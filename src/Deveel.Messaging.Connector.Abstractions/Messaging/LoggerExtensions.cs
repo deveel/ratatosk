@@ -10,7 +10,7 @@ namespace Deveel.Messaging
     /// <summary>
     /// Provides high-performance logging extensions for Channel Connector Base operations using source-generated logging methods.
     /// </summary>
-    internal static partial class ChannelConnectorBaseLoggerExtensions
+    internal static partial class LoggerExtensions
     {
         #region Authentication Logging
 
@@ -30,19 +30,19 @@ namespace Deveel.Messaging
             EventId = 2003,
             Level = LogLevel.Debug,
             Message = "Using authentication configuration: {AuthenticationType}")]
-        internal static partial void LogUsingAuthenticationConfiguration(this ILogger logger, string authenticationType);
+        internal static partial void LogUsingAuthenticationConfiguration(this ILogger logger, AuthenticationType authenticationType);
 
         [LoggerMessage(
             EventId = 2004,
             Level = LogLevel.Information,
             Message = "Authentication successful using {AuthenticationType}")]
-        internal static partial void LogAuthenticationSuccessful(this ILogger logger, string authenticationType);
+        internal static partial void LogAuthenticationSuccessful(this ILogger logger, AuthenticationType authenticationType);
 
         [LoggerMessage(
             EventId = 2005,
             Level = LogLevel.Error,
-            Message = "Authentication failed: {ErrorMessage}")]
-        internal static partial void LogAuthenticationFailed(this ILogger logger, string errorMessage);
+            Message = "Authentication failed using {AuthenticationType}")]
+        internal static partial void LogAuthenticationFailed(this ILogger logger, AuthenticationType authenticationType);
 
         [LoggerMessage(
             EventId = 2006,
@@ -66,7 +66,7 @@ namespace Deveel.Messaging
             EventId = 2009,
             Level = LogLevel.Warning,
             Message = "Authentication configuration not found for credential type: {AuthenticationType}")]
-        internal static partial void LogAuthenticationConfigurationNotFound(this ILogger logger, string authenticationType);
+        internal static partial void LogAuthenticationConfigurationNotFound(this ILogger logger, AuthenticationType authenticationType);
 
         [LoggerMessage(
             EventId = 2010,
@@ -77,8 +77,8 @@ namespace Deveel.Messaging
         [LoggerMessage(
             EventId = 2011,
             Level = LogLevel.Error,
-            Message = "Authentication refresh failed: {ErrorMessage}")]
-        internal static partial void LogAuthenticationRefreshFailed(this ILogger logger, string errorMessage);
+            Message = "Authentication refresh failed")]
+        internal static partial void LogAuthenticationRefreshFailed(this ILogger logger);
 
         [LoggerMessage(
             EventId = 2012,
