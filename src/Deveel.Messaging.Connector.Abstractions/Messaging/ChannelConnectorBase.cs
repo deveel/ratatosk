@@ -187,7 +187,7 @@ namespace Deveel.Messaging
 						"No suitable authentication configuration found for the provided connection settings");
 				}
 
-				Logger.LogUsingAuthenticationConfiguration(authConfig.AuthenticationType.ToString());
+				Logger.LogUsingAuthenticationConfiguration(authConfig.AuthenticationType);
 
 				// Perform authentication
 				var authResult = await _authenticationManager.AuthenticateAsync(connectionSettings, authConfig, cancellationToken);
@@ -195,12 +195,12 @@ namespace Deveel.Messaging
 				if (authResult.IsSuccessful && authResult.Credential != null)
 				{
 					_authenticationCredential = authResult.Credential;
-					Logger.LogAuthenticationSuccessful(authConfig.AuthenticationType.ToString());
+					Logger.LogAuthenticationSuccessful(authConfig.AuthenticationType);
 					return ConnectorResult<bool>.Success(true);
 				}
 				else
 				{
-					Logger.LogAuthenticationFailed(authResult.ErrorMessage ?? "Unknown error");
+					Logger.LogAuthenticationFailed(authConfig.AuthenticationType);
 					return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
 						authResult.ErrorMessage ?? "Authentication failed");
 				}
@@ -239,7 +239,7 @@ namespace Deveel.Messaging
 				
 				if (authConfig == null)
 				{
-					Logger.LogAuthenticationConfigurationNotFound(_authenticationCredential.AuthenticationType.ToString());
+					Logger.LogAuthenticationConfigurationNotFound(_authenticationCredential.AuthenticationType);
 					return await AuthenticateAsync(connectionSettings, cancellationToken);
 				}
 
@@ -254,7 +254,7 @@ namespace Deveel.Messaging
 				}
 				else
 				{
-					Logger.LogAuthenticationRefreshFailed(authResult.ErrorMessage ?? "Unknown error");
+					Logger.LogAuthenticationRefreshFailed();
 					return ConnectorResult<bool>.Fail(ConnectorErrorCodes.AuthenticationFailed, 
 						authResult.ErrorMessage ?? "Authentication refresh failed");
 				}

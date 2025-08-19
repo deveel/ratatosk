@@ -52,7 +52,7 @@ namespace Deveel.Messaging
 		/// <summary>
 		/// Gets the display name from the master schema, or the connector type name if not available.
 		/// </summary>
-		public string DisplayName => Schema.DisplayName ?? ConnectorType.Name;
+		public string DisplayName => String.IsNullOrWhiteSpace(Schema.DisplayName) ? ConnectorType.Name : Schema.DisplayName;
 
 		/// <summary>
 		/// Gets the capabilities supported by the connector from the master schema.

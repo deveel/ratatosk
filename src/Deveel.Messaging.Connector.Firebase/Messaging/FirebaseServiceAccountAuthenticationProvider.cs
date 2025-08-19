@@ -46,7 +46,7 @@ namespace Deveel.Messaging
         {
             try
             {
-                _logger.LogDebug("Obtaining Firebase service account credential");
+                _logger.LogObtainingServiceAccountCredential();
 
                 // Get service account key - can be JSON string or file path
                 var serviceAccountKey = GetStringParameter(connectionSettings, "ServiceAccountKey") ??
@@ -67,7 +67,7 @@ namespace Deveel.Messaging
                         return Task.FromResult(CreateFailureResult($"Service account key file not found: {serviceAccountKey}", "SERVICE_ACCOUNT_FILE_NOT_FOUND"));
                     }
                     
-                    _logger.LogDebug("Using service account key file: {FilePath}", serviceAccountKey);
+                    _logger.LogUsingServiceAccountKeyFile();
                 }
                 else
                 {
@@ -75,7 +75,7 @@ namespace Deveel.Messaging
                     try
                     {
                         System.Text.Json.JsonDocument.Parse(serviceAccountKey);
-                        _logger.LogDebug("Using service account key JSON string");
+                        _logger.LogUsingServiceAccountKeyJson();
                     }
                     catch (System.Text.Json.JsonException)
                     {
@@ -96,12 +96,12 @@ namespace Deveel.Messaging
                     credential.Properties["ProjectId"] = projectId;
                 }
 
-                _logger.LogInformation("Successfully prepared Firebase service account credential");
+                _logger.LogFirebaseServiceAccountCredentialPrepared();
                 return Task.FromResult(CreateSuccessResult(credential));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error preparing Firebase service account credential");
+                _logger.LogFirebaseServiceAccountCredentialError(ex);
                 return Task.FromResult(CreateFailureResult($"Error preparing credential: {ex.Message}", "CREDENTIAL_ERROR"));
             }
         }
@@ -114,12 +114,12 @@ namespace Deveel.Messaging
             if (existingCredential.AuthenticationType == AuthenticationType.Certificate &&
                 !string.IsNullOrWhiteSpace(existingCredential.CredentialValue))
             {
-                _logger.LogDebug("Service account credential is still valid, no refresh needed");
+                _logger.LogServiceAccountCredentialValid();
                 return Task.FromResult(CreateSuccessResult(existingCredential));
             }
 
             // If credential is invalid, obtain a new one
-            _logger.LogDebug("Service account credential is invalid, obtaining new credential");
+            _logger.LogServiceAccountCredentialInvalid();
             return ObtainCredentialAsync(connectionSettings, cancellationToken);
         }
     }
