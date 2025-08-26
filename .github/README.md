@@ -2,7 +2,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0-512BD4)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![NuGet](https://img.shields.io/badge/NuGet-Available-blue)](https://www.nuget.org/) [![CodeCov](https://codecov.io/gh/deveel/deveel.messaging/branch/main/graph/badge.svg)](https://codecov.io/gh/deveel/deveel.messaging)
+[![NuGet](https://img.shields.io/badge/NuGet-Available-blue)](https://www.nuget.org/) [![codecov](https://codecov.io/gh/deveel/deveel.messaging/graph/badge.svg?token=0JV12EPQOD)](https://codecov.io/gh/deveel/deveel.messaging)
 
 
 A modern, extensible messaging framework for .NET that provides a unified abstraction layer for various messaging providers including SMS, email, WhatsApp, and push notifications. The framework offers strong type safety, comprehensive validation, and flexible connector architecture.

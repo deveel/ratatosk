@@ -162,18 +162,8 @@ public static class TwilioMockFactory
     {
         var messageResource = (MessageResource)Activator.CreateInstance(typeof(MessageResource), true)!;
         
-        // Use reflection to set backing fields directly using the correct compiler-generated field names
-        // Skip To and From fields for now since they seem to have complex type requirements
-        SetPrivateField(messageResource, "<Sid>k__BackingField", sid);
-        SetPrivateField(messageResource, "<Status>k__BackingField", status);
-        SetPrivateField(messageResource, "<Body>k__BackingField", body);
-        SetPrivateField(messageResource, "<DateCreated>k__BackingField", DateTime.UtcNow);
-        SetPrivateField(messageResource, "<DateUpdated>k__BackingField", DateTime.UtcNow);
-        SetPrivateField(messageResource, "<NumSegments>k__BackingField", "1");
-        SetPrivateField(messageResource, "<Price>k__BackingField", "0.0075");
-        SetPrivateField(messageResource, "<PriceUnit>k__BackingField", "USD");
-        SetPrivateField(messageResource, "<ErrorCode>k__BackingField", (int?)null);
-        SetPrivateField(messageResource, "<ErrorMessage>k__BackingField", (string?)null);
+        // Use helper method to set backing fields
+        TwilioReflectionHelper.SetMessageResourceFields(messageResource, sid, status, body);
 
         return messageResource;
     }
@@ -197,10 +187,8 @@ public static class TwilioMockFactory
     {
         var accountResource = (AccountResource)Activator.CreateInstance(typeof(AccountResource), true)!;
         
-        // Use reflection to set backing fields directly using the correct compiler-generated field names
-        SetPrivateField(accountResource, "<Sid>k__BackingField", sid);
-        SetPrivateField(accountResource, "<FriendlyName>k__BackingField", friendlyName);
-        SetPrivateField(accountResource, "<Status>k__BackingField", AccountResource.StatusEnum.Active);
+        // Use helper method to set backing fields
+        TwilioReflectionHelper.SetAccountResourceFields(accountResource, sid, friendlyName);
 
         return accountResource;
     }
@@ -216,16 +204,8 @@ public static class TwilioMockFactory
     {
         var messageResource = (MessageResource)Activator.CreateInstance(typeof(MessageResource), true)!;
         
-        SetPrivateField(messageResource, "<Sid>k__BackingField", sid);
-        SetPrivateField(messageResource, "<Status>k__BackingField", MessageResource.StatusEnum.Failed);
-        SetPrivateField(messageResource, "<Body>k__BackingField", "Hello World");
-        SetPrivateField(messageResource, "<DateCreated>k__BackingField", DateTime.UtcNow);
-        SetPrivateField(messageResource, "<DateUpdated>k__BackingField", DateTime.UtcNow);
-        SetPrivateField(messageResource, "<NumSegments>k__BackingField", "1");
-        SetPrivateField(messageResource, "<Price>k__BackingField", "0.0075");
-        SetPrivateField(messageResource, "<PriceUnit>k__BackingField", "USD");
-        SetPrivateField(messageResource, "<ErrorCode>k__BackingField", errorCode);
-        SetPrivateField(messageResource, "<ErrorMessage>k__BackingField", errorMessage);
+        // Use helper method to set backing fields for failed message
+        TwilioReflectionHelper.SetFailedMessageResourceFields(messageResource, sid, errorCode, errorMessage);
 
         return messageResource;
     }
@@ -246,9 +226,73 @@ public static class TwilioMockFactory
         mock.Setup(x => x.FetchAccountAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
     }
+}
+
+/// <summary>
+/// Internal helper class that encapsulates reflection calls for Twilio resource creation.
+/// This reduces the risk by centralizing reflection usage and making it testable.
+/// </summary>
+internal static class TwilioReflectionHelper
+{
+    /// <summary>
+    /// Sets the backing fields for a MessageResource instance.
+    /// </summary>
+    /// <param name="messageResource">The MessageResource instance.</param>
+    /// <param name="sid">The message SID.</param>
+    /// <param name="status">The message status.</param>
+    /// <param name="body">The message body.</param>
+    internal static void SetMessageResourceFields(MessageResource messageResource, string sid, MessageResource.StatusEnum status, string body)
+    {
+        // Use reflection to set backing fields directly using the correct compiler-generated field names
+        SetPrivateField(messageResource, "<Sid>k__BackingField", sid);
+        SetPrivateField(messageResource, "<Status>k__BackingField", status);
+        SetPrivateField(messageResource, "<Body>k__BackingField", body);
+        SetPrivateField(messageResource, "<DateCreated>k__BackingField", DateTime.UtcNow);
+        SetPrivateField(messageResource, "<DateUpdated>k__BackingField", DateTime.UtcNow);
+        SetPrivateField(messageResource, "<NumSegments>k__BackingField", "1");
+        SetPrivateField(messageResource, "<Price>k__BackingField", "0.0075");
+        SetPrivateField(messageResource, "<PriceUnit>k__BackingField", "USD");
+        SetPrivateField(messageResource, "<ErrorCode>k__BackingField", (int?)null);
+        SetPrivateField(messageResource, "<ErrorMessage>k__BackingField", (string?)null);
+    }
+
+    /// <summary>
+    /// Sets the backing fields for a failed MessageResource instance.
+    /// </summary>
+    /// <param name="messageResource">The MessageResource instance.</param>
+    /// <param name="sid">The message SID.</param>
+    /// <param name="errorCode">The error code.</param>
+    /// <param name="errorMessage">The error message.</param>
+    internal static void SetFailedMessageResourceFields(MessageResource messageResource, string sid, int errorCode, string errorMessage)
+    {
+        SetPrivateField(messageResource, "<Sid>k__BackingField", sid);
+        SetPrivateField(messageResource, "<Status>k__BackingField", MessageResource.StatusEnum.Failed);
+        SetPrivateField(messageResource, "<Body>k__BackingField", "Hello World");
+        SetPrivateField(messageResource, "<DateCreated>k__BackingField", DateTime.UtcNow);
+        SetPrivateField(messageResource, "<DateUpdated>k__BackingField", DateTime.UtcNow);
+        SetPrivateField(messageResource, "<NumSegments>k__BackingField", "1");
+        SetPrivateField(messageResource, "<Price>k__BackingField", "0.0075");
+        SetPrivateField(messageResource, "<PriceUnit>k__BackingField", "USD");
+        SetPrivateField(messageResource, "<ErrorCode>k__BackingField", errorCode);
+        SetPrivateField(messageResource, "<ErrorMessage>k__BackingField", errorMessage);
+    }
+
+    /// <summary>
+    /// Sets the backing fields for an AccountResource instance.
+    /// </summary>
+    /// <param name="accountResource">The AccountResource instance.</param>
+    /// <param name="sid">The account SID.</param>
+    /// <param name="friendlyName">The account friendly name.</param>
+    internal static void SetAccountResourceFields(AccountResource accountResource, string sid, string friendlyName)
+    {
+        SetPrivateField(accountResource, "<Sid>k__BackingField", sid);
+        SetPrivateField(accountResource, "<FriendlyName>k__BackingField", friendlyName);
+        SetPrivateField(accountResource, "<Status>k__BackingField", AccountResource.StatusEnum.Active);
+    }
 
     /// <summary>
     /// Sets a private field value using reflection.
+    /// This method centralizes all reflection usage for better maintainability and testability.
     /// </summary>
     /// <param name="obj">The object instance.</param>
     /// <param name="fieldName">The field name.</param>

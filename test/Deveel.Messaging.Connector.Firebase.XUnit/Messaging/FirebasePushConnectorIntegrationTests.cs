@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
+using System.Net.Http;
 using System.Reflection;
 
 using Xunit.Abstractions;
@@ -332,9 +333,9 @@ namespace Deveel.Messaging
                     // Simulate processing in chunks
                     var tokenCount = msg.Tokens?.Count ?? 0;
                     var responses = Enumerable.Range(0, tokenCount)
-                        .Select(_ => CreateMockSendResponse($"msg-{Guid.NewGuid()}", true))
+                        .Select(_ => FirebaseReflectionHelper.CreateMockSendResponse($"msg-{Guid.NewGuid()}", true))
                         .ToList();
-                    return CreateMockBatchResponse(responses);
+                    return FirebaseReflectionHelper.CreateMockBatchResponse(responses);
                 })
                 .Callback(() => Thread.Sleep(1)); // Minimal delay to simulate processing
             
@@ -353,16 +354,16 @@ namespace Deveel.Messaging
                 .ReturnsAsync((MulticastMessage msg, bool dryRun, CancellationToken ct) =>
                 {
                     Interlocked.Increment(ref multicastCalls);
-                    var responses = msg.Tokens.Select(token => CreateMockSendResponse($"multicast-{Guid.NewGuid()}", true)).ToList();
-                    return CreateMockBatchResponse(responses);
+                    var responses = msg.Tokens.Select(token => FirebaseReflectionHelper.CreateMockSendResponse($"multicast-{Guid.NewGuid()}", true)).ToList();
+                    return FirebaseReflectionHelper.CreateMockBatchResponse(responses);
                 });
             
             mock.Setup(x => x.SendEachAsync(It.IsAny<IEnumerable<FirebaseAdmin.Messaging.Message>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((IEnumerable<FirebaseAdmin.Messaging.Message> messages, bool dryRun, CancellationToken ct) =>
                 {
                     Interlocked.Increment(ref eachCalls);
-                    var responses = messages.Select(m => CreateMockSendResponse($"each-{Guid.NewGuid()}", true)).ToList();
-                    return CreateMockBatchResponse(responses);
+                    var responses = messages.Select(m => FirebaseReflectionHelper.CreateMockSendResponse($"each-{Guid.NewGuid()}", true)).ToList();
+                    return FirebaseReflectionHelper.CreateMockBatchResponse(responses);
                 });
             
             return mock;
@@ -391,8 +392,8 @@ namespace Deveel.Messaging
                 .ReturnsAsync((IEnumerable<FirebaseAdmin.Messaging.Message> messages, bool dryRun, CancellationToken ct) =>
                 {
                     var responses = messages.Select((m, index) => 
-                        CreateMockSendResponse($"msg-{index}", index % 2 == 0)).ToList(); // Every other fails
-                    return CreateMockBatchResponse(responses);
+                        FirebaseReflectionHelper.CreateMockSendResponse($"msg-{index}", index % 2 == 0)).ToList(); // Every other fails
+                    return FirebaseReflectionHelper.CreateMockBatchResponse(responses);
                 });
             
             return mock;
@@ -459,41 +460,6 @@ namespace Deveel.Messaging
 
         #endregion
 
-        #region Mock Response Helpers
-
-        private SendResponse CreateMockSendResponse(string messageId, bool isSuccess)
-        {
-            var ctor1 = typeof(SendResponse).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new [] { typeof(string) }, null);
-            var ctor2 = typeof(SendResponse).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new [] { typeof(FirebaseMessagingException) }, null);
-
-            if (ctor1 != null && isSuccess)
-            {
-                // Create a successful SendResponse
-                return (SendResponse)ctor1.Invoke(new object[] { messageId });
-			} else if (ctor2 != null && !isSuccess)
-            {
-				// Create a failed SendResponse with an exception
-				// MessagingErrorCode? fcmCode = null, Exception inner = null, HttpResponseMessage response = null
-                var ctorTypes = new[] { typeof(ErrorCode), typeof(string), typeof(MessagingErrorCode), typeof(Exception), typeof(HttpResponseMessage) };
-				var exCtor = typeof(FirebaseMessagingException)
-                    .GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, ctorTypes, null);
-                var exception = (FirebaseMessagingException)exCtor.Invoke(new object?[] { ErrorCode.Unknown, "Error", null, null, null });
-                return (SendResponse)ctor2.Invoke(new object[] { exception });
-			}
-
-			return null!; // This will require updating the batch logic
-        }
-
-        private BatchResponse CreateMockBatchResponse(IList<SendResponse> responses)
-        {
-            // Since SendResponse can't be mocked, let's create a simpler approach
-            // Create a mock BatchResponse that doesn't depend on SendResponse objects
-            var ctor = typeof(BatchResponse).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(IList<SendResponse>) }, null);
-            return ctor.Invoke(new object[] { responses }) as BatchResponse ?? throw new InvalidOperationException("Failed to create mock BatchResponse");
-		}
-
-        #endregion
-
         #region Test Data Helpers
 
         private IMessage CreateTestMessage(string? suffix = null)
@@ -536,5 +502,52 @@ namespace Deveel.Messaging
         #endregion
 
         #endregion
+    }
+
+    /// <summary>
+    /// Internal helper class that encapsulates reflection calls for Firebase resource creation.
+    /// This reduces the risk by centralizing reflection usage and making it testable.
+    /// </summary>
+    internal static class FirebaseReflectionHelper
+    {
+        /// <summary>
+        /// Creates a mock SendResponse using reflection.
+        /// </summary>
+        /// <param name="messageId">The message ID.</param>
+        /// <param name="isSuccess">Whether the response represents success.</param>
+        /// <returns>A SendResponse instance.</returns>
+        internal static SendResponse CreateMockSendResponse(string messageId, bool isSuccess)
+        {
+            var ctor1 = typeof(SendResponse).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new [] { typeof(string) }, null);
+            var ctor2 = typeof(SendResponse).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new [] { typeof(FirebaseMessagingException) }, null);
+
+            if (ctor1 != null && isSuccess)
+            {
+                // Create a successful SendResponse
+                return (SendResponse)ctor1.Invoke(new object[] { messageId });
+            } 
+            else if (ctor2 != null && !isSuccess)
+            {
+                // Create a failed SendResponse with an exception
+                var ctorTypes = new[] { typeof(ErrorCode), typeof(string), typeof(MessagingErrorCode), typeof(Exception), typeof(HttpResponseMessage) };
+                var exCtor = typeof(FirebaseMessagingException)
+                    .GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, ctorTypes, null);
+                var exception = (FirebaseMessagingException)exCtor!.Invoke(new object?[] { ErrorCode.Unknown, "Error", null, null, null });
+                return (SendResponse)ctor2.Invoke(new object[] { exception });
+            }
+
+            throw new InvalidOperationException("Unable to create mock SendResponse");
+        }
+
+        /// <summary>
+        /// Creates a mock BatchResponse using reflection.
+        /// </summary>
+        /// <param name="responses">The list of SendResponse objects.</param>
+        /// <returns>A BatchResponse instance.</returns>
+        internal static BatchResponse CreateMockBatchResponse(IList<SendResponse> responses)
+        {
+            var ctor = typeof(BatchResponse).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(IList<SendResponse>) }, null);
+            return (BatchResponse)(ctor?.Invoke(new object[] { responses }) ?? throw new InvalidOperationException("Failed to create mock BatchResponse"));
+        }
     }
 }
