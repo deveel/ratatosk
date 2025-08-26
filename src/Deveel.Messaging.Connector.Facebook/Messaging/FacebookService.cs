@@ -135,7 +135,7 @@ namespace Deveel.Messaging
         /// <summary>
         /// Validates Facebook Page Access Token format according to Facebook requirements.
         /// </summary>
-        private static bool IsValidPageAccessToken(string token)
+        internal static bool IsValidPageAccessToken(string token)
         {
             // Facebook Page Access Tokens typically start with specific patterns
             // and have minimum length requirements
@@ -179,7 +179,7 @@ namespace Deveel.Messaging
         /// <summary>
         /// Builds Facebook Messenger Platform message payload according to API specification.
         /// </summary>
-        private static object BuildFacebookMessagePayload(FacebookMessageRequest request)
+        internal static object BuildFacebookMessagePayload(FacebookMessageRequest request)
         {
             var payload = new Dictionary<string, object>
             {
@@ -205,7 +205,7 @@ namespace Deveel.Messaging
         /// <summary>
         /// Builds message content according to Facebook Messenger Platform specification.
         /// </summary>
-        private static object BuildMessageContent(FacebookMessage message)
+        internal static object BuildMessageContent(FacebookMessage message)
         {
             var content = new Dictionary<string, object>();
 
@@ -256,7 +256,7 @@ namespace Deveel.Messaging
         /// <summary>
         /// Parses Facebook API error response for detailed error information.
         /// </summary>
-        private static string ParseFacebookError(RestResponse response)
+        internal static string ParseFacebookError(RestResponse response)
         {
             try
             {
@@ -290,7 +290,7 @@ namespace Deveel.Messaging
         /// <summary>
         /// Safely extracts string property from JSON element.
         /// </summary>
-        private static string? GetJsonStringProperty(JsonElement element, string propertyName)
+        internal static string? GetJsonStringProperty(JsonElement element, string propertyName)
         {
             return element.TryGetProperty(propertyName, out var property) ? property.GetString() : null;
         }

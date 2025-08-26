@@ -21,4 +21,10 @@
   <ItemGroup>
     <PackageReference Include="Twilio" Version="7.6.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Deveel.Messaging.Connector.Twilio.XUnit</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>

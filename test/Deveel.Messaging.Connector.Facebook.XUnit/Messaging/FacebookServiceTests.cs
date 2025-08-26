@@ -215,37 +215,26 @@ public class FacebookServiceTests
     [Fact]
     public void ValidatePageAccessToken_ValidTokens_ReturnsTrue()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("IsValidPageAccessToken", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
-        // Test valid token formats
-        Assert.True((bool)method!.Invoke(null, new object[] { "EAATest123456789|ValidPageAccessToken" })!);
-        Assert.True((bool)method.Invoke(null, new object[] { "EAAGTest123456789abcdef" })!);
-        Assert.True((bool)method.Invoke(null, new object[] { "someLongTokenWithPipe|123456" })!);
+        // Test valid token formats using internal method directly
+        Assert.True(FacebookService.IsValidPageAccessToken("EAATest123456789|ValidPageAccessToken"));
+        Assert.True(FacebookService.IsValidPageAccessToken("EAAGTest123456789abcdef"));
+        Assert.True(FacebookService.IsValidPageAccessToken("someLongTokenWithPipe|123456"));
     }
 
     [Fact]
     public void ValidatePageAccessToken_InvalidTokens_ReturnsFalse()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("IsValidPageAccessToken", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
-        // Test invalid token formats
-        Assert.False((bool)method!.Invoke(null, new object[] { "" })!);
-        Assert.False((bool)method.Invoke(null, new object[] { "short" })!);
-        Assert.False((bool)method.Invoke(null, new object[] { "token with spaces" })!);
-        Assert.False((bool)method.Invoke(null, new object[] { "   " })!);
+        // Test invalid token formats using internal method directly
+        Assert.False(FacebookService.IsValidPageAccessToken(""));
+        Assert.False(FacebookService.IsValidPageAccessToken("short"));
+        Assert.False(FacebookService.IsValidPageAccessToken("token with spaces"));
+        Assert.False(FacebookService.IsValidPageAccessToken("   "));
     }
 
     [Fact]
     public void BuildFacebookMessagePayload_ValidRequest_CreatesCorrectStructure()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("BuildFacebookMessagePayload", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var request = new FacebookMessageRequest
         {
             Recipient = "user-123",
@@ -254,7 +243,7 @@ public class FacebookServiceTests
         };
 
         // Act
-        var result = method!.Invoke(null, new object[] { request });
+        var result = FacebookService.BuildFacebookMessagePayload(request);
 
         // Assert
         Assert.NotNull(result);
@@ -269,10 +258,7 @@ public class FacebookServiceTests
     [Fact]
     public void BuildMessageContent_WithTextAndQuickReplies_CreatesCorrectStructure()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("BuildMessageContent", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var message = new FacebookMessage
         {
             Text = "Choose an option:",
@@ -295,7 +281,7 @@ public class FacebookServiceTests
         };
 
         // Act
-        var result = method!.Invoke(null, new object[] { message });
+        var result = FacebookService.BuildMessageContent(message);
 
         // Assert
         Assert.NotNull(result);
@@ -313,10 +299,7 @@ public class FacebookServiceTests
     [Fact]
     public void BuildMessageContent_WithAttachment_CreatesCorrectStructure()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("BuildMessageContent", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var message = new FacebookMessage
         {
             Attachment = new FacebookAttachment
@@ -331,7 +314,7 @@ public class FacebookServiceTests
         };
 
         // Act
-        var result = method!.Invoke(null, new object[] { message });
+        var result = FacebookService.BuildMessageContent(message);
 
         // Assert
         Assert.NotNull(result);
@@ -348,10 +331,7 @@ public class FacebookServiceTests
     [Fact]
     public void ParseFacebookError_ValidErrorResponse_ReturnsFormattedMessage()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("ParseFacebookError", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var mockResponse = new Mock<RestResponse>();
         mockResponse.Object.Content = @"{
             ""error"": {
@@ -363,23 +343,19 @@ public class FacebookServiceTests
         mockResponse.Object.StatusCode = System.Net.HttpStatusCode.BadRequest;
 
         // Act
-        var result = method!.Invoke(null, new object[] { mockResponse.Object });
+        var result = FacebookService.ParseFacebookError(mockResponse.Object);
 
         // Assert
         Assert.NotNull(result);
-        var errorMessage = result as string;
-        Assert.Contains("Code 190", errorMessage!);
-        Assert.Contains("Subcode 460", errorMessage);
-        Assert.Contains("Invalid OAuth access token", errorMessage);
+        Assert.Contains("Code 190", result);
+        Assert.Contains("Subcode 460", result);
+        Assert.Contains("Invalid OAuth access token", result);
     }
 
     [Fact]
     public void ParseFacebookError_ErrorWithoutSubcode_ReturnsSimpleFormat()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("ParseFacebookError", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var mockResponse = new Mock<RestResponse>();
         mockResponse.Object.Content = @"{
             ""error"": {
@@ -390,56 +366,47 @@ public class FacebookServiceTests
         mockResponse.Object.StatusCode = System.Net.HttpStatusCode.TooManyRequests;
 
         // Act
-        var result = method!.Invoke(null, new object[] { mockResponse.Object });
+        var result = FacebookService.ParseFacebookError(mockResponse.Object);
 
         // Assert
         Assert.NotNull(result);
-        var errorMessage = result as string;
-        Assert.Contains("Code 4", errorMessage!);
-        Assert.DoesNotContain("Subcode", errorMessage);
-        Assert.Contains("Rate limit exceeded", errorMessage);
+        Assert.Contains("Code 4", result);
+        Assert.DoesNotContain("Subcode", result);
+        Assert.Contains("Rate limit exceeded", result);
     }
 
     [Fact]
     public void ParseFacebookError_EmptyContent_ReturnsHttpStatus()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("ParseFacebookError", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var mockResponse = new Mock<RestResponse>();
         mockResponse.Object.Content = "";
         mockResponse.Object.StatusCode = System.Net.HttpStatusCode.InternalServerError;
         mockResponse.Object.ErrorMessage = "Network error";
 
         // Act
-        var result = method!.Invoke(null, new object[] { mockResponse.Object });
+        var result = FacebookService.ParseFacebookError(mockResponse.Object);
 
         // Assert
         Assert.NotNull(result);
-        var errorMessage = result as string;
-        Assert.Contains("HTTP 500", errorMessage!);
-        Assert.Contains("Network error", errorMessage);
+        Assert.Contains("HTTP 500", result);
+        Assert.Contains("Network error", result);
     }
 
     [Fact]
     public void ParseFacebookError_InvalidJson_ReturnsRawContent()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("ParseFacebookError", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var mockResponse = new Mock<RestResponse>();
         mockResponse.Object.Content = "Invalid JSON response";
         mockResponse.Object.StatusCode = System.Net.HttpStatusCode.BadRequest;
 
         // Act
-        var result = method!.Invoke(null, new object[] { mockResponse.Object });
+        var result = FacebookService.ParseFacebookError(mockResponse.Object);
 
         // Assert
         Assert.NotNull(result);
-        var errorMessage = result as string;
-        Assert.Equal("Invalid JSON response", errorMessage);
+        Assert.Equal("Invalid JSON response", result);
     }
 
     #endregion
@@ -449,14 +416,11 @@ public class FacebookServiceTests
     [Fact]
     public void GetJsonStringProperty_ExistingProperty_ReturnsValue()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("GetJsonStringProperty", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(@"{""name"": ""Test Page"", ""id"": ""123456""}");
 
         // Act
-        var result = method!.Invoke(null, new object[] { jsonElement, "name" });
+        var result = FacebookService.GetJsonStringProperty(jsonElement, "name");
 
         // Assert
         Assert.Equal("Test Page", result);
@@ -465,14 +429,11 @@ public class FacebookServiceTests
     [Fact]
     public void GetJsonStringProperty_NonExistingProperty_ReturnsNull()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("GetJsonStringProperty", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(@"{""name"": ""Test Page""}");
 
         // Act
-        var result = method!.Invoke(null, new object[] { jsonElement, "nonexistent" });
+        var result = FacebookService.GetJsonStringProperty(jsonElement, "nonexistent");
 
         // Assert
         Assert.Null(result);
@@ -569,10 +530,7 @@ public class FacebookServiceTests
     [Fact]
     public void BuildFacebookMessagePayload_WithDefaultNotificationType_DoesNotIncludeProperty()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("BuildFacebookMessagePayload", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var request = new FacebookMessageRequest
         {
             Recipient = "user-123",
@@ -582,7 +540,7 @@ public class FacebookServiceTests
         };
 
         // Act
-        var result = method!.Invoke(null, new object[] { request });
+        var result = FacebookService.BuildFacebookMessagePayload(request);
 
         // Assert
         var payload = result as Dictionary<string, object>;
@@ -593,10 +551,7 @@ public class FacebookServiceTests
     [Fact]
     public void BuildFacebookMessagePayload_WithNonDefaultNotificationType_IncludesProperty()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("BuildFacebookMessagePayload", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var request = new FacebookMessageRequest
         {
             Recipient = "user-123",
@@ -606,7 +561,7 @@ public class FacebookServiceTests
         };
 
         // Act
-        var result = method!.Invoke(null, new object[] { request });
+        var result = FacebookService.BuildFacebookMessagePayload(request);
 
         // Assert
         var payload = result as Dictionary<string, object>;
@@ -618,10 +573,7 @@ public class FacebookServiceTests
     [Fact]
     public void BuildFacebookMessagePayload_WithTag_IncludesTagProperty()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("BuildFacebookMessagePayload", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var request = new FacebookMessageRequest
         {
             Recipient = "user-123",
@@ -631,7 +583,7 @@ public class FacebookServiceTests
         };
 
         // Act
-        var result = method!.Invoke(null, new object[] { request });
+        var result = FacebookService.BuildFacebookMessagePayload(request);
 
         // Assert
         var payload = result as Dictionary<string, object>;
@@ -643,10 +595,7 @@ public class FacebookServiceTests
     [Fact]
     public void BuildMessageContent_WithQuickReplyWithoutImageUrl_DoesNotIncludeImageUrl()
     {
-        // Use reflection to test the private method
-        var method = typeof(FacebookService).GetMethod("BuildMessageContent", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        
+        // Test internal method directly
         var message = new FacebookMessage
         {
             Text = "Choose an option:",
@@ -663,7 +612,7 @@ public class FacebookServiceTests
         };
 
         // Act
-        var result = method!.Invoke(null, new object[] { message });
+        var result = FacebookService.BuildMessageContent(message);
 
         // Assert
         var content = result as Dictionary<string, object>;

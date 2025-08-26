@@ -23,4 +23,10 @@
     <PackageReference Include="FirebaseAdmin" Version="2.4.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Deveel.Messaging.Connector.Firebase.XUnit</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>

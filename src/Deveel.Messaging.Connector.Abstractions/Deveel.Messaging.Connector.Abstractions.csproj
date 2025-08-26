@@ -16,4 +16,10 @@
   <ItemGroup Condition="$(TargetFramework) == 'net9.0'">
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
   </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Deveel.Messaging.Connector.Abstractions.XUnit</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>

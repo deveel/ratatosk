@@ -4,4 +4,10 @@
     <Description>The set of abstractions and base classes for the messaging domain</Description>
     <PackageTags>messaging;message;abstractions;endpoint;email;phone;device</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Deveel.Messaging.Abstrations.XUnit</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>
