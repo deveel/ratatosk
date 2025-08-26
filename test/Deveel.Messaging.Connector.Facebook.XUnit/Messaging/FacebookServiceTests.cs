@@ -234,7 +234,6 @@ public class FacebookServiceTests
     [Fact]
     public void BuildFacebookMessagePayload_ValidRequest_CreatesCorrectStructure()
     {
-        // Test internal method directly
         var request = new FacebookMessageRequest
         {
             Recipient = "user-123",
@@ -379,6 +378,7 @@ public class FacebookServiceTests
     public void ParseFacebookError_EmptyContent_ReturnsHttpStatus()
     {
         // Test internal method directly
+
         var mockResponse = new Mock<RestResponse>();
         mockResponse.Object.Content = "";
         mockResponse.Object.StatusCode = System.Net.HttpStatusCode.InternalServerError;

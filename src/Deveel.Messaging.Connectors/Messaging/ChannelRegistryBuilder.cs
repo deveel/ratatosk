@@ -52,12 +52,7 @@ namespace Deveel.Messaging
 		public ChannelRegistryBuilder RegisterConnector<TConnector>(Func<IServiceProvider, IChannelSchema, TConnector>? connectorFactory = null)
 			where TConnector : class, IChannelConnector
 		{
-			_registrationDescriptors.Add(new ConnectorRegistrationDescriptor(typeof(TConnector), 
-				connectorFactory != null
-					? (serviceProvider, schema) => connectorFactory(serviceProvider, schema)
-					: null));
-
-			return this;
+			return RegisterConnector(typeof(TConnector), connectorFactory);
 		}
 
 		/// <summary>
@@ -77,7 +72,12 @@ namespace Deveel.Messaging
 				throw new ArgumentException($"Type '{connectorType.Name}' must implement {nameof(IChannelConnector)}.", nameof(connectorType));
 			}
 
-			_registrationDescriptors.Add(new ConnectorRegistrationDescriptor(connectorType, connectorFactory));
+			if (!Attribute.IsDefined(connectorType, typeof(ChannelSchemaAttribute)))
+				throw new ArgumentException($"Type '{connectorType.Name}' must be decorated with {nameof(ChannelSchemaAttribute)}.", nameof(connectorType));
+
+			_registrationDescriptors.Add(new ConnectorRegistrationDescriptor(connectorType,
+				connectorFactory != null ? (serviceProvider, schema) => connectorFactory(serviceProvider, schema) : null));
+
 
 			return this;
 		}
