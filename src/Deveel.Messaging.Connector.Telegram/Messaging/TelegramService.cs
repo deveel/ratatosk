@@ -6,6 +6,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Bot.Requests;
 
 namespace Deveel.Messaging
 {
@@ -48,7 +49,7 @@ namespace Deveel.Messaging
 		public async Task<User> GetMeAsync(CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			return await _botClient!.GetMe(cancellationToken);
+			return await _botClient!.SendRequest(new GetMeRequest(), cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -63,30 +64,21 @@ namespace Deveel.Messaging
 			CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			
+
+			var request = new SendMessageRequest
+			{
+				ChatId = chatId,
+				Text = text,
+				LinkPreviewOptions = disableWebPagePreview == true ? new LinkPreviewOptions { IsDisabled = true } : null,
+				DisableNotification = disableNotification ?? false,
+				ReplyParameters = replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
+				ReplyMarkup = replyMarkup
+			};
+
 			if (parseMode.HasValue)
-			{
-				return await _botClient!.SendTextMessageAsync(
-					chatId,
-					text,
-					parseMode: parseMode.Value,
-					linkPreviewOptions: disableWebPagePreview == true ? new LinkPreviewOptions { IsDisabled = true } : null,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
-			else
-			{
-				return await _botClient!.SendTextMessageAsync(
-					chatId,
-					text,
-					linkPreviewOptions: disableWebPagePreview == true ? new LinkPreviewOptions { IsDisabled = true } : null,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
+				request.ParseMode = parseMode.Value;
+
+			return await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -101,30 +93,21 @@ namespace Deveel.Messaging
 			CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			
+
+			var request = new SendPhotoRequest
+			{
+				ChatId = chatId,
+				Photo = photo,
+				Caption = caption,
+				DisableNotification = disableNotification ?? false,
+				ReplyParameters = replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
+				ReplyMarkup = replyMarkup
+			};
+
 			if (parseMode.HasValue)
-			{
-				return await _botClient!.SendPhotoAsync(
-					chatId,
-					photo,
-					caption: caption,
-					parseMode: parseMode.Value,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
-			else
-			{
-				return await _botClient!.SendPhotoAsync(
-					chatId,
-					photo,
-					caption: caption,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
+				request.ParseMode = parseMode.Value;
+
+			return await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -144,40 +127,26 @@ namespace Deveel.Messaging
 			CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			
+
+			var request = new SendVideoRequest
+			{
+				ChatId = chatId,
+				Video = video,
+				Duration = duration,
+				Width = width,
+				Height = height,
+				Thumbnail = thumb,
+				Caption = caption,
+				SupportsStreaming = supportsStreaming ?? false,
+				DisableNotification = disableNotification ?? false,
+				ReplyParameters = replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
+				ReplyMarkup = replyMarkup
+			};
+
 			if (parseMode.HasValue)
-			{
-				return await _botClient!.SendVideoAsync(
-					chatId,
-					video,
-					duration: duration,
-					width: width,
-					height: height,
-					thumbnail: thumb,
-					caption: caption,
-					parseMode: parseMode.Value,
-					supportsStreaming: supportsStreaming ?? false,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
-			else
-			{
-				return await _botClient!.SendVideoAsync(
-					chatId,
-					video,
-					duration: duration,
-					width: width,
-					height: height,
-					thumbnail: thumb,
-					caption: caption,
-					supportsStreaming: supportsStreaming ?? false,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
+				request.ParseMode = parseMode.Value;
+
+			return await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -196,38 +165,25 @@ namespace Deveel.Messaging
 			CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			
+
+			var request = new SendAudioRequest
+			{
+				ChatId = chatId,
+				Audio = audio,
+				Caption = caption,
+				Duration = duration,
+				Performer = performer,
+				Title = title,
+				Thumbnail = thumb,
+				DisableNotification = disableNotification ?? false,
+				ReplyParameters = replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
+				ReplyMarkup = replyMarkup
+			};
+
 			if (parseMode.HasValue)
-			{
-				return await _botClient!.SendAudioAsync(
-					chatId,
-					audio,
-					caption: caption,
-					parseMode: parseMode.Value,
-					duration: duration,
-					performer: performer,
-					title: title,
-					thumbnail: thumb,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
-			else
-			{
-				return await _botClient!.SendAudioAsync(
-					chatId,
-					audio,
-					caption: caption,
-					duration: duration,
-					performer: performer,
-					title: title,
-					thumbnail: thumb,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
+				request.ParseMode = parseMode.Value;
+
+			return await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -244,34 +200,23 @@ namespace Deveel.Messaging
 			CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			
+
+			var request = new SendDocumentRequest
+			{
+				ChatId = chatId,
+				Document = document,
+				Thumbnail = thumb,
+				Caption = caption,
+				DisableContentTypeDetection = disableContentTypeDetection ?? false,
+				DisableNotification = disableNotification ?? false,
+				ReplyParameters = replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
+				ReplyMarkup = replyMarkup
+			};
+
 			if (parseMode.HasValue)
-			{
-				return await _botClient!.SendDocumentAsync(
-					chatId,
-					document,
-					thumbnail: thumb,
-					caption: caption,
-					parseMode: parseMode.Value,
-					disableContentTypeDetection: disableContentTypeDetection ?? false,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
-			else
-			{
-				return await _botClient!.SendDocumentAsync(
-					chatId,
-					document,
-					thumbnail: thumb,
-					caption: caption,
-					disableContentTypeDetection: disableContentTypeDetection ?? false,
-					disableNotification: disableNotification ?? false,
-					replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-					replyMarkup: replyMarkup,
-					cancellationToken: cancellationToken);
-			}
+				request.ParseMode = parseMode.Value;
+
+			return await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -289,17 +234,20 @@ namespace Deveel.Messaging
 		{
 			EnsureInitialized();
 			
-			return await _botClient!.SendLocation(
-				chatId,
-				latitude,
-				longitude,
-				livePeriod: livePeriod,
-				heading: heading,
-				proximityAlertRadius: proximityAlertRadius,
-				disableNotification: disableNotification ?? false,
-				replyParameters: replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
-				replyMarkup: replyMarkup,
-				cancellationToken: cancellationToken);
+			var request = new SendLocationRequest
+			{
+				ChatId = chatId,
+				Latitude = latitude,
+				Longitude = longitude,
+				LivePeriod = livePeriod,
+				Heading = heading,
+				ProximityAlertRadius = proximityAlertRadius,
+				DisableNotification = disableNotification ?? false,
+				ReplyParameters = replyToMessageId.HasValue ? new ReplyParameters { MessageId = replyToMessageId.Value } : null,
+				ReplyMarkup = replyMarkup
+			};
+
+			return await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -315,29 +263,36 @@ namespace Deveel.Messaging
 		{
 			EnsureInitialized();
 			
-			await _botClient!.SetWebhook(
-				url,
-				certificate: certificate as InputFileStream,
-				ipAddress: ipAddress,
-				maxConnections: maxConnections,
-				allowedUpdates: allowedUpdates,
-				dropPendingUpdates: dropPendingUpdates ?? false,
-				secretToken: secretToken,
-				cancellationToken: cancellationToken);
+			var request = new SetWebhookRequest
+			{
+				Url = url,
+				Certificate = certificate as InputFileStream,
+				IpAddress = ipAddress,
+				MaxConnections = maxConnections,
+				AllowedUpdates = allowedUpdates,
+				DropPendingUpdates = dropPendingUpdates ?? false,
+				SecretToken = secretToken
+			};
+
+			await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <inheritdoc/>
 		public async Task DeleteWebhookAsync(bool? dropPendingUpdates = null, CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			await _botClient!.DeleteWebhook(dropPendingUpdates ?? false, cancellationToken);
+			var request = new DeleteWebhookRequest
+			{
+				DropPendingUpdates = dropPendingUpdates ?? false
+			};
+			await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <inheritdoc/>
 		public async Task<WebhookInfo> GetWebhookInfoAsync(CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			return await _botClient!.GetWebhookInfo(cancellationToken);
+			return await _botClient!.SendRequest(new GetWebhookInfoRequest(), cancellationToken);
 		}
 
 		/// <inheritdoc/>
@@ -350,12 +305,15 @@ namespace Deveel.Messaging
 		{
 			EnsureInitialized();
 			
-			return await _botClient!.GetUpdates(
-				offset: offset,
-				limit: limit,
-				timeout: timeout,
-				allowedUpdates: allowedUpdates,
-				cancellationToken: cancellationToken);
+			var request = new GetUpdatesRequest
+			{
+				Offset = offset,
+				Limit = limit,
+				Timeout = timeout,
+				AllowedUpdates = allowedUpdates
+			};
+
+			return await _botClient!.SendRequest(request, cancellationToken);
 		}
 
 		/// <summary>
