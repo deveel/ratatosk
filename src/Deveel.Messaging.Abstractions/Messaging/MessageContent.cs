@@ -18,6 +18,7 @@ namespace Deveel.Messaging {
 	[JsonDerivedType(typeof(BinaryContent), nameof(MessageContentType.Binary))]
 	// TODO: [JsonDerivedType(typeof(XmlContent), nameof(MessageContentType.Xml))]
 	[JsonDerivedType(typeof(MediaContent), nameof(MessageContentType.Media))]
+	[JsonDerivedType(typeof(LocationContent), nameof(MessageContentType.Location))]
 	public abstract class MessageContent : IMessageContent {
 		/// <summary>
 		/// Gets the type of the content.
@@ -65,6 +66,9 @@ namespace Deveel.Messaging {
 			if (content.ContentType == MessageContentType.Media &&
 				content is IMediaContent mediaContent)
 				return new MediaContent(mediaContent);
+			if (content.ContentType == MessageContentType.Location &&
+				content is ILocationContent locationContent)
+				return new LocationContent(locationContent);
 
 			throw new NotSupportedException($"The content of type '{content.ContentType}' is not supported");
 		}

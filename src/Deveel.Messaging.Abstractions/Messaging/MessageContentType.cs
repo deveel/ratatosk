@@ -62,6 +62,15 @@ namespace Deveel.Messaging
 		/// <summary>
 		/// The content of the message is a binary stream.
 		/// </summary>
-		Binary = 7
+		Binary = 7,
+
+		/// <summary>
+		/// The content of the message is a geographical location.
+		/// </summary>
+		/// <remarks>
+		/// This represents location data including latitude and longitude coordinates,
+		/// and optionally additional location-specific properties.
+		/// </remarks>
+		Location = 8
 	}
 }
