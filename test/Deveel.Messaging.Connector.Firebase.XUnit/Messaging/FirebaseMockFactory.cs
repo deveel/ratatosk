@@ -104,10 +104,13 @@ namespace Deveel.Messaging
         }
 
         /// <summary>
-        /// Creates a test device token message.
+        /// Creates a test device token message with a valid Firebase device token.
         /// </summary>
-        public static IMessage CreateDeviceTokenMessage(string deviceToken = "test-device-token")
+        public static IMessage CreateDeviceTokenMessage(string? deviceToken = null)
         {
+            // Use a realistic Firebase device token if none provided
+            deviceToken ??= "eGc7_3RqSfGb1AthP4IjL4z:APA91bHjqkK9L3mKFYp8xNvPGwKh7P5Ty9a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V2w3X4y5Z6a7B8c9D0e1F2g3H4i5J6k7L8m9N0o1P2q3R4s5T6u7V8w9X0y1Z2";
+            
             var message = new Message
             {
                 Id = Guid.NewGuid().ToString(),
@@ -120,6 +123,15 @@ namespace Deveel.Messaging
                    .With("Priority", "high");
             
             return message;
+        }
+
+        /// <summary>
+        /// Creates a valid Firebase device token that meets validation requirements (140+ characters)
+        /// </summary>
+        public static string CreateValidFirebaseDeviceToken(string? suffix = null)
+        {
+            var baseSuffix = suffix ?? Guid.NewGuid().ToString("N")[..8];
+            return $"eGc7_3RqSfGb1AthP4IjL4z:APA91bHjqkK9L3mKFYp8xNvPGwKh7P5Ty9a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V2w3X4y5Z6a7B8c9D0e1F2g3H4i5J6k7L8m9N0o1P2q3R4s5T6u7V8w9X0y1Z2_{baseSuffix}";
         }
 
         /// <summary>

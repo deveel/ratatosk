@@ -28,7 +28,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "text-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("This is a text notification")
             };
             
@@ -61,7 +61,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "json-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new JsonContent(@"{""data"":""value"",""number"":123}")
             };
             
@@ -97,7 +97,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "image-url-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Notification with image")
             };
             
@@ -128,7 +128,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "custom-data-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Message with custom data")
             };
             
@@ -162,7 +162,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "invalid-json-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Message with invalid JSON")
             };
             
@@ -193,7 +193,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "android-complete-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "android-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Complete Android notification")
             };
             
@@ -239,7 +239,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "ios-complete-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "ios-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Complete iOS notification")
             };
             
@@ -279,7 +279,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "normal-priority-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Normal priority notification")
             };
             
@@ -313,7 +313,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "data-only-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("") // Empty text content instead of no content
             };
             
@@ -338,7 +338,7 @@ namespace Deveel.Messaging
         }
 
         [Fact]
-        public async Task SendMessageAsync_WithInvalidBadgeNumber_HandlesGracefully()
+        public async Task SendMessageAsync_WithInvalidBadgeNumber_ReturnsValidationError()
         {
             // Arrange
             var mockFirebaseService = CreateInspectingMockFirebaseService();
@@ -347,19 +347,18 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "invalid-badge-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Test notification")
             };
             
             message.With("Title", "Test Notification")
-                   .With("Body", "Test notification")
-                   .With("Badge", "not-a-number");
+                   .With("Badge", "not-a-number"); // Invalid badge should trigger validation error
 
             // Act
             var result = await connector.SendMessageAsync(message, CancellationToken.None);
 
-            // Assert - The message should fail validation due to invalid badge value
-            Assert.False(result.Successful, "Expected message to fail validation due to invalid badge number");
+            // Assert - The message should fail validation due to invalid badge
+            Assert.False(result.Successful, "Expected validation failure for invalid badge number");
             Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
             
             // Verify Firebase service was NOT called due to validation failure
@@ -371,7 +370,7 @@ namespace Deveel.Messaging
         }
 
         [Fact]
-        public async Task SendMessageAsync_WithInvalidTimeToLive_HandlesGracefully()
+        public async Task SendMessageAsync_WithInvalidTimeToLive_ReturnsValidationError()
         {
             // Arrange
             var mockFirebaseService = CreateInspectingMockFirebaseService();
@@ -380,19 +379,18 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "invalid-ttl-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Test notification")
             };
             
             message.With("Title", "Test Notification")
-                   .With("Body", "Test notification")
-                   .With("TimeToLive", "invalid-number");
+                   .With("TimeToLive", "invalid-number"); // Invalid TTL should trigger validation error
 
             // Act
             var result = await connector.SendMessageAsync(message, CancellationToken.None);
 
-            // Assert - The message should fail validation due to invalid TimeToLive value
-            Assert.False(result.Successful, "Expected message to fail validation due to invalid TimeToLive");
+            // Assert - The message should fail validation due to invalid TTL
+            Assert.False(result.Successful, "Expected validation failure for invalid time to live");
             Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
             
             // Verify Firebase service was NOT called due to validation failure
@@ -404,7 +402,7 @@ namespace Deveel.Messaging
         }
 
         [Fact]
-        public async Task SendMessageAsync_WithInvalidBooleanProperties_HandlesGracefully()
+        public async Task SendMessageAsync_WithInvalidBooleanProperties_ReturnsValidationError()
         {
             // Arrange
             var mockFirebaseService = CreateInspectingMockFirebaseService();
@@ -413,20 +411,19 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "invalid-boolean-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Test notification")
             };
             
             message.With("Title", "Test Notification")
-                   .With("Body", "Test notification")
-                   .With("ContentAvailable", "maybe")
-                   .With("MutableContent", "perhaps");
+                   .With("ContentAvailable", "maybe")   // Invalid boolean should trigger validation error
+                   .With("MutableContent", "perhaps");  // Invalid boolean should trigger validation error
 
             // Act
             var result = await connector.SendMessageAsync(message, CancellationToken.None);
 
             // Assert - The message should fail validation due to invalid boolean values
-            Assert.False(result.Successful, "Expected message to fail validation due to invalid boolean properties");
+            Assert.False(result.Successful, "Expected validation failure for invalid boolean properties");
             Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
             
             // Verify Firebase service was NOT called due to validation failure
@@ -450,7 +447,7 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "long-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, "test-token"),
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Short content")
             };
             
@@ -533,8 +530,8 @@ namespace Deveel.Messaging
 
         private async Task<FirebasePushConnector> CreateInitializedConnectorAsync(IFirebaseService firebaseService)
         {
-            // Use test schema that has corrected endpoint validation
-            var schema = FirebaseChannelSchemas.FirebasePush;
+            // Use the full FirebasePush schema which supports all features being tested
+            var schema = FirebaseChannelSchemas.FirebasePush; // Change back to full schema
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
@@ -564,14 +561,24 @@ namespace Deveel.Messaging
             var message = new Message
             {
                 Id = "simple-msg-" + Guid.NewGuid().ToString("N")[..8],
-                Receiver = new Endpoint(EndpointType.DeviceId, "simple-device-token"),
+                // Use a realistic-length device token that meets validation requirements
+                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
                 Content = new TextContent("Simple notification")
             };
             
-            // Add required properties for Firebase validation - body comes from TextContent
+            // Add required properties for Firebase validation
             message.With("Title", "Simple Notification");
             
             return message;
+        }
+
+        /// <summary>
+        /// Creates a valid Firebase device token that meets length requirements
+        /// </summary>
+        private string CreateValidDeviceToken()
+        {
+            // Firebase tokens are typically 140+ characters, create a realistic test token
+            return "eGc7_3RqSfGb1AthP4IjL4z:APA91bHjqkK9L3mKFYp8xNvPGwKh7P5Ty9a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V2w3X4y5Z6a7B8c9D0e1F2g3H4i5J6k7L8m9N0o1P2q3R4s5T6u7V8w9X0y1Z2";
         }
 
         #endregion

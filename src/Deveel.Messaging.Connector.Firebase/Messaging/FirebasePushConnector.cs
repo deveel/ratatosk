@@ -6,6 +6,8 @@
 using System.Text.Json;
 using FirebaseAdmin.Messaging;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
 
 namespace Deveel.Messaging
 {
@@ -278,6 +280,111 @@ namespace Deveel.Messaging
             }
 
             return ConnectorResult<ConnectorHealth>.Success(health);
+        }
+
+        /// <inheritdoc/>
+        protected override async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            // Call base validation first
+            await foreach (var result in base.ValidateMessageCoreAsync(message, cancellationToken))
+            {
+                yield return result;
+            }
+
+            // Firebase-specific validation
+            if (message.Receiver == null)
+            {
+                yield return new ValidationResult("Message receiver is required for Firebase notifications", new[] { "Receiver" });
+                yield break;
+            }
+
+            // Validate endpoint type
+            if (message.Receiver.Type != EndpointType.DeviceId && message.Receiver.Type != EndpointType.Topic)
+            {
+                yield return new ValidationResult("Firebase notifications only support DeviceId (device token) or Topic endpoints", new[] { "Receiver.Type" });
+            }
+
+            // Validate device token format if it's a device ID
+            if (message.Receiver.Type == EndpointType.DeviceId)
+            {
+                var deviceToken = message.Receiver.Address;
+                if (string.IsNullOrWhiteSpace(deviceToken))
+                {
+                    yield return new ValidationResult("Device token cannot be empty", new[] { "Receiver.Address" });
+                }
+                else if (deviceToken.Length < 140) // FCM tokens are typically longer
+                {
+                    yield return new ValidationResult("Device token appears to be invalid (too short)", new[] { "Receiver.Address" });
+                }
+            }
+
+            // Validate topic name format
+            if (message.Receiver.Type == EndpointType.Topic)
+            {
+                var topicName = message.Receiver.Address;
+                if (string.IsNullOrWhiteSpace(topicName))
+                {
+                    yield return new ValidationResult("Topic name cannot be empty", new[] { "Receiver.Address" });
+                }
+                else if (!IsValidTopicName(topicName))
+                {
+                    yield return new ValidationResult("Topic name contains invalid characters. Use only letters, numbers, hyphens, and underscores", new[] { "Receiver.Address" });
+                }
+            }
+
+            // Validate message content
+            if (message.Content != null)
+            {
+                // Validate notification title length
+                var title = GetMessageProperty(message, "Title");
+                if (!string.IsNullOrEmpty(title) && title.Length > FirebaseConnectorConstants.MaxTitleLength)
+                {
+                    yield return new ValidationResult($"Notification title cannot exceed {FirebaseConnectorConstants.MaxTitleLength} characters", new[] { "Title" });
+                }
+
+                // Validate body length for text content
+                if (message.Content is ITextContent textContent)
+                {
+                    if (textContent.Text.Length > FirebaseConnectorConstants.MaxBodyLength)
+                    {
+                        yield return new ValidationResult($"Message body cannot exceed {FirebaseConnectorConstants.MaxBodyLength} characters", new[] { "Content" });
+                    }
+                }
+
+                // Validate image URL format
+                var imageUrl = GetMessageProperty(message, "ImageUrl");
+                if (!string.IsNullOrEmpty(imageUrl) && !Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri))
+                {
+                    yield return new ValidationResult("ImageUrl must be a valid URL", new[] { "ImageUrl" });
+                }
+
+                // Validate color format
+                var color = GetMessageProperty(message, "Color");
+                if (!string.IsNullOrEmpty(color) && !IsValidHexColor(color))
+                {
+                    yield return new ValidationResult("Color must be in hexadecimal format (#rrggbb or #aarrggbb)", new[] { "Color" });
+                }
+
+                // Validate custom data JSON
+                var customData = GetMessageProperty(message, "CustomData");
+                if (!string.IsNullOrEmpty(customData))
+                {
+                    bool isValidJson = true;
+                    try
+                    {
+                        JsonDocument.Parse(customData);
+                    }
+                    catch (JsonException)
+                    {
+                        isValidJson = false;
+                    }
+                    
+                    if (!isValidJson)
+                    {
+                        yield return new ValidationResult("CustomData must be valid JSON", new[] { "CustomData" });
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -564,6 +671,32 @@ namespace Deveel.Messaging
         }
 
         /// <summary>
+        /// Validates if a topic name follows Firebase naming conventions.
+        /// </summary>
+        private static bool IsValidTopicName(string topicName)
+        {
+            if (string.IsNullOrEmpty(topicName))
+                return false;
+
+            // Firebase topic names can contain letters, numbers, hyphens, and underscores
+            // They cannot start with "/topics/" (this is added by Firebase automatically)
+            return topicName.All(c => char.IsLetterOrDigit(c) || c == '-' || c == '_');
+        }
+
+        /// <summary>
+        /// Validates if a color string is in valid hexadecimal format.
+        /// </summary>
+        private static bool IsValidHexColor(string color)
+        {
+            if (string.IsNullOrEmpty(color))
+                return false;
+
+            return color.StartsWith('#') && 
+                   (color.Length == 7 || color.Length == 9) &&
+                   color[1..].All(c => char.IsDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'));
+        }
+
+        /// <summary>
         /// Checks if messages can use multicast (same notification content).
         /// </summary>
         private bool CanUseMulticast(List<FirebaseAdmin.Messaging.Message> messages)
@@ -689,6 +822,25 @@ namespace Deveel.Messaging
                 // Use the original message ID as key
                 results[messageId] = result;
             }
+        }
+
+        /// <inheritdoc/>
+        protected override async Task ShutdownConnectorAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Clean up Firebase app if needed
+                if (_firebaseService.App != null)
+                {
+                    _firebaseService.App.Delete();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error during Firebase connector shutdown");
+            }
+            
+            await base.ShutdownConnectorAsync(cancellationToken);
         }
     }
 }
