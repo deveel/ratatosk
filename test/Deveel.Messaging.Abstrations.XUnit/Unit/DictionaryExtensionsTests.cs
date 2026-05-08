@@ -77,6 +77,20 @@ public class DictionaryExtensionsTests
     }
 
     [Fact]
+    public void Should_ReturnFalse_When_TryGetValueEnumValueIsInvalid()
+    {
+        var dictionary = new Dictionary<string, object>
+        {
+            { "statusKey", "NotARealContentType" }
+        };
+
+        var result = dictionary.TryGetValue<MessageContentType>("statusKey", out var value);
+
+        Assert.False(result);
+        Assert.Equal(default, value);
+    }
+
+    [Fact]
     public void Should_ConvertType_When_TryGetValueConvertibleValue()
     {
         // Arrange
@@ -130,6 +144,21 @@ public class DictionaryExtensionsTests
         
         // Cleanup
         jsonDocument.Dispose();
+    }
+
+    [Fact]
+    public void Should_ReturnFalse_When_TryGetValueJsonElementCannotDeserializeTargetType()
+    {
+        using var jsonDocument = JsonDocument.Parse("\"not-an-int\"");
+        var dictionary = new Dictionary<string, object>
+        {
+            { "jsonKey", jsonDocument.RootElement }
+        };
+
+        var result = dictionary.TryGetValue<int>("jsonKey", out var value);
+
+        Assert.False(result);
+        Assert.Equal(0, value);
     }
 
     [Fact]

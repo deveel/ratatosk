@@ -65,6 +65,21 @@ namespace Deveel.Messaging.XUnit
 		}
 
 		[Fact]
+		public async Task Should_DisposesOnFailedInitialization_When_CreateConnectorAsyncWithAsyncDisposableConnector()
+		{
+			var registry = CreateRegistry();
+			registry.RegisterConnector<AsyncDisposableFailingConnector>();
+
+			AsyncDisposableFailingConnector.Reset();
+
+			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+				registry.CreateConnectorAsync<AsyncDisposableFailingConnector>());
+
+			Assert.Contains("Failed to initialize connector", exception.Message);
+			Assert.True(AsyncDisposableFailingConnector.WasAsyncDisposed);
+		}
+
+		[Fact]
 		public async Task Should_HandleGracefully_When_DisposeConnectorsSyncWithTimeout()
 		{
 			// Arrange
@@ -431,6 +446,37 @@ namespace Deveel.Messaging.XUnit
 				SetState(ConnectorState.Shutdown);
 				return Task.CompletedTask;
 			}
+
+			public ValueTask DisposeAsync()
+			{
+				WasAsyncDisposed = true;
+				return ValueTask.CompletedTask;
+			}
+		}
+
+		[ChannelSchema(typeof(TestSchemaFactory))]
+		private class AsyncDisposableFailingConnector : ChannelConnectorBase, IAsyncDisposable
+		{
+			public static bool WasAsyncDisposed { get; private set; }
+
+			public AsyncDisposableFailingConnector(IChannelSchema schema) : base(schema)
+			{
+				WasAsyncDisposed = false;
+			}
+
+			public static void Reset() => WasAsyncDisposed = false;
+
+			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+				=> Task.FromResult(ConnectorResult<bool>.Fail("INIT_FAILED", "Initialization failed"));
+
+			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+
+			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+				=> throw new NotImplementedException();
+
+			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+				=> throw new NotImplementedException();
 
 			public ValueTask DisposeAsync()
 			{
