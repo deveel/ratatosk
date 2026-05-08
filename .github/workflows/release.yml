@@ -32,29 +32,28 @@ jobs:
     outputs:
       should-publish: ${{ steps.validate.outputs.should-publish }}
       tag-name: ${{ steps.validate.outputs.tag-name }}
-      version: ${{ steps.validate.outputs.version }}
       is-manual: ${{ steps.validate.outputs.is-manual }}
-    
+
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
     - name: Validate Release
       id: validate
       run: |
+        git fetch origin main --no-tags
+        RELEASE_COMMIT="$GITHUB_SHA"
+
         if [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
-          # Triggered by tag push
           TAG_NAME="${{ github.ref_name }}"
-          VERSION="${TAG_NAME#v}"  # Remove 'v' prefix if present
+          VERSION="${TAG_NAME#v}"
           SHOULD_PUBLISH="true"
           IS_MANUAL="false"
-          echo "🏷️ Triggered by tag: $TAG_NAME"
+          RELEASE_COMMIT="$(git rev-list -n 1 "$TAG_NAME")"
         elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          # Triggered manually
           INPUT_VERSION="${{ inputs.version }}"
-          # Ensure version has 'v' prefix for tag
           if [[ "$INPUT_VERSION" == v* ]]; then
             TAG_NAME="$INPUT_VERSION"
             VERSION="${INPUT_VERSION#v}"
@@ -64,28 +63,30 @@ jobs:
           fi
           SHOULD_PUBLISH="${{ inputs.publish-to-nuget }}"
           IS_MANUAL="true"
-          echo "🖱️ Triggered manually with version: $VERSION"
         else
-          echo "❌ Invalid trigger event: ${{ github.event_name }}"
+          echo "Invalid trigger event: ${{ github.event_name }}" >&2
           exit 1
         fi
-        
-        # Validate version format (basic semver validation)
+
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.ref_name }}" != "main" ]; then
+          echo "Manual releases must be started from the main branch." >&2
+          exit 1
+        fi
+
+        if ! git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main; then
+          echo "Releases must point to a commit that is already contained in main." >&2
+          exit 1
+        fi
+
         if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
-          echo "❌ Invalid version format: $VERSION"
-          echo "Expected format: X.Y.Z[-prerelease][+build]"
+          echo "Invalid version format: $VERSION" >&2
           exit 1
         fi
-        
-        echo "🏷️ Release tag: $TAG_NAME"
-        echo "🔢 Version: $VERSION"
-        echo "🚀 Should publish to NuGet: $SHOULD_PUBLISH"
-        echo "🖱️ Is manual trigger: $IS_MANUAL"
-        
+
         echo "tag-name=$TAG_NAME" >> $GITHUB_OUTPUT
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "should-publish=$SHOULD_PUBLISH" >> $GITHUB_OUTPUT
         echo "is-manual=$IS_MANUAL" >> $GITHUB_OUTPUT
+      shell: bash
 
   check-tag-exists:
     needs: validate-release
@@ -94,224 +95,76 @@ jobs:
     if: needs.validate-release.outputs.is-manual == 'true'
     outputs:
       tag-exists: ${{ steps.check.outputs.exists }}
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        
+
     - name: Check if tag exists
       id: check
       run: |
         TAG_NAME="${{ needs.validate-release.outputs.tag-name }}"
         if git rev-parse --verify "refs/tags/$TAG_NAME" >/dev/null 2>&1; then
-          echo "⚠️ Tag $TAG_NAME already exists"
           echo "exists=true" >> $GITHUB_OUTPUT
         else
-          echo "✅ Tag $TAG_NAME does not exist"
           echo "exists=false" >> $GITHUB_OUTPUT
         fi
-
-  calculate-version:
-    needs: [validate-release, check-tag-exists]
-    name: "Calculate Version"
-    if: always() && needs.validate-release.result == 'success'
-    runs-on: ubuntu-latest
-    outputs:
-      final-version: ${{ steps.version-override.outputs.FINAL_VERSION }}
-      final-nuget-version: ${{ steps.version-override.outputs.FINAL_NUGET_VERSION }}
-      final-assembly-version: ${{ steps.version-override.outputs.FINAL_ASSEMBLY_VERSION }}
-      final-file-version: ${{ steps.version-override.outputs.FINAL_FILE_VERSION }}
-      final-informational-version: ${{ steps.version-override.outputs.FINAL_INFORMATIONAL_VERSION }}
-      use-tag-version: ${{ steps.version-override.outputs.USE_TAG_VERSION }}
-    
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v1.1.1
-      with:
-        versionSpec: '5.x'
-    
-    - name: Determine Version
-      id: gitversion
-      uses: gittools/actions/gitversion/execute@v1.1.1
-
-    - name: Override Version for Pre-release Tags
-      id: version-override
-      run: |
-        # Get the validated version from the validate-release job
-        VALIDATED_VERSION="${{ needs.validate-release.outputs.version }}"
-        TAG_NAME="${{ needs.validate-release.outputs.tag-name }}"
-        
-        # Check if this is a manual trigger or if we have a valid semver tag
-        if [[ "$VALIDATED_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
-          # This is a valid semver version, use it directly
-          echo "🏷️ Using validated version: $VALIDATED_VERSION"
-          echo "FINAL_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
-          echo "FINAL_NUGET_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
-          # For assembly version, remove pre-release and build metadata
-          ASSEMBLY_VERSION="${VALIDATED_VERSION%%[-+]*}.0"
-          if [[ ! "$ASSEMBLY_VERSION" =~ \.[0-9]+$ ]]; then
-            ASSEMBLY_VERSION="${ASSEMBLY_VERSION}.0"
-          fi
-          echo "FINAL_ASSEMBLY_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_OUTPUT
-          echo "FINAL_FILE_VERSION=$ASSEMBLY_VERSION" >> $GITHUB_OUTPUT
-          echo "FINAL_INFORMATIONAL_VERSION=$VALIDATED_VERSION" >> $GITHUB_OUTPUT
-          echo "USE_TAG_VERSION=true" >> $GITHUB_OUTPUT
-        else
-          # Use GitVersion output
-          echo "🔧 Using GitVersion output"
-          echo "FINAL_VERSION=${{ steps.gitversion.outputs.SemVer }}" >> $GITHUB_OUTPUT
-          echo "FINAL_NUGET_VERSION=${{ steps.gitversion.outputs.NuGetVersion }}" >> $GITHUB_OUTPUT
-          echo "FINAL_ASSEMBLY_VERSION=${{ steps.gitversion.outputs.AssemblySemVer }}" >> $GITHUB_OUTPUT
-          echo "FINAL_FILE_VERSION=${{ steps.gitversion.outputs.AssemblySemFileVer }}" >> $GITHUB_OUTPUT
-          echo "FINAL_INFORMATIONAL_VERSION=${{ steps.gitversion.outputs.InformationalVersion }}" >> $GITHUB_OUTPUT
-          echo "USE_TAG_VERSION=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Debug Version Calculation
-      run: |
-        echo "🔍 Version Calculation Debug Information:"
-        echo "Current Branch: $(git branch --show-current)"
-        echo "Current Commit: $(git rev-parse HEAD)"
-        echo "Tag: ${{ needs.validate-release.outputs.tag-name }}"
-        echo "Expected Version: ${{ needs.validate-release.outputs.version }}"
-        echo "Use Tag Version: ${{ steps.version-override.outputs.USE_TAG_VERSION }}"
-        echo ""
-        echo "GitVersion outputs:"
-        echo "  SemVer: ${{ steps.gitversion.outputs.SemVer }}"
-        echo "  NuGetVersion: ${{ steps.gitversion.outputs.NuGetVersion }}"
-        echo "  AssemblySemVer: ${{ steps.gitversion.outputs.AssemblySemVer }}"
-        echo "  AssemblySemFileVer: ${{ steps.gitversion.outputs.AssemblySemFileVer }}"
-        echo "  InformationalVersion: ${{ steps.gitversion.outputs.InformationalVersion }}"
-        echo "  PreReleaseTag: ${{ steps.gitversion.outputs.PreReleaseTag }}"
-        echo "  PreReleaseNumber: ${{ steps.gitversion.outputs.PreReleaseNumber }}"
-        echo ""
-        echo "Final versions to use:"
-        echo "  Version: ${{ steps.version-override.outputs.FINAL_VERSION }}"
-        echo "  NuGet Version: ${{ steps.version-override.outputs.FINAL_NUGET_VERSION }}"
-        echo "  Assembly Version: ${{ steps.version-override.outputs.FINAL_ASSEMBLY_VERSION }}"
-        echo "  File Version: ${{ steps.version-override.outputs.FINAL_FILE_VERSION }}"
-        echo "  Informational Version: ${{ steps.version-override.outputs.FINAL_INFORMATIONAL_VERSION }}"
+      shell: bash
 
   build:
-    needs: [validate-release, calculate-version]
+    needs: validate-release
     name: "Build and Test (Release)"
-    if: always() && needs.validate-release.result == 'success' && needs.calculate-version.result == 'success'
-    strategy:
-      fail-fast: true
-      matrix:
-        include:
-          - dotnet: '8.0.x'
-            dotnet-framework: 'net8.0'
-            os: ubuntu-latest
-          - dotnet: '8.0.x'
-            dotnet-framework: 'net8.0'
-            os: windows-latest
-          - dotnet: '9.0.x'
-            dotnet-framework: 'net9.0'
-            os: ubuntu-latest
-          - dotnet: '9.0.x'
-            dotnet-framework: 'net9.0'
-            os: windows-latest
-    
-    runs-on: ${{ matrix.os }}
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup .NET ${{ matrix.dotnet }}
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ matrix.dotnet }}
-
-    - name: Display Build Version Info
-      run: |
-        echo "🔍 Release Build Version Information:"
-        echo "SemVer: ${{ needs.calculate-version.outputs.final-version }}"
-        echo "NuGet Version: ${{ needs.calculate-version.outputs.final-nuget-version }}"
-        echo "Assembly Version: ${{ needs.calculate-version.outputs.final-assembly-version }}"
-        echo "File Version: ${{ needs.calculate-version.outputs.final-file-version }}"
-        echo "Informational Version: ${{ needs.calculate-version.outputs.final-informational-version }}"
-          
-    - name: Restore dependencies
-      run: dotnet restore -p:TargetFramework=${{ matrix.dotnet-framework }}
-      
-    - name: Build
-      run: |
-        dotnet build --no-restore -c Release -f ${{ matrix.dotnet-framework }} \
-          -p:Version="${{ needs.calculate-version.outputs.final-nuget-version }}" \
-          -p:PackageVersion="${{ needs.calculate-version.outputs.final-nuget-version }}" \
-          -p:AssemblyVersion="${{ needs.calculate-version.outputs.final-assembly-version }}" \
-          -p:FileVersion="${{ needs.calculate-version.outputs.final-file-version }}" \
-          -p:InformationalVersion="${{ needs.calculate-version.outputs.final-informational-version }}" \
-          -p:UseGitVersion=false
-      shell: bash
-    
-    - name: Test
-      run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }} --collect:"XPlat Code Coverage" --results-directory ./coverage
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: |
-          ./coverage/**/coverage.cobertura.xml
-        flags: ${{ matrix.dotnet-framework }},${{ matrix.os }}
-        name: ${{ matrix.os }}-${{ matrix.dotnet-framework }}
-        fail_ci_if_error: false
-        verbose: true
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    if: always() && needs.validate-release.result == 'success'
+    uses: ./.github/workflows/build-test.yml
+    with:
+      configuration: Release
+      version-tag-name: ${{ needs.validate-release.outputs.tag-name }}
+      collect-coverage: true
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
   create-tag:
     needs: [validate-release, check-tag-exists, build]
     name: "Create Tag"
     runs-on: ubuntu-latest
     if: needs.validate-release.outputs.is-manual == 'true' && needs.check-tag-exists.outputs.tag-exists == 'false'
-    
+
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
-        
+
     - name: Create and push tag
       run: |
         TAG_NAME="${{ needs.validate-release.outputs.tag-name }}"
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        
-        echo "📝 Creating tag: $TAG_NAME"
         git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
-        
-        echo "📤 Pushing tag: $TAG_NAME"
         git push origin "$TAG_NAME"
-        
-        echo "✅ Tag $TAG_NAME created and pushed successfully"
+      shell: bash
 
   publish:
-    needs: [validate-release, calculate-version, build]
+    needs: [validate-release, build]
     name: "Publish Packages (Release)"
     if: always() && needs.build.result == 'success'
     uses: ./.github/workflows/publish.yml
     with:
       publish-to-nuget: ${{ needs.validate-release.outputs.should-publish == 'true' }}
       build-configuration: 'Release'
-      version: ${{ needs.calculate-version.outputs.final-version }}
-      nuget-version: ${{ needs.calculate-version.outputs.final-nuget-version }}
-      assembly-version: ${{ needs.calculate-version.outputs.final-assembly-version }}
-      informational-version: ${{ needs.calculate-version.outputs.final-informational-version }}
-    secrets: inherit
+      version: ${{ needs.build.outputs.version }}
+      nuget-version: ${{ needs.build.outputs.nuget-version }}
+      assembly-version: ${{ needs.build.outputs.assembly-version }}
+      informational-version: ${{ needs.build.outputs.informational-version }}
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+      nuget-api-key: ${{ secrets.NUGET_API_KEY }}
 
   summary:
-    needs: [validate-release, calculate-version, publish, create-tag]
+    needs: [validate-release, build, publish, create-tag]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -322,36 +175,12 @@ jobs:
         echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
         echo "| Tag | \`${{ needs.validate-release.outputs.tag-name }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Version | \`${{ needs.calculate-version.outputs.final-version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| NuGet Version | \`${{ needs.calculate-version.outputs.final-nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Assembly Version | \`${{ needs.calculate-version.outputs.final-assembly-version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| File Version | \`${{ needs.calculate-version.outputs.final-file-version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Used Tag Version | ${{ needs.calculate-version.outputs.use-tag-version == 'true' && '✅ Yes' || '❌ No (GitVersion)' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Version | \`${{ needs.build.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| NuGet Version | \`${{ needs.build.outputs.nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Assembly Version | \`${{ needs.build.outputs.assembly-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| File Version | \`${{ needs.build.outputs.file-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Version Source | \`${{ needs.build.outputs.version-source }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Trigger | ${{ needs.validate-release.outputs.is-manual == 'true' && '🖱️ Manual' || '🏷️ Tag Push' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| NuGet.org | ${{ needs.validate-release.outputs.should-publish == 'true' && '✅ Published' || '❌ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| GitHub Packages | ✅ Published |" >> $GITHUB_STEP_SUMMARY
         echo "| Tag Created | ${{ needs.create-tag.result == 'success' && '✅ Yes' || (needs.create-tag.result == 'skipped' && '⏭️ Skipped' || '❌ Failed') }} |" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        echo "📋 **Version Calculation Notes**:" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ needs.calculate-version.outputs.use-tag-version }}" == "true" ]; then
-          echo "- ✅ **Tag-based versioning**: Used version from tag \`${{ needs.validate-release.outputs.tag-name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- 🎯 **NuGet compatible**: Pre-release version format preserved" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ⚙️ **GitVersion calculation**: Version calculated by GitVersion" >> $GITHUB_STEP_SUMMARY
-          echo "- ⚠️ **Note**: If you expected tag-based versioning, ensure tag format is valid semver" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        echo "📋 **Test Execution Notes**:" >> $GITHUB_STEP_SUMMARY
-        echo "- **Ubuntu**: All tests executed" >> $GITHUB_STEP_SUMMARY
-        echo "- **Windows**: All tests executed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ needs.validate-release.outputs.is-manual }}" == "true" ]; then
-          echo "🖱️ **Manual Release**: This release was triggered manually with version \`${{ needs.validate-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "🏷️ **Tag Release**: This release was triggered by pushing tag \`${{ needs.validate-release.outputs.tag-name }}\`" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "📦 **Published Packages**: Check the [packages page](https://github.com/${{ github.repository }}/pkgs) for the published packages." >> $GITHUB_STEP_SUMMARY
+      shell: bash

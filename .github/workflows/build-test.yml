@@ -1,0 +1,219 @@
+name: Build and Test
+
+on:
+  workflow_call:
+    inputs:
+      configuration:
+        description: Build configuration to use
+        required: false
+        type: string
+        default: Release
+      version-tag-name:
+        description: Tag name to use when calculating a release version
+        required: false
+        type: string
+        default: ''
+      collect-coverage:
+        description: Whether to collect test coverage
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      version:
+        description: Calculated semantic version
+        value: ${{ jobs.version.outputs.version }}
+      nuget-version:
+        description: Calculated NuGet package version
+        value: ${{ jobs.version.outputs.nuget-version }}
+      assembly-version:
+        description: Calculated assembly version
+        value: ${{ jobs.version.outputs.assembly-version }}
+      file-version:
+        description: Calculated file version
+        value: ${{ jobs.version.outputs.file-version }}
+      informational-version:
+        description: Calculated informational version
+        value: ${{ jobs.version.outputs.informational-version }}
+      version-source:
+        description: Where the version came from
+        value: ${{ jobs.version.outputs.version-source }}
+    secrets:
+      codecov_token:
+        required: false
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  version:
+    name: Calculate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.calculate.outputs.version }}
+      nuget-version: ${{ steps.calculate.outputs.nuget-version }}
+      assembly-version: ${{ steps.calculate.outputs.assembly-version }}
+      file-version: ${{ steps.calculate.outputs.file-version }}
+      informational-version: ${{ steps.calculate.outputs.informational-version }}
+      version-source: ${{ steps.calculate.outputs.version-source }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v1.1.1
+        with:
+          versionSpec: '5.x'
+
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v1.1.1
+
+      - name: Calculate Version Metadata
+        id: calculate
+        run: |
+          set -euo pipefail
+          tag_name="${{ inputs.version-tag-name }}"
+
+          if [[ -n "$tag_name" ]]; then
+            version="${tag_name#v}"
+
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+              echo "Invalid tag version: $version" >&2
+              exit 1
+            fi
+
+            assembly_version="${version%%[-+]*}.0"
+            if [[ ! "$assembly_version" =~ \.[0-9]+$ ]]; then
+              assembly_version="${assembly_version}.0"
+            fi
+
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "nuget-version=$version" >> "$GITHUB_OUTPUT"
+            echo "assembly-version=$assembly_version" >> "$GITHUB_OUTPUT"
+            echo "file-version=$assembly_version" >> "$GITHUB_OUTPUT"
+            echo "informational-version=$version" >> "$GITHUB_OUTPUT"
+            echo "version-source=input-tag" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+              echo "Invalid tag version: $version" >&2
+              exit 1
+            fi
+
+            assembly_version="${version%%[-+]*}.0"
+            if [[ ! "$assembly_version" =~ \.[0-9]+$ ]]; then
+              assembly_version="${assembly_version}.0"
+            fi
+
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "nuget-version=$version" >> "$GITHUB_OUTPUT"
+            echo "assembly-version=$assembly_version" >> "$GITHUB_OUTPUT"
+            echo "file-version=$assembly_version" >> "$GITHUB_OUTPUT"
+            echo "informational-version=$version" >> "$GITHUB_OUTPUT"
+            echo "version-source=tag" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ steps.gitversion.outputs.SemVer }}" >> "$GITHUB_OUTPUT"
+            echo "nuget-version=${{ steps.gitversion.outputs.NuGetVersionV2 }}" >> "$GITHUB_OUTPUT"
+            echo "assembly-version=${{ steps.gitversion.outputs.AssemblySemVer }}" >> "$GITHUB_OUTPUT"
+            echo "file-version=${{ steps.gitversion.outputs.AssemblySemFileVer }}" >> "$GITHUB_OUTPUT"
+            echo "informational-version=${{ steps.gitversion.outputs.InformationalVersion }}" >> "$GITHUB_OUTPUT"
+            echo "version-source=gitversion" >> "$GITHUB_OUTPUT"
+          fi
+        shell: bash
+
+  build:
+    needs: version
+    name: Build and Test
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - dotnet: '8.0.x'
+            dotnet-framework: 'net8.0'
+            os: ubuntu-latest
+          - dotnet: '8.0.x'
+            dotnet-framework: 'net8.0'
+            os: windows-latest
+          - dotnet: '9.0.x'
+            dotnet-framework: 'net9.0'
+            os: ubuntu-latest
+          - dotnet: '9.0.x'
+            dotnet-framework: 'net9.0'
+            os: windows-latest
+          - dotnet: '10.0.x'
+            dotnet-framework: 'net10.0'
+            os: ubuntu-latest
+          - dotnet: '10.0.x'
+            dotnet-framework: 'net10.0'
+            os: windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET ${{ matrix.dotnet }}
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+
+      - name: Restore dependencies
+        run: dotnet restore Deveel.Messaging.Model.sln -p:TargetFramework=${{ matrix.dotnet-framework }}
+
+      - name: Build
+        run: >
+          dotnet build Deveel.Messaging.Model.sln
+          --no-restore
+          --configuration "${{ inputs.configuration }}"
+          --framework "${{ matrix.dotnet-framework }}"
+          --verbosity normal
+          -p:Version="${{ needs.version.outputs.version }}"
+          -p:PackageVersion="${{ needs.version.outputs.nuget-version }}"
+          -p:AssemblyVersion="${{ needs.version.outputs.assembly-version }}"
+          -p:FileVersion="${{ needs.version.outputs.file-version }}"
+          -p:InformationalVersion="${{ needs.version.outputs.informational-version }}"
+          -p:UseGitVersion=false
+
+      - name: Test
+        if: inputs.collect-coverage != true
+        run: >
+          dotnet test Deveel.Messaging.Model.sln
+          --no-build
+          --verbosity normal
+          --configuration "${{ inputs.configuration }}"
+          --framework "${{ matrix.dotnet-framework }}"
+
+      - name: Test with coverage
+        if: inputs.collect-coverage == true
+        run: >
+          dotnet test Deveel.Messaging.Model.sln
+          --no-build
+          --verbosity normal
+          --configuration "${{ inputs.configuration }}"
+          --framework "${{ matrix.dotnet-framework }}"
+          --
+          --coverage
+          --coverage-output-format cobertura
+          --coverage-output coverage.cobertura.xml
+
+      - name: Upload coverage to Codecov
+        if: inputs.collect-coverage == true
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./test/**/TestResults/coverage.cobertura.xml
+          flags: ${{ matrix.dotnet-framework }},${{ matrix.os }}
+          name: ${{ matrix.os }}-${{ matrix.dotnet-framework }}
+          fail_ci_if_error: false
+          verbose: true
+          token: ${{ secrets.codecov_token }}

@@ -416,3 +416,8 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+.idea
+samples/**/libs/*
+!samples/**/libs/.gitkeep
+samples/**/src/**/appsettings.local.json

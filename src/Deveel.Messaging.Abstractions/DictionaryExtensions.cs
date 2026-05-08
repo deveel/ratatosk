@@ -40,36 +40,42 @@ namespace Deveel {
 			if (obj is TValue tValue) {
 				value = tValue;
 				return true;
-			} else if (typeof(TValue).IsEnum && obj is string s) {
-				value = (TValue) Enum.Parse(typeof(TValue), s, true);
-				return true;
-			} else if (obj is IConvertible convertible) {
-				var nullableType = Nullable.GetUnderlyingType(typeof(TValue));
-				if (nullableType != null) {
-					try
-					{
-						value = (TValue)Convert.ChangeType(convertible, nullableType);
-						return true;
-					} catch (Exception)
-					{
-						value = default;
-						return false;
-					}
-					
+			}
+
+			var targetType = Nullable.GetUnderlyingType(typeof(TValue)) ?? typeof(TValue);
+			if (targetType.IsEnum && obj is string s) {
+				if (Enum.TryParse(targetType, s, true, out var enumValue)) {
+					value = (TValue)enumValue!;
+					return true;
 				}
 
-				try
-				{
-					value = (TValue)Convert.ChangeType(convertible, typeof(TValue));
+				value = default;
+				return false;
+			} else if (obj is IConvertible convertible) {
+				try {
+					value = (TValue)Convert.ChangeType(convertible, targetType);
 					return true;
-				} catch (FormatException)
-				{
+				} catch (FormatException) {
+					value = default;
+					return false;
+				} catch (InvalidCastException) {
+					value = default;
+					return false;
+				} catch (OverflowException) {
 					value = default;
 					return false;
 				}
 			} else if (obj is JsonElement jsonElement) {
-				value = jsonElement.Deserialize<TValue>();
-				return true;
+				try {
+					value = jsonElement.Deserialize<TValue>();
+					return true;
+				} catch (JsonException) {
+					value = default;
+					return false;
+				} catch (NotSupportedException) {
+					value = default;
+					return false;
+				}
 			}
 
 			value = default;

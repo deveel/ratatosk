@@ -315,18 +315,7 @@ namespace Deveel.Messaging
 				// Check if initialization was successful
 				if (!initResult.Successful)
 				{
-					// If connector implements IDisposable, dispose it before throwing
-					if (connector is IDisposable disposable)
-					{
-						try
-						{
-							disposable.Dispose();
-						}
-						catch
-						{
-							// Ignore disposal errors
-						}
-					}
+					await DisposeConnectorOnFailureAsync(connector);
 					
 					throw new InvalidOperationException(
 						$"Failed to initialize connector of type '{registration.ConnectorType.Name}': {initResult.Error?.ErrorMessage ?? "Unknown error"}");
@@ -337,16 +326,9 @@ namespace Deveel.Messaging
 			catch (Exception ex)
 			{
 				// If we have a connector instance and initialization failed, try to dispose it
-				if (connector != null && connector is IDisposable disposable)
+				if (connector != null)
 				{
-					try
-					{
-						disposable.Dispose();
-					}
-					catch
-					{
-						// Ignore disposal errors
-					}
+					await DisposeConnectorOnFailureAsync(connector);
 				}
 				
 				// Re-throw the original exception or wrap it
@@ -355,6 +337,25 @@ namespace Deveel.Messaging
 					
 				throw new InvalidOperationException(
 					$"Failed to create and initialize connector of type '{registration.ConnectorType.Name}': {ex.Message}", ex);
+			}
+		}
+
+		private static async Task DisposeConnectorOnFailureAsync(IChannelConnector connector)
+		{
+			try
+			{
+				if (connector is IAsyncDisposable asyncDisposable)
+				{
+					await asyncDisposable.DisposeAsync();
+				}
+				else if (connector is IDisposable disposable)
+				{
+					disposable.Dispose();
+				}
+			}
+			catch
+			{
+				// Ignore disposal errors while cleaning up failed connector instances
 			}
 		}
 

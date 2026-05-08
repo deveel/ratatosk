@@ -6,7 +6,7 @@ permissions:
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
@@ -14,157 +14,47 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-  calculate-version:
-    name: "Calculate Version"
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.gitversion.outputs.semVer }}
-      nuget-version: ${{ steps.gitversion.outputs.nuGetVersionV2 }}
-      assembly-version: ${{ steps.gitversion.outputs.assemblySemVer }}
-      file-version: ${{ steps.gitversion.outputs.assemblySemFileVer }}
-      informational-version: ${{ steps.gitversion.outputs.informationalVersion }}
-      is-prerelease: ${{ contains(steps.gitversion.outputs.nuGetVersionV2, '-') }}
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v1.1.1
-      with:
-        versionSpec: '5.x'
-    
-    - name: Determine Version
-      id: gitversion
-      uses: gittools/actions/gitversion/execute@v1.1.1
-
-    - name: Display GitVersion Results
-      run: |
-        echo "🔍 GitVersion 5.x Results:"
-        echo "Branch: ${{ github.ref }}"
-        echo "SemVer: '${{ steps.gitversion.outputs.semVer }}'"
-        echo "NuGetVersionV2: '${{ steps.gitversion.outputs.nuGetVersionV2 }}'"
-        echo "AssemblySemVer: '${{ steps.gitversion.outputs.assemblySemVer }}'"
-        echo "AssemblySemFileVer: '${{ steps.gitversion.outputs.assemblySemFileVer }}'"
-        echo "InformationalVersion: '${{ steps.gitversion.outputs.informationalVersion }}'"
-        echo "PreReleaseTag: '${{ steps.gitversion.outputs.preReleaseTag }}'"
-        echo "PreReleaseNumber: '${{ steps.gitversion.outputs.preReleaseNumber }}'"
-        echo "CommitsSinceVersionSource: '${{ steps.gitversion.outputs.commitsSinceVersionSource }}'"
-        echo "Is Pre-release: ${{ contains(steps.gitversion.outputs.nuGetVersionV2, '-') }}"
-        echo ""
-        echo "📋 Expected behavior:"
-        echo "- CD workflow should ALWAYS produce pre-release versions"
-        echo "- main branch should produce versions like: X.Y.Z-alpha.N"
-        echo "- develop branch should produce versions like: X.Y.Z-dev.N"
-        echo "- Only tagged releases from release workflow should produce stable versions"
-
   build:
-    needs: calculate-version
     name: "Build and Test"
-    strategy:
-      matrix:
-        include:
-          - dotnet: '8.0.x'
-            dotnet-framework: 'net8.0'
-            os: ubuntu-latest
-          - dotnet: '8.0.x'
-            dotnet-framework: 'net8.0'
-            os: windows-latest
-          - dotnet: '9.0.x'
-            dotnet-framework: 'net9.0'
-            os: ubuntu-latest
-          - dotnet: '9.0.x'
-            dotnet-framework: 'net9.0'
-            os: windows-latest
-    
-    runs-on: ${{ matrix.os }}
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup .NET ${{ matrix.dotnet }}
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ matrix.dotnet }}
-
-    - name: Display Build Version Info
-      run: |
-        echo "🔍 Build Version Information (from GitVersion 5.x):"
-        echo "SemVer: ${{ needs.calculate-version.outputs.version }}"
-        echo "NuGet Version: ${{ needs.calculate-version.outputs.nuget-version }}"
-        echo "Assembly Version: ${{ needs.calculate-version.outputs.assembly-version }}"
-        echo "File Version: ${{ needs.calculate-version.outputs.file-version }}"
-        echo "Informational Version: ${{ needs.calculate-version.outputs.informational-version }}"
-        echo "Is Pre-release: ${{ needs.calculate-version.outputs.is-prerelease }}"
-          
-    - name: Restore dependencies
-      run: dotnet restore -p:TargetFramework=${{ matrix.dotnet-framework }}
-      
-    - name: Build
-      run: |
-        echo "🏗️ Building with GitVersion 5.x integration..."
-        dotnet build --no-restore -c Release -f ${{ matrix.dotnet-framework }} -p:UseGitVersion=true --verbosity normal
-    
-    - name: Test
-      run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }}
+    uses: ./.github/workflows/build-test.yml
+    with:
+      configuration: Release
 
   publish:
-    needs: [calculate-version, build]
+    needs: build
     name: "Publish Pre-release Packages (CI/CD)"
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     uses: ./.github/workflows/publish.yml
     with:
       publish-to-nuget: false
       build-configuration: 'Release'
-      version: ${{ needs.calculate-version.outputs.version }}
-      nuget-version: ${{ needs.calculate-version.outputs.nuget-version }}
-      assembly-version: ${{ needs.calculate-version.outputs.assembly-version }}
-      informational-version: ${{ needs.calculate-version.outputs.informational-version }}
-    secrets: inherit
+      version: ${{ needs.build.outputs.version }}
+      nuget-version: ${{ needs.build.outputs.nuget-version }}
+      assembly-version: ${{ needs.build.outputs.assembly-version }}
+      informational-version: ${{ needs.build.outputs.informational-version }}
+    secrets:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
   clean:
     needs: publish
     name: "Clean Old Pre-release Packages"
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     uses: ./.github/workflows/clean-packages.yml
 
   summary:
-    needs: [calculate-version, build, publish]
+    needs: [build, publish]
     runs-on: ubuntu-latest
     if: always()
     steps:
     - name: CD Workflow Summary
       run: |
-        echo "## 🚀 CD Workflow Summary (GitVersion 5.x Direct)" >> $GITHUB_STEP_SUMMARY
+        echo "## 🚀 CD Workflow Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
         echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Version (GitVersion) | \`${{ needs.calculate-version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| NuGet Version (GitVersion) | \`${{ needs.calculate-version.outputs.nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Assembly Version (GitVersion) | \`${{ needs.calculate-version.outputs.assembly-version }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Pre-release | ${{ needs.calculate-version.outputs.is-prerelease == 'true' && '✅ Yes' || '❌ No' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Version | \`${{ needs.build.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| NuGet Version | \`${{ needs.build.outputs.nuget-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Assembly Version | \`${{ needs.build.outputs.assembly-version }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Version Source | \`${{ needs.build.outputs.version-source }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Pre-release | ${{ contains(needs.build.outputs.nuget-version, '-') && '✅ Yes' || '❌ No' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Published to GitHub | ${{ needs.publish.result == 'success' && '✅ Yes' || '❌ No' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ needs.calculate-version.outputs.is-prerelease }}" == "true" ]; then
-          echo "🎯 **Pre-release Package**: This version is directly from GitVersion 5.x" >> $GITHUB_STEP_SUMMARY
-          echo "📦 **Usage**: Install with \`--prerelease\` flag: \`dotnet add package PackageName --version ${{ needs.calculate-version.outputs.nuget-version }} --prerelease\`" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **GitVersion Direct**: No manual version construction - all versions from GitVersion 5.x" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "⚠️ **Warning**: GitVersion produced a stable version!" >> $GITHUB_STEP_SUMMARY
-          echo "🏷️ **Current**: \`${{ needs.calculate-version.outputs.nuget-version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "🔧 **Action Required**: Check GitVersion configuration for branch labeling" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "📋 **Versioning Strategy**:" >> $GITHUB_STEP_SUMMARY
-        echo "- **CI/CD Workflow** (this): GitVersion 5.x calculates all versions directly" >> $GITHUB_STEP_SUMMARY
-        echo "  - **main**: GitVersion → \`X.Y.Z-alpha.N\` versions" >> $GITHUB_STEP_SUMMARY
-        echo "  - **develop**: GitVersion → \`X.Y.Z-dev.N\` versions" >> $GITHUB_STEP_SUMMARY
-        echo "- **Release Workflow**: GitVersion produces stable versions from tags (\`X.Y.Z\`)" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build Process**: Uses \`-p:UseGitVersion=true\` to integrate directly" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "📦 **Published Packages**: Check the [GitHub Packages](https://github.com/${{ github.repository }}/pkgs) for the published packages." >> $GITHUB_STEP_SUMMARY
+      shell: bash

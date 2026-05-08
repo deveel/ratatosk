@@ -1,26 +1,34 @@
 <Project>
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
     <RootNamespace>Deveel</RootNamespace>
     <IsPackable>false</IsPackable>
+    <IsTestProject Condition="'$(IsTestProject)' == ''">true</IsTestProject>
+      <OutputType Condition="'$(IsTestProject)' == 'true'">Exe</OutputType>
+      <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+      <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
   </PropertyGroup>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(IsTestProject) == 'True'">
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageReference Include="xunit" Version="2.5.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  <ItemGroup Condition="'$(IsTestProject)' == 'true' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <PackageReference Include="xunit.v3" Version="1.*" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.*" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Deveel"/>
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <OutputType>Exe</OutputType>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
+  </PropertyGroup>
 </Project>
