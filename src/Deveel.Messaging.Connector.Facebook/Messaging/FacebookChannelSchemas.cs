@@ -6,23 +6,99 @@
 namespace Deveel.Messaging
 {
     /// <summary>
-    /// Provides pre-configured channel schemas for Facebook Messenger messaging services.
+    /// Provides the default Facebook schemas aligned with the current Graph API version.
     /// </summary>
     public static class FacebookChannelSchemas
     {
-        /// <summary>
-        /// Gets the comprehensive base schema for Facebook Messenger that supports
-        /// all available capabilities and configurations.
-        /// </summary>
-        /// <remarks>
-        /// This schema includes all Facebook Messenger capabilities including sending, receiving,
-        /// media attachments, and webhook support. It can be used as-is
-        /// or derived to create more restrictive configurations for specific use cases.
-        /// </remarks>
-        public static ChannelSchema FacebookMessenger => new ChannelSchema(FacebookConnectorConstants.Provider, FacebookConnectorConstants.MessengerChannel, "1.0.0")
+        public static ChannelSchema FacebookMessenger => FacebookSchemaBuilder.CreateFacebookMessenger(FacebookConnectorConstants.ConnectorSchemaVersion);
+
+        public static ChannelSchema SimpleMessenger => FacebookSchemaBuilder.CreateSimpleMessenger(FacebookConnectorConstants.ConnectorSchemaVersion);
+
+        public static ChannelSchema NotificationMessenger => FacebookSchemaBuilder.CreateNotificationMessenger(FacebookConnectorConstants.ConnectorSchemaVersion);
+
+        public static ChannelSchema MediaMessenger => FacebookSchemaBuilder.CreateMediaMessenger(FacebookConnectorConstants.ConnectorSchemaVersion);
+    }
+
+    /// <summary>
+    /// Provides Facebook schemas aligned with Graph API v20.0.
+    /// </summary>
+    public static class FacebookChannelSchemasV20
+    {
+        public static ChannelSchema FacebookMessenger => FacebookSchemaBuilder.CreateFacebookMessenger(FacebookConnectorConstants.GraphApiVersion20);
+
+        public static ChannelSchema SimpleMessenger => FacebookSchemaBuilder.CreateSimpleMessenger(FacebookConnectorConstants.GraphApiVersion20);
+
+        public static ChannelSchema NotificationMessenger => FacebookSchemaBuilder.CreateNotificationMessenger(FacebookConnectorConstants.GraphApiVersion20);
+
+        public static ChannelSchema MediaMessenger => FacebookSchemaBuilder.CreateMediaMessenger(FacebookConnectorConstants.GraphApiVersion20);
+    }
+
+    /// <summary>
+    /// Provides Facebook schemas aligned with Graph API v19.0.
+    /// </summary>
+    public static class FacebookChannelSchemasV19
+    {
+        public static ChannelSchema FacebookMessenger => FacebookSchemaBuilder.CreateFacebookMessenger(FacebookConnectorConstants.GraphApiVersion19);
+
+        public static ChannelSchema SimpleMessenger => FacebookSchemaBuilder.CreateSimpleMessenger(FacebookConnectorConstants.GraphApiVersion19);
+
+        public static ChannelSchema NotificationMessenger => FacebookSchemaBuilder.CreateNotificationMessenger(FacebookConnectorConstants.GraphApiVersion19);
+
+        public static ChannelSchema MediaMessenger => FacebookSchemaBuilder.CreateMediaMessenger(FacebookConnectorConstants.GraphApiVersion19);
+    }
+
+    /// <summary>
+    /// Provides Facebook schemas aligned with Graph API v18.0.
+    /// </summary>
+    public static class FacebookChannelSchemasV18
+    {
+        public static ChannelSchema FacebookMessenger => FacebookSchemaBuilder.CreateFacebookMessenger(FacebookConnectorConstants.GraphApiVersion18);
+
+        public static ChannelSchema SimpleMessenger => FacebookSchemaBuilder.CreateSimpleMessenger(FacebookConnectorConstants.GraphApiVersion18);
+
+        public static ChannelSchema NotificationMessenger => FacebookSchemaBuilder.CreateNotificationMessenger(FacebookConnectorConstants.GraphApiVersion18);
+
+        public static ChannelSchema MediaMessenger => FacebookSchemaBuilder.CreateMediaMessenger(FacebookConnectorConstants.GraphApiVersion18);
+    }
+
+    internal static class FacebookSchemaBuilder
+    {
+        internal static ChannelSchema CreateFacebookMessenger(string graphApiVersion) => CreateBaseSchema(NormalizeSupportedVersion(graphApiVersion));
+
+        internal static ChannelSchema CreateSimpleMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Simple Messenger")
+            .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveParameter("WebhookUrl")
+            .RemoveParameter("VerifyToken")
+            .RemoveContentType(MessageContentType.Media)
+            .RemoveMessageProperty("QuickReplies")
+            .RemoveMessageProperty("Tag");
+
+        internal static ChannelSchema CreateNotificationMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Notification Messenger")
+            .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .RemoveParameter("WebhookUrl")
+            .RemoveParameter("VerifyToken")
+            .RemoveMessageProperty("QuickReplies");
+
+        internal static ChannelSchema CreateMediaMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Media Messenger")
+            .RemoveCapability(ChannelCapability.ReceiveMessages)
+            .AddMessageProperty("Attachment", DataType.String, p =>
+            {
+                p.IsRequired = false;
+                p.Description = "JSON object defining attachment (image, audio, video, file)";
+            })
+            .AddMessageProperty("Template", DataType.String, p =>
+            {
+                p.IsRequired = false;
+                p.Description = "JSON object defining structured message template";
+            });
+
+        private static ChannelSchema CreateBaseSchema(string version) => new ChannelSchema(
+                FacebookConnectorConstants.Provider,
+                FacebookConnectorConstants.MessengerChannel,
+                version)
             .WithDisplayName("Facebook Messenger Connector")
             .WithCapabilities(
-                ChannelCapability.SendMessages | 
+                ChannelCapability.SendMessages |
                 ChannelCapability.ReceiveMessages |
                 ChannelCapability.MediaAttachments |
                 ChannelCapability.HealthCheck)
@@ -54,11 +130,11 @@ namespace Deveel.Messaging
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-                e.IsRequired = true; // Facebook User ID (PSID) is required for both sending and receiving
+                e.IsRequired = true;
             })
             .HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
             {
-                e.CanSend = true; // Allow EmailAddress so it passes schema validation
+                e.CanSend = true;
                 e.CanReceive = false;
                 e.IsRequired = false;
             })
@@ -89,43 +165,16 @@ namespace Deveel.Messaging
                 p.Description = "Message tag for sending outside 24-hour window";
             });
 
-        /// <summary>
-        /// Gets a simplified Messenger schema for basic messaging use cases.
-        /// This schema removes webhook capabilities and advanced features.
-        /// </summary>
-        public static ChannelSchema SimpleMessenger => new ChannelSchema(FacebookMessenger, "Facebook Simple Messenger")
-            .RemoveCapability(ChannelCapability.ReceiveMessages)
-            .RemoveParameter("WebhookUrl")
-            .RemoveParameter("VerifyToken")
-            .RemoveContentType(MessageContentType.Media)
-            .RemoveMessageProperty("QuickReplies")
-            .RemoveMessageProperty("Tag");
+        private static string NormalizeSupportedVersion(string graphApiVersion)
+        {
+            ArgumentNullException.ThrowIfNullOrWhiteSpace(graphApiVersion, nameof(graphApiVersion));
 
-        /// <summary>
-        /// Gets a send-only schema optimized for notifications and alerts.
-        /// This schema includes media support but removes receiving capabilities.
-        /// </summary>
-        public static ChannelSchema NotificationMessenger => new ChannelSchema(FacebookMessenger, "Facebook Notification Messenger")
-            .RemoveCapability(ChannelCapability.ReceiveMessages)
-            .RemoveParameter("WebhookUrl")
-            .RemoveParameter("VerifyToken")
-            .RemoveMessageProperty("QuickReplies");
+            var matchingVersion = FacebookConnectorConstants.SupportedSchemaVersions
+                .FirstOrDefault(version => string.Equals(version, graphApiVersion, StringComparison.OrdinalIgnoreCase));
 
-        /// <summary>
-        /// Gets a media-focused schema optimized for rich content messaging.
-        /// This schema includes all media capabilities and interactive features.
-        /// </summary>
-        public static ChannelSchema MediaMessenger => new ChannelSchema(FacebookMessenger, "Facebook Media Messenger")
-            .RemoveCapability(ChannelCapability.ReceiveMessages)
-            .AddMessageProperty("Attachment", DataType.String, p =>
-            {
-                p.IsRequired = false;
-                p.Description = "JSON object defining attachment (image, audio, video, file)";
-            })
-            .AddMessageProperty("Template", DataType.String, p =>
-            {
-                p.IsRequired = false;
-                p.Description = "JSON object defining structured message template";
-            });
+            return matchingVersion ?? throw new ArgumentException(
+                $"Unsupported Facebook Graph API schema version '{graphApiVersion}'. Supported versions: {string.Join(", ", FacebookConnectorConstants.SupportedSchemaVersions)}",
+                nameof(graphApiVersion));
+        }
     }
 }

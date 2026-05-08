@@ -26,6 +26,37 @@ namespace Deveel.Messaging
 		public const string GraphApiVersion = "v21.0";
 
 		/// <summary>
+		/// The previous Facebook Graph API version supported by the connector schemas.
+		/// </summary>
+		public const string GraphApiVersion20 = "v20.0";
+
+		/// <summary>
+		/// An older Facebook Graph API version supported by the connector schemas.
+		/// </summary>
+		public const string GraphApiVersion19 = "v19.0";
+
+		/// <summary>
+		/// The oldest Facebook Graph API version explicitly supported by the connector schemas.
+		/// </summary>
+		public const string GraphApiVersion18 = "v18.0";
+
+		/// <summary>
+		/// The version of the connector schema, aligned with the Facebook Graph API version.
+		/// </summary>
+		public const string ConnectorSchemaVersion = GraphApiVersion;
+
+		/// <summary>
+		/// Gets the Facebook Graph API versions that have explicit schema variants.
+		/// </summary>
+		public static IReadOnlyList<string> SupportedSchemaVersions { get; } = new[]
+		{
+			ConnectorSchemaVersion,
+			GraphApiVersion20,
+			GraphApiVersion19,
+			GraphApiVersion18
+		};
+
+		/// <summary>
 		/// The base URL for Facebook Graph API
 		/// </summary>
 		public const string GraphApiBaseUrl = "https://graph.facebook.com";
