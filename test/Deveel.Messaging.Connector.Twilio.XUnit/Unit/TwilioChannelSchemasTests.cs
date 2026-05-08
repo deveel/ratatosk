@@ -1,14 +1,56 @@
 namespace Deveel.Messaging;
 
 /// <summary>
-/// Tests for the <see cref="TwilioChannelSchemas"/> class to verify
-/// the predefined Twilio SMS and WhatsApp channel schemas are configured correctly.
+/// Tests for the <see cref="TwilioChannelSchemas"/> class and its versioned variants
+/// to verify the predefined Twilio SMS and WhatsApp channel schemas are configured correctly.
 /// </summary>
 [Trait("Category", "Unit")]
 [Trait("Layer", "Infrastructure")]
 [Trait("Feature", "TwilioChannelSchemas")]
 public class TwilioChannelSchemasTests
 {
+    #region MemberData Sources
+
+    /// <summary>
+    /// Provides versioned SMS schema groups for theory tests.
+    /// Each entry contains: expected version, base SMS schema, and available derived SMS schemas.
+    /// </summary>
+    public static IEnumerable<object[]> VersionedSmsSchemaGroups =>
+    [
+        [
+            TwilioConnectorConstants.SdkVersion6,
+            TwilioChannelSchemasV6.TwilioSms,
+            new[] { TwilioChannelSchemasV6.SimpleSms, TwilioChannelSchemasV6.NotificationSms, TwilioChannelSchemasV6.BulkSms }
+        ],
+        [
+            TwilioConnectorConstants.SdkVersion5,
+            TwilioChannelSchemasV5.TwilioSms,
+            new[] { TwilioChannelSchemasV5.SimpleSms, TwilioChannelSchemasV5.NotificationSms }
+        ]
+    ];
+
+    /// <summary>
+    /// Provides versioned WhatsApp schema groups for theory tests.
+    /// Each entry contains: expected version, base WhatsApp schema, and available derived WhatsApp schemas.
+    /// </summary>
+    public static IEnumerable<object[]> VersionedWhatsAppSchemaGroups =>
+    [
+        [
+            TwilioConnectorConstants.SdkVersion6,
+            TwilioChannelSchemasV6.TwilioWhatsApp,
+            new[] { TwilioChannelSchemasV6.SimpleWhatsApp, TwilioChannelSchemasV6.WhatsAppTemplates }
+        ],
+        [
+            TwilioConnectorConstants.SdkVersion5,
+            TwilioChannelSchemasV5.TwilioWhatsApp,
+            new[] { TwilioChannelSchemasV5.SimpleWhatsApp }
+        ]
+    ];
+
+    #endregion
+
+    #region TwilioSms (v7.0 current)
+
     [Fact]
     public void Should_HaveCorrectBasicProperties_When_TwilioSmsIsInvoked()
     {
@@ -19,7 +61,7 @@ public class TwilioChannelSchemasTests
         // Assert
         Assert.Equal(TwilioConnectorConstants.Provider, schema.ChannelProvider);
         Assert.Equal(TwilioConnectorConstants.SmsChannel, schema.ChannelType);
-        Assert.Equal("1.0.0", schema.Version);
+        Assert.Equal(TwilioConnectorConstants.ConnectorSchemaVersion, schema.Version);
         Assert.Equal("Twilio SMS Connector", schema.DisplayName);
     }
 
@@ -33,7 +75,7 @@ public class TwilioChannelSchemasTests
         // Assert
         Assert.Equal(TwilioConnectorConstants.Provider, schema.ChannelProvider);
         Assert.Equal(TwilioConnectorConstants.WhatsAppChannel, schema.ChannelType);
-        Assert.Equal("1.0.0", schema.Version);
+        Assert.Equal(TwilioConnectorConstants.ConnectorSchemaVersion, schema.Version);
         Assert.Equal("Twilio WhatsApp Business API Connector", schema.DisplayName);
     }
 
@@ -66,7 +108,7 @@ public class TwilioChannelSchemasTests
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.Templates));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HealthCheck));
-        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.BulkMessaging)); // WhatsApp doesn't support bulk messaging
+        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
     }
 
     [Fact]
@@ -78,8 +120,7 @@ public class TwilioChannelSchemasTests
 
         // Assert
         var requiredParams = schema.Parameters.Where(p => p.IsRequired).ToList();
-        Assert.Equal(2, requiredParams.Count); // AccountSid and AuthToken only
-        
+        Assert.Equal(2, requiredParams.Count);
         Assert.Contains(requiredParams, p => p.Name == "AccountSid" && p.DataType == DataType.String);
         Assert.Contains(requiredParams, p => p.Name == "AuthToken" && p.DataType == DataType.String && p.IsSensitive);
     }
@@ -93,8 +134,7 @@ public class TwilioChannelSchemasTests
 
         // Assert
         var requiredParams = schema.Parameters.Where(p => p.IsRequired).ToList();
-        Assert.Equal(2, requiredParams.Count); // AccountSid and AuthToken only
-        
+        Assert.Equal(2, requiredParams.Count);
         Assert.Contains(requiredParams, p => p.Name == "AccountSid" && p.DataType == DataType.String);
         Assert.Contains(requiredParams, p => p.Name == "AuthToken" && p.DataType == DataType.String && p.IsSensitive);
     }
@@ -109,7 +149,6 @@ public class TwilioChannelSchemasTests
         // Assert
         var optionalParams = schema.Parameters.Where(p => !p.IsRequired).ToList();
         Assert.True(optionalParams.Count >= 5);
-        
         Assert.Contains(optionalParams, p => p.Name == "WebhookUrl");
         Assert.Contains(optionalParams, p => p.Name == "StatusCallback");
         Assert.Contains(optionalParams, p => p.Name == "ValidityPeriod" && p.DefaultValue?.Equals(14400) == true);
@@ -126,11 +165,9 @@ public class TwilioChannelSchemasTests
 
         // Assert
         var optionalParams = schema.Parameters.Where(p => !p.IsRequired).ToList();
-        Assert.True(optionalParams.Count >= 2); // WebhookUrl and StatusCallback
-        
+        Assert.True(optionalParams.Count >= 2);
         Assert.Contains(optionalParams, p => p.Name == "WebhookUrl");
         Assert.Contains(optionalParams, p => p.Name == "StatusCallback");
-        // ContentSid and ContentVariables are now extracted from ITemplateContent, not parameters
     }
 
     [Fact]
@@ -233,12 +270,8 @@ public class TwilioChannelSchemasTests
         // Act
         var schema = TwilioChannelSchemas.TwilioSms;
 
-        // Assert
+        // Assert — v7.0 includes AttemptLimits, SmartEncoded, PersistentAction
         Assert.True(schema.MessageProperties.Count >= 6);
-        
-        // Note: Body and MediaUrl are no longer message properties - they are extracted from message content
-        // Body comes from TextContent.Text when ContentType = PlainText
-        // MediaUrl comes from MediaContent.FileUrl when ContentType = Media
         var optionalProps = schema.MessageProperties.Where(p => !p.IsRequired).ToList();
         Assert.Contains(optionalProps, p => p.Name == "ValidityPeriod");
         Assert.Contains(optionalProps, p => p.Name == "MaxPrice");
@@ -255,15 +288,207 @@ public class TwilioChannelSchemasTests
         // Act
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
 
-        // Assert
+        // Assert — v7.0 includes PersistentAction
         Assert.True(schema.MessageProperties.Count >= 2);
-        
-        // Note: ContentSid and ContentVariables are now extracted from ITemplateContent, not message properties
-        // TemplateId maps to ContentSid, Parameters map to ContentVariables JSON
         var optionalProps = schema.MessageProperties.Where(p => !p.IsRequired).ToList();
         Assert.Contains(optionalProps, p => p.Name == "ProvideCallback");
         Assert.Contains(optionalProps, p => p.Name == "PersistentAction");
     }
+
+    #endregion
+
+    #region Versioned schema groups
+
+    [Theory]
+    [MemberData(nameof(VersionedSmsSchemaGroups))]
+    public void Should_PreserveExpectedVersionAcrossSmsSchemaGroup_When_VersionedSchemaClassIsUsed(
+        string expectedVersion,
+        ChannelSchema baseSchema,
+        ChannelSchema[] derivedSchemas)
+    {
+        // Arrange
+        var allSchemas = derivedSchemas.Prepend(baseSchema).ToList();
+
+        // Act
+        var versions = allSchemas.Select(s => s.Version).ToList();
+
+        // Assert
+        Assert.All(versions, version => Assert.Equal(expectedVersion, version));
+    }
+
+    [Theory]
+    [MemberData(nameof(VersionedSmsSchemaGroups))]
+    public void Should_RetainBaseSmsConfiguration_When_VersionedSchemaClassIsUsed(
+        string expectedVersion,
+        ChannelSchema baseSchema,
+        ChannelSchema[] _)
+    {
+        // Arrange
+        // Act
+        // Assert
+        Assert.Equal(TwilioConnectorConstants.Provider, baseSchema.ChannelProvider);
+        Assert.Equal(TwilioConnectorConstants.SmsChannel, baseSchema.ChannelType);
+        Assert.Equal(expectedVersion, baseSchema.Version);
+        Assert.Equal("Twilio SMS Connector", baseSchema.DisplayName);
+        Assert.True(baseSchema.Capabilities.HasFlag(ChannelCapability.SendMessages));
+        Assert.True(baseSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
+        Assert.Contains(baseSchema.Parameters, p => p.Name == "AccountSid" && p.IsRequired);
+        Assert.Contains(baseSchema.Parameters, p => p.Name == "AuthToken" && p.IsRequired && p.IsSensitive);
+    }
+
+    [Theory]
+    [MemberData(nameof(VersionedWhatsAppSchemaGroups))]
+    public void Should_PreserveExpectedVersionAcrossWhatsAppSchemaGroup_When_VersionedSchemaClassIsUsed(
+        string expectedVersion,
+        ChannelSchema baseSchema,
+        ChannelSchema[] derivedSchemas)
+    {
+        // Arrange
+        var allSchemas = derivedSchemas.Prepend(baseSchema).ToList();
+
+        // Act
+        var versions = allSchemas.Select(s => s.Version).ToList();
+
+        // Assert
+        Assert.All(versions, version => Assert.Equal(expectedVersion, version));
+    }
+
+    [Theory]
+    [MemberData(nameof(VersionedWhatsAppSchemaGroups))]
+    public void Should_RetainBaseWhatsAppConfiguration_When_VersionedSchemaClassIsUsed(
+        string expectedVersion,
+        ChannelSchema baseSchema,
+        ChannelSchema[] _)
+    {
+        // Arrange
+        // Act
+        // Assert
+        Assert.Equal(TwilioConnectorConstants.Provider, baseSchema.ChannelProvider);
+        Assert.Equal(TwilioConnectorConstants.WhatsAppChannel, baseSchema.ChannelType);
+        Assert.Equal(expectedVersion, baseSchema.Version);
+        Assert.Equal("Twilio WhatsApp Business API Connector", baseSchema.DisplayName);
+        Assert.True(baseSchema.Capabilities.HasFlag(ChannelCapability.SendMessages));
+        Assert.True(baseSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
+        Assert.Contains(baseSchema.Parameters, p => p.Name == "AccountSid" && p.IsRequired);
+        Assert.Contains(baseSchema.Parameters, p => p.Name == "AuthToken" && p.IsRequired && p.IsSensitive);
+    }
+
+    #endregion
+
+    #region SDK version capability differences
+
+    [Fact]
+    public void Should_NotHaveSmartEncodedOrAttemptLimitsOrPersistentAction_When_V6SmsIsInvoked()
+    {
+        // Arrange
+        // Act
+        var schema = TwilioChannelSchemasV6.TwilioSms;
+
+        // Assert
+        Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "SmartEncoded");
+        Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "AttemptLimits");
+        Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "PersistentAction");
+    }
+
+    [Fact]
+    public void Should_HaveMessagingServiceSid_When_V6SmsIsInvoked()
+    {
+        // Arrange
+        // Act
+        var schema = TwilioChannelSchemasV6.TwilioSms;
+
+        // Assert
+        Assert.Contains(schema.Parameters, p => p.Name == "MessagingServiceSid");
+    }
+
+    [Fact]
+    public void Should_NotHaveMessagingServiceSid_When_V5SmsIsInvoked()
+    {
+        // Arrange
+        // Act
+        var schema = TwilioChannelSchemasV5.TwilioSms;
+
+        // Assert
+        Assert.DoesNotContain(schema.Parameters, p => p.Name == "MessagingServiceSid");
+    }
+
+    [Fact]
+    public void Should_NotHaveSmartEncodedOrAttemptLimitsOrPersistentAction_When_V5SmsIsInvoked()
+    {
+        // Arrange
+        // Act
+        var schema = TwilioChannelSchemasV5.TwilioSms;
+
+        // Assert
+        Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "SmartEncoded");
+        Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "AttemptLimits");
+        Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "PersistentAction");
+    }
+
+    [Fact]
+    public void Should_HaveTemplateSupportAndPersistentAction_When_V7WhatsAppIsInvoked()
+    {
+        // Arrange
+        // Act
+        var schema = TwilioChannelSchemas.TwilioWhatsApp;
+
+        // Assert
+        Assert.True(schema.Capabilities.HasFlag(ChannelCapability.Templates));
+        Assert.Contains(schema.ContentTypes, ct => ct == MessageContentType.Template);
+        Assert.Contains(schema.MessageProperties, p => p.Name == "PersistentAction");
+    }
+
+    [Fact]
+    public void Should_HaveTemplateSupportButNoPersistentAction_When_V6WhatsAppIsInvoked()
+    {
+        // Arrange
+        // Act
+        var schema = TwilioChannelSchemasV6.TwilioWhatsApp;
+
+        // Assert
+        Assert.True(schema.Capabilities.HasFlag(ChannelCapability.Templates));
+        Assert.Contains(schema.ContentTypes, ct => ct == MessageContentType.Template);
+        Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "PersistentAction");
+    }
+
+    [Fact]
+    public void Should_NotHaveTemplateSupportOrPersistentAction_When_V5WhatsAppIsInvoked()
+    {
+        // Arrange
+        // Act
+        var schema = TwilioChannelSchemasV5.TwilioWhatsApp;
+
+        // Assert
+        Assert.False(schema.Capabilities.HasFlag(ChannelCapability.Templates));
+        Assert.DoesNotContain(schema.ContentTypes, ct => ct == MessageContentType.Template);
+        Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "PersistentAction");
+    }
+
+    [Fact]
+    public void Should_ThrowInvalidOperationException_When_BulkSmsBuiltForV5()
+    {
+        // Arrange
+        // Act & Assert — BulkSms requires MessagingServiceSid which is not available in SDK v5.0
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => TwilioSchemaBuilder.CreateBulkSms(TwilioConnectorConstants.SdkVersion5));
+
+        Assert.Contains("6.0", ex.Message);
+    }
+
+    [Fact]
+    public void Should_ThrowInvalidOperationException_When_WhatsAppTemplatesBuiltForV5()
+    {
+        // Arrange
+        // Act & Assert — WhatsAppTemplates requires template support which is not available in SDK v5.0
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => TwilioSchemaBuilder.CreateWhatsAppTemplates(TwilioConnectorConstants.SdkVersion5));
+
+        Assert.Contains("6.0", ex.Message);
+    }
+
+    #endregion
+
+    #region Derived schemas (v7.0 current)
 
     [Fact]
     public void Should_BeCorrectlyDerivedFromTwilioSms_When_SimpleSmsIsInvoked()
@@ -278,23 +503,18 @@ public class TwilioChannelSchemasTests
         Assert.Equal(baseSchema.ChannelType, simplifiedSchema.ChannelType);
         Assert.Equal(baseSchema.Version, simplifiedSchema.Version);
         Assert.True(baseSchema.IsCompatibleWith(simplifiedSchema));
-
-        // Display name should be different
         Assert.Equal("Twilio Simple SMS", simplifiedSchema.DisplayName);
 
-        // Capabilities should be restricted
         Assert.True(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.SendMessages));
         Assert.True(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
         Assert.True(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.HealthCheck));
         Assert.False(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
         Assert.False(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
 
-        // Parameters should be reduced
         Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "WebhookUrl");
         Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "StatusCallback");
         Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "MessagingServiceSid");
 
-        // Content types should be reduced
         Assert.Single(simplifiedSchema.ContentTypes);
         Assert.Contains(MessageContentType.PlainText, simplifiedSchema.ContentTypes);
         Assert.DoesNotContain(MessageContentType.Media, simplifiedSchema.ContentTypes);
@@ -313,11 +533,8 @@ public class TwilioChannelSchemasTests
         Assert.Equal(baseSchema.ChannelType, simplifiedSchema.ChannelType);
         Assert.Equal(baseSchema.Version, simplifiedSchema.Version);
         Assert.True(baseSchema.IsCompatibleWith(simplifiedSchema));
-
-        // Display name should be different
         Assert.Equal("Twilio Simple WhatsApp", simplifiedSchema.DisplayName);
 
-        // Capabilities should be restricted
         Assert.True(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.SendMessages));
         Assert.True(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
         Assert.True(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
@@ -325,12 +542,9 @@ public class TwilioChannelSchemasTests
         Assert.False(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
         Assert.False(simplifiedSchema.Capabilities.HasFlag(ChannelCapability.Templates));
 
-        // Parameters should be reduced
         Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "WebhookUrl");
         Assert.DoesNotContain(simplifiedSchema.Parameters, p => p.Name == "StatusCallback");
-        // ContentSid and ContentVariables are no longer parameters
 
-        // Content types should be reduced
         Assert.Equal(2, simplifiedSchema.ContentTypes.Count);
         Assert.Contains(MessageContentType.PlainText, simplifiedSchema.ContentTypes);
         Assert.Contains(MessageContentType.Media, simplifiedSchema.ContentTypes);
@@ -350,11 +564,8 @@ public class TwilioChannelSchemasTests
         Assert.Equal(baseSchema.ChannelType, templateSchema.ChannelType);
         Assert.Equal(baseSchema.Version, templateSchema.Version);
         Assert.True(baseSchema.IsCompatibleWith(templateSchema));
-
-        // Display name should be different
         Assert.Equal("Twilio WhatsApp Templates", templateSchema.DisplayName);
 
-        // Capabilities should be restricted
         Assert.True(templateSchema.Capabilities.HasFlag(ChannelCapability.SendMessages));
         Assert.True(templateSchema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
         Assert.True(templateSchema.Capabilities.HasFlag(ChannelCapability.Templates));
@@ -362,9 +573,6 @@ public class TwilioChannelSchemasTests
         Assert.False(templateSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
         Assert.False(templateSchema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
 
-        // ContentSid is now derived from TemplateContent.TemplateId, not a parameter
-
-        // Content types should be reduced
         Assert.Equal(2, templateSchema.ContentTypes.Count);
         Assert.Contains(MessageContentType.PlainText, templateSchema.ContentTypes);
         Assert.Contains(MessageContentType.Template, templateSchema.ContentTypes);
@@ -384,20 +592,14 @@ public class TwilioChannelSchemasTests
         Assert.Equal(baseSchema.ChannelType, notificationSchema.ChannelType);
         Assert.Equal(baseSchema.Version, notificationSchema.Version);
         Assert.True(baseSchema.IsCompatibleWith(notificationSchema));
-
-        // Display name should be different
         Assert.Equal("Twilio Notification SMS", notificationSchema.DisplayName);
 
-        // Should maintain status query capability but remove receiving
         Assert.True(notificationSchema.Capabilities.HasFlag(ChannelCapability.SendMessages));
         Assert.True(notificationSchema.Capabilities.HasFlag(ChannelCapability.MessageStatusQuery));
         Assert.False(notificationSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
 
-        // Should not have webhook parameters
         Assert.DoesNotContain(notificationSchema.Parameters, p => p.Name == "WebhookUrl");
-
-        // Should not support media
-        Assert.DoesNotContain(MessageContentType.Media, notificationSchema.ContentTypes);
+        Assert.DoesNotContain(notificationSchema.ContentTypes, ct => ct == MessageContentType.Media);
     }
 
     [Fact]
@@ -413,25 +615,24 @@ public class TwilioChannelSchemasTests
         Assert.Equal(baseSchema.ChannelType, bulkSchema.ChannelType);
         Assert.Equal(baseSchema.Version, bulkSchema.Version);
         Assert.True(baseSchema.IsCompatibleWith(bulkSchema));
-
-        // Display name should be different
         Assert.Equal("Twilio Bulk SMS", bulkSchema.DisplayName);
 
-        // Should maintain bulk messaging capability but remove receiving
         Assert.True(bulkSchema.Capabilities.HasFlag(ChannelCapability.SendMessages));
         Assert.True(bulkSchema.Capabilities.HasFlag(ChannelCapability.BulkMessaging));
         Assert.False(bulkSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
 
-        // MessagingServiceSid should be required
         var messagingServiceParam = bulkSchema.Parameters.FirstOrDefault(p => p.Name == "MessagingServiceSid");
         Assert.NotNull(messagingServiceParam);
         Assert.True(messagingServiceParam.IsRequired);
 
-        // Phone number endpoint should be optional in bulk messaging (messaging service handles sender selection)
         var phoneEndpoint = bulkSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.PhoneNumber);
         Assert.NotNull(phoneEndpoint);
         Assert.False(phoneEndpoint.IsRequired);
     }
+
+    #endregion
+
+    #region Validation
 
     [Fact]
     public void Should_PassValidationAsRestrictionsOfBase_When_AllSchemasIsInvoked()
@@ -439,7 +640,7 @@ public class TwilioChannelSchemasTests
         // Arrange
         var smsBaseSchema = TwilioChannelSchemas.TwilioSms;
         var whatsAppBaseSchema = TwilioChannelSchemas.TwilioWhatsApp;
-        
+
         var smsDerivedSchemas = new[]
         {
             TwilioChannelSchemas.SimpleSms,
@@ -453,16 +654,13 @@ public class TwilioChannelSchemasTests
             TwilioChannelSchemas.WhatsAppTemplates
         };
 
-        // Act
-        // Assert
+        // Act & Assert
         foreach (var derivedSchema in smsDerivedSchemas)
         {
             var validationResults = derivedSchema.ValidateAsRestrictionOf(smsBaseSchema);
             Assert.Empty(validationResults);
         }
 
-        // Act
-        // Assert
         foreach (var derivedSchema in whatsAppDerivedSchemas)
         {
             var validationResults = derivedSchema.ValidateAsRestrictionOf(whatsAppBaseSchema);
@@ -487,11 +685,6 @@ public class TwilioChannelSchemasTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
             .SetParameter("MessagingServiceSid", "MG1234567890123456789012345678901234");
 
-        var validTemplateSettings = new ConnectionSettings()
-            .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
-            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678")
-            .SetParameter("ContentSid", "HX1234567890123456789012345678901234");
-
         var smsSchemas = new[]
         {
             TwilioChannelSchemas.TwilioSms,
@@ -505,27 +698,22 @@ public class TwilioChannelSchemasTests
             TwilioChannelSchemas.SimpleWhatsApp
         };
 
-        // Act
-        // Assert
+        // Act & Assert
         foreach (var schema in smsSchemas)
         {
             var validationResults = schema.ValidateConnectionSettings(validSmsSettings);
             Assert.Empty(validationResults);
         }
 
-        // Act
-        // Assert
         foreach (var schema in whatsAppSchemas)
         {
             var validationResults = schema.ValidateConnectionSettings(validWhatsAppSettings);
             Assert.Empty(validationResults);
         }
 
-        // Test bulk schema separately with messaging service
         var bulkValidationResults = TwilioChannelSchemas.BulkSms.ValidateConnectionSettings(validBulkSettings);
         Assert.Empty(bulkValidationResults);
 
-        // Test template schema separately - no longer requires ContentSid parameter
         var templateValidationResults = TwilioChannelSchemas.WhatsAppTemplates.ValidateConnectionSettings(validWhatsAppSettings);
         Assert.Empty(templateValidationResults);
     }
@@ -538,9 +726,6 @@ public class TwilioChannelSchemasTests
 
         var validProps = new Dictionary<string, object?>
         {
-            // Note: Body and MediaUrl are no longer message properties - they are extracted from message content
-            // Body comes from TextContent.Text when ContentType = PlainText
-            // MediaUrl comes from MediaContent.FileUrl when ContentType = Media
             ["ValidityPeriod"] = 3600,
             ["MaxPrice"] = 0.05m,
             ["ProvideCallback"] = true
@@ -548,7 +733,7 @@ public class TwilioChannelSchemasTests
 
         var invalidProps = new Dictionary<string, object?>
         {
-            ["ValidityPeriod"] = "invalid", // Wrong type
+            ["ValidityPeriod"] = "invalid",
             ["UnknownProperty"] = "value"
         };
 
@@ -573,8 +758,6 @@ public class TwilioChannelSchemasTests
 
         var validProps = new Dictionary<string, object?>
         {
-            // Note: ContentSid and ContentVariables are now extracted from ITemplateContent, not message properties
-            // TemplateId maps to ContentSid, Parameters map to ContentVariables JSON
             ["ProvideCallback"] = true
         };
 
@@ -594,8 +777,85 @@ public class TwilioChannelSchemasTests
         Assert.NotEmpty(invalidResults);
         Assert.Contains(invalidResults, r => r.ErrorMessage!.Contains("Unknown message property 'UnknownProperty'"));
     }
-    
-    #region Helper Methods
+
+    [Fact]
+    public void Should_HaveConsistentProviderAndChannel_When_AllVersionedSchemasIsInvoked()
+    {
+        // Arrange
+        var smsSchemas = new[]
+        {
+            TwilioChannelSchemas.TwilioSms,
+            TwilioChannelSchemasV6.TwilioSms,
+            TwilioChannelSchemasV5.TwilioSms,
+        };
+
+        var whatsAppSchemas = new[]
+        {
+            TwilioChannelSchemas.TwilioWhatsApp,
+            TwilioChannelSchemasV6.TwilioWhatsApp,
+            TwilioChannelSchemasV5.TwilioWhatsApp,
+        };
+
+        // Act & Assert
+        Assert.All(smsSchemas, schema =>
+        {
+            Assert.Equal(TwilioConnectorConstants.Provider, schema.ChannelProvider);
+            Assert.Equal(TwilioConnectorConstants.SmsChannel, schema.ChannelType);
+        });
+
+        Assert.All(whatsAppSchemas, schema =>
+        {
+            Assert.Equal(TwilioConnectorConstants.Provider, schema.ChannelProvider);
+            Assert.Equal(TwilioConnectorConstants.WhatsAppChannel, schema.ChannelType);
+        });
+    }
+
+    [Fact]
+    public void Should_ReportCorrectVersion_When_AllVersionedSchemasIsInvoked()
+    {
+        // Arrange
+        var expectedVersions = new Dictionary<string, ChannelSchema[]>
+        {
+            [TwilioConnectorConstants.ConnectorSchemaVersion] =
+            [
+                TwilioChannelSchemas.TwilioSms,
+                TwilioChannelSchemas.TwilioWhatsApp,
+                TwilioChannelSchemas.SimpleSms,
+                TwilioChannelSchemas.NotificationSms,
+                TwilioChannelSchemas.BulkSms,
+                TwilioChannelSchemas.SimpleWhatsApp,
+                TwilioChannelSchemas.WhatsAppTemplates,
+            ],
+            [TwilioConnectorConstants.SdkVersion6] =
+            [
+                TwilioChannelSchemasV6.TwilioSms,
+                TwilioChannelSchemasV6.TwilioWhatsApp,
+                TwilioChannelSchemasV6.SimpleSms,
+                TwilioChannelSchemasV6.NotificationSms,
+                TwilioChannelSchemasV6.BulkSms,
+                TwilioChannelSchemasV6.SimpleWhatsApp,
+                TwilioChannelSchemasV6.WhatsAppTemplates,
+            ],
+            [TwilioConnectorConstants.SdkVersion5] =
+            [
+                TwilioChannelSchemasV5.TwilioSms,
+                TwilioChannelSchemasV5.TwilioWhatsApp,
+                TwilioChannelSchemasV5.SimpleSms,
+                TwilioChannelSchemasV5.NotificationSms,
+                TwilioChannelSchemasV5.SimpleWhatsApp,
+            ],
+        };
+
+        // Act & Assert
+        foreach (var (expectedVersion, schemas) in expectedVersions)
+        {
+            Assert.All(schemas, schema => Assert.Equal(expectedVersion, schema.Version));
+        }
+    }
+
+    #endregion
+
+    #region Helpers
 
     private static Message CreateTestMessage(IDictionary<string, object?> properties)
     {
