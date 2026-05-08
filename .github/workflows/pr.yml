@@ -17,42 +17,9 @@ jobs:
 
   build:
     name: "Build and Test"
-    strategy:
-      matrix:
-        include:
-          - dotnet: '8.0.x'
-            dotnet-framework: 'net8.0'
-            os: ubuntu-latest
-          - dotnet: '8.0.x'
-            dotnet-framework: 'net8.0'
-            os: windows-latest
-          - dotnet: '9.0.x'
-            dotnet-framework: 'net9.0'
-            os: ubuntu-latest
-          - dotnet: '9.0.x'
-            dotnet-framework: 'net9.0'
-            os: windows-latest
-    
-    runs-on: ${{ matrix.os }}
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup .NET ${{ matrix.dotnet }}
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ matrix.dotnet }}
-          
-    - name: Restore dependencies
-      run: dotnet restore -p:TargetFramework=${{ matrix.dotnet-framework }}
-      
-    - name: Build
-      run: dotnet build --no-restore -c Release -f ${{ matrix.dotnet-framework }}
-    
-    - name: Test
-      run: dotnet test --no-build --verbosity normal -c Release -f ${{ matrix.dotnet-framework }}
+    uses: ./.github/workflows/build-test.yml
+    with:
+      configuration: Release
 
   summary:
     needs: build
@@ -69,23 +36,17 @@ jobs:
         echo "| Source Branch | \`${{ github.head_ref }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Target Branch | \`${{ github.base_ref }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Build Status | ${{ needs.build.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Coverage | 📊 Collected at Release Only |" >> $GITHUB_STEP_SUMMARY
+        echo "| Frameworks | .NET 8, 9, 10 |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        
+
         if [ "${{ needs.build.result }}" == "success" ]; then
           echo "✅ **Build Successful**: All tests passed." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📋 **Test Execution Notes**:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Ubuntu (.NET 8 & 9)**: All tests executed" >> $GITHUB_STEP_SUMMARY
-          echo "- **Windows (.NET 8 & 9)**: All tests executed" >> $GITHUB_STEP_SUMMARY
-          echo "- **Code Coverage**: Skipped (collected only during releases)" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ **Build Failed**: Please check the build logs for more details." >> $GITHUB_STEP_SUMMARY
         fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "📝 **Note**: This is a PR build - no packages are published and no coverage is collected." >> $GITHUB_STEP_SUMMARY
-        
+
         if [ "${{ github.event.pull_request.draft }}" == "true" ]; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🚧 **Draft PR**: This pull request is marked as draft." >> $GITHUB_STEP_SUMMARY
         fi
+      shell: bash

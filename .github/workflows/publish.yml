@@ -29,6 +29,13 @@ on:
         description: 'Informational version'
         required: true
         type: string
+    secrets:
+      nuget-api-key:
+        description: 'API key for NuGet.org'
+        required: false
+      github-token:
+        description: 'GitHub token for authentication (defaults to GITHUB_TOKEN)'
+        required: false
 
 permissions:
   contents: read
@@ -43,7 +50,7 @@ jobs:
   publish:
     name: "Pack and Publish Packages"
     runs-on: ubuntu-latest
-    
+
     outputs:
       version: ${{ inputs.version }}
       nuget-version: ${{ inputs.nuget-version }}
@@ -51,45 +58,26 @@ jobs:
       file-version: ${{ inputs.assembly-version }}
       informational-version: ${{ inputs.informational-version }}
       packages-published-to-nuget: ${{ steps.publish-nuget.outputs.published }}
-    
+
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
-    - name: Display Version Information
-      run: |
-        echo "🏷️ Version: ${{ inputs.version }}"
-        echo "📦 NuGet Version: ${{ inputs.nuget-version }}"
-        echo "🔢 Assembly Version: ${{ inputs.assembly-version }}"
-        echo "📄 File Version: ${{ inputs.assembly-version }}"
-        echo "ℹ️ Informational Version: ${{ inputs.informational-version }}"
-        echo "🚀 Publish to NuGet: ${{ inputs.publish-to-nuget }}"
-        echo "⚙️ Build Configuration: ${{ inputs.build-configuration }}"
-
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: |
           8.0.x
           9.0.x
+          10.0.x
 
     - name: Restore Dependencies
       run: dotnet restore
 
-    - name: Debug Version Properties
-      run: |
-        echo "🔍 Version Properties to be used:"
-        echo "Version: ${{ inputs.version }}"
-        echo "PackageVersion: ${{ inputs.nuget-version }}"
-        echo "AssemblyVersion: ${{ inputs.assembly-version }}"
-        echo "FileVersion: ${{ inputs.assembly-version }}"
-        echo "InformationalVersion: ${{ inputs.informational-version }}"
-
     - name: Pack Packages
       run: |
-        echo "🏗️ Packing packages with explicit version properties..."
         dotnet pack --configuration ${{ inputs.build-configuration }} --include-symbols --output ./nuget \
           --verbosity normal \
           -p:Version="${{ inputs.nuget-version }}" \
@@ -98,48 +86,32 @@ jobs:
           -p:FileVersion="${{ inputs.assembly-version }}" \
           -p:InformationalVersion="${{ inputs.informational-version }}" \
           -p:UseGitVersion=false
-
-    - name: List Generated Packages
-      run: |
-        echo "📋 Generated packages:"
-        ls -la ./nuget/
-        echo ""
-        echo "📋 Package details:"
-        for pkg in ./nuget/*.nupkg; do
-          if [ -f "$pkg" ]; then
-            echo "Package: $(basename "$pkg")"
-            unzip -l "$pkg" | grep -E '\.(nuspec|dll)$' | head -5
-            echo "---"
-          fi
-        done
+      shell: bash
 
     - name: Publish to GitHub Packages
       run: |
-        echo "📤 Publishing packages to GitHub Packages..."
         dotnet nuget push ./nuget/**/*.nupkg \
           --skip-duplicate \
-          --api-key ${{ secrets.GITHUB_TOKEN }} \
+          --api-key ${{ secrets.github-token }} \
           --source "https://nuget.pkg.github.com/deveel/index.json"
-        echo "✅ Successfully published to GitHub Packages"
+      shell: bash
 
     - name: Publish to NuGet.org
       id: publish-nuget
       if: inputs.publish-to-nuget == true
       run: |
-        if [ -z "${{ secrets.NUGET_API_KEY}}" ]; then
-            echo "❌ NUGET_API_KEY secret is not set"
-            exit 1
+        if [ -z "${{ secrets.nuget-api-key }}" ]; then
+          echo "NUGET_API_KEY secret is not set" >&2
+          exit 1
         fi
 
-        echo "📤 Publishing packages to NuGet.org..."
-        
         dotnet nuget push ./nuget/**/*.nupkg \
           --skip-duplicate \
-          --api-key ${{ secrets.NUGET_API_KEY }} \
+          --api-key ${{ secrets.nuget-api-key }} \
           --source https://api.nuget.org/v3/index.json
-        
-        echo "✅ Successfully published to NuGet.org"
+
         echo "published=true" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Upload Package Artifacts
       uses: actions/upload-artifact@v4
@@ -163,9 +135,4 @@ jobs:
         echo "| Assembly Version | \`${{ inputs.assembly-version }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Published to GitHub | ✅ |" >> $GITHUB_STEP_SUMMARY
         echo "| Published to NuGet.org | ${{ inputs.publish-to-nuget == true && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ inputs.publish-to-nuget }}" == "true" ]; then
-          echo "🎉 Packages have been published to both GitHub Packages and NuGet.org!" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "📦 Packages have been published to GitHub Packages only." >> $GITHUB_STEP_SUMMARY
-        fi
+      shell: bash
