@@ -6,7 +6,7 @@ permissions:
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
@@ -23,7 +23,6 @@ jobs:
   publish:
     needs: build
     name: "Publish Pre-release Packages (CI/CD)"
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     uses: ./.github/workflows/publish.yml
     with:
       publish-to-nuget: false
@@ -38,7 +37,6 @@ jobs:
   clean:
     needs: publish
     name: "Clean Old Pre-release Packages"
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     uses: ./.github/workflows/clean-packages.yml
 
   summary:

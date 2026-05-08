@@ -518,6 +518,15 @@ We follow **Semantic Versioning** (SemVer):
 - **Minor** (X.Y.0): New features, backward compatible
 - **Patch** (X.Y.Z): Bug fixes, backward compatible
 
+### Branching and Releases
+
+The repository follows **GitHub Flow**:
+
+- `main` is the only long-lived branch.
+- Short-lived branches are created from `main` and merged back through pull requests.
+- GitVersion generates CI package versions from branch and `main` builds.
+- Stable releases are created from `vX.Y.Z` tags that point to commits already contained in `main`.
+
 ### Changelog
 
 Update `CHANGELOG.md` for all notable changes:

@@ -43,11 +43,15 @@ jobs:
     - name: Validate Release
       id: validate
       run: |
+        git fetch origin main --no-tags
+        RELEASE_COMMIT="$GITHUB_SHA"
+
         if [ "${{ github.event_name }}" == "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
           TAG_NAME="${{ github.ref_name }}"
           VERSION="${TAG_NAME#v}"
           SHOULD_PUBLISH="true"
           IS_MANUAL="false"
+          RELEASE_COMMIT="$(git rev-list -n 1 "$TAG_NAME")"
         elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           INPUT_VERSION="${{ inputs.version }}"
           if [[ "$INPUT_VERSION" == v* ]]; then
@@ -61,6 +65,16 @@ jobs:
           IS_MANUAL="true"
         else
           echo "Invalid trigger event: ${{ github.event_name }}" >&2
+          exit 1
+        fi
+
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.ref_name }}" != "main" ]; then
+          echo "Manual releases must be started from the main branch." >&2
+          exit 1
+        fi
+
+        if ! git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main; then
+          echo "Releases must point to a commit that is already contained in main." >&2
           exit 1
         fi
 

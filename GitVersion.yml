@@ -1,23 +1,71 @@
-mode: ContinuousDeployment
+mode: ContinuousDelivery
+tag-prefix: '[vV]?'
+commit-message-incrementing: Enabled
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-scheme: MajorMinorPatch
 branches:
   main:
+    regex: ^master$|^main$
     tag: ''
     increment: Patch
-    regex: ^main$
-    source-branches: ['feature']
     prevent-increment-of-merged-branch-version: true
-    tracks-release-branches: true
-    is-release-branch: true
-  feature:
-    tag: useBranchName
-    increment: None
-    regex: ^feature[-/]
-    source-branches: ['main']
+    track-merge-target: false
+    source-branches: []
     tracks-release-branches: false
     is-release-branch: false
+    is-mainline: true
+    pre-release-weight: 55000
+  release:
+    regex: ^releases?[/-]
+    tag: beta
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    source-branches: [ main ]
+    tracks-release-branches: false
+    is-release-branch: true
+    is-mainline: false
+    pre-release-weight: 30000
+  feature:
+    regex: ^features?[/-]
+    tag: useBranchName
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    source-branches: [ main, release ]
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: false
+    pre-release-weight: 30000
+  pull-request:
+    regex: ^(pull|pull-requests|pr)[/-]
+    tag: PullRequest
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: true
+    tag-number-pattern: '[/-](?<number>\d+)[-/]'
+    track-merge-target: false
+    source-branches: [ main, release, feature ]
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: false
+    pre-release-weight: 30000
+  unknown:
+    regex: ^(?!master$|main$|releases?[/-].+|features?[/-].+|(pull|pull-requests|pr)[/-].+)(?<BranchName>.+)$
+    tag: useBranchName
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    source-branches: [ main, release, feature, pull-request ]
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: false
+    pre-release-weight: 30000
+  develop:
+    regex: ^$
+  hotfix:
+    regex: ^$
+  support:
+    regex: ^$
 ignore:
   sha: []
 merge-message-formats: {}
-commit-message-incrementing: Enabled
-assembly-versioning-scheme: MajorMinorPatch
-continuous-delivery-fallback-tag: alpha
