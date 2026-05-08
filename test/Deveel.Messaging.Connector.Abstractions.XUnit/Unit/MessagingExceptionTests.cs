@@ -41,7 +41,7 @@ namespace Deveel.Messaging
             var exception = new MessagingException(errorCode);
 
             // Assert
-            Assert.Null(exception.Message == exception.Message ? null : exception.Message);
+            Assert.False(string.IsNullOrEmpty(exception.Message));
             Assert.Null(exception.InnerException);
         }
 
