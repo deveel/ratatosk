@@ -208,7 +208,7 @@ jobs:
           --coverage-output coverage.cobertura.xml
 
       - name: Upload coverage to Codecov
-        if: inputs.collect-coverage == true && secrets.codecov_token != ''
+        if: inputs.collect-coverage == true
         uses: codecov/codecov-action@v4
         with:
           files: ./test/**/TestResults/coverage.cobertura.xml
@@ -216,3 +216,4 @@ jobs:
           name: ${{ matrix.os }}-${{ matrix.dotnet-framework }}
           fail_ci_if_error: false
           verbose: true
+          token: ${{ secrets.codecov_token }}
