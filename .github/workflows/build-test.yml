@@ -38,7 +38,7 @@ on:
         description: Where the version came from
         value: ${{ jobs.version.outputs.version-source }}
     secrets:
-      codecov-token:
+      codecov_token:
         required: false
 
 permissions:
@@ -159,12 +159,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup .NET ${{ matrix.dotnet }}
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ matrix.dotnet }}
 
@@ -208,7 +208,7 @@ jobs:
           --coverage-output coverage.cobertura.xml
 
       - name: Upload coverage to Codecov
-        if: ${{ inputs.collect-coverage == true && secrets.codecov-token != '' }}
+        if: inputs.collect-coverage == true && secrets.codecov_token != ''
         uses: codecov/codecov-action@v4
         with:
           files: ./test/**/TestResults/coverage.cobertura.xml
@@ -216,5 +216,3 @@ jobs:
           name: ${{ matrix.os }}-${{ matrix.dotnet-framework }}
           fail_ci_if_error: false
           verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.codecov-token }}

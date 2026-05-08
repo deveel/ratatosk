@@ -36,7 +36,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -109,7 +109,7 @@ jobs:
       version-tag-name: ${{ needs.validate-release.outputs.tag-name }}
       collect-coverage: true
     secrets:
-      codecov-token: ${{ secrets.CODECOV_TOKEN }}
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
   create-tag:
     needs: [validate-release, check-tag-exists, build]
