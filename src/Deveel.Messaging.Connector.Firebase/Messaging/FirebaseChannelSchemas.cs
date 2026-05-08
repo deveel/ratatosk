@@ -24,7 +24,7 @@ namespace Deveel.Messaging
         public static ChannelSchema FirebasePush => new ChannelSchema(FirebaseConnectorConstants.Provider, FirebaseConnectorConstants.PushChannel, "1.0.0")
             .WithDisplayName("Firebase Cloud Messaging (FCM) Connector")
             .WithCapabilities(
-                ChannelCapability.SendMessages | 
+                ChannelCapability.SendMessages |
                 ChannelCapability.BulkMessaging |
                 ChannelCapability.HealthCheck)
             .AddParameter(new ChannelParameter("ProjectId", DataType.String)
@@ -49,28 +49,28 @@ namespace Deveel.Messaging
             .HandlesMessageEndpoint(EndpointType.DeviceId, e =>
             {
                 e.CanSend = false; // Push notifications are send-only
-				e.CanReceive = true; 
+				e.CanReceive = true;
                 e.IsRequired = true; // Device token is required for sending
             })
             .HandlesMessageEndpoint(EndpointType.Topic, e =>
             {
                 e.CanSend = false; // Topic notifications are send-only
-				e.CanReceive = true; 
+				e.CanReceive = true;
                 e.IsRequired = false; // Alternative to device tokens
             })
             .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Certificate, "Firebase Service Account Authentication")
-                .WithRequiredField("ServiceAccountKey", DataType.String, field =>
+                .WithRequiredField("ServiceAccountKey", DataType.String, authField =>
                 {
-                    field.DisplayName = "Service Account Key";
-                    field.Description = "Firebase service account key JSON or file path";
-                    field.AuthenticationRole = "Certificate";
-                    field.IsSensitive = true;
+                    authField.DisplayName = "Service Account Key";
+                    authField.Description = "Firebase service account key JSON or file path";
+                    authField.AuthenticationRole = "Certificate";
+                    authField.IsSensitive = true;
                 })
-                .WithOptionalField("ProjectId", DataType.String, field =>
+                .WithOptionalField("ProjectId", DataType.String, authField =>
                 {
-                    field.DisplayName = "Project ID";
-                    field.Description = "Firebase project ID (can be extracted from service account key)";
-                    field.AuthenticationRole = "ProjectId";
+                    authField.DisplayName = "Project ID";
+                    authField.Description = "Firebase project ID (can be extracted from service account key)";
+                    authField.AuthenticationRole = "ProjectId";
                 }))
             .AddMessageProperty("Title", DataType.String, p =>
             {
@@ -249,7 +249,7 @@ namespace Deveel.Messaging
             var color = value.ToString();
             if (string.IsNullOrEmpty(color)) yield break;
 
-            if (!color.StartsWith('#') || 
+            if (!color.StartsWith('#') ||
                 (color.Length != 7 && color.Length != 9) ||
                 !color[1..].All(c => char.IsDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')))
             {
@@ -264,11 +264,11 @@ namespace Deveel.Messaging
         /// </summary>
         private static IEnumerable<ValidationResult> ValidateJsonContent(object? value)
         {
-            if (value == null) 
+            if (value == null)
                 return Enumerable.Empty<ValidationResult>();
 
             var jsonContent = value.ToString();
-            if (string.IsNullOrEmpty(jsonContent)) 
+            if (string.IsNullOrEmpty(jsonContent))
                 return Enumerable.Empty<ValidationResult>();
 
             try
@@ -308,7 +308,7 @@ namespace Deveel.Messaging
 
             // Check for valid operators and basic syntax
             var validOperators = new[] { "&&", "||", "(", ")", "'" };
-            var containsValidSyntax = condition.Contains("'") || 
+            var containsValidSyntax = condition.Contains("'") ||
                                     validOperators.Any(op => condition.Contains(op));
 
             if (!containsValidSyntax)
@@ -324,17 +324,17 @@ namespace Deveel.Messaging
         /// </summary>
         private static IEnumerable<ValidationResult> ValidateActionsJson(object? value)
         {
-            if (value == null) 
+            if (value == null)
                 return Enumerable.Empty<ValidationResult>();
 
             var jsonContent = value.ToString();
-            if (string.IsNullOrEmpty(jsonContent)) 
+            if (string.IsNullOrEmpty(jsonContent))
                 return Enumerable.Empty<ValidationResult>();
 
             try
             {
                 using var document = System.Text.Json.JsonDocument.Parse(jsonContent);
-                
+
                 if (document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array)
                 {
                     return new[]

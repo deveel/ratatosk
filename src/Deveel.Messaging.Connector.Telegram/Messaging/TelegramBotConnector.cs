@@ -91,7 +91,7 @@ namespace Deveel.Messaging
 				// Validate required parameters
 				if (string.IsNullOrWhiteSpace(_botToken))
 				{
-					return ConnectorResult<bool>.Fail(TelegramErrorCodes.MissingBotToken, 
+					return ConnectorResult<bool>.Fail(TelegramErrorCodes.MissingBotToken,
 						"Bot token is required for Telegram Bot API");
 				}
 
@@ -102,9 +102,9 @@ namespace Deveel.Messaging
 					var validationErrors = validationResults.ToList();
 					if (validationErrors.Count > 0)
 					{
-						_logger?.LogError("Connection settings validation failed: {Errors}", 
+						_logger?.LogError("Connection settings validation failed: {Errors}",
 							string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-						return ConnectorResult<bool>.ValidationFailed(TelegramErrorCodes.InvalidBotToken, 
+						return ConnectorResult<bool>.ValidationFailed(TelegramErrorCodes.InvalidBotToken,
 							"Connection settings validation failed", validationErrors);
 					}
 				}
@@ -114,7 +114,7 @@ namespace Deveel.Messaging
 
 				// Get bot information to verify the token
 				_botInfo = await _telegramService.GetMeAsync(cancellationToken);
-				_logger?.LogInformation("Bot initialized successfully: @{BotUsername} ({BotId})", 
+				_logger?.LogInformation("Bot initialized successfully: @{BotUsername} ({BotId})",
 					_botInfo.Username, _botInfo.Id);
 
 				// Set up webhook if URL is provided
@@ -142,14 +142,14 @@ namespace Deveel.Messaging
 
 				// Test connection by calling getMe API
 				var botInfo = await _telegramService.GetMeAsync(cancellationToken);
-				
+
 				if (botInfo == null)
 				{
-					return ConnectorResult<bool>.Fail(TelegramErrorCodes.ConnectionFailed, 
+					return ConnectorResult<bool>.Fail(TelegramErrorCodes.ConnectionFailed,
 						"Unable to retrieve bot information");
 				}
 
-				_logger?.LogDebug("Connection test successful. Bot: @{BotUsername} ({BotId})", 
+				_logger?.LogDebug("Connection test successful. Bot: @{BotUsername} ({BotId})",
 					botInfo.Username, botInfo.Id);
 				return ConnectorResult<bool>.Success(true);
 			}
@@ -171,13 +171,13 @@ namespace Deveel.Messaging
 				var chatId = ExtractChatId(message.Receiver);
 				if (chatId == null)
 				{
-					return ConnectorResult<SendResult>.Fail(TelegramErrorCodes.InvalidChatId, 
+					return ConnectorResult<SendResult>.Fail(TelegramErrorCodes.InvalidChatId,
 						"Receiver must contain a valid Telegram chat ID");
 				}
 
 				Telegram.Bot.Types.Message sentMessage = await SendMessageByContentType(message, chatId, cancellationToken);
 
-				_logger?.LogInformation("Telegram message sent successfully. MessageId: {TelegramMessageId}, ChatId: {ChatId}", 
+				_logger?.LogInformation("Telegram message sent successfully. MessageId: {TelegramMessageId}, ChatId: {ChatId}",
 					sentMessage.MessageId, sentMessage.Chat.Id);
 
 				var result = new SendResult(message.Id, sentMessage.MessageId.ToString())
@@ -317,10 +317,10 @@ namespace Deveel.Messaging
 				if (source.ContentType == MessageSource.JsonContentType)
 				{
 					var messages = ParseTelegramWebhookJson(source);
-					
+
 					if (messages.Count == 0)
 					{
-						return ConnectorResult<ReceiveResult>.Fail(TelegramErrorCodes.InvalidWebhookData, 
+						return ConnectorResult<ReceiveResult>.Fail(TelegramErrorCodes.InvalidWebhookData,
 							"No valid messages found in webhook data");
 					}
 
@@ -328,7 +328,7 @@ namespace Deveel.Messaging
 					return ConnectorResult<ReceiveResult>.Success(result);
 				}
 
-				return ConnectorResult<ReceiveResult>.Fail(TelegramErrorCodes.UnsupportedContentType, 
+				return ConnectorResult<ReceiveResult>.Fail(TelegramErrorCodes.UnsupportedContentType,
 					"Only JSON content type is supported for Telegram message receiving");
 			}
 			catch (Exception ex)
@@ -390,7 +390,7 @@ namespace Deveel.Messaging
 						new[] { "Content.Longitude" });
 				}
 
-				if (locationContent.LivePeriod.HasValue && 
+				if (locationContent.LivePeriod.HasValue &&
 					(locationContent.LivePeriod.Value < 60 || locationContent.LivePeriod.Value > 86400))
 				{
 					yield return new ValidationResult(
@@ -398,7 +398,7 @@ namespace Deveel.Messaging
 						new[] { "Content.LivePeriod" });
 				}
 
-				if (locationContent.Heading.HasValue && 
+				if (locationContent.Heading.HasValue &&
 					(locationContent.Heading.Value < 1 || locationContent.Heading.Value > 360))
 				{
 					yield return new ValidationResult(
@@ -406,7 +406,7 @@ namespace Deveel.Messaging
 						new[] { "Content.Heading" });
 				}
 
-				if (locationContent.ProximityAlertRadius.HasValue && 
+				if (locationContent.ProximityAlertRadius.HasValue &&
 					(locationContent.ProximityAlertRadius.Value < 1 || locationContent.ProximityAlertRadius.Value > 100000))
 				{
 					yield return new ValidationResult(
@@ -421,7 +421,7 @@ namespace Deveel.Messaging
 			{
 				InlineKeyboardButton[][]? keyboard = null;
 				var validationResults = new List<ValidationResult>();
-				
+
 				try
 				{
 					keyboard = JsonSerializer.Deserialize<InlineKeyboardButton[][]>(inlineKeyboardJson);
@@ -684,7 +684,7 @@ namespace Deveel.Messaging
 		private ParseMode? GetMessageParseMode(IMessage message)
 		{
 			var parseModeString = GetMessageProperty(message, "ParseMode") ?? _parseMode;
-			
+
 			return parseModeString?.ToLowerInvariant() switch
 			{
 				"markdown" => ParseMode.Markdown,
@@ -830,9 +830,9 @@ namespace Deveel.Messaging
 				var photoArray = photoElement.EnumerateArray().ToArray();
 				if (photoArray.Length > 0)
 				{
-					var largestPhoto = photoArray.OrderByDescending(p => 
+					var largestPhoto = photoArray.OrderByDescending(p =>
 						p.TryGetProperty("file_size", out var sizeElement) ? sizeElement.GetInt32() : 0).First();
-					
+
 					if (largestPhoto.TryGetProperty("file_id", out var fileIdElement))
 					{
 						content = new MediaContent(MediaType.Image, fileIdElement.GetString() ?? "", "");
