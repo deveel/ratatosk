@@ -60,7 +60,7 @@ namespace Deveel.Messaging
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Should_ThrowArgumentNullException_When_ErrorCodeIsNullOrWhitespace(string? errorCode)
+        public void Should_ThrowArgumentException_When_ErrorCodeIsNullOrWhitespace(string? errorCode)
         {
             // Arrange
             var results = SampleResults();
@@ -105,7 +105,7 @@ namespace Deveel.Messaging
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Should_ThrowArgumentNullException_When_ErrorCodeIsNullOrWhitespace_TwoParam(string? errorCode)
+        public void Should_ThrowArgumentException_When_ErrorCodeIsNullOrWhitespace_TwoParam(string? errorCode)
         {
             // Arrange
             var results = SampleResults();

@@ -96,7 +96,7 @@ namespace Deveel.Messaging
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Should_ThrowArgumentNullException_When_ErrorCodeIsNullOrWhitespace_WithMessage(string? errorCode)
+        public void Should_ThrowArgumentException_When_ErrorCodeIsNullOrWhitespace_WithMessage(string? errorCode)
         {
             // Arrange
             // Act & Assert
@@ -144,7 +144,7 @@ namespace Deveel.Messaging
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Should_ThrowArgumentNullException_When_ErrorCodeIsNullOrWhitespace_WithInner(string? errorCode)
+        public void Should_ThrowArgumentException_When_ErrorCodeIsNullOrWhitespace_WithInner(string? errorCode)
         {
             // Arrange
             // Act & Assert
