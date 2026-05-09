@@ -10,7 +10,7 @@ assembly-file-versioning-scheme: MajorMinorPatch
 branches:
   main:
     regex: ^master$|^main$
-    label: alpha
+    tag: alpha
     increment: Patch
     prevent-increment:
       of-merged-branch: true
@@ -23,7 +23,7 @@ branches:
 
   feature:
     regex: ^features?[/-]
-    label: '{BranchName}'
+    tag: '{BranchName}'
     increment: Inherit
     prevent-increment:
       of-merged-branch: false
@@ -36,7 +36,7 @@ branches:
 
   pull-request:
     regex: ^(pull|pull-requests|pr)[/-]
-    label: PullRequest{Number}
+    tag: pr-{Number}
     increment: Inherit
     prevent-increment:
       of-merged-branch: true
@@ -49,7 +49,7 @@ branches:
 
   unknown:
     regex: ^(?!master$|main$|features?[/-].+|(pull|pull-requests|pr)[/-].+)(?<BranchName>.+)$
-    label: '{BranchName}'
+    tag: '{BranchName}'
     increment: Inherit
     prevent-increment:
       of-merged-branch: false

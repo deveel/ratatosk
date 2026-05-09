@@ -207,11 +207,18 @@ jobs:
           --coverage-output-format cobertura
           --coverage-output coverage.cobertura.xml
 
+      - name: List coverage files
+        if: inputs.collect-coverage == true
+        run: |
+          echo "Discovered coverage files:"
+          find . -type f -name 'coverage.cobertura.xml' | sort
+        shell: bash
+
       - name: Upload coverage to Codecov
         if: inputs.collect-coverage == true
         uses: codecov/codecov-action@v4
         with:
-          files: ./test/**/TestResults/coverage.cobertura.xml
+          files: ./test/**/TestResults/**/coverage.cobertura.xml,./**/coverage.cobertura.xml
           flags: ${{ matrix.dotnet-framework }},${{ matrix.os }}
           name: ${{ matrix.os }}-${{ matrix.dotnet-framework }}
           fail_ci_if_error: false
