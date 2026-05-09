@@ -66,7 +66,7 @@ namespace Deveel.Messaging
             // Perform authentication first
             var result = await AuthenticateAsync(cancellationToken);
             if (!result.Successful)
-                throw new ConnectorException(result.Error.ErrorCode, result.Error.ErrorMessage);
+                throw new ConnectorException(result.Error?.ErrorCode ?? ConnectorErrorCodes.AuthenticationFailed, result.Error?.ErrorMessage ?? "Authentication failed");
 
             // Extract configuration from connection settings with proper handling of missing values
             var projectIdParam = ConnectionSettings.GetParameter("ProjectId");
@@ -281,7 +281,7 @@ namespace Deveel.Messaging
                 // Validate body length for text content
                 if (message.Content is ITextContent textContent)
                 {
-                    if (textContent.Text.Length > FirebaseConnectorConstants.MaxBodyLength)
+                    if (!string.IsNullOrEmpty(textContent.Text) && textContent.Text.Length > FirebaseConnectorConstants.MaxBodyLength)
                     {
                         yield return new ValidationResult($"Message body cannot exceed {FirebaseConnectorConstants.MaxBodyLength} characters", new[] { "Content" });
                     }
@@ -711,7 +711,7 @@ namespace Deveel.Messaging
 
                     if (response.IsSuccess)
                     {
-                        result.AdditionalData["MessageId"] = response.MessageId;
+                        result.AdditionalData["MessageId"] = response.MessageId ?? string.Empty;
                     }
                     else
                     {
@@ -748,7 +748,7 @@ namespace Deveel.Messaging
 
                 if (response.IsSuccess)
                 {
-                    result.AdditionalData["MessageId"] = response.MessageId;
+                    result.AdditionalData["MessageId"] = response.MessageId ?? string.Empty;
                 }
                 else
                 {

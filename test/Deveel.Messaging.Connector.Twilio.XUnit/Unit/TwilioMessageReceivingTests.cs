@@ -20,7 +20,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio SMS webhook form data
         var webhookData = "MessageSid=SM1234567890&" +
@@ -70,7 +70,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio WhatsApp webhook
         var webhookData = "MessageSid=SM9876543210&" +
@@ -121,7 +121,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.MediaAttachments);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio MMS webhook with media
         var webhookData = "MessageSid=MM1234567890&" +
@@ -178,7 +178,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.HandleMessageState);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio status callback
         var statusData = "MessageSid=SM1234567890&" +
@@ -221,7 +221,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.HandleMessageState);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio failed status callback
         var statusData = "MessageSid=SM1234567890&" +
@@ -268,7 +268,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio webhook in JSON format (less common but supported by some configurations)
         var webhookJson = new
@@ -323,7 +323,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.HandleMessageState);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var statusData = $"MessageSid=SM1234567890&MessageStatus={twilioStatus}&To=%2B1987654321&From=%2B1234567890";
 
@@ -355,7 +355,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.BulkMessaging);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate batch of Twilio messages in JSON format
         var batchPayload = new
@@ -417,7 +417,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.Templates);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp template response
         var webhookData = "MessageSid=SM1234567890&" +
@@ -479,7 +479,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Invalid webhook data (missing required fields)
         var invalidWebhookData = "From=%2B1234567890&Body=Test";
@@ -495,6 +495,7 @@ public class TwilioMessageReceivingTests
         // Assert
         Assert.NotNull(result.Error.ErrorCode);
         Assert.NotEmpty(result.Error.ErrorCode);
+        Assert.NotNull(result.Error.ErrorMessage);
         Assert.Equal("MISSING_MESSAGE_SID", result.Error.ErrorCode);
         Assert.Contains("MessageSid", result.Error.ErrorMessage);
         Assert.Contains("required", result.Error.ErrorMessage);
@@ -512,7 +513,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages);
 
         var connector = new TwilioTestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var webhookData = "MessageSid=SM1234567890&From=%2B1234567890&To=%2B1987654321&Body=Test%20message";
 
@@ -561,17 +562,17 @@ public class TwilioMessageReceivingTests
         if (contentType == MessageSource.UrlPostContentType)
         {
             var source = MessageSource.UrlPost(content);
-            return connector.ReceiveMessagesAsync(source, CancellationToken.None);
+            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         }
         else if (contentType == MessageSource.JsonContentType)
         {
             var source = MessageSource.Json(content);
-            return connector.ReceiveMessagesAsync(source, CancellationToken.None);
+            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         }
         else
         {
             var source = MessageSource.Text(content);
-            return connector.ReceiveMessagesAsync(source, CancellationToken.None);
+            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         }
     }
 
@@ -583,17 +584,17 @@ public class TwilioMessageReceivingTests
         if (contentType == MessageSource.UrlPostContentType)
         {
             var source = MessageSource.UrlPost(content);
-            return connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         }
         else if (contentType == MessageSource.JsonContentType)
         {
             var source = MessageSource.Json(content);
-            return connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         }
         else
         {
             var source = MessageSource.Text(content);
-            return connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         }
     }
 

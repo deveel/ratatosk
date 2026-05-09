@@ -21,7 +21,7 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a valid Twilio WhatsApp webhook source
         var webhookData = "MessageSid=SM1234567890&From=whatsapp%3A%2B1234567890&To=whatsapp%3A%2B1987654321&Body=Test%20WhatsApp&MessageStatus=received&ProfileName=John%20Doe";
@@ -29,7 +29,7 @@ public class TwilioWhatsAppConnectorWebhookTests
 
         // Act
         // Assert
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid webhook data
         Assert.True(result.Successful);
@@ -53,7 +53,7 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a valid Twilio WhatsApp status callback source
         var statusData = "MessageSid=SM1234567890&MessageStatus=delivered&To=whatsapp%3A%2B1987654321&From=whatsapp%3A%2B1234567890&ProfileName=Customer";
@@ -61,7 +61,7 @@ public class TwilioWhatsAppConnectorWebhookTests
 
         // Act
         // Assert
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid status callback data
         Assert.True(result.Successful);
@@ -85,7 +85,7 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a WhatsApp JSON webhook payload
         var webhookJson = """
@@ -102,7 +102,7 @@ public class TwilioWhatsAppConnectorWebhookTests
         var source = MessageSource.Json(webhookJson);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -126,7 +126,7 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a WhatsApp JSON status callback payload
         var statusJson = """
@@ -142,7 +142,7 @@ public class TwilioWhatsAppConnectorWebhookTests
         var source = MessageSource.Json(statusJson);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -162,14 +162,14 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a WhatsApp button response webhook (empty body, button data)
         var webhookData = "MessageSid=SM1234567890&From=whatsapp%3A%2B1234567890&To=whatsapp%3A%2B1987654321&Body=&ButtonText=Yes&ButtonPayload=confirm_booking&MessageStatus=received";
         var source = MessageSource.UrlPost(webhookData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -198,14 +198,14 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create an unsupported source type (XML)
         var xmlData = "<message>Not supported</message>";
         var source = MessageSource.Xml(xmlData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -224,14 +224,14 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create an unsupported source type (XML)
         var xmlData = "<status>Not supported</status>";
         var source = MessageSource.Xml(xmlData);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -288,7 +288,7 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var webhookData = "MessageSid=SM1234567890&From=whatsapp%3A%2B1234567890&To=whatsapp%3A%2B1987654321&Body=Test&MessageStatus=received";
         var source = MessageSource.UrlPost(webhookData);
@@ -296,7 +296,7 @@ public class TwilioWhatsAppConnectorWebhookTests
         // Act
         // Assert
         await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.ReceiveMessagesAsync(source, CancellationToken.None));
+            connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public class TwilioWhatsAppConnectorWebhookTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var statusData = "MessageSid=SM1234567890&MessageStatus=delivered&To=whatsapp%3A%2B1987654321&From=whatsapp%3A%2B1234567890";
         var source = MessageSource.UrlPost(statusData);
@@ -317,6 +317,6 @@ public class TwilioWhatsAppConnectorWebhookTests
         // Act
         // Assert
         await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.ReceiveMessageStatusAsync(source, CancellationToken.None));
+            connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken));
     }
 }

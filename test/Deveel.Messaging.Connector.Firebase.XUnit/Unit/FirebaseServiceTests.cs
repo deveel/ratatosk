@@ -260,7 +260,7 @@ namespace Deveel.Messaging
             var service = new FirebaseService();
 
             // Act
-            var result = await service.TestConnectionAsync();
+            var result = await service.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -276,7 +276,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.SendAsync(message));
+                service.SendAsync(message, cancellationToken: TestContext.Current.CancellationToken));
 
             Assert.Contains("Firebase service is not initialized", exception.Message);
         }
@@ -291,7 +291,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.SendEachAsync(messages));
+                service.SendEachAsync(messages, cancellationToken: TestContext.Current.CancellationToken));
 
             Assert.Contains("Firebase service is not initialized", exception.Message);
         }
@@ -306,7 +306,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.SendMulticastAsync(multicastMessage));
+                service.SendMulticastAsync(multicastMessage, cancellationToken: TestContext.Current.CancellationToken));
 
             Assert.Contains("Firebase service is not initialized", exception.Message);
         }
@@ -327,7 +327,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.SendAsync(null!));
+                service.SendAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -341,7 +341,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.SendEachAsync(null!));
+                service.SendEachAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -355,7 +355,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.SendMulticastAsync(null!));
+                service.SendMulticastAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         #endregion
@@ -438,7 +438,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.SendEachAsync(messages));
+                service.SendEachAsync(messages, cancellationToken: TestContext.Current.CancellationToken));
             
             Assert.Contains("Firebase service is not initialized", exception.Message);
         }
@@ -457,7 +457,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var exception = Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.SendAsync(message));
+                service.SendAsync(message, cancellationToken: TestContext.Current.CancellationToken));
 
             // The exception should be about initialization, not parameters
             Assert.NotNull(exception);

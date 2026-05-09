@@ -62,8 +62,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            service.FetchPageAsync("test-page-id", CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.FetchPageAsync("test-page-id", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -79,8 +79,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            service.SendMessageAsync(request, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SendMessageAsync(request, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -92,8 +92,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
-            service.SendMessageAsync(null!, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            service.SendMessageAsync(null!, TestContext.Current.CancellationToken));
 
         // Act
         // Assert
@@ -102,8 +102,8 @@ public class FacebookServiceTests
             Recipient = "",
             Message = new FacebookMessage { Text = "Test" }
         };
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(emptyRecipientRequest, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SendMessageAsync(emptyRecipientRequest, TestContext.Current.CancellationToken));
 
         // Act
         // Assert
@@ -112,8 +112,8 @@ public class FacebookServiceTests
             Recipient = "user-123",
             Message = null!
         };
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
-            service.SendMessageAsync(nullMessageRequest, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            service.SendMessageAsync(nullMessageRequest, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -131,8 +131,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(longTextRequest, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SendMessageAsync(longTextRequest, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -145,22 +145,22 @@ public class FacebookServiceTests
         var request = new FacebookMessageRequest
         {
             Recipient = "user-123",
-            Message = new FacebookMessage 
-            { 
+            Message = new FacebookMessage
+            {
                 Text = "Choose an option:",
-                QuickReplies = Enumerable.Range(1, 14).Select(i => new FacebookQuickReply 
-                { 
-                    ContentType = "text", 
-                    Title = $"Option {i}", 
-                    Payload = $"OPTION_{i}" 
+                QuickReplies = Enumerable.Range(1, 14).Select(i => new FacebookQuickReply
+                {
+                    ContentType = "text",
+                    Title = $"Option {i}",
+                    Payload = $"OPTION_{i}"
                 }).ToList()
             }
         };
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(request, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SendMessageAsync(request, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -179,8 +179,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(request, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SendMessageAsync(request, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -199,8 +199,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(request, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SendMessageAsync(request, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -278,17 +278,17 @@ public class FacebookServiceTests
             Text = "Choose an option:",
             QuickReplies = new List<FacebookQuickReply>
             {
-                new FacebookQuickReply 
-                { 
-                    ContentType = "text", 
-                    Title = "Yes", 
+                new FacebookQuickReply
+                {
+                    ContentType = "text",
+                    Title = "Yes",
                     Payload = "YES_PAYLOAD",
                     ImageUrl = "https://example.com/yes.png"
                 },
-                new FacebookQuickReply 
-                { 
-                    ContentType = "text", 
-                    Title = "No", 
+                new FacebookQuickReply
+                {
+                    ContentType = "text",
+                    Title = "No",
                     Payload = "NO_PAYLOAD"
                 }
             }
@@ -304,7 +304,7 @@ public class FacebookServiceTests
         Assert.True(content.ContainsKey("text"));
         Assert.True(content.ContainsKey("quick_replies"));
         Assert.Equal("Choose an option:", content["text"]);
-        
+
         var quickReplies = content["quick_replies"] as object[];
         Assert.NotNull(quickReplies);
         Assert.Equal(2, quickReplies.Length);
@@ -319,8 +319,8 @@ public class FacebookServiceTests
             Attachment = new FacebookAttachment
             {
                 Type = "image",
-                Payload = new FacebookPayload 
-                { 
+                Payload = new FacebookPayload
+                {
                     Url = "https://example.com/image.jpg",
                     IsReusable = true
                 }
@@ -473,8 +473,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(request, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SendMessageAsync(request, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -492,8 +492,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(request, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SendMessageAsync(request, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -513,33 +513,38 @@ public class FacebookServiceTests
         // Assert
         // The validation method in FacebookService checks for text/attachment content before making API call
         // So whitespace text with no attachment should throw ArgumentException during validation
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(request, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SendMessageAsync(request, TestContext.Current.CancellationToken));
     }
 
     [Fact]
-    public async Task Should_ValidateCount_When_SendMessageAsyncWithRequestLevelQuickReplies()
+    public void Should_IgnoreRequestLevelQuickReplies_When_BuildFacebookMessagePayload()
     {
         // Arrange
-        var service = new FacebookService();
-        service.Initialize("EAATest123456789|ValidPageAccessToken");
-
+#pragma warning disable CS0618 // Intentionally exercising deprecated property for backward-compatibility behavior.
         var request = new FacebookMessageRequest
         {
             Recipient = "user-123",
-            Message = new FacebookMessage { Text = "Test" },
-            QuickReplies = Enumerable.Range(1, 14).Select(i => new FacebookQuickReply 
-            { 
-                ContentType = "text", 
-                Title = $"Option {i}", 
-                Payload = $"OPTION_{i}" 
+            Message = new FacebookMessage { Text = "Choose an option:" },
+            QuickReplies = Enumerable.Range(1, 14).Select(i => new FacebookQuickReply
+            {
+                ContentType = "text",
+                Title = $"Option {i}",
+                Payload = $"OPTION_{i}"
             }).ToList()
         };
+#pragma warning restore CS0618
 
         // Act
+        var result = FacebookService.BuildFacebookMessagePayload(request);
+
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.SendMessageAsync(request, CancellationToken.None));
+        var payload = result as Dictionary<string, object>;
+        Assert.NotNull(payload);
+
+        var message = payload["message"] as Dictionary<string, object>;
+        Assert.NotNull(message);
+        Assert.False(message.ContainsKey("quick_replies"));
     }
 
     #endregion
@@ -620,10 +625,10 @@ public class FacebookServiceTests
             Text = "Choose an option:",
             QuickReplies = new List<FacebookQuickReply>
             {
-                new FacebookQuickReply 
-                { 
-                    ContentType = "text", 
-                    Title = "Yes", 
+                new FacebookQuickReply
+                {
+                    ContentType = "text",
+                    Title = "Yes",
                     Payload = "YES_PAYLOAD"
                     // No ImageUrl specified
                 }
@@ -636,11 +641,11 @@ public class FacebookServiceTests
         // Assert
         var content = result as Dictionary<string, object>;
         Assert.NotNull(content);
-        
+
         var quickReplies = content["quick_replies"] as object[];
         Assert.NotNull(quickReplies);
         Assert.Single(quickReplies);
-        
+
         var quickReply = quickReplies[0] as Dictionary<string, object>;
         Assert.NotNull(quickReply);
         Assert.False(quickReply.ContainsKey("image_url"));
@@ -659,8 +664,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.FetchPageAsync(null!, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.FetchPageAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -672,8 +677,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.FetchPageAsync("", CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.FetchPageAsync("", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -685,8 +690,8 @@ public class FacebookServiceTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
-            service.FetchPageAsync("   ", CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.FetchPageAsync("   ", TestContext.Current.CancellationToken));
     }
 
     #endregion

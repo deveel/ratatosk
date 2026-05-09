@@ -103,7 +103,7 @@ namespace Deveel.Messaging
                 .SetParameter("ApiKey", "test-api-key-12345");
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -120,7 +120,7 @@ namespace Deveel.Messaging
             var connectionSettings = new ConnectionSettings();
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -137,7 +137,7 @@ namespace Deveel.Messaging
                 .SetParameter("Password", "testpass");
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -156,7 +156,7 @@ namespace Deveel.Messaging
                 .SetParameter("AuthToken", "auth-token-123");
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -185,7 +185,7 @@ namespace Deveel.Messaging
                 .SetParameter("TokenEndpoint", "https://oauth.example.com/token");
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful, $"Expected success but got: {result.ErrorCode} - {result.ErrorMessage}");
@@ -205,7 +205,7 @@ namespace Deveel.Messaging
                 // Missing ClientSecret and TokenEndpoint
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -223,7 +223,7 @@ namespace Deveel.Messaging
             var configuration = AuthenticationConfigurations.ApiKeyAuthentication();
 
             // Act
-            var result = await manager.AuthenticateAsync(connectionSettings, configuration);
+            var result = await manager.AuthenticateAsync(connectionSettings, configuration, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -242,7 +242,7 @@ namespace Deveel.Messaging
             var configuration = AuthenticationConfigurations.BasicAuthentication();
 
             // Act
-            var result = await manager.AuthenticateAsync(connectionSettings, configuration);
+            var result = await manager.AuthenticateAsync(connectionSettings, configuration, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -260,8 +260,8 @@ namespace Deveel.Messaging
             var configuration = AuthenticationConfigurations.ApiKeyAuthentication();
 
             // Act
-            var result1 = await manager.AuthenticateAsync(connectionSettings, configuration);
-            var result2 = await manager.AuthenticateAsync(connectionSettings, configuration);
+            var result1 = await manager.AuthenticateAsync(connectionSettings, configuration, TestContext.Current.CancellationToken);
+            var result2 = await manager.AuthenticateAsync(connectionSettings, configuration, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result1.IsSuccessful);
@@ -308,7 +308,7 @@ namespace Deveel.Messaging
                 .SetParameter("ApiKey", "cert-12345");
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -325,7 +325,7 @@ namespace Deveel.Messaging
             var connectionSettings = new ConnectionSettings(); // No certificate provided
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -345,7 +345,7 @@ namespace Deveel.Messaging
             var connector = new TestAuthConnector(schema, connectionSettings);
 
             // Act
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -363,7 +363,7 @@ namespace Deveel.Messaging
             var connector = new TestAuthConnector(schema, connectionSettings);
 
             // Act
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -392,7 +392,7 @@ namespace Deveel.Messaging
                 var authResult = await AuthenticateAsync(cancellationToken);
                 if (!authResult.Successful)
                 {
-                    throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error.ErrorCode} - {authResult.Error.ErrorMessage}");
+                    throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
                 }
             }
         }

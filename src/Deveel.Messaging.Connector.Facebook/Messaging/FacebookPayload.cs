@@ -10,7 +10,14 @@ namespace Deveel.Messaging
 	/// </summary>
 	public class FacebookPayload
     {
+		/// <summary>
+		/// Gets or sets the publicly reachable URL of the media attachment.
+		/// </summary>
         public string Url { get; set; } = string.Empty;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether the uploaded asset can be reused by Facebook.
+		/// </summary>
         public bool IsReusable { get; set; } = true;
     }
 }

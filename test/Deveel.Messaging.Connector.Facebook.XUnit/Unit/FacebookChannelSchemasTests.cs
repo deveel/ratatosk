@@ -89,6 +89,8 @@ public class FacebookChannelSchemasTests
         ChannelSchema ___)
     {
         // Arrange
+        _ = __;
+        _ = ___;
         var parameters = messengerSchema.Parameters.ToList();
         var contentTypes = messengerSchema.ContentTypes.ToList();
 

@@ -163,7 +163,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.SendAsync(messageWithoutTarget));
+                service.SendAsync(messageWithoutTarget, cancellationToken: TestContext.Current.CancellationToken));
 
             Assert.Contains("Firebase service is not initialized", exception.Message);
         }
@@ -182,7 +182,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.SendAsync(emptyMessage));
+                service.SendAsync(emptyMessage, cancellationToken: TestContext.Current.CancellationToken));
 
             Assert.Contains("Firebase service is not initialized", exception.Message);
         }
@@ -226,7 +226,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.SendEachAsync(emptyMessages));
+                service.SendEachAsync(emptyMessages, cancellationToken: TestContext.Current.CancellationToken));
 
             Assert.Contains("Firebase service is not initialized", exception.Message);
         }
@@ -281,7 +281,7 @@ namespace Deveel.Messaging
             var results = new List<bool>();
             for (int i = 0; i < 5; i++)
             {
-                results.Add(await service.TestConnectionAsync());
+                results.Add(await service.TestConnectionAsync(TestContext.Current.CancellationToken));
             }
 
             // Assert
@@ -326,7 +326,7 @@ namespace Deveel.Messaging
 
             // Act
             var tasks = messages.Select(message =>
-                Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync(message))
+                Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync(message, cancellationToken: TestContext.Current.CancellationToken))
             ).ToArray();
 
             var exceptions = await Task.WhenAll(tasks);
@@ -353,7 +353,7 @@ namespace Deveel.Messaging
 
             // Act
             var tasks = services.Select(service =>
-                Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync(testMessage))
+                Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync(testMessage, cancellationToken: TestContext.Current.CancellationToken))
             ).ToArray();
 
             var exceptions = await Task.WhenAll(tasks);

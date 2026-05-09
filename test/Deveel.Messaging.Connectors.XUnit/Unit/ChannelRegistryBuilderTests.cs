@@ -69,7 +69,7 @@ namespace Deveel.Messaging.XUnit {
 			var startAsync = hosted!.GetType().GetMethod("StartAsync");
 			var registry = provider.GetRequiredService<IChannelRegistry>() as DummyRegistry;
 			Assert.NotNull(startAsync);
-			await (Task)startAsync.Invoke(hosted, new object[] { CancellationToken.None })!;
+			await (Task)startAsync.Invoke(hosted, new object[] { TestContext.Current.CancellationToken })!;
 			Assert.True(registry!.Registered);
 		}
 

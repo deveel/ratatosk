@@ -93,7 +93,7 @@ public class TwilioSchemaCapabilityTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a valid Twilio webhook source
         var webhookData = "MessageSid=SM1234567890&From=%2B1234567890&To=%2B1987654321&Body=Test&MessageStatus=received";
@@ -101,7 +101,7 @@ public class TwilioSchemaCapabilityTests
 
         // Act
         // Assert
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         
         // The result may fail due to parsing (which is expected since we're using a mock),
         // but it should not fail due to capability validation
@@ -118,7 +118,7 @@ public class TwilioSchemaCapabilityTests
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
         
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a valid Twilio status callback source
         var statusData = "MessageSid=SM1234567890&MessageStatus=delivered&To=%2B1987654321&From=%2B1234567890";
@@ -126,7 +126,7 @@ public class TwilioSchemaCapabilityTests
 
         // Act
         // Assert
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid status callback data
         Assert.True(result.Successful);

@@ -19,7 +19,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook for single WhatsApp message
         var webhookJson = new
@@ -39,7 +39,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -63,7 +63,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook for batch of WhatsApp messages
         var webhookJson = new
@@ -80,7 +80,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -108,7 +108,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp button response (empty body with button data)
         var webhookJson = new
@@ -127,7 +127,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -146,7 +146,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON status callback for WhatsApp
         var statusJson = new
@@ -165,7 +165,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -187,7 +187,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp-specific "read" status
         var statusJson = new
@@ -203,7 +203,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -234,7 +234,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var statusJson = new
         {
@@ -248,7 +248,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -264,7 +264,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp media message
         var webhookJson = new
@@ -284,7 +284,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -303,7 +303,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp JSON webhook missing required MessageSid
         var invalidJson = new
@@ -318,7 +318,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -333,7 +333,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp JSON webhook missing From field
         var invalidJson = new
@@ -348,7 +348,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -363,14 +363,14 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Invalid JSON content
         var invalidJson = "{ \"MessageSid\": \"SM123\", \"From\": \"whatsapp:+123456789";
         var source = MessageSource.Json(invalidJson);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -385,14 +385,14 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Invalid JSON content
         var invalidJson = "{ \"MessageSid\": \"SM123\", \"MessageStatus\":";
         var source = MessageSource.Json(invalidJson);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -407,7 +407,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp template interaction response
         var webhookJson = new
@@ -428,7 +428,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -447,7 +447,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp message with Unicode content
         var unicodeMessage = "Hola! ?? Testing WhatsApp mojis and  special characters ????? ??";
@@ -465,7 +465,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -483,7 +483,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate comprehensive WhatsApp JSON status callback with all possible fields
         var statusJson = new
@@ -512,7 +512,7 @@ public class TwilioWhatsAppConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);

@@ -49,12 +49,12 @@ public class ChannelSchemaTests
 	[InlineData("TestProvider", "Email", "")]
 	[InlineData("TestProvider", "Email", "   ")]
 	public void Should_ThrowArgumentException_When_ConstructorWithInvalidParameters(
-		string channelProvider, string channelType, string version)
+		string? channelProvider, string? channelType, string? version)
 	{
 		// Act
 		// Assert
 		Assert.ThrowsAny<ArgumentException>(() => 
-			new ChannelSchema(channelProvider, channelType, version));
+			new ChannelSchema(channelProvider!, channelType!, version!));
 	}
 
 	[Fact]

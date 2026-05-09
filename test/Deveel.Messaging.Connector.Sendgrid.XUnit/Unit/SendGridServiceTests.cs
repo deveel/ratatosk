@@ -39,14 +39,14 @@ namespace Deveel.Messaging.Tests
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Should_ThrowArgumentException_When_InitializeWithInvalidApiKey(string invalidApiKey)
+        public void Should_ThrowArgumentException_When_InitializeWithInvalidApiKey(string? invalidApiKey)
         {
             // Arrange
             var service = new SendGridService();
 
             // Act
             // Assert
-            var exception = Assert.Throws<ArgumentException>(() => service.Initialize(invalidApiKey));
+            var exception = Assert.Throws<ArgumentException>(() => service.Initialize(invalidApiKey!));
             Assert.Equal("apiKey", exception.ParamName);
             Assert.Contains("API key cannot be null or empty", exception.Message);
         }
@@ -65,7 +65,7 @@ namespace Deveel.Messaging.Tests
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => service.SendEmailAsync(message, CancellationToken.None));
+                () => service.SendEmailAsync(message, TestContext.Current.CancellationToken));
             Assert.Equal("SendGrid client is not initialized", exception.Message);
         }
 
@@ -80,7 +80,7 @@ namespace Deveel.Messaging.Tests
             var message = new SendGridMessage();
 
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => service.SendEmailAsync(message, CancellationToken.None));
+                () => service.SendEmailAsync(message, TestContext.Current.CancellationToken));
             Assert.Equal("SendGrid client is not initialized", exception.Message);
         }
 
@@ -95,7 +95,7 @@ namespace Deveel.Messaging.Tests
             var service = new SendGridService();
 
             // Act
-            var result = await service.TestConnectionAsync(CancellationToken.None);
+            var result = await service.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -115,7 +115,7 @@ namespace Deveel.Messaging.Tests
             // Act
             // Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => service.GetEmailActivityAsync(messageId, CancellationToken.None));
+                () => service.GetEmailActivityAsync(messageId, TestContext.Current.CancellationToken));
             Assert.Equal("SendGrid client is not initialized", exception.Message);
         }
 
@@ -150,7 +150,7 @@ namespace Deveel.Messaging.Tests
                       .ReturnsAsync(expectedResponse);
 
             // Act
-            var result = await _service.SendEmailAsync(message, CancellationToken.None);
+            var result = await _service.SendEmailAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.NotNull(result);
@@ -195,7 +195,7 @@ namespace Deveel.Messaging.Tests
                 .ReturnsAsync(successResponse);
 
             // Act
-            var result = await _service.TestConnectionAsync(CancellationToken.None);
+            var result = await _service.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -222,7 +222,7 @@ namespace Deveel.Messaging.Tests
                 .ReturnsAsync(errorResponse);
 
             // Act
-            var result = await _service.TestConnectionAsync(CancellationToken.None);
+            var result = await _service.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -241,7 +241,7 @@ namespace Deveel.Messaging.Tests
                 .ThrowsAsync(new HttpRequestException("Network error"));
 
             // Act
-            var result = await _service.TestConnectionAsync(CancellationToken.None);
+            var result = await _service.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -288,7 +288,7 @@ namespace Deveel.Messaging.Tests
                 .ReturnsAsync(expectedResponse);
 
             // Act
-            var result = await _service.GetEmailActivityAsync(messageId, CancellationToken.None);
+            var result = await _service.GetEmailActivityAsync(messageId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.NotNull(result);
@@ -317,7 +317,7 @@ namespace Deveel.Messaging.Tests
                 .ReturnsAsync(notFoundResponse);
 
             // Act
-            var result = await _service.GetEmailActivityAsync(messageId, CancellationToken.None);
+            var result = await _service.GetEmailActivityAsync(messageId, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.NotNull(result);
@@ -343,7 +343,7 @@ namespace Deveel.Messaging.Tests
                 .ReturnsAsync(expectedResponse);
 
             // Act
-            await _service.GetEmailActivityAsync(messageId, CancellationToken.None);
+            await _service.GetEmailActivityAsync(messageId, TestContext.Current.CancellationToken);
 
             // Assert
             _mockClient.Verify(x => x.RequestAsync(
@@ -456,7 +456,7 @@ namespace Deveel.Messaging.Tests
             // Assert
             // The SendGrid client throws a NullReferenceException when passed a null message
             await Assert.ThrowsAsync<NullReferenceException>(
-                () => service.SendEmailAsync(null!, CancellationToken.None));
+                () => service.SendEmailAsync(null!, TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -469,7 +469,7 @@ namespace Deveel.Messaging.Tests
             // Act
             // Assert
             // We can't test the actual response without a real API key, but we can ensure it doesn't throw immediately
-            var exception = await Record.ExceptionAsync(() => service.GetEmailActivityAsync(null!, CancellationToken.None));
+            var exception = await Record.ExceptionAsync(() => service.GetEmailActivityAsync(null!, TestContext.Current.CancellationToken));
             
             // The exact behavior depends on the SendGrid client implementation
             // but we verify that our service doesn't add additional null checks that would change the behavior

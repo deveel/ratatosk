@@ -19,7 +19,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate SendGrid inbound parse webhook JSON
         var webhookJson = new
@@ -39,7 +39,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -68,7 +68,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate SendGrid processed event (email successfully processed)
         var webhookJson = new
@@ -88,7 +88,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -116,7 +116,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate SendGrid JSON webhook with multiple events
         var webhookJson = new[]
@@ -130,7 +130,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -158,7 +158,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate SendGrid JSON event webhook for delivered status
         var statusJson = new
@@ -176,7 +176,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -200,7 +200,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate SendGrid bounce event
         var statusJson = new
@@ -218,7 +218,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -253,7 +253,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var statusJson = new
         {
@@ -267,7 +267,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -284,7 +284,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate email with only plain text content
         var webhookJson = new
@@ -302,7 +302,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -321,7 +321,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate email without text or HTML content
         var webhookJson = new
@@ -338,7 +338,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -357,7 +357,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate non-inbound/non-processed events (should be filtered out)
         var webhookJson = new[]
@@ -371,7 +371,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful); // Should fail because no valid messages found
@@ -386,7 +386,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate array of status events
         var statusJson = new[]
@@ -399,7 +399,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -415,7 +415,7 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate webhook missing required from field
         var invalidJson = new
@@ -431,7 +431,7 @@ public class SendGridEmailConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -446,14 +446,14 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Invalid JSON content
         var invalidJson = "{ \"event\": \"inbound\", \"sg_message_id\": \"test123\", \"from\": \"test@exam";
         var source = MessageSource.Json(invalidJson);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -468,14 +468,14 @@ public class SendGridEmailConnectorJsonTests
         var schema = SendGridChannelSchemas.SendGridEmail;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Invalid JSON content
         var invalidJson = "{ \"event\": \"delivered\", \"sg_message_id\":";
         var source = MessageSource.Json(invalidJson);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);

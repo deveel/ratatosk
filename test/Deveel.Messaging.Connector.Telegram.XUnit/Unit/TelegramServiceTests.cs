@@ -174,7 +174,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetMeAsync());
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetMeAsync(TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -185,7 +185,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendTextMessageAsync(123456, "test message"));
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendTextMessageAsync(123456, "test message", cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -196,7 +196,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendPhotoAsync(123456, InputFile.FromUri("https://example.com/photo.jpg")));
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendPhotoAsync(123456, InputFile.FromUri("https://example.com/photo.jpg"), cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -207,7 +207,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendVideoAsync(123456, InputFile.FromUri("https://example.com/video.mp4")));
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendVideoAsync(123456, InputFile.FromUri("https://example.com/video.mp4"), cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -218,7 +218,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAudioAsync(123456, InputFile.FromUri("https://example.com/audio.mp3")));
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAudioAsync(123456, InputFile.FromUri("https://example.com/audio.mp3"), cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -229,7 +229,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendDocumentAsync(123456, InputFile.FromUri("https://example.com/document.pdf")));
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendDocumentAsync(123456, InputFile.FromUri("https://example.com/document.pdf"), cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -240,7 +240,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendLocationAsync(123456, 40.7128, -74.0060));
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendLocationAsync(123456, 40.7128, -74.0060, cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -251,7 +251,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SetWebhookAsync("https://example.com/webhook"));
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.SetWebhookAsync("https://example.com/webhook", cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -262,7 +262,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteWebhookAsync());
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteWebhookAsync(cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -273,7 +273,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetWebhookInfoAsync());
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetWebhookInfoAsync(TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -284,7 +284,7 @@ namespace Deveel.Messaging
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetUpdatesAsync());
+			await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetUpdatesAsync(cancellationToken: TestContext.Current.CancellationToken));
 		}
 
 		#endregion
@@ -307,7 +307,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.GetMeAsync();
+			var result = await service.GetMeAsync(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -334,7 +334,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.SendTextMessageAsync(123456, "Test message");
+			var result = await service.SendTextMessageAsync(123456, "Test message", cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -359,7 +359,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.SendTextMessageAsync(123456, "*Bold text*", Telegram.Bot.Types.Enums.ParseMode.Markdown);
+			var result = await service.SendTextMessageAsync(123456, "*Bold text*", Telegram.Bot.Types.Enums.ParseMode.Markdown, cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -385,7 +385,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.SendPhotoAsync(123456, photoFile);
+			var result = await service.SendPhotoAsync(123456, photoFile, cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -410,7 +410,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.GetWebhookInfoAsync();
+			var result = await service.GetWebhookInfoAsync(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -435,7 +435,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			await service.DeleteWebhookAsync();
+			await service.DeleteWebhookAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			mockBotClient.Verify(x => x.SendRequest<bool>(
@@ -459,7 +459,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.GetUpdatesAsync();
+			var result = await service.GetUpdatesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -490,7 +490,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.SendPhotoAsync(123456, photoFile);
+			var result = await service.SendPhotoAsync(123456, photoFile, cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -529,7 +529,8 @@ namespace Deveel.Messaging
 				parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
 				disableNotification: true,
 				replyToMessageId: 999,
-				replyMarkup: replyMarkup);
+				replyMarkup: replyMarkup,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -567,7 +568,8 @@ namespace Deveel.Messaging
 				123456,
 				photoFile,
 				caption: "Test *bold* caption",
-				parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown);
+				parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -594,7 +596,7 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-				() => service.SendPhotoAsync(123456, photoFile));
+				() => service.SendPhotoAsync(123456, photoFile, cancellationToken: TestContext.Current.CancellationToken));
 			Assert.Equal("Bot blocked by user", exception.Message);
 		}
 
@@ -619,7 +621,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.SendVideoAsync(123456, videoFile);
+			var result = await service.SendVideoAsync(123456, videoFile, cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -663,7 +665,8 @@ namespace Deveel.Messaging
 				supportsStreaming: true,
 				disableNotification: true,
 				replyToMessageId: 999,
-				replyMarkup: replyMarkup);
+				replyMarkup: replyMarkup,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -706,7 +709,8 @@ namespace Deveel.Messaging
 				123456,
 				videoFile,
 				caption: "Plain text caption",
-				supportsStreaming: true);
+				supportsStreaming: true,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -735,7 +739,7 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<ArgumentException>(
-				() => service.SendVideoAsync(123456, videoFile));
+				() => service.SendVideoAsync(123456, videoFile, cancellationToken: TestContext.Current.CancellationToken));
 			Assert.Equal("Invalid video format", exception.Message);
 		}
 
@@ -760,7 +764,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.SendAudioAsync(123456, audioFile);
+			var result = await service.SendAudioAsync(123456, audioFile, cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -803,7 +807,8 @@ namespace Deveel.Messaging
 				thumb: thumbnailFile,
 				disableNotification: true,
 				replyToMessageId: 999,
-				replyMarkup: replyMarkup);
+				replyMarkup: replyMarkup,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -847,7 +852,8 @@ namespace Deveel.Messaging
 				caption: "Plain text caption",
 				duration: 240,
 				performer: "Artist Name",
-				title: "Song Title");
+				title: "Song Title",
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -878,7 +884,7 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<TimeoutException>(
-				() => service.SendAudioAsync(123456, audioFile));
+				() => service.SendAudioAsync(123456, audioFile, cancellationToken: TestContext.Current.CancellationToken));
 			Assert.Equal("Request timeout", exception.Message);
 		}
 
@@ -903,7 +909,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.SendDocumentAsync(123456, documentFile);
+			var result = await service.SendDocumentAsync(123456, documentFile, cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -944,7 +950,8 @@ namespace Deveel.Messaging
 				disableContentTypeDetection: true,
 				disableNotification: true,
 				replyToMessageId: 999,
-				replyMarkup: replyMarkup);
+				replyMarkup: replyMarkup,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -984,7 +991,8 @@ namespace Deveel.Messaging
 				123456,
 				documentFile,
 				caption: "Plain text caption",
-				disableContentTypeDetection: true);
+				disableContentTypeDetection: true,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -1013,7 +1021,7 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-				() => service.SendDocumentAsync(123456, documentFile));
+				() => service.SendDocumentAsync(123456, documentFile, cancellationToken: TestContext.Current.CancellationToken));
 			Assert.Equal("Bot token invalid", exception.Message);
 		}
 
@@ -1037,7 +1045,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			var result = await service.SendLocationAsync(123456, 40.7128, -74.0060);
+			var result = await service.SendLocationAsync(123456, 40.7128, -74.0060, cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -1075,7 +1083,8 @@ namespace Deveel.Messaging
 				proximityAlertRadius: 500,
 				disableNotification: true,
 				replyToMessageId: 999,
-				replyMarkup: replyMarkup);
+				replyMarkup: replyMarkup,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -1111,7 +1120,7 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-				() => service.SendLocationAsync(123456, 40.7128, -74.0060));
+				() => service.SendLocationAsync(123456, 40.7128, -74.0060, cancellationToken: TestContext.Current.CancellationToken));
 			Assert.Equal("Invalid coordinates", exception.Message);
 		}
 
@@ -1134,7 +1143,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			await service.SetWebhookAsync("https://example.com/webhook");
+			await service.SetWebhookAsync("https://example.com/webhook", cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			mockBotClient.Verify(x => x.SendRequest<bool>(
@@ -1166,7 +1175,8 @@ namespace Deveel.Messaging
 				maxConnections: 50,
 				allowedUpdates: allowedUpdates,
 				dropPendingUpdates: true,
-				secretToken: "secret123");
+				secretToken: "secret123",
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			mockBotClient.Verify(x => x.SendRequest<bool>(
@@ -1196,7 +1206,7 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<ArgumentException>(
-				() => service.SetWebhookAsync("invalid-url"));
+				() => service.SetWebhookAsync("invalid-url", cancellationToken: TestContext.Current.CancellationToken));
 			Assert.Equal("Invalid webhook URL", exception.Message);
 		}
 
@@ -1215,7 +1225,7 @@ namespace Deveel.Messaging
 			service.Initialize(ValidToken);
 
 			// Act
-			await service.DeleteWebhookAsync(dropPendingUpdates: true);
+			await service.DeleteWebhookAsync(dropPendingUpdates: true, cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			mockBotClient.Verify(x => x.SendRequest<bool>(
@@ -1252,7 +1262,8 @@ namespace Deveel.Messaging
 				offset: 100,
 				limit: 50,
 				timeout: 30,
-				allowedUpdates: allowedUpdates);
+				allowedUpdates: allowedUpdates,
+				cancellationToken: TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(result);
@@ -1283,7 +1294,7 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<TaskCanceledException>(
-				() => service.GetUpdatesAsync());
+				() => service.GetUpdatesAsync(cancellationToken: TestContext.Current.CancellationToken));
 			Assert.Equal("Operation was cancelled", exception.Message);
 		}
 

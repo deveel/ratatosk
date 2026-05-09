@@ -37,7 +37,7 @@ namespace Deveel.Messaging
             var connector = new TestEmailConnector(schema, connectionSettings);
 
             // Act
-            var initResult = await connector.InitializeAsync(CancellationToken.None);
+            var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(initResult.Successful, $"Expected successful initialization but got: {initResult.Error?.ErrorCode} - {initResult.Error?.ErrorMessage}");
@@ -72,7 +72,7 @@ namespace Deveel.Messaging
             var connector = new TestSmsConnector(schema, connectionSettings);
 
             // Act
-            var initResult = await connector.InitializeAsync(CancellationToken.None);
+            var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(initResult.Successful, $"Expected successful initialization but got: {initResult.Error?.ErrorCode} - {initResult.Error?.ErrorMessage}");
@@ -107,7 +107,7 @@ namespace Deveel.Messaging
                 .SetParameter("ApiKey", "test-api-key-123");
 
             var apiKeyConnector = new TestFlexibleConnector(schema, apiKeySettings);
-            var apiKeyInitResult = await apiKeyConnector.InitializeAsync(CancellationToken.None);
+            var apiKeyInitResult = await apiKeyConnector.InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.True(apiKeyInitResult.Successful);
             Assert.Equal(AuthenticationType.ApiKey, apiKeyConnector.TestAuthenticationCredential!.AuthenticationType);
@@ -118,7 +118,7 @@ namespace Deveel.Messaging
                 .SetParameter("Password", "testpass");
 
             var basicConnector = new TestFlexibleConnector(schema, basicSettings);
-            var basicInitResult = await basicConnector.InitializeAsync(CancellationToken.None);
+            var basicInitResult = await basicConnector.InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.True(basicInitResult.Successful);
             Assert.Equal(AuthenticationType.Basic, basicConnector.TestAuthenticationCredential!.AuthenticationType);
@@ -138,7 +138,7 @@ namespace Deveel.Messaging
             var connector = new TestRefreshConnector(schema, connectionSettings);
 
             // Act
-            var initResult = await connector.InitializeAsync(CancellationToken.None);
+            var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             Assert.True(initResult.Successful);
 
             var initialCredential = connector.TestAuthenticationCredential;
@@ -192,7 +192,7 @@ namespace Deveel.Messaging
             await Task.Delay(10, cancellationToken); // Simulate sending
 
             var result = new SendResult(message.Id, $"email-{Guid.NewGuid()}");
-            result.AdditionalData["ApiKey"] = GetApiKey();
+            result.AdditionalData["ApiKey"] = GetApiKey() ?? string.Empty;
 
             return result;
         }
@@ -236,7 +236,7 @@ namespace Deveel.Messaging
             await Task.Delay(10, cancellationToken); // Simulate sending
 
             var result = new SendResult(message.Id, $"sms-{Guid.NewGuid()}");
-            result.AdditionalData["AuthHeader"] = GetAuthenticationHeader();
+            result.AdditionalData["AuthHeader"] = GetAuthenticationHeader() ?? string.Empty;
 
             return result;
         }
@@ -280,7 +280,7 @@ namespace Deveel.Messaging
             await Task.Delay(10, cancellationToken); // Simulate sending
 
             var result = new SendResult(message.Id, $"oauth-{Guid.NewGuid()}");
-            result.AdditionalData["AuthHeader"] = GetAuthenticationHeader();
+            result.AdditionalData["AuthHeader"] = GetAuthenticationHeader() ?? string.Empty;
 
             return result;
         }
@@ -320,7 +320,7 @@ namespace Deveel.Messaging
             await Task.Delay(10, cancellationToken); // Simulate sending
 
             var result = new SendResult(message.Id, $"flexible-{Guid.NewGuid()}");
-            result.AdditionalData["AuthType"] = AuthenticationCredential?.AuthenticationType.ToString();
+            result.AdditionalData["AuthType"] = AuthenticationCredential?.AuthenticationType.ToString() ?? string.Empty;
 
             return result;
         }

@@ -41,7 +41,7 @@ public class ChannelConnectorBaseTests
 		var connector = new TestConnector(schema);
 
 		// Act
-		var result = await connector.InitializeAsync(CancellationToken.None);
+		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(result.Successful);
@@ -54,10 +54,10 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
-		var result = await connector.InitializeAsync(CancellationToken.None);
+		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.False(result.Successful);
@@ -72,7 +72,7 @@ public class ChannelConnectorBaseTests
 		var connector = new TestConnector(schema) { ShouldFailInitialization = true };
 
 		// Act
-		var result = await connector.InitializeAsync(CancellationToken.None);
+		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.False(result.Successful);
@@ -87,7 +87,7 @@ public class ChannelConnectorBaseTests
 		var connector = new TestConnector(schema) { ShouldThrowOnInitialization = true };
 
 		// Act
-		var result = await connector.InitializeAsync(CancellationToken.None);
+		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.False(result.Successful);
@@ -105,7 +105,7 @@ public class ChannelConnectorBaseTests
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<InvalidOperationException>(() =>
-			connector.TestConnectionAsync(CancellationToken.None));
+			connector.TestConnectionAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -114,10 +114,10 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
-		var result = await connector.TestConnectionAsync(CancellationToken.None);
+		var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(result.Successful);
@@ -131,7 +131,7 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.WithCapabilities(ChannelCapability.ReceiveMessages); // No send capability
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var message = new Message
 		{
 			Id = Guid.NewGuid().ToString(),
@@ -141,7 +141,7 @@ public class ChannelConnectorBaseTests
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.SendMessageAsync(message, CancellationToken.None));
+			connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -150,12 +150,12 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<ArgumentNullException>(() =>
-			connector.SendMessageAsync(null!, CancellationToken.None));
+			connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -164,7 +164,7 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var message = new Message
 		{
 			Id = Guid.NewGuid().ToString(),
@@ -172,7 +172,7 @@ public class ChannelConnectorBaseTests
 		};
 
 		// Act
-		var result = await connector.SendMessageAsync(message, CancellationToken.None);
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(result.Successful);
@@ -186,7 +186,7 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var batch = new MessageBatch {
 			Id = Guid.NewGuid().ToString(),
 			Messages = new List<IMessage> { new Message { Id = Guid.NewGuid().ToString() } }
@@ -195,7 +195,7 @@ public class ChannelConnectorBaseTests
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.SendBatchAsync(batch, CancellationToken.None));
+			connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -205,7 +205,7 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.WithCapability(ChannelCapability.BulkMessaging);
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var batch = new MessageBatch {
 			Id = Guid.NewGuid().ToString(),
 			Messages = new List<IMessage> {
@@ -217,7 +217,7 @@ public class ChannelConnectorBaseTests
 		};
 
 		// Act
-		var result = await connector.SendBatchAsync(batch, CancellationToken.None);
+		var result = await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.False(result.Successful);
@@ -230,12 +230,12 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.GetMessageStatusAsync("test-message", CancellationToken.None));
+			connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -245,12 +245,12 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.WithCapability(ChannelCapability.MessageStatusQuery);
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<ArgumentNullException>(() =>
-			connector.GetMessageStatusAsync(null!, CancellationToken.None));
+			connector.GetMessageStatusAsync(null!, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -268,7 +268,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		var results = new List<ValidationResult>();
-		await foreach (var result in connector.ValidateMessageAsync(message, CancellationToken.None))
+		await foreach (var result in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
 		{
 			results.Add(result);
 		}
@@ -284,12 +284,12 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.ReceiveMessageStatusAsync(MessageSource.Text("test content"), CancellationToken.None));
+			connector.ReceiveMessageStatusAsync(MessageSource.Text("test content"), TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -298,12 +298,12 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.ReceiveMessagesAsync(MessageSource.Text("test content"), CancellationToken.None));
+			connector.ReceiveMessagesAsync(MessageSource.Text("test content"), TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -316,7 +316,7 @@ public class ChannelConnectorBaseTests
 		// Act
 		// Assert
 		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.GetHealthAsync(CancellationToken.None));
+			connector.GetHealthAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -326,10 +326,10 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.WithCapability(ChannelCapability.HealthCheck);
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
-		var result = await connector.GetHealthAsync(CancellationToken.None);
+		var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(result.Successful);
@@ -345,10 +345,10 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.WithCapability(ChannelCapability.HealthCheck);
 		var connector = new TestConnector(schema) { ShouldFailInitialization = true };
-		await connector.InitializeAsync(CancellationToken.None); // This will put it in Error state
+		await connector.InitializeAsync(TestContext.Current.CancellationToken); // This will put it in Error state
 
 		// Act
-		var result = await connector.GetHealthAsync(CancellationToken.None);
+		var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(result.Successful);
@@ -364,10 +364,10 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Act
-		await connector.ShutdownAsync(CancellationToken.None);
+		await connector.ShutdownAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.Equal(ConnectorState.Shutdown, connector.State);
@@ -379,11 +379,11 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
-		await connector.ShutdownAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		await connector.ShutdownAsync(TestContext.Current.CancellationToken);
 
 		// Act
-		await connector.ShutdownAsync(CancellationToken.None);
+		await connector.ShutdownAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.Equal(ConnectorState.Shutdown, connector.State);
@@ -410,13 +410,13 @@ public class ChannelConnectorBaseTests
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
 		{
 			await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				connector.TestConnectionAsync(CancellationToken.None));
+				connector.TestConnectionAsync(TestContext.Current.CancellationToken));
 		}
 
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
 		{
 			await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				connector.SendMessageAsync(message, CancellationToken.None));
+				connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
 		}
 	}
 
@@ -428,7 +428,7 @@ public class ChannelConnectorBaseTests
 		var connector = new TestConnector(schema);
 
 		// Act
-		var result = await connector.GetStatusAsync(CancellationToken.None);
+		var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(result.Successful);
@@ -442,7 +442,7 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
 			.AddContentType(MessageContentType.Html); // Only supports HTML, not PlainText
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var message = new Message
 		{
 			Id = Guid.NewGuid().ToString(),
@@ -450,7 +450,7 @@ public class ChannelConnectorBaseTests
 		};
 
 		// Act
-		var result = await connector.SendMessageAsync(message, CancellationToken.None);
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.False(result.Successful);
@@ -466,7 +466,7 @@ public class ChannelConnectorBaseTests
 			.WithCapability(ChannelCapability.BulkMessaging)
 			.AddContentType(MessageContentType.Html); // Only supports HTML
 		var connector = new TestConnector(schema);
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		var batch = new MessageBatch {
 			Id = Guid.NewGuid().ToString(),
@@ -479,7 +479,7 @@ public class ChannelConnectorBaseTests
 		};
 
 		// Act
-		var result = await connector.SendBatchAsync(batch, CancellationToken.None);
+		var result = await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.False(result.Successful);
@@ -502,7 +502,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		var results = new List<ValidationResult>();
-		await foreach (var result in connector.ValidateMessageAsync(message, CancellationToken.None))
+		await foreach (var result in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
 		{
 			results.Add(result);
 		}
@@ -527,7 +527,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		var results = new List<ValidationResult>();
-		await foreach (var result in connector.ValidateMessageAsync(message, CancellationToken.None))
+		await foreach (var result in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
 		{
 			results.Add(result);
 		}
@@ -555,7 +555,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		var results = new List<ValidationResult>();
-		await foreach (var result in connector.ValidateMessageAsync(message, CancellationToken.None))
+		await foreach (var result in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
 		{
 			results.Add(result);
 		}
@@ -641,7 +641,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		var results = new List<ValidationResult>();
-		await foreach (var result in connector.ValidateMessageAsync(validMessage, CancellationToken.None))
+		await foreach (var result in connector.ValidateMessageAsync(validMessage, TestContext.Current.CancellationToken))
 		{
 			results.Add(result);
 		}

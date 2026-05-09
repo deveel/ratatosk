@@ -30,7 +30,7 @@ public class MessageReceivingIntegrationTests
             });
 
         var connector = new IntegrationTestConnector(schema, processedMessages);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate receiving multiple messages
         var webhookMessages = new[]
@@ -45,7 +45,7 @@ public class MessageReceivingIntegrationTests
         foreach (var webhookData in webhookMessages)
         {
             var source = MessageSource.UrlPost(webhookData);
-            var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+            var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
             results.Add(result);
         }
 
@@ -75,7 +75,7 @@ public class MessageReceivingIntegrationTests
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new StatusTrackingConnector(schema, messageStatuses);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var messageId = "SM1234567890";
 
@@ -83,7 +83,7 @@ public class MessageReceivingIntegrationTests
         // 1. Receive initial message
         var messageWebhook = $"MessageSid={messageId}&From=%2B1234567890&To=%2B1987654321&Body=Test%20message&MessageStatus=received";
         var messageSource = MessageSource.UrlPost(messageWebhook);
-        var receiveResult = await connector.ReceiveMessagesAsync(messageSource, CancellationToken.None);
+        var receiveResult = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // 2. Receive status updates
         var statusUpdates = new[]
@@ -96,7 +96,7 @@ public class MessageReceivingIntegrationTests
         foreach (var statusUpdate in statusUpdates)
         {
             var statusSource = MessageSource.UrlPost(statusUpdate);
-            await connector.ReceiveMessageStatusAsync(statusSource, CancellationToken.None);
+            await connector.ReceiveMessageStatusAsync(statusSource, TestContext.Current.CancellationToken);
         }
 
         // Assert
@@ -123,7 +123,7 @@ public class MessageReceivingIntegrationTests
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new IntegrationTestConnector(schema, processedMessages);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a large batch of messages
         var batchSize = 100;
@@ -142,7 +142,7 @@ public class MessageReceivingIntegrationTests
         var startTime = DateTime.UtcNow;
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         var endTime = DateTime.UtcNow;
         var processingTime = endTime - startTime;
@@ -173,7 +173,7 @@ public class MessageReceivingIntegrationTests
             });
 
         var connector = new ValidationTestConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Test cases: valid and invalid messages
         var testCases = new[]
@@ -193,7 +193,7 @@ public class MessageReceivingIntegrationTests
         foreach (var testCase in testCases)
         {
             var source = MessageSource.UrlPost(testCase.Data);
-            var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+            var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
             if (testCase.ShouldSucceed)
             {
@@ -216,7 +216,7 @@ public class MessageReceivingIntegrationTests
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new FilteringTestConnector(schema, filteredMessages);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Messages with different content types
         var messages = new[]
@@ -231,13 +231,13 @@ public class MessageReceivingIntegrationTests
         foreach (var messageData in messages)
         {
             var source = MessageSource.UrlPost(messageData);
-            await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+            await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         }
 
         // Assert
         Assert.Equal(3, filteredMessages.Count);
-        Assert.DoesNotContain(filteredMessages, m => ((ITextContent)m.Content!).Text.Contains("SPAM"));
-        Assert.Contains(filteredMessages, m => ((ITextContent)m.Content!).Text.Contains("URGENT"));
+        Assert.DoesNotContain(filteredMessages, m => m.Content is ITextContent text && !string.IsNullOrEmpty(text.Text) && text.Text.Contains("SPAM"));
+        Assert.Contains(filteredMessages, m => m.Content is ITextContent text && !string.IsNullOrEmpty(text.Text) && text.Text.Contains("URGENT"));
     }
 
     [Fact]
@@ -250,13 +250,13 @@ public class MessageReceivingIntegrationTests
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new RetryTestConnector(schema, () => ++attemptCount);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var messageData = "MessageSid=SM1111111111&From=%2B1234567890&To=%2B1987654321&Body=Test%20message";
         var source = MessageSource.UrlPost(messageData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -274,13 +274,13 @@ public class MessageReceivingIntegrationTests
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new TransformationTestConnector(schema, transformedMessages);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var messageData = "MessageSid=SM1111111111&From=%2B1234567890&To=%2B1987654321&Body=hello%20world%21";
         var source = MessageSource.UrlPost(messageData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -308,7 +308,7 @@ public class MessageReceivingIntegrationTests
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new ConcurrentTestConnector(schema, receivedMessages);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var messageCount = 50;
         var semaphore = new SemaphoreSlim(10); // Limit concurrency
@@ -316,12 +316,12 @@ public class MessageReceivingIntegrationTests
         // Act
         var tasks = Enumerable.Range(1, messageCount).Select(async i =>
         {
-            await semaphore.WaitAsync();
+            await semaphore.WaitAsync(TestContext.Current.CancellationToken);
             try
             {
                 var messageData = $"MessageSid=SM{i:D10}&From=%2B123456789{i % 10}&To=%2B1987654321&Body=Concurrent%20message%20{i}";
                 var source = MessageSource.UrlPost(messageData);
-                return await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+                return await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
             } finally
             {
                 semaphore.Release();

@@ -147,7 +147,7 @@ namespace Deveel.Messaging.XUnit
 				s.GetType().Name.Contains("ConnectorRegistrationService"));
 
 			// Act
-			await registrationService!.StartAsync(CancellationToken.None);
+			await registrationService!.StartAsync(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(registry.IsConnectorRegistered<TestConnector>());
@@ -171,13 +171,13 @@ namespace Deveel.Messaging.XUnit
 				s.GetType().Name.Contains("ConnectorRegistrationService"));
 
 			// Act
-			await registrationService!.StartAsync(CancellationToken.None);
+			await registrationService!.StartAsync(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(registry.IsConnectorRegistered<TestConnector>());
 
 			// Test that we can create a connector (which would use the factory)
-			var connector = await registry.CreateConnectorAsync<TestConnector>();
+			var connector = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
 			Assert.NotNull(connector);
 		}
 
@@ -197,7 +197,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			await registrationService!.StopAsync(CancellationToken.None);
+			await registrationService!.StopAsync(TestContext.Current.CancellationToken);
 		}
 
 		[Fact]
@@ -232,7 +232,7 @@ namespace Deveel.Messaging.XUnit
 				s.GetType().Name.Contains("ConnectorRegistrationService"));
 
 			// Act
-			await registrationService!.StartAsync(CancellationToken.None);
+			await registrationService!.StartAsync(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(registry.IsConnectorRegistered<TestConnector>());

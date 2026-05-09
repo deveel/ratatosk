@@ -30,7 +30,7 @@ namespace Deveel.Messaging
             var message = CreateDetailedDeviceTokenMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -63,7 +63,7 @@ namespace Deveel.Messaging
             var message = CreateDetailedTopicMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -90,7 +90,7 @@ namespace Deveel.Messaging
             var message = CreateRichNotificationMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -120,7 +120,7 @@ namespace Deveel.Messaging
             var message = CreateDataOnlyMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -142,7 +142,7 @@ namespace Deveel.Messaging
             var message = CreateMessageWithInvalidReceiver();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful);
@@ -170,7 +170,7 @@ namespace Deveel.Messaging
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
             
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
             
             var batch = CreateSimpleMessageBatch();
@@ -178,7 +178,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             await Assert.ThrowsAsync<NotSupportedException>(() => 
-                connector.SendBatchAsync(batch, CancellationToken.None));
+                connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -190,7 +190,7 @@ namespace Deveel.Messaging
             var batch = CreateEmptyMessageBatch();
 
             // Act
-            var result = await connector.SendBatchAsync(batch, CancellationToken.None);
+            var result = await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -211,7 +211,7 @@ namespace Deveel.Messaging
             var message = CreateSimpleDeviceTokenMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful);
@@ -228,7 +228,7 @@ namespace Deveel.Messaging
             var batch = CreateSimpleMessageBatch();
 
             // Act
-            var result = await connector.SendBatchAsync(batch, CancellationToken.None);
+            var result = await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful);
@@ -249,7 +249,7 @@ namespace Deveel.Messaging
             // Act
             // Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                connector.SendMessageAsync(message, CancellationToken.None));
+                connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
         }
 
         #endregion
@@ -265,7 +265,7 @@ namespace Deveel.Messaging
             var message = CreateAndroidSpecificMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -296,7 +296,7 @@ namespace Deveel.Messaging
             var message = CreateiOSSpecificMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -328,7 +328,7 @@ namespace Deveel.Messaging
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
             
             return connector;

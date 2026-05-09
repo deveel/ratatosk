@@ -43,21 +43,21 @@ public class FacebookMessengerConnectorIntegrationTests
         // Assert
 
         // 1. Initialize
-        var initResult = await connector.InitializeAsync(CancellationToken.None);
+        var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
         Assert.True(initResult.Successful);
         Assert.Equal(ConnectorState.Ready, connector.State);
 
         // 2. Test connection
-        var connectionResult = await connector.TestConnectionAsync(CancellationToken.None);
+        var connectionResult = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
         Assert.True(connectionResult.Successful);
 
         // 3. Get status
-        var statusResult = await connector.GetStatusAsync(CancellationToken.None);
+        var statusResult = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
         Assert.True(statusResult.Successful);
         Assert.Contains("Facebook Messenger Connector", statusResult.Value!.Description);
 
         // 4. Get health
-        var healthResult = await connector.GetHealthAsync(CancellationToken.None);
+        var healthResult = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
         Assert.True(healthResult.Successful);
         Assert.True(healthResult.Value!.IsHealthy);
 
@@ -69,13 +69,13 @@ public class FacebookMessengerConnectorIntegrationTests
             Content = new TextContent("Hello from integration test!")
         };
 
-        var sendResult = await connector.SendMessageAsync(message, CancellationToken.None);
+        var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
         Assert.True(sendResult.Successful);
         Assert.Equal("test-msg-1", sendResult.Value!.MessageId);
         Assert.Equal("fb-msg-123", sendResult.Value.RemoteMessageId);
 
         // 6. Shutdown
-        await connector.ShutdownAsync(CancellationToken.None);
+        await connector.ShutdownAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ConnectorState.Shutdown, connector.State);
     }
 
@@ -89,7 +89,7 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create Facebook webhook JSON payload
         var webhookPayload = new
@@ -123,7 +123,7 @@ public class FacebookMessengerConnectorIntegrationTests
         var messageSource = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(messageSource, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -150,7 +150,7 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create Facebook webhook JSON payload with media attachment
         var webhookPayload = new
@@ -194,7 +194,7 @@ public class FacebookMessengerConnectorIntegrationTests
         var messageSource = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(messageSource, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -221,7 +221,7 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create invalid webhook payload (missing required fields)
         var invalidPayload = new { invalid = "data" };
@@ -229,7 +229,7 @@ public class FacebookMessengerConnectorIntegrationTests
         var messageSource = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(messageSource, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -246,12 +246,12 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var messageSource = MessageSource.UrlPost("invalid=form&data=true");
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(messageSource, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -275,7 +275,7 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var quickRepliesJson = JsonSerializer.Serialize(new[]
         {
@@ -296,7 +296,7 @@ public class FacebookMessengerConnectorIntegrationTests
         };
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -320,7 +320,7 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create message with text exceeding Facebook's limit (2000 characters)
         var longText = new string('A', 2001);
@@ -333,7 +333,7 @@ public class FacebookMessengerConnectorIntegrationTests
 
         // Act
         var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
-        await foreach (var result in connector.ValidateMessageAsync(message, CancellationToken.None))
+        await foreach (var result in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
         {
             if (result != System.ComponentModel.DataAnnotations.ValidationResult.Success)
                 validationResults.Add(result);
@@ -356,10 +356,10 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var healthResult = await connector.GetHealthAsync(CancellationToken.None);
+        var healthResult = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(healthResult.Successful); // Health check itself should succeed
@@ -388,7 +388,7 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var messageCount = 50;
         var semaphore = new SemaphoreSlim(10); // Limit concurrency to simulate real-world conditions
@@ -396,7 +396,7 @@ public class FacebookMessengerConnectorIntegrationTests
         // Act
         var tasks = Enumerable.Range(1, messageCount).Select(async i =>
         {
-            await semaphore.WaitAsync();
+            await semaphore.WaitAsync(TestContext.Current.CancellationToken);
             try
             {
                 var message = new Message
@@ -406,7 +406,7 @@ public class FacebookMessengerConnectorIntegrationTests
                     Content = new TextContent($"Concurrent message {i}")
                 };
 
-                return await connector.SendMessageAsync(message, CancellationToken.None);
+                return await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
             }
             finally
             {
@@ -442,7 +442,7 @@ public class FacebookMessengerConnectorIntegrationTests
             .SetParameter("PageId", "test-page-id");
 
         var connector = new FacebookMessengerConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message
         {
@@ -452,7 +452,7 @@ public class FacebookMessengerConnectorIntegrationTests
         };
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
