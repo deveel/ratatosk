@@ -3,69 +3,71 @@ tag-prefix: '[vV]?'
 commit-message-incrementing: Enabled
 assembly-versioning-scheme: MajorMinorPatch
 assembly-file-versioning-scheme: MajorMinorPatch
+
+# GitHub Flow:
+# - `main` is the only long-lived branch and publishes preview packages
+# - stable packages are produced only from version tags on commits already in `main`
+# NOTE: this file is authored for GitVersion 5.x syntax (eg `tag`,
+# `prevent-increment-of-merged-branch-version`). Keep CI and MSBuild GitVersion
+# versions aligned before introducing 6.x-style keys.
 branches:
   main:
     regex: ^master$|^main$
-    tag: ''
+    tag: alpha
     increment: Patch
     prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     source-branches: []
     tracks-release-branches: false
     is-release-branch: false
-    is-mainline: true
     pre-release-weight: 55000
-  release:
-    regex: ^releases?[/-]
-    tag: beta
-    increment: Patch
-    prevent-increment-of-merged-branch-version: true
+
+  feature:
+    regex: ^features?[/-]
+    tag: '{BranchName}'
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: false
     track-merge-target: false
     source-branches: [ main ]
     tracks-release-branches: false
-    is-release-branch: true
-    is-mainline: false
-    pre-release-weight: 30000
-  feature:
-    regex: ^features?[/-]
-    tag: useBranchName
-    increment: Inherit
-    prevent-increment-of-merged-branch-version: false
-    track-merge-target: false
-    source-branches: [ main, release ]
-    tracks-release-branches: false
     is-release-branch: false
-    is-mainline: false
     pre-release-weight: 30000
+
   pull-request:
     regex: ^(pull|pull-requests|pr)[/-]
-    tag: PullRequest
+    tag: pr
     increment: Inherit
     prevent-increment-of-merged-branch-version: true
-    tag-number-pattern: '[/-](?<number>\d+)[-/]'
     track-merge-target: false
-    source-branches: [ main, release, feature ]
+    source-branches: [ main, feature ]
     tracks-release-branches: false
     is-release-branch: false
-    is-mainline: false
     pre-release-weight: 30000
+
   unknown:
-    regex: ^(?!master$|main$|releases?[/-].+|features?[/-].+|(pull|pull-requests|pr)[/-].+)(?<BranchName>.+)$
-    tag: useBranchName
+    regex: ^(?!master$|main$|features?[/-].+|(pull|pull-requests|pr)[/-].+)(?<BranchName>.+)$
+    tag: '{BranchName}'
     increment: Inherit
     prevent-increment-of-merged-branch-version: false
     track-merge-target: false
-    source-branches: [ main, release, feature, pull-request ]
+    source-branches: [ main, feature, pull-request ]
     tracks-release-branches: false
     is-release-branch: false
-    is-mainline: false
     pre-release-weight: 30000
+
   develop:
     regex: ^$
+
+  release:
+    regex: ^$
+
   hotfix:
     regex: ^$
+
   support:
     regex: ^$
+
 ignore:
   sha: []
+
 merge-message-formats: {}

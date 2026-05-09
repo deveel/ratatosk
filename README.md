@@ -9,6 +9,8 @@ Deveel Messaging is a .NET framework that gives you one consistent way to work w
 
 Instead of coding directly against each provider SDK, you build an `IMessage`, send it through an `IChannelConnector`, and handle a predictable `ConnectorResult<T>`. That keeps your app code stable even if providers change.
 
+The repository currently targets `.NET 8`, `.NET 9`, and `.NET 10`.
+
 ## What this project includes
 
 - A shared message model (`IMessage`, endpoints, content types, properties)
@@ -66,7 +68,7 @@ Strengthens quality gates, release automation, observability, and docs completen
 - [x] **Test coverage target (>= 80%)** - Enforce minimum line coverage per library in CI.
 - [x] **CI/CD pipeline hardening** - Automate build, test, compatibility checks, signing, and NuGet publishing from release tags.
 - [x] **Structured logging improvements** - Standardize event IDs, scopes, and `LoggerMessage` patterns across connectors.
-- [ ] **Documentation completeness** - Complete XML API docs and connector guides with consistent coverage.
+- [x] **Documentation completeness** - Complete XML API docs and connector guides with consistent coverage.
 
 ### v0.5.0 - Inbound Messaging
 
@@ -113,6 +115,16 @@ Start from the docs home and follow the path that best matches what you are buil
 - **Validation-first integration** - Model endpoints, apply validation rules, and extend validation when channel-specific constraints grow.
   ([Endpoint types](docs/endpointtype-usage.md) -> [Message validation examples](docs/validatemessage-usage-examples.md) -> [Validation extensions](docs/channelschema-validation-extension-usage.md))
 
+## Versioning and Releases
+
+The project uses a simple GitHub Flow-based release model:
+
+- `main` is the only long-lived branch
+- merges to `main` produce preview packages with an `-alpha.N` suffix
+- stable packages are produced only from `vX.Y.Z` tags on commits already in `main`
+
+Package versions are calculated automatically with GitVersion, so versions should not be edited manually in project files.
+
 ## Contributing
 
 Contributions are welcome and appreciated.
@@ -122,6 +134,8 @@ If you want to contribute:
 - Open an issue to discuss bugs, features, or design changes
 - Check the existing documentation and package boundaries before proposing API changes
 - Submit focused pull requests with tests when behavior changes
+
+The contribution workflow follows GitHub Flow: create a short-lived branch from `main`, open a pull request, and let CI produce preview packages from `main` after merge.
 
 For local setup, coding conventions, and the contribution workflow, read [CONTRIBUTING.md](CONTRIBUTING.md).
 

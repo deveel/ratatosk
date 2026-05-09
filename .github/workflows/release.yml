@@ -126,10 +126,10 @@ jobs:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
   create-tag:
-    needs: [validate-release, check-tag-exists, build]
+    needs: [validate-release, check-tag-exists, build, publish]
     name: "Create Tag"
     runs-on: ubuntu-latest
-    if: needs.validate-release.outputs.is-manual == 'true' && needs.check-tag-exists.outputs.tag-exists == 'false'
+    if: needs.validate-release.outputs.is-manual == 'true' && needs.check-tag-exists.outputs.tag-exists == 'false' && needs.publish.result == 'success'
 
     steps:
     - name: Checkout
