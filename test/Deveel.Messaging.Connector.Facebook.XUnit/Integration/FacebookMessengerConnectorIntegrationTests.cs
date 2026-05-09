@@ -205,7 +205,7 @@ public class FacebookMessengerConnectorIntegrationTests
         Assert.Equal("fb-msg-media-123", receivedMessage.Id);
         Assert.Equal("user-789", receivedMessage.Sender!.Address);
         Assert.Equal(MessageContentType.Media, receivedMessage.Content!.ContentType);
-        
+
         var mediaContent = (IMediaContent)receivedMessage.Content;
         Assert.Equal("https://example.com/image.jpg", mediaContent.FileUrl);
         Assert.Equal(MediaType.Image, mediaContent.MediaType);
@@ -366,7 +366,7 @@ public class FacebookMessengerConnectorIntegrationTests
         Assert.NotNull(healthResult.Value);
         Assert.False(healthResult.Value.IsHealthy); // But connector should be unhealthy
         Assert.Single(healthResult.Value.Issues);
-        Assert.Contains("Connection test failed", healthResult.Value.Issues.First());
+        Assert.Contains("Network error", healthResult.Value.Issues.First());
     }
 
     [Fact]
@@ -377,10 +377,10 @@ public class FacebookMessengerConnectorIntegrationTests
         var messageCounter = 0;
 
         mockFacebookService.Setup(x => x.SendMessageAsync(It.IsAny<FacebookMessageRequest>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync(() => new FacebookMessageResponse 
-                          { 
-                              MessageId = $"fb-msg-{Interlocked.Increment(ref messageCounter)}", 
-                              RecipientId = "user-123" 
+                          .ReturnsAsync(() => new FacebookMessageResponse
+                          {
+                              MessageId = $"fb-msg-{Interlocked.Increment(ref messageCounter)}",
+                              RecipientId = "user-123"
                           });
 
         var connectionSettings = new ConnectionSettings()
@@ -425,7 +425,7 @@ public class FacebookMessengerConnectorIntegrationTests
         Assert.Equal(messageCount, messageIds.Count);
 
         // Verify service was called the expected number of times
-        mockFacebookService.Verify(x => x.SendMessageAsync(It.IsAny<FacebookMessageRequest>(), It.IsAny<CancellationToken>()), 
+        mockFacebookService.Verify(x => x.SendMessageAsync(It.IsAny<FacebookMessageRequest>(), It.IsAny<CancellationToken>()),
                                   Times.Exactly(messageCount));
     }
 
@@ -456,7 +456,7 @@ public class FacebookMessengerConnectorIntegrationTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.SendMessageFailed, result.Error!.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error!.ErrorCode);
         Assert.Contains("Facebook Graph API error", result.Error.ErrorMessage);
     }
 }

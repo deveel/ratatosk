@@ -88,7 +88,7 @@ public class TwilioWhatsAppConnectorTests
         var schema = TwilioChannelSchemas.SimpleWhatsApp;
         var connectionSettings = new ConnectionSettings()
             .SetParameter("FromNumber", "whatsapp:+1234567890");
-        
+
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings, _mockTwilioService.Object, _mockLogger.Object);
 
         // Act
@@ -107,7 +107,7 @@ public class TwilioWhatsAppConnectorTests
         var connectionSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
-        
+
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings, _mockTwilioService.Object, _mockLogger.Object);
 
         // Act
@@ -126,7 +126,7 @@ public class TwilioWhatsAppConnectorTests
         var connectionSettings = new ConnectionSettings()
             .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
             .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
-        
+
         var connector = new TwilioWhatsAppConnector(schema, connectionSettings, _mockTwilioService.Object, _mockLogger.Object);
 
         // Act
@@ -235,7 +235,7 @@ public class TwilioWhatsAppConnectorTests
         // Assert
         Assert.False(result.Successful);
         Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
-        
+
         // Verify Twilio service was not called due to validation failure
         _mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -265,7 +265,7 @@ public class TwilioWhatsAppConnectorTests
         Assert.False(result.Successful);
         Assert.Equal(TwilioErrorCodes.InvalidRecipient, result.Error?.ErrorCode);
         Assert.Contains("WhatsApp phone number is required", result.Error?.ErrorMessage);
-        
+
         // Verify Twilio service was not called due to validation failure
         _mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -289,7 +289,7 @@ public class TwilioWhatsAppConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(TwilioErrorCodes.SendMessageFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error?.ErrorCode);
         Assert.Contains("WhatsApp API error", result.Error?.ErrorMessage);
     }
 
@@ -338,7 +338,7 @@ public class TwilioWhatsAppConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(TwilioErrorCodes.StatusQueryFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.GetMessageStatusError, result.Error?.ErrorCode);
         Assert.Contains("Status query failed", result.Error?.ErrorMessage);
     }
 

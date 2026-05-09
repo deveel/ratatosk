@@ -346,30 +346,30 @@ public class MessageReceivingIntegrationTests
         private readonly List<IMessage> _processedMessages;
 
         public IntegrationTestConnector(IChannelSchema schema, List<IMessage> processedMessages)
-            : base(schema)
+            : base(schema, new ConnectionSettings())
         {
             _processedMessages = processedMessages;
         }
 
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<SendResult>.Success(new SendResult(message.Id, $"remote-{message.Id}")));
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+            => Task.FromResult(new SendResult(message.Id, $"remote-{message.Id}"));
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Integration Test Connector")));
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+            => Task.FromResult(new StatusInfo("Integration Test Connector"));
 
-        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             var messages = ParseMessages(source);
             _processedMessages.AddRange(messages);
 
             var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
-            return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
+            return Task.FromResult(result);
         }
 
         private List<IMessage> ParseMessages(MessageSource source)
@@ -426,24 +426,24 @@ public class MessageReceivingIntegrationTests
         private readonly Dictionary<string, List<MessageStatus>> _messageStatuses;
 
         public StatusTrackingConnector(IChannelSchema schema, Dictionary<string, List<MessageStatus>> messageStatuses)
-            : base(schema)
+            : base(schema, new ConnectionSettings())
         {
             _messageStatuses = messageStatuses;
         }
 
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<SendResult>.Success(new SendResult(message.Id, $"remote-{message.Id}")));
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+            => Task.FromResult(new SendResult(message.Id, $"remote-{message.Id}"));
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Status Tracking Connector")));
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+            => Task.FromResult(new StatusInfo("Status Tracking Connector"));
 
-        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             var formData = source.AsUrlPostData();
             var messageId = formData["MessageSid"];
@@ -462,10 +462,10 @@ public class MessageReceivingIntegrationTests
             };
 
             var result = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-            return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
+            return Task.FromResult(result);
         }
 
-        protected override Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<StatusUpdateResult> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             var formData = source.AsUrlPostData();
             var messageId = formData["MessageSid"];
@@ -486,39 +486,39 @@ public class MessageReceivingIntegrationTests
             _messageStatuses[messageId].Add(status);
 
             var statusResult = new StatusUpdateResult(messageId, status);
-            return Task.FromResult(ConnectorResult<StatusUpdateResult>.Success(statusResult));
+            return Task.FromResult(statusResult);
         }
     }
 
     public class ValidationTestConnector : ChannelConnectorBase
     {
-        public ValidationTestConnector(IChannelSchema schema) : base(schema) { }
+        public ValidationTestConnector(IChannelSchema schema) : base(schema, new ConnectionSettings()) { }
 
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<SendResult>.Success(new SendResult(message.Id, $"remote-{message.Id}")));
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+            => Task.FromResult(new SendResult(message.Id, $"remote-{message.Id}"));
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Validation Test Connector")));
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+            => Task.FromResult(new StatusInfo("Validation Test Connector"));
 
-        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             var formData = source.AsUrlPostData();
 
             // Validate required fields
             if (!formData.TryGetValue("MessageSid", out var messageId) || string.IsNullOrEmpty(messageId))
             {
-                return ConnectorResult<ReceiveResult>.FailTask("MISSING_MESSAGE_ID", "MessageSid is required");
+                throw new ConnectorException("MISSING_MESSAGE_ID", "MessageSid is required");
             }
 
             if (!formData.TryGetValue("From", out var from) || !IsValidPhoneNumber(from))
             {
-                return ConnectorResult<ReceiveResult>.FailTask("INVALID_FROM", "Valid From phone number is required");
+                throw new ConnectorException("INVALID_FROM", "Valid From phone number is required");
             }
 
             var message = new Message
@@ -530,7 +530,7 @@ public class MessageReceivingIntegrationTests
             };
 
             var result = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-            return ConnectorResult<ReceiveResult>.SuccessTask(result);
+            return Task.FromResult(result);
         }
 
         private bool IsValidPhoneNumber(string phoneNumber)
@@ -544,24 +544,24 @@ public class MessageReceivingIntegrationTests
         private readonly List<IMessage> _filteredMessages;
 
         public FilteringTestConnector(IChannelSchema schema, List<IMessage> filteredMessages)
-            : base(schema)
+            : base(schema, new ConnectionSettings())
         {
             _filteredMessages = filteredMessages;
         }
 
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => ConnectorResult<bool>.SuccessTask(true);
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+            =>  ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => ConnectorResult<bool>.SuccessTask(true);
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => ConnectorResult<SendResult>.SuccessTask(new SendResult(message.Id, $"remote-{message.Id}"));
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+            => Task.FromResult(new SendResult(message.Id, $"remote-{message.Id}"));
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => ConnectorResult<StatusInfo>.SuccessTask(new StatusInfo("Filtering Test Connector"));
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+            => Task.FromResult(new StatusInfo("Filtering Test Connector"));
 
-        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             var formData = source.AsUrlPostData();
             var body = formData.TryGetValue("Body", out var b) ? Uri.UnescapeDataString(b) : "";
@@ -581,7 +581,7 @@ public class MessageReceivingIntegrationTests
             }
 
             var result = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-            return ConnectorResult<ReceiveResult>.SuccessTask(result);
+            return Task.FromResult(result);
         }
     }
 
@@ -590,28 +590,29 @@ public class MessageReceivingIntegrationTests
         private readonly Func<int> _getAttemptCount;
 
         public RetryTestConnector(IChannelSchema schema, Func<int> getAttemptCount)
-            : base(schema)
+            : base(schema, new ConnectionSettings())
         {
             _getAttemptCount = getAttemptCount;
         }
 
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => ConnectorResult<bool>.SuccessTask(true);
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => ConnectorResult<bool>.SuccessTask(true);
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => ConnectorResult<SendResult>.SuccessTask(new SendResult(message.Id, $"remote-{message.Id}"));
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+            => Task.FromResult(new SendResult(message.Id, $"remote-{message.Id}"));
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => ConnectorResult<StatusInfo>.SuccessTask(new StatusInfo("Retry Test Connector"));
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+            => Task.FromResult(new StatusInfo("Retry Test Connector"));
 
-        protected override async Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override async Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             // Implement retry logic within the connector itself
-            ConnectorResult<ReceiveResult> result;
+            ReceiveResult? result = null;
             int attempts = 0;
+            string? errorMessage = null, errorCode = null;
 
             do
             {
@@ -620,7 +621,8 @@ public class MessageReceivingIntegrationTests
                 // Fail on first 2 attempts, succeed on 3rd
                 if (attempts < 3)
                 {
-                    result = ConnectorResult<ReceiveResult>.Fail("TRANSIENT_ERROR", $"Simulated failure on attempt {attempts}");
+                    errorCode = "TRANSIENT_ERROR";
+                    errorMessage = $"Simulated failure on attempt {attempts}";
                     // Simulate delay before retry
                     await Task.Delay(10, cancellationToken);
                     continue;
@@ -636,10 +638,15 @@ public class MessageReceivingIntegrationTests
                 };
 
                 var receiveResult = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-                result = ConnectorResult<ReceiveResult>.Success(receiveResult);
+                result = receiveResult;
                 break;
 
             } while (attempts < 3);
+
+            if (result == null)
+            {
+                throw new ConnectorException(errorCode!, errorMessage!);
+            }
 
             return result;
         }
@@ -650,24 +657,24 @@ public class MessageReceivingIntegrationTests
         private readonly List<IMessage> _transformedMessages;
 
         public TransformationTestConnector(IChannelSchema schema, List<IMessage> transformedMessages)
-            : base(schema)
+            : base(schema, new ConnectionSettings())
         {
             _transformedMessages = transformedMessages;
         }
 
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => ConnectorResult<bool>.SuccessTask(true);
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => ConnectorResult<bool>.SuccessTask(true);
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => ConnectorResult<SendResult>.SuccessTask(new SendResult(message.Id, $"remote-{message.Id}"));
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+            => Task.FromResult(new SendResult(message.Id, $"remote-{message.Id}"));
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => ConnectorResult<StatusInfo>.SuccessTask(new StatusInfo("Transformation Test Connector"));
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+            => Task.FromResult(new StatusInfo("Transformation Test Connector"));
 
-        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             var formData = source.AsUrlPostData();
             var originalBody = formData.TryGetValue("Body", out var body) ? Uri.UnescapeDataString(body) : "";
@@ -691,7 +698,7 @@ public class MessageReceivingIntegrationTests
             _transformedMessages.Add(message);
 
             var result = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-            return ConnectorResult<ReceiveResult>.SuccessTask(result);
+            return Task.FromResult(result);
         }
     }
 
@@ -700,24 +707,24 @@ public class MessageReceivingIntegrationTests
         private readonly ConcurrentBag<IMessage> _receivedMessages;
 
         public ConcurrentTestConnector(IChannelSchema schema, ConcurrentBag<IMessage> receivedMessages)
-            : base(schema)
+            : base(schema, new ConnectionSettings())
         {
             _receivedMessages = receivedMessages;
         }
 
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => ConnectorResult<bool>.SuccessTask(true);
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => ConnectorResult<bool>.SuccessTask(true);
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => ConnectorResult<SendResult>.SuccessTask(new SendResult(message.Id, $"remote-{message.Id}"));
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+            => Task.FromResult(new SendResult(message.Id, $"remote-{message.Id}"));
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => ConnectorResult<StatusInfo>.SuccessTask(new StatusInfo("Concurrent Test Connector"));
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+            => Task.FromResult(new StatusInfo("Concurrent Test Connector"));
 
-        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             // Simulate some processing time and then process synchronously
             return Task.Run(async () =>
@@ -736,7 +743,7 @@ public class MessageReceivingIntegrationTests
                 _receivedMessages.Add(message);
 
                 var result = new ReceiveResult(Guid.NewGuid().ToString(), new[] { message });
-                return ConnectorResult<ReceiveResult>.Success(result);
+                return result;
             });
         }
     }

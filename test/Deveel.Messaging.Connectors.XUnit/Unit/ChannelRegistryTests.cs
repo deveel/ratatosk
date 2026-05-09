@@ -35,7 +35,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.Throws<InvalidOperationException>(() => 
+			Assert.Throws<InvalidOperationException>(() =>
 				registry.RegisterConnector<TestConnector>());
 		}
 
@@ -47,7 +47,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.Throws<ArgumentException>(() => 
+			Assert.Throws<ArgumentException>(() =>
 				registry.RegisterConnector<ConnectorWithoutAttribute>());
 		}
 
@@ -75,7 +75,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.Throws<InvalidOperationException>(() => 
+			Assert.Throws<InvalidOperationException>(() =>
 				registry.GetConnectorSchema<TestConnector>());
 		}
 
@@ -216,7 +216,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(async () => 
+			await Assert.ThrowsAsync<InvalidOperationException>(async () =>
 				await registry.CreateConnectorAsync<TestConnector>(incompatibleSchema));
 		}
 
@@ -374,66 +374,66 @@ namespace Deveel.Messaging.XUnit
 		{
 		}
 
-		protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+		protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 		{
 			SetState(ConnectorState.Ready);
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-		{
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+		protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        {
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+		protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			var result = new SendResult("test-" + Guid.NewGuid().ToString("N")[..8], "remote-" + Guid.NewGuid().ToString("N")[..8]);
 			result.Status = MessageStatus.Sent;
-			return Task.FromResult(ConnectorResult<SendResult>.Success(result));
+			return Task.FromResult(result);
 		}
 
-		protected override Task<ConnectorResult<BatchSendResult>> SendBatchCoreAsync(IMessageBatch batch, CancellationToken cancellationToken)
+		protected override Task<BatchSendResult> SendBatchCoreAsync(IMessageBatch batch, CancellationToken cancellationToken)
 		{
 			var batchId = "test-batch-" + Guid.NewGuid().ToString("N")[..8];
 			var remoteBatchId = "remote-batch-" + Guid.NewGuid().ToString("N")[..8];
 			var messageResults = new Dictionary<string, SendResult>();
-			
+
 			foreach (var message in batch.Messages)
 			{
 				var sendResult = new SendResult(message.Id, "remote-" + Guid.NewGuid().ToString("N")[..8]);
 				sendResult.Status = MessageStatus.Sent;
 				messageResults[message.Id] = sendResult;
 			}
-			
+
 			var batchResult = new BatchSendResult(batchId, remoteBatchId, messageResults);
-			return Task.FromResult(ConnectorResult<BatchSendResult>.Success(batchResult));
+			return Task.FromResult(batchResult);
 		}
 
-		protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+		protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 		{
 			var status = new StatusInfo("Test Connector is running", "All systems operational");
-			return Task.FromResult(ConnectorResult<StatusInfo>.Success(status));
+			return Task.FromResult(status);
 		}
 
-		protected override Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
+		protected override Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
 		{
 			var updates = new StatusUpdatesResult(messageId, Array.Empty<StatusUpdateResult>());
-			return Task.FromResult(ConnectorResult<StatusUpdatesResult>.Success(updates));
+			return Task.FromResult(updates);
 		}
 
-		protected override Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
+		protected override Task<StatusUpdateResult> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
 		{
 			var result = new StatusUpdateResult("test-message-id", MessageStatus.Delivered);
-			return Task.FromResult(ConnectorResult<StatusUpdateResult>.Success(result));
+			return Task.FromResult(result);
 		}
 
-		protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+		protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
 		{
 			var result = new ReceiveResult("test-batch-" + Guid.NewGuid().ToString("N")[..8], Array.Empty<IMessage>());
-			return Task.FromResult(ConnectorResult<ReceiveResult>.Success(result));
+			return Task.FromResult(result);
 		}
 
-		protected override Task<ConnectorResult<ConnectorHealth>> GetConnectorHealthAsync(CancellationToken cancellationToken)
+		protected override Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
 		{
 			var health = new ConnectorHealth
 			{
@@ -442,7 +442,7 @@ namespace Deveel.Messaging.XUnit
 				LastHealthCheck = DateTime.UtcNow,
 				Uptime = TimeSpan.FromMinutes(10)
 			};
-			return Task.FromResult(ConnectorResult<ConnectorHealth>.Success(health));
+			return Task.FromResult(health);
 		}
 
 		protected override Task ShutdownConnectorAsync(CancellationToken cancellationToken)
@@ -461,48 +461,48 @@ namespace Deveel.Messaging.XUnit
 		{
 		}
 
-		protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+		protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 		{
 			SetState(ConnectorState.Ready);
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+		protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
 		{
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+			return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-		{
-			throw new NotImplementedException();
-		}
-
-		protected override Task<ConnectorResult<BatchSendResult>> SendBatchCoreAsync(IMessageBatch batch, CancellationToken cancellationToken)
+		protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+		protected override Task<BatchSendResult> SendBatchCoreAsync(IMessageBatch batch, CancellationToken cancellationToken)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
+		protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
+		protected override Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+		protected override Task<StatusUpdateResult> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override Task<ConnectorResult<ConnectorHealth>> GetConnectorHealthAsync(CancellationToken cancellationToken)
+		protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
 		{
 			throw new NotImplementedException();
 		}

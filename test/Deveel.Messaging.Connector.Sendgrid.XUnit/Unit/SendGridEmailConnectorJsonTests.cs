@@ -45,7 +45,7 @@ public class SendGridEmailConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("14c5d75ce93.dfd.64b469.filter0001.16648.5515E0B88.0", message.Id);
         Assert.Equal("test@example.com", message.Sender?.Address);
@@ -54,7 +54,7 @@ public class SendGridEmailConnectorJsonTests
         Assert.Equal(EndpointType.EmailAddress, message.Receiver?.Type);
         Assert.Equal(MessageContentType.Html, message.Content!.ContentType);
         Assert.Equal("<p>This is the <strong>HTML</strong> version of the email.</p>", ((IHtmlContent)message.Content!).Html);
-        
+
         // Check subject property
         Assert.NotNull(message.Properties);
         Assert.True(message.Properties.ContainsKey("Subject"));
@@ -94,14 +94,14 @@ public class SendGridEmailConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("filter0001.16648.5515E0B88.0", message.Id);
         Assert.Equal("sender@example.com", message.Sender?.Address);
         Assert.Equal("recipient@example.com", message.Receiver?.Address);
         Assert.Equal(MessageContentType.PlainText, message.Content!.ContentType);
         Assert.Equal("Thank you for your order!", ((ITextContent)message.Content!).Text);
-        
+
         // Check additional properties
         Assert.True(message.Properties!.ContainsKey("category"));
         Assert.Equal("order_confirmation", message.Properties["category"].Value);
@@ -136,16 +136,16 @@ public class SendGridEmailConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Equal(3, result.Value.Messages.Count);
-        
+
         var messages = result.Value.Messages.ToList();
         Assert.Equal("email_001", messages[0].Id);
         Assert.Equal("email_002", messages[1].Id);
         Assert.Equal("email_003", messages[2].Id);
-        
+
         Assert.Equal("sender1@example.com", messages[0].Sender?.Address);
         Assert.Equal("sender2@example.com", messages[1].Sender?.Address);
         Assert.Equal("sender3@example.com", messages[2].Sender?.Address);
-        
+
         Assert.Equal("First email content", ((ITextContent)messages[0].Content!).Text);
         Assert.Equal("Second email content", ((ITextContent)messages[1].Content!).Text);
         Assert.Equal("Third email content", ((ITextContent)messages[2].Content!).Text);
@@ -183,7 +183,7 @@ public class SendGridEmailConnectorJsonTests
         Assert.NotNull(result.Value);
         Assert.Equal("14c5d75ce93.dfd.64b469.filter0001.16648.5515E0B88.0", result.Value.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
-        
+
         // Check SendGrid-specific additional data
         Assert.True(result.Value.AdditionalData.ContainsKey("Channel"));
         Assert.Equal("Email", result.Value.AdditionalData["Channel"]);
@@ -225,7 +225,7 @@ public class SendGridEmailConnectorJsonTests
         Assert.NotNull(result.Value);
         Assert.Equal("bounce_message_123", result.Value.MessageId);
         Assert.Equal(MessageStatus.DeliveryFailed, result.Value.Status);
-        
+
         // Check bounce-specific data
         Assert.True(result.Value.AdditionalData.ContainsKey("reason"));
         Assert.Equal("550 5.1.1 User unknown", result.Value.AdditionalData["reason"]);
@@ -308,7 +308,7 @@ public class SendGridEmailConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal(MessageContentType.PlainText, message.Content!.ContentType);
         Assert.Equal("This email contains only plain text content.", ((ITextContent)message.Content!).Text);
@@ -344,7 +344,7 @@ public class SendGridEmailConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal(MessageContentType.PlainText, message.Content!.ContentType);
         Assert.Equal("", ((ITextContent)message.Content!).Text);
@@ -458,7 +458,7 @@ public class SendGridEmailConnectorJsonTests
         // Assert
         Assert.False(result.Successful);
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.ReceiveMessageFailed, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error.ErrorCode);
     }
 
     [Fact]
@@ -480,7 +480,7 @@ public class SendGridEmailConnectorJsonTests
         // Assert
         Assert.False(result.Successful);
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.ReceiveStatusFailed, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveStatusError, result.Error.ErrorCode);
     }
 
     private static ConnectionSettings CreateValidConnectionSettings()

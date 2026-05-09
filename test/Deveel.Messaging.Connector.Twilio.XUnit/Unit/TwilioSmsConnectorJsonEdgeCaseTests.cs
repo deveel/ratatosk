@@ -62,7 +62,7 @@ public class TwilioSmsConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM1234567890", message.Id);
         Assert.Equal("", ((ITextContent)message.Content!).Text); // null body should become empty string
@@ -99,7 +99,7 @@ public class TwilioSmsConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Equal(2, result.Value.Messages.Count); // Only 2 valid messages
-        
+
         var messages = result.Value.Messages.ToList();
         Assert.Equal("SM1111111111", messages[0].Id);
         Assert.Equal("SM4444444444", messages[1].Id);
@@ -140,7 +140,7 @@ public class TwilioSmsConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM1234567890", message.Id);
         Assert.Equal("Message with many extra fields", ((ITextContent)message.Content!).Text);
@@ -278,7 +278,7 @@ public class TwilioSmsConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM1234567890", message.Id);
     }
@@ -346,7 +346,7 @@ public class TwilioSmsConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM1234567890", message.Id);
         Assert.Equal("Numeric fields test", ((ITextContent)message.Content!).Text);
@@ -381,7 +381,7 @@ public class TwilioSmsConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM123-456_789.abc", message.Id);
     }
@@ -416,7 +416,7 @@ public class TwilioSmsConnectorJsonEdgeCaseTests
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890", result.Value.MessageId);
         Assert.Equal(MessageStatus.DeliveryFailed, result.Value.Status);
-        
+
         // Verify long property is preserved
         Assert.True(result.Value.AdditionalData.ContainsKey("ErrorMessage"));
         Assert.Equal(longString, result.Value.AdditionalData["ErrorMessage"]);
@@ -473,7 +473,7 @@ public class TwilioSmsConnectorJsonEdgeCaseTests
         // Assert
         Assert.False(result.Successful);
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.ReceiveMessageFailed, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error.ErrorCode);
     }
 
     private static ConnectionSettings CreateValidConnectionSettings()

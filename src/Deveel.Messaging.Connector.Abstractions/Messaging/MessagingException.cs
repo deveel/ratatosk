@@ -19,7 +19,7 @@ namespace Deveel.Messaging
 		/// </param>
 		public MessagingException(string errorCode)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(errorCode, nameof(errorCode));
+			ArgumentException.ThrowIfNullOrWhiteSpace(errorCode, nameof(errorCode));
 			ErrorCode = errorCode;
 		}
 
@@ -33,13 +33,13 @@ namespace Deveel.Messaging
 		/// <param name="message">The message that describes the error.</param>
 		public MessagingException(string errorCode, string? message) : base(message)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(errorCode, nameof(errorCode));
+			ArgumentException.ThrowIfNullOrWhiteSpace(errorCode, nameof(errorCode));
 			ErrorCode = errorCode;
 		}
 
 		/// <summary>
-		/// Constructs a new instance of the <see cref="MessagingException"/> class 
-		/// with a specified error message and a reference to the inner exception 
+		/// Constructs a new instance of the <see cref="MessagingException"/> class
+		/// with a specified error message and a reference to the inner exception
 		/// that is the cause of this exception.
 		/// </summary>
 		/// <param name="errorCode">
@@ -47,10 +47,10 @@ namespace Deveel.Messaging
 		/// </param>
 		/// <param name="message">The error message that explains the reason for the exception.</param>
 		/// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
-		public MessagingException(string errorCode, string? message, Exception? innerException) 
+		public MessagingException(string errorCode, string? message, Exception? innerException)
 			: base(message, innerException)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(errorCode, nameof(errorCode));
+			ArgumentException.ThrowIfNullOrWhiteSpace(errorCode, nameof(errorCode));
 			ErrorCode = errorCode;
 		}
 

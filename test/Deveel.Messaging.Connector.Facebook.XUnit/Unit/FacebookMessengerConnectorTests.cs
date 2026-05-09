@@ -119,7 +119,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.ConnectionFailed, result.Error?.ErrorCode);
+        Assert.Equal(FacebookErrorCodes.MissingPageId, result.Error?.ErrorCode);
     }
 
     [Fact]
@@ -160,8 +160,8 @@ public class FacebookMessengerConnectorTests
         Assert.Equal(MessageStatus.Sent, result.Value.Status);
 
         mockFacebookService.Verify(x => x.SendMessageAsync(
-            It.Is<FacebookMessageRequest>(req => 
-                req.Recipient == "user-123" && 
+            It.Is<FacebookMessageRequest>(req =>
+                req.Recipient == "user-123" &&
                 req.Message.Text == "Hello, Facebook Messenger!"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -230,8 +230,8 @@ public class FacebookMessengerConnectorTests
         Assert.Equal("fb-message-124", result.Value.RemoteMessageId);
 
         mockFacebookService.Verify(x => x.SendMessageAsync(
-            It.Is<FacebookMessageRequest>(req => 
-                req.Recipient == "user-123" && 
+            It.Is<FacebookMessageRequest>(req =>
+                req.Recipient == "user-123" &&
                 req.Message.Attachment != null &&
                 req.Message.Attachment.Type == "image" &&
                 req.Message.Attachment.Payload.Url == "https://example.com/image.jpg"),
@@ -278,7 +278,7 @@ public class FacebookMessengerConnectorTests
         Assert.True(result.Successful);
 
         mockFacebookService.Verify(x => x.SendMessageAsync(
-            It.Is<FacebookMessageRequest>(req => 
+            It.Is<FacebookMessageRequest>(req =>
                 req.MessagingType == "UPDATE" &&
                 req.NotificationType == "SILENT_PUSH" &&
                 req.Tag == "CONFIRMED_EVENT_UPDATE"),
@@ -357,7 +357,7 @@ public class FacebookMessengerConnectorTests
         Assert.NotNull(result.Value);
         Assert.False(result.Value.IsHealthy);
         Assert.Single(result.Value.Issues);
-        Assert.Contains("Connection test failed", result.Value.Issues.First());
+        Assert.Contains("Unable to retrieve page information", result.Value.Issues.First());
     }
 
     [Fact]
@@ -445,8 +445,8 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.MissingCredentials, result.Error?.ErrorCode);
-        Assert.Contains("Facebook authentication error", result.Error?.ErrorMessage);
+        Assert.Equal(FacebookErrorCodes.InvalidAccessToken, result.Error?.ErrorCode);
+        Assert.Contains("Invalid Page Access Token format", result.Error?.ErrorMessage);
         Assert.Equal(ConnectorState.Error, connector.State);
     }
 
@@ -562,7 +562,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.ConnectionTestFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ConnectionTestError, result.Error?.ErrorCode);
         Assert.Contains("Network error", result.Error?.ErrorMessage);
     }
 
@@ -586,7 +586,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.ConnectionFailed, result.Error?.ErrorCode);
+        Assert.Equal(FacebookErrorCodes.MissingPageId, result.Error?.ErrorCode);
         Assert.Contains("Unable to retrieve page information", result.Error?.ErrorMessage);
     }
 
@@ -702,8 +702,8 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.SendMessageFailed, result.Error?.ErrorCode);
-        Assert.Contains("Facebook validation error", result.Error?.ErrorMessage);
+        Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error?.ErrorCode);
+        Assert.Contains("Message text too long", result.Error?.ErrorMessage);
     }
 
     [Fact]
@@ -733,7 +733,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.SendMessageFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error?.ErrorCode);
         Assert.Contains("Facebook Graph API error", result.Error?.ErrorMessage);
     }
 
@@ -764,7 +764,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.SendMessageFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error?.ErrorCode);
         Assert.Contains("Network timeout", result.Error?.ErrorMessage);
     }
 
@@ -799,7 +799,7 @@ public class FacebookMessengerConnectorTests
         public TestableStatusExceptionConnector(ConnectionSettings connectionSettings, IFacebookService facebookService)
             : base(connectionSettings, facebookService) { }
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
             throw new InvalidOperationException("Status operation failed");
         }
@@ -832,7 +832,7 @@ public class FacebookMessengerConnectorTests
         Assert.NotNull(result.Value);
         Assert.False(result.Value.IsHealthy);
         Assert.Single(result.Value.Issues);
-        Assert.Contains("Connection test failed", result.Value.Issues.First()); // Fixed: Connection test failure message
+        Assert.Contains("Facebook Graph API error", result.Value.Issues.First()); // Fixed: Connection test failure message
     }
 
     [Fact]
@@ -881,7 +881,7 @@ public class FacebookMessengerConnectorTests
         // Assert
         Assert.False(result.Successful);
         Assert.Equal(FacebookErrorCodes.UnsupportedContentType, result.Error?.ErrorCode);
-        Assert.Contains("Only JSON content type is supported", result.Error?.ErrorMessage);
+        Assert.Contains("Only application/json is supported", result.Error?.ErrorMessage);
     }
 
     [Fact]
@@ -926,7 +926,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.ReceiveMessageFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error?.ErrorCode);
     }
 
     [Fact]
@@ -970,7 +970,7 @@ public class FacebookMessengerConnectorTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.IsType<MediaContent>(message.Content);
         Assert.Equal("sender-123", message.Sender?.Address);
@@ -1163,7 +1163,7 @@ public class FacebookMessengerConnectorTests
         // Assert
         Assert.True(result.Successful);
         mockFacebookService.Verify(x => x.SendMessageAsync(
-            It.Is<FacebookMessageRequest>(req => 
+            It.Is<FacebookMessageRequest>(req =>
                 req.Message.Attachment != null &&
                 req.Message.Attachment.Type == "file"),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -1312,7 +1312,7 @@ public class FacebookMessengerConnectorTests
         // Assert
         Assert.True(result.Successful);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.NotEmpty(message.Id); // Should have generated an ID
         Assert.True(Guid.TryParse(message.Id, out _)); // Should be a valid GUID

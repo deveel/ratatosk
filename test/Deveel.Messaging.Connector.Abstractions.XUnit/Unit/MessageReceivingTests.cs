@@ -40,11 +40,11 @@ public class MessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var receivedMessage = result.Value.Messages.First();
         Assert.NotNull(receivedMessage.Content);
         Assert.Equal(MessageContentType.PlainText, receivedMessage.Content.ContentType);
-        
+
         var textContent = receivedMessage.Content as ITextContent;
         Assert.NotNull(textContent);
         Assert.Equal(messageText, textContent.Text);
@@ -87,7 +87,7 @@ public class MessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var receivedMessage = result.Value.Messages.First();
         Assert.Equal("SM123456789", receivedMessage.Id);
         Assert.Equal("+1234567890", receivedMessage.Sender?.Address);
@@ -122,7 +122,7 @@ public class MessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var receivedMessage = result.Value.Messages.First();
         Assert.Equal("SM987654321", receivedMessage.Id);
         Assert.Equal("+1234567890", receivedMessage.Sender?.Address);
@@ -170,7 +170,7 @@ public class MessageReceivingTests
         Assert.NotNull(result.Value);
         Assert.Equal(3, result.Value.Messages.Count);
         Assert.Equal("batch-123", result.Value.BatchId);
-        
+
         var messages = result.Value.Messages.ToList();
         Assert.Equal("msg-1", messages[0].Id);
         Assert.Equal("msg-2", messages[1].Id);
@@ -217,11 +217,11 @@ public class MessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var receivedMessage = result.Value.Messages.First();
         Assert.Equal("email-123", receivedMessage.Id);
         Assert.Equal(MessageContentType.Multipart, receivedMessage.Content?.ContentType);
-        
+
         var multipartContent = receivedMessage.Content as IMultipartContent;
         Assert.NotNull(multipartContent);
         Assert.Equal(2, multipartContent.Parts.Count());
@@ -265,7 +265,7 @@ public class MessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var receivedMessage = result.Value.Messages.First();
         Assert.Equal("MM123456789", receivedMessage.Id);
         Assert.NotNull(receivedMessage.Properties);
@@ -326,7 +326,7 @@ public class MessageReceivingTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
             connector.ReceiveMessagesAsync(source, CancellationToken.None));
     }
 
@@ -344,7 +344,7 @@ public class MessageReceivingTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
             connector.ReceiveMessageStatusAsync(source, CancellationToken.None));
     }
 
@@ -419,7 +419,7 @@ public class MessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var receivedMessage = result.Value.Messages.First();
         Assert.Equal("xml-msg-123", receivedMessage.Id);
     }
@@ -445,7 +445,7 @@ public class MessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var receivedMessage = result.Value.Messages.First();
         Assert.Equal(MessageContentType.Binary, receivedMessage.Content?.ContentType);
     }
@@ -548,7 +548,7 @@ public class MessageReceivingTests
             {
                 var contentType = partElement.TryGetProperty("ContentType", out var ctProp) ? ctProp.GetString() : "";
                 var content = partElement.TryGetProperty("Content", out var contentProp) ? contentProp.GetString() : "";
-                
+
                 if (contentType == "text/plain")
                 {
                     parts.Add(new TextContentPart(content ?? ""));
@@ -586,10 +586,10 @@ public class MessageReceivingTests
 
     private IMessage ParseJsonMessage(JsonElement jsonData)
     {
-        var messageId = jsonData.TryGetProperty("MessageSid", out var sidProperty) ? sidProperty.GetString() : 
-                       jsonData.TryGetProperty("Id", out var idProperty) ? idProperty.GetString() : 
+        var messageId = jsonData.TryGetProperty("MessageSid", out var sidProperty) ? sidProperty.GetString() :
+                       jsonData.TryGetProperty("Id", out var idProperty) ? idProperty.GetString() :
                        Guid.NewGuid().ToString();
-        
+
         var from = jsonData.TryGetProperty("From", out var fromProperty) ? fromProperty.GetString() ?? "" : "";
         var to = jsonData.TryGetProperty("To", out var toProperty) ? toProperty.GetString() ?? "" : "";
         var body = jsonData.TryGetProperty("Body", out var bodyProperty) ? bodyProperty.GetString() ?? "" : "";
@@ -644,7 +644,7 @@ public class MessageReceivingTests
     private List<IMessage> ParseXmlMessages(MessageSource source)
     {
         var messages = new List<IMessage>();
-        
+
         try
         {
             // For XML content type, we need to get the string directly since AsText() requires TextContentType
@@ -676,7 +676,7 @@ public class MessageReceivingTests
     private List<IMessage> ParseXmlFromString(string xmlContent)
     {
         var messages = new List<IMessage>();
-        
+
         if (xmlContent.Contains("<Message>"))
         {
             var messageId = ExtractXmlValue(xmlContent, "Id") ?? Guid.NewGuid().ToString();
@@ -720,11 +720,11 @@ public class MessageReceivingTests
     private List<IMessage> ParseFormDataFromString(string formDataText)
     {
         var messages = new List<IMessage>();
-        
+
         // Parse the form data manually
         var pairs = formDataText.Split('&', StringSplitOptions.RemoveEmptyEntries);
         var formData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        
+
         foreach (var pair in pairs)
         {
             var keyValue = pair.Split('=', 2);
@@ -763,13 +763,13 @@ public class MessageReceivingTests
     {
         if (string.IsNullOrEmpty(address))
             return EndpointType.Id;
-        
+
         if (address.StartsWith("+"))
             return EndpointType.PhoneNumber;
-        
+
         if (address.Contains("@"))
             return EndpointType.EmailAddress;
-        
+
         return EndpointType.Id;
     }
 
@@ -788,11 +788,11 @@ public class MessageReceivingTests
         var endTag = $"</{elementName}>";
         var startIndex = xml.IndexOf(startTag);
         if (startIndex == -1) return null;
-        
+
         startIndex += startTag.Length;
         var endIndex = xml.IndexOf(endTag, startIndex);
         if (endIndex == -1) return null;
-        
+
         return xml.Substring(startIndex, endIndex - startIndex);
     }
 }
@@ -806,29 +806,29 @@ public class TestReceivingConnector : ChannelConnectorBase
     {
     }
 
-    protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+    protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
     {
-        return ConnectorResult<bool>.SuccessTask(true);
+        return ValueTask.CompletedTask;
     }
 
-    protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+    protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
     {
-        return ConnectorResult<bool>.SuccessTask(true);
+        return ValueTask.CompletedTask;
     }
 
-    protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+    protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
     {
         var result = new SendResult(message.Id, $"remote-{message.Id}");
-        return ConnectorResult<SendResult>.SuccessTask(result);
+        return Task.FromResult(result);
     }
 
-    protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+    protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
     {
         var status = new StatusInfo("Test Receiving Connector Status");
-        return ConnectorResult<StatusInfo>.SuccessTask(status);
+        return Task.FromResult(status);
     }
 
-    protected override async Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+    protected override async Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
     {
         // Add some actual async work and check cancellation
         await Task.Delay(1, cancellationToken);
@@ -889,7 +889,7 @@ public class TestReceivingConnector : ChannelConnectorBase
                         var xmlText = GetStringFromSource(source);
                         var xmlMessages = ParseXmlFromString(xmlText);
                         messages.AddRange(xmlMessages);
-                        
+
                         // If no XML messages were parsed, create a generic one
                         if (messages.Count == 0)
                         {
@@ -907,7 +907,7 @@ public class TestReceivingConnector : ChannelConnectorBase
                         var formDataText = GetStringFromSource(source);
                         var formMessages = ParseFormDataFromString(formDataText);
                         messages.AddRange(formMessages);
-                        
+
                         // If no form data messages were parsed, create a generic one
                         if (messages.Count == 0)
                         {
@@ -956,49 +956,42 @@ public class TestReceivingConnector : ChannelConnectorBase
                 });
             }
 
-            var result = new ReceiveResult(batchId, messages);
-            return ConnectorResult<ReceiveResult>.Success(result);
+            return new ReceiveResult(batchId, messages);
         }
         catch (JsonException ex)
         {
-            return ConnectorResult<ReceiveResult>.Fail("JSON_PARSE_ERROR", $"Failed to parse JSON content: {ex.Message}");
+            throw new ConnectorException("JSON_PARSE_ERROR", $"Failed to parse JSON content: {ex.Message}", ex);
         }
         catch (Exception ex)
         {
-            return ConnectorResult<ReceiveResult>.Fail("RECEIVE_ERROR", ex.Message);
+            throw new ConnectorException("RECEIVE_ERROR", $"An error occurred while receiving messages: {ex.Message}", ex);
         }
     }
 
-    protected override Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
+    protected override Task<StatusUpdateResult> ReceiveMessageStatusCoreAsync(MessageSource source,
+        CancellationToken cancellationToken)
     {
-        try
+        if (source.ContentType == MessageSource.JsonContentType)
         {
-            if (source.ContentType == MessageSource.JsonContentType)
+            var statusData = source.AsJson<JsonElement>();
+            var messageId = statusData.GetProperty("MessageSid").GetString() ?? "unknown";
+            var statusString = statusData.GetProperty("MessageStatus").GetString() ?? "unknown";
+
+            var status = statusString.ToLowerInvariant() switch
             {
-                var statusData = source.AsJson<JsonElement>();
-                var messageId = statusData.GetProperty("MessageSid").GetString() ?? "unknown";
-                var statusString = statusData.GetProperty("MessageStatus").GetString() ?? "unknown";
-                
-                var status = statusString.ToLowerInvariant() switch
-                {
-                    "delivered" => MessageStatus.Delivered,
-                    "sent" => MessageStatus.Sent,
-                    "failed" => MessageStatus.DeliveryFailed,
-                    "received" => MessageStatus.Received,
-                    _ => MessageStatus.Unknown
-                };
+                "delivered" => MessageStatus.Delivered,
+                "sent" => MessageStatus.Sent,
+                "failed" => MessageStatus.DeliveryFailed,
+                "received" => MessageStatus.Received,
+                _ => MessageStatus.Unknown
+            };
 
-                var statusResult = new StatusUpdateResult(messageId, status);
-                return Task.FromResult(ConnectorResult<StatusUpdateResult>.Success(statusResult));
-            }
+            var statusResult = new StatusUpdateResult(messageId, status);
+            return Task.FromResult(statusResult);
+        }
 
-            return ConnectorResult<StatusUpdateResult>.FailTask("UNSUPPORTED_CONTENT_TYPE", 
-                "Only JSON content type is supported for status updates");
-        }
-        catch (Exception ex)
-        {
-            return ConnectorResult<StatusUpdateResult>.FailTask("STATUS_RECEIVE_ERROR", ex.Message);
-        }
+        throw new ConnectorException("UNSUPPORTED_CONTENT_TYPE",
+            "Only JSON content type is supported for status updates");
     }
 
     private List<IMessage> ParseJsonMessages(MessageSource source)
@@ -1022,7 +1015,7 @@ public class TestReceivingConnector : ChannelConnectorBase
             {
                 var contentType = partElement.TryGetProperty("ContentType", out var ctProp) ? ctProp.GetString() : "";
                 var content = partElement.TryGetProperty("Content", out var contentProp) ? contentProp.GetString() : "";
-                
+
                 if (contentType == "text/plain")
                 {
                     parts.Add(new TextContentPart(content ?? ""));
@@ -1060,10 +1053,10 @@ public class TestReceivingConnector : ChannelConnectorBase
 
     private IMessage ParseJsonMessage(JsonElement jsonData)
     {
-        var messageId = jsonData.TryGetProperty("MessageSid", out var sidProperty) ? sidProperty.GetString() : 
-                       jsonData.TryGetProperty("Id", out var idProperty) ? idProperty.GetString() : 
+        var messageId = jsonData.TryGetProperty("MessageSid", out var sidProperty) ? sidProperty.GetString() :
+                       jsonData.TryGetProperty("Id", out var idProperty) ? idProperty.GetString() :
                        Guid.NewGuid().ToString();
-        
+
         var from = jsonData.TryGetProperty("From", out var fromProperty) ? fromProperty.GetString() ?? "" : "";
         var to = jsonData.TryGetProperty("To", out var toProperty) ? toProperty.GetString() ?? "" : "";
         var body = jsonData.TryGetProperty("Body", out var bodyProperty) ? bodyProperty.GetString() ?? "" : "";
@@ -1118,7 +1111,7 @@ public class TestReceivingConnector : ChannelConnectorBase
     private List<IMessage> ParseXmlMessages(MessageSource source)
     {
         var messages = new List<IMessage>();
-        
+
         try
         {
             // For XML content type, we need to get the string directly since AsText() requires TextContentType
@@ -1150,7 +1143,7 @@ public class TestReceivingConnector : ChannelConnectorBase
     private List<IMessage> ParseXmlFromString(string xmlContent)
     {
         var messages = new List<IMessage>();
-        
+
         if (xmlContent.Contains("<Message>"))
         {
             var messageId = ExtractXmlValue(xmlContent, "Id") ?? Guid.NewGuid().ToString();
@@ -1194,11 +1187,11 @@ public class TestReceivingConnector : ChannelConnectorBase
     private List<IMessage> ParseFormDataFromString(string formDataText)
     {
         var messages = new List<IMessage>();
-        
+
         // Parse the form data manually
         var pairs = formDataText.Split('&', StringSplitOptions.RemoveEmptyEntries);
         var formData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        
+
         foreach (var pair in pairs)
         {
             var keyValue = pair.Split('=', 2);
@@ -1237,13 +1230,13 @@ public class TestReceivingConnector : ChannelConnectorBase
     {
         if (string.IsNullOrEmpty(address))
             return EndpointType.Id;
-        
+
         if (address.StartsWith("+"))
             return EndpointType.PhoneNumber;
-        
+
         if (address.Contains("@"))
             return EndpointType.EmailAddress;
-        
+
         return EndpointType.Id;
     }
 
@@ -1262,11 +1255,11 @@ public class TestReceivingConnector : ChannelConnectorBase
         var endTag = $"</{elementName}>";
         var startIndex = xml.IndexOf(startTag);
         if (startIndex == -1) return null;
-        
+
         startIndex += startTag.Length;
         var endIndex = xml.IndexOf(endTag, startIndex);
         if (endIndex == -1) return null;
-        
+
         return xml.Substring(startIndex, endIndex - startIndex);
     }
 }

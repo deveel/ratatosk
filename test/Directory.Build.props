@@ -16,9 +16,10 @@
     <AssemblyAttribute Include="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(IsTestProject)' == 'true' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
     <PackageReference Include="xunit.v3" Version="1.*" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.*" />
+      <PackageReference Include="MartinCostello.Logging.XUnit.v3" Version="0.7.1" />
   </ItemGroup>
 
   <ItemGroup>

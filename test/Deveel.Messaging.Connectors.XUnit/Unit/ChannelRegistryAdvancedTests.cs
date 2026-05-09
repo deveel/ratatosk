@@ -31,11 +31,11 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
+			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
 				registry.CreateConnectorAsync<DisposableFailingConnector>());
-			
+
 			Assert.Contains("Failed to initialize connector", exception.Message);
-			
+
 			// The connector should have been disposed automatically
 			Assert.True(DisposableFailingConnector.WasDisposed);
 		}
@@ -48,17 +48,17 @@ namespace Deveel.Messaging.XUnit
 			registry.RegisterConnector<AsyncDisposableExceptionConnector>();
 
 			// Reset the static flag before the test
-			var field = typeof(AsyncDisposableExceptionConnector).GetField("WasAsyncDisposed", 
+			var field = typeof(AsyncDisposableExceptionConnector).GetField("WasAsyncDisposed",
 				System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 			field?.SetValue(null, false);
 
 			// Act
 			// Assert
-			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
+			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
 				registry.CreateConnectorAsync<AsyncDisposableExceptionConnector>());
-			
+
 			Assert.Contains("Failed to create instance", exception.Message);
-			
+
 			// Since the constructor throws before the object is fully created,
 			// we can't expect it to be disposed via IAsyncDisposable
 			// The test verifies that the exception is properly wrapped and handled
@@ -85,7 +85,7 @@ namespace Deveel.Messaging.XUnit
 			// Arrange
 			var registry = CreateRegistry();
 			registry.RegisterConnector<SlowShutdownConnector>();
-			
+
 			// Create a connector that will take time to shutdown
 			var connector = await registry.CreateConnectorAsync<SlowShutdownConnector>();
 
@@ -103,7 +103,7 @@ namespace Deveel.Messaging.XUnit
 			var registry = CreateRegistry();
 			registry.RegisterConnector<ErrorDuringShutdownConnector>();
 			registry.RegisterConnector<TestConnector>();
-			
+
 			var connector1 = await registry.CreateConnectorAsync<ErrorDuringShutdownConnector>();
 			var connector2 = await registry.CreateConnectorAsync<TestConnector>();
 
@@ -120,7 +120,7 @@ namespace Deveel.Messaging.XUnit
 			// Arrange
 			var registry = CreateRegistry();
 			registry.RegisterConnector<AsyncDisposableConnector>();
-			
+
 			var connector = await registry.CreateConnectorAsync<AsyncDisposableConnector>();
 
 			// Act
@@ -138,7 +138,7 @@ namespace Deveel.Messaging.XUnit
 			var registry = CreateRegistry();
 			registry.RegisterConnector<ErrorDuringDisposalConnector>();
 			registry.RegisterConnector<TestConnector>();
-			
+
 			var connector1 = await registry.CreateConnectorAsync<ErrorDuringDisposalConnector>();
 			var connector2 = await registry.CreateConnectorAsync<TestConnector>();
 
@@ -155,7 +155,7 @@ namespace Deveel.Messaging.XUnit
 			// Arrange
 			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
-			
+
 			var incompatibleSchema = new ChannelSchema("DifferentProvider", "DifferentType", "1.0.0");
 
 			// Act
@@ -171,13 +171,13 @@ namespace Deveel.Messaging.XUnit
 		{
 			// Arrange
 			var registry = CreateRegistry();
-			
+
 			// This should register fine, but fail when creating the connector
 			registry.RegisterConnector<ConnectorWithoutProperConstructor>();
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => 
+			await Assert.ThrowsAsync<InvalidOperationException>(() =>
 				registry.CreateConnectorAsync<ConnectorWithoutProperConstructor>());
 		}
 
@@ -189,7 +189,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.Throws<ArgumentException>(() => 
+			Assert.Throws<ArgumentException>(() =>
 				registry.RegisterConnector<ConnectorWithInvalidSchemaType>());
 		}
 
@@ -248,7 +248,7 @@ namespace Deveel.Messaging.XUnit
 			// Arrange
 			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
-			
+
 			var connector = await registry.CreateConnectorAsync<TestConnector>();
 
 			// Act
@@ -281,19 +281,19 @@ namespace Deveel.Messaging.XUnit
 		{
 			public TestConnector(IChannelSchema schema) : base(schema) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
-				return Task.FromResult(ConnectorResult<bool>.Success(true));
+                return ValueTask.CompletedTask;
 			}
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 		}
 
@@ -302,23 +302,23 @@ namespace Deveel.Messaging.XUnit
 		{
 			public static bool WasDisposed { get; private set; }
 
-			public DisposableFailingConnector(IChannelSchema schema) : base(schema) 
+			public DisposableFailingConnector(IChannelSchema schema) : base(schema)
 			{
 				WasDisposed = false;
 			}
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
-				return Task.FromResult(ConnectorResult<bool>.Fail("INIT_FAILED", "Initialization failed"));
+                throw new MessagingException("INIT_FAILED", "Initialization failed");
 			}
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public void Dispose()
@@ -337,22 +337,22 @@ namespace Deveel.Messaging.XUnit
 				WasAsyncDisposed = false;
 			}
 
-			public AsyncDisposableExceptionConnector(IChannelSchema schema) : base(schema) 
+			public AsyncDisposableExceptionConnector(IChannelSchema schema) : base(schema)
 			{
 				WasAsyncDisposed = false;
 				throw new Exception("Constructor exception");
 			}
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public ValueTask DisposeAsync()
@@ -367,19 +367,19 @@ namespace Deveel.Messaging.XUnit
 		{
 			public SlowShutdownConnector(IChannelSchema schema) : base(schema) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
-				return Task.FromResult(ConnectorResult<bool>.Success(true));
+                return ValueTask.CompletedTask;
 			}
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			protected override async Task ShutdownConnectorAsync(CancellationToken cancellationToken)
@@ -395,19 +395,19 @@ namespace Deveel.Messaging.XUnit
 		{
 			public ErrorDuringShutdownConnector(IChannelSchema schema) : base(schema) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
-				return Task.FromResult(ConnectorResult<bool>.Success(true));
+                return ValueTask.CompletedTask;
 			}
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			protected override Task ShutdownConnectorAsync(CancellationToken cancellationToken)
@@ -421,24 +421,24 @@ namespace Deveel.Messaging.XUnit
 		{
 			public static bool WasAsyncDisposed { get; private set; }
 
-			public AsyncDisposableConnector(IChannelSchema schema) : base(schema) 
+			public AsyncDisposableConnector(IChannelSchema schema) : base(schema)
 			{
 				WasAsyncDisposed = false;
 			}
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
-				return Task.FromResult(ConnectorResult<bool>.Success(true));
+                return ValueTask.CompletedTask;
 			}
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			protected override Task ShutdownConnectorAsync(CancellationToken cancellationToken)
@@ -466,16 +466,16 @@ namespace Deveel.Messaging.XUnit
 
 			public static void Reset() => WasAsyncDisposed = false;
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Fail("INIT_FAILED", "Initialization failed"));
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+				=> throw new MessagingException("INIT_FAILED", "Initialization failed");
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public ValueTask DisposeAsync()
@@ -490,19 +490,19 @@ namespace Deveel.Messaging.XUnit
 		{
 			public ErrorDuringDisposalConnector(IChannelSchema schema) : base(schema) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
-				return Task.FromResult(ConnectorResult<bool>.Success(true));
+                return ValueTask.CompletedTask;
 			}
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			protected override Task ShutdownConnectorAsync(CancellationToken cancellationToken)
@@ -523,16 +523,16 @@ namespace Deveel.Messaging.XUnit
 			// Missing constructor that accepts IChannelSchema
 			public ConnectorWithoutProperConstructor() : base(null!) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+            protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+                => ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 		}
 
@@ -541,16 +541,16 @@ namespace Deveel.Messaging.XUnit
 		{
 			public ConnectorWithInvalidSchemaType(IChannelSchema schema) : base(schema) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 		}
 

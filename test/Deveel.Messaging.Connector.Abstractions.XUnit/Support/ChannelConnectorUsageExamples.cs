@@ -47,7 +47,7 @@ public class ChannelConnectorUsageExamples
 		var schema = new ChannelSchema("Twilio", "SMS", "2.0.0")
 			.WithDisplayName("SMS Connector")
 			.WithCapabilities(
-				ChannelCapability.SendMessages | 
+				ChannelCapability.SendMessages |
 				ChannelCapability.MessageStatusQuery |
 				ChannelCapability.HealthCheck)
 			.AddRequiredParameter("AccountSid", DataType.String)
@@ -101,30 +101,30 @@ public class ChannelConnectorUsageExamples
 	{
 		public ExampleEmailConnector(IChannelSchema schema) : base(schema) { }
 
-		protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+		protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 		{
 			// Simulate email server configuration
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+		protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
 		{
 			// Simulate connection test to email server
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+		protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			// Simulate sending email
 			var result = new SendResult(message.Id, $"email-{Guid.NewGuid()}");
 			result.Status = MessageStatus.Sent;
-			return Task.FromResult(ConnectorResult<SendResult>.Success(result));
+			return Task.FromResult(result);
 		}
 
-		protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+		protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 		{
 			var status = new StatusInfo("Connected");
-			return Task.FromResult(ConnectorResult<StatusInfo>.Success(status));
+			return Task.FromResult(status);
 		}
 	}
 
@@ -133,35 +133,35 @@ public class ChannelConnectorUsageExamples
 	{
 		public ExampleSmsConnector(IChannelSchema schema) : base(schema) { }
 
-		protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+		protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 		{
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-		{
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+		protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        {
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+		protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			var result = new SendResult(message.Id, $"sms-{Guid.NewGuid()}");
 			result.Status = MessageStatus.Queued;
-			return Task.FromResult(ConnectorResult<SendResult>.Success(result));
+			return Task.FromResult(result);
 		}
 
-		protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+		protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 		{
 			var status = new StatusInfo("Active");
-			return Task.FromResult(ConnectorResult<StatusInfo>.Success(status));
+			return Task.FromResult(status);
 		}
 
 		// Override to provide status query capability
-		protected override Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
+		protected override Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
 		{
 			var statusUpdate = new StatusUpdateResult(messageId, MessageStatus.Delivered);
 			var result = new StatusUpdatesResult(messageId, new[] { statusUpdate });
-			return Task.FromResult(ConnectorResult<StatusUpdatesResult>.Success(result));
+			return Task.FromResult(result);
 		}
 	}
 
@@ -170,30 +170,30 @@ public class ChannelConnectorUsageExamples
 	{
 		public ExampleHealthConnector(IChannelSchema schema) : base(schema) { }
 
-		protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+		protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 		{
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-		{
-			return Task.FromResult(ConnectorResult<bool>.Success(true));
+		protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        {
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+		protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			// This connector doesn't support sending
 			throw new NotSupportedException("This connector is for health monitoring only");
 		}
 
-		protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+		protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 		{
 			var status = new StatusInfo("Monitoring");
-			return Task.FromResult(ConnectorResult<StatusInfo>.Success(status));
+			return Task.FromResult(status);
 		}
 
 		// Override to provide custom health information
-		protected override Task<ConnectorResult<ConnectorHealth>> GetConnectorHealthAsync(CancellationToken cancellationToken)
+		protected override Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
 		{
 			var health = new ConnectorHealth
 			{
@@ -208,7 +208,7 @@ public class ChannelConnectorUsageExamples
 			health.Metrics["memory_usage"] = "120MB";
 			health.Metrics["cpu_usage"] = "15%";
 
-			return Task.FromResult(ConnectorResult<ConnectorHealth>.Success(health));
+			return Task.FromResult(health);
 		}
 	}
 }

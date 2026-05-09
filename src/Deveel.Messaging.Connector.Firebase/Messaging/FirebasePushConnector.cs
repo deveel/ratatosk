@@ -22,7 +22,6 @@ namespace Deveel.Messaging
     [ChannelSchema(typeof(FirebasePushSchemaFactory))]
     public class FirebasePushConnector : ChannelConnectorBase
     {
-        private readonly ConnectionSettings _connectionSettings;
         private readonly IFirebaseService _firebaseService;
         private readonly DateTime _startTime = DateTime.UtcNow;
 
@@ -40,9 +39,9 @@ namespace Deveel.Messaging
         /// <param name="authenticationManager">Optional authentication manager for handling authentication flows.</param>
         /// <exception cref="ArgumentNullException">Thrown when schema or connectionSettings is null.</exception>
         public FirebasePushConnector(IChannelSchema schema, ConnectionSettings connectionSettings, IFirebaseService? firebaseService = null, ILogger<FirebasePushConnector>? logger = null, IAuthenticationManager? authenticationManager = null)
-            : base(schema, logger, authenticationManager)
+            : base(schema, connectionSettings, logger, authenticationManager)
         {
-            _connectionSettings = connectionSettings ?? throw new ArgumentNullException(nameof(connectionSettings));
+            ArgumentNullException.ThrowIfNull(connectionSettings);
             _firebaseService = firebaseService ?? new FirebaseService();
 
             // Register Firebase-specific authentication provider
@@ -62,179 +61,121 @@ namespace Deveel.Messaging
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+        protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            try
+            using var loggerScope = Logger.BeginScope("ProjectId={ProjectId}", new { ProjectId = _projectId });
+
+            // Perform authentication first
+            var result = await AuthenticateAsync(cancellationToken);
+            if (!result.Successful)
+                throw new ConnectorException(result.Error.ErrorCode, result.Error.ErrorMessage);
+
+            // Extract configuration from connection settings with proper handling of missing values
+            var projectIdParam = ConnectionSettings.GetParameter("ProjectId");
+            var dryRunParam = ConnectionSettings.GetParameter("DryRun");
+
+            _projectId = projectIdParam?.ToString();
+            _dryRun = dryRunParam != null && Convert.ToBoolean(dryRunParam);
+
+            if (string.IsNullOrWhiteSpace(_projectId))
             {
-                Logger.LogInitializingConnector();
-
-                // Perform authentication first
-                var authResult = await AuthenticateAsync(_connectionSettings, cancellationToken);
-                if (!authResult.Successful)
-                {
-                    return authResult;
-                }
-
-                // Extract configuration from connection settings with proper handling of missing values
-                var projectIdParam = _connectionSettings.GetParameter("ProjectId");
-                var dryRunParam = _connectionSettings.GetParameter("DryRun");
-
-                _projectId = projectIdParam?.ToString();
-                _dryRun = dryRunParam != null && Convert.ToBoolean(dryRunParam);
-
-                if (string.IsNullOrWhiteSpace(_projectId))
-                {
-                    return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, "ProjectId is required");
-                }
-
-                // Get the service account key from the authenticated credential
-                if (AuthenticationCredential?.AuthenticationType == AuthenticationType.Certificate)
-                {
-                    _serviceAccountKey = AuthenticationCredential.CredentialValue;
-                }
-                else
-                {
-                    return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, "Service account authentication is required for Firebase");
-                }
-
-                // Initialize Firebase service
-                await _firebaseService.InitializeAsync(_serviceAccountKey, _projectId);
-
-                Logger.LogConnectorInitialized(_projectId);
-                return ConnectorResult<bool>.Success(true);
+                throw new MessagingException(ConnectorErrorCodes.InitializationError, "ProjectId is required");
             }
-            catch (Exception ex)
+
+            // Get the service account key from the authenticated credential
+            if (AuthenticationCredential?.AuthenticationType == AuthenticationType.Certificate)
             {
-                Logger.LogInitializationFailed(ex);
-                return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, ex.Message);
+                _serviceAccountKey = AuthenticationCredential.CredentialValue;
             }
+            else
+            {
+                throw new MessagingException(ConnectorErrorCodes.InitializationError,
+                    "Service account authentication is required for Firebase");
+            }
+
+            // Initialize Firebase service
+            await _firebaseService.InitializeAsync(_serviceAccountKey, _projectId);
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        protected override async ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                Logger.LogTestingConnection();
+            var isConnected = await _firebaseService.TestConnectionAsync(cancellationToken);
 
-                var isConnected = await _firebaseService.TestConnectionAsync(cancellationToken);
-                
-                if (isConnected)
-                {
-                    Logger.LogConnectionTestSuccessful();
-                    return ConnectorResult<bool>.Success(true);
-                }
-                else
-                {
-                    Logger.LogConnectionTestFailed();
-                    return ConnectorResult<bool>.Fail(ConnectorErrorCodes.ConnectionTestError, "Firebase connection test failed");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogConnectionTestException(ex);
-                return ConnectorResult<bool>.Fail(ConnectorErrorCodes.ConnectionTestError, ex.Message);
-            }
+            if (!isConnected)
+                throw new ConnectorException(ConnectorErrorCodes.ConnectionTestError,
+                    "Firebase connection test failed");
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+        protected override async Task<SendResult> SendMessageCoreAsync(IMessage message,
+            CancellationToken cancellationToken)
         {
-            try
-            {
-                Logger.LogSendingPushNotification(message.Receiver?.Address);
+            Logger.LogSendingPushNotification(message.Receiver?.Address);
 
+            var firebaseMessage = await BuildFirebaseMessageAsync(message, cancellationToken);
+            var messageId = await _firebaseService.SendAsync(firebaseMessage, _dryRun, cancellationToken);
+
+            var result = new SendResult(message.Id, messageId);
+            result.AdditionalData["MessageId"] = messageId;
+            result.AdditionalData["ProjectId"] = _projectId!;
+            result.AdditionalData["DryRun"] = _dryRun;
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        protected override async Task<BatchSendResult> SendBatchCoreAsync(IMessageBatch batch,
+            CancellationToken cancellationToken)
+        {
+            var batchId = Guid.NewGuid().ToString();
+            var messages = new List<FirebaseAdmin.Messaging.Message>();
+
+            // Build Firebase messages
+            foreach (var message in batch.Messages)
+            {
                 var firebaseMessage = await BuildFirebaseMessageAsync(message, cancellationToken);
-                var messageId = await _firebaseService.SendAsync(firebaseMessage, _dryRun, cancellationToken);
-
-                var result = new SendResult(message.Id, messageId);
-                result.AdditionalData["MessageId"] = messageId;
-                result.AdditionalData["ProjectId"] = _projectId!;
-                result.AdditionalData["DryRun"] = _dryRun;
-
-                Logger.LogPushNotificationSent(messageId);
-                return ConnectorResult<SendResult>.Success(result);
+                messages.Add(firebaseMessage);
             }
-            catch (Exception ex)
+
+            // Check if we can use multicast (all messages to device tokens with same notification)
+            var deviceTokenMessages = messages.Where(m => !string.IsNullOrEmpty(m.Token)).ToList();
+            var topicMessages = messages.Where(m => !string.IsNullOrEmpty(m.Topic)).ToList();
+
+            var results = new Dictionary<string, SendResult>();
+
+            // Send multicast messages if possible
+            if (deviceTokenMessages.Count > 1 && CanUseMulticast(deviceTokenMessages))
             {
-                Logger.LogPushNotificationSendFailed(ex);
-                return ConnectorResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, ex.Message);
+                await SendMulticastMessagesAsync(deviceTokenMessages, batch.Messages, results, cancellationToken);
             }
+            else if (deviceTokenMessages.Count > 0)
+            {
+                await SendIndividualMessagesAsync(deviceTokenMessages, batch.Messages, results, cancellationToken);
+            }
+
+            // Send topic messages individually
+            if (topicMessages.Count > 0)
+            {
+                await SendIndividualMessagesAsync(topicMessages, batch.Messages, results, cancellationToken);
+            }
+
+            return new BatchSendResult(batchId, batchId, results);
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<BatchSendResult>> SendBatchCoreAsync(IMessageBatch batch, CancellationToken cancellationToken)
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                Logger.LogSendingBatch(batch.Messages.Count());
-
-                var batchId = Guid.NewGuid().ToString();
-                var messages = new List<FirebaseAdmin.Messaging.Message>();
-
-                // Build Firebase messages
-                foreach (var message in batch.Messages)
-                {
-                    var firebaseMessage = await BuildFirebaseMessageAsync(message, cancellationToken);
-                    messages.Add(firebaseMessage);
-                }
-
-                // Check if we can use multicast (all messages to device tokens with same notification)
-                var deviceTokenMessages = messages.Where(m => !string.IsNullOrEmpty(m.Token)).ToList();
-                var topicMessages = messages.Where(m => !string.IsNullOrEmpty(m.Topic)).ToList();
-
-                var results = new Dictionary<string, SendResult>();
-
-                // Send multicast messages if possible
-                if (deviceTokenMessages.Count > 1 && CanUseMulticast(deviceTokenMessages))
-                {
-                    await SendMulticastMessagesAsync(deviceTokenMessages, batch.Messages, results, cancellationToken);
-                }
-                else if (deviceTokenMessages.Count > 0)
-                {
-                    await SendIndividualMessagesAsync(deviceTokenMessages, batch.Messages, results, cancellationToken);
-                }
-
-                // Send topic messages individually
-                if (topicMessages.Count > 0)
-                {
-                    await SendIndividualMessagesAsync(topicMessages, batch.Messages, results, cancellationToken);
-                }
-
-                var batchResult = new BatchSendResult(batchId, batchId, results);
-                
-                Logger.LogBatchSent(batchId, results.Count);
-                
-                return ConnectorResult<BatchSendResult>.Success(batchResult);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogBatchSendFailed(ex);
-                return ConnectorResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, ex.Message);
-            }
+            var status = new StatusInfo("Firebase connector operational", $"Project: {_projectId ?? "Unknown"}");
+            status.AdditionalData["ProjectId"] = _projectId ?? "Unknown";
+            status.AdditionalData["IsInitialized"] = _firebaseService.IsInitialized;
+            status.AdditionalData["DryRun"] = _dryRun;
+            status.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
+            return Task.FromResult(status);
         }
 
         /// <inheritdoc/>
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                var status = new StatusInfo("Firebase connector operational", $"Project: {_projectId ?? "Unknown"}");
-                status.AdditionalData["ProjectId"] = _projectId ?? "Unknown";
-                status.AdditionalData["IsInitialized"] = _firebaseService.IsInitialized;
-                status.AdditionalData["DryRun"] = _dryRun;
-                status.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
-
-                return ConnectorResult<StatusInfo>.SuccessTask(status);
-            }
-            catch (Exception ex)
-            {
-                return ConnectorResult<StatusInfo>.FailTask(ConnectorErrorCodes.GetStatusError, ex.Message);
-            }
-        }
-
-        /// <inheritdoc/>
-        protected override async Task<ConnectorResult<ConnectorHealth>> GetConnectorHealthAsync(CancellationToken cancellationToken)
+        protected override async Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
         {
             var health = new ConnectorHealth
             {
@@ -265,12 +206,7 @@ namespace Deveel.Messaging
             {
                 try
                 {
-                    var connectionTest = await TestConnectorConnectionAsync(cancellationToken);
-                    if (!connectionTest.Successful)
-                    {
-                        health.IsHealthy = false;
-                        health.Issues.Add("Firebase connection test failed");
-                    }
+                    await TestConnectorConnectionAsync(cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -279,7 +215,7 @@ namespace Deveel.Messaging
                 }
             }
 
-            return ConnectorResult<ConnectorHealth>.Success(health);
+            return health;
         }
 
         /// <inheritdoc/>
@@ -378,7 +314,7 @@ namespace Deveel.Messaging
                     {
                         isValidJson = false;
                     }
-                    
+
                     if (!isValidJson)
                     {
                         yield return new ValidationResult("CustomData must be valid JSON", new[] { "CustomData" });
@@ -429,7 +365,7 @@ namespace Deveel.Messaging
                 messageBuilder.Android = androidConfig;
             }
 
-            // Set iOS-specific configuration  
+            // Set iOS-specific configuration
             var apnsConfig = BuildApnsConfig(message);
             if (apnsConfig != null)
             {
@@ -453,7 +389,7 @@ namespace Deveel.Messaging
         private Notification? BuildNotification(IMessage message)
         {
             var title = GetMessageProperty(message, "Title");
-            var body = (message.Content as ITextContent)?.Text ?? 
+            var body = (message.Content as ITextContent)?.Text ??
                       GetMessageProperty(message, "Body");
             var imageUrl = GetMessageProperty(message, "ImageUrl");
 
@@ -691,7 +627,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrEmpty(color))
                 return false;
 
-            return color.StartsWith('#') && 
+            return color.StartsWith('#') &&
                    (color.Length == 7 || color.Length == 9) &&
                    color[1..].All(c => char.IsDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'));
         }
@@ -704,7 +640,7 @@ namespace Deveel.Messaging
             if (messages.Count <= 1) return false;
 
             var first = messages[0];
-            return messages.All(m => 
+            return messages.All(m =>
                 AreNotificationsEqual(m.Notification, first.Notification) &&
                 AreDataPayloadsEqual(m.Data, first.Data));
         }
@@ -716,9 +652,9 @@ namespace Deveel.Messaging
         {
             if (n1 == null && n2 == null) return true;
             if (n1 == null || n2 == null) return false;
-            
-            return n1.Title == n2.Title && 
-                   n1.Body == n2.Body && 
+
+            return n1.Title == n2.Title &&
+                   n1.Body == n2.Body &&
                    n1.ImageUrl == n2.ImageUrl;
         }
 
@@ -763,11 +699,11 @@ namespace Deveel.Messaging
                 {
                     var token = chunk.ElementAt(i);
                     var response = batchResponse.Responses[i];
-                    
+
                     // Find the original message ID for this token
                     var originalMessage = originalMessages.FirstOrDefault(m => m.Receiver?.Address == token);
                     var messageId = originalMessage?.Id ?? $"multicast-{token}";
-                    
+
                     var result = new SendResult(messageId, response.MessageId ?? "unknown");
                     result.AdditionalData["Token"] = token;
                     result.AdditionalData["ProjectId"] = _projectId!;
@@ -799,11 +735,11 @@ namespace Deveel.Messaging
             {
                 var message = messages[i];
                 var response = batchResponse.Responses[i];
-                
+
                 // Find the original message ID
                 var originalMessage = originalMessages.ElementAtOrDefault(i);
                 var messageId = originalMessage?.Id ?? $"message-{Guid.NewGuid()}";
-                
+
                 var result = new SendResult(messageId, response.MessageId ?? "unknown");
                 result.AdditionalData["Token"] = message.Token;
                 result.AdditionalData["Topic"] = message.Topic;
@@ -837,9 +773,9 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error during Firebase connector shutdown");
+                Logger.LogShutdownFailed(ex);
             }
-            
+
             await base.ShutdownConnectorAsync(cancellationToken);
         }
     }

@@ -27,16 +27,6 @@ namespace Deveel.Messaging
         public const string MissingCredentials = "MISSING_CREDENTIALS";
 
         /// <summary>
-        /// Indicates that connection settings validation failed.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the provided connection settings do not meet the
-        /// requirements defined by the Facebook Messenger channel schema, such as missing
-        /// required parameters or invalid parameter values.
-        /// </remarks>
-        public const string InvalidConnectionSettings = "INVALID_CONNECTION_SETTINGS";
-
-        /// <summary>
         /// Indicates that the provided access token is invalid or expired.
         /// </summary>
         /// <remarks>
@@ -72,16 +62,6 @@ namespace Deveel.Messaging
         #region Message Validation
 
         /// <summary>
-        /// Indicates that message validation failed.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the message properties do not meet the
-        /// requirements defined by the Facebook Messenger channel schema, such as missing
-        /// required properties or invalid property values.
-        /// </remarks>
-        public const string InvalidMessage = "INVALID_MESSAGE";
-
-        /// <summary>
         /// Indicates that the recipient User ID is invalid or missing.
         /// </summary>
         /// <remarks>
@@ -104,16 +84,6 @@ namespace Deveel.Messaging
         #region API Operations
 
         /// <summary>
-        /// Indicates that the Facebook Graph API connection test failed.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when attempting to test connectivity by fetching page
-        /// information from the Facebook Graph API fails, typically due to invalid credentials
-        /// or network connectivity issues.
-        /// </remarks>
-        public const string ConnectionFailed = "CONNECTION_FAILED";
-
-        /// <summary>
         /// Indicates that the connection test operation failed.
         /// </summary>
         /// <remarks>
@@ -122,36 +92,9 @@ namespace Deveel.Messaging
         /// </remarks>
         public const string ConnectionTestFailed = "CONNECTION_TEST_FAILED";
 
-        /// <summary>
-        /// Indicates that sending a message through Facebook Messenger failed.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the Facebook Graph API call to send a message fails,
-        /// either due to API errors, invalid parameters, or service unavailability.
-        /// </remarks>
-        public const string SendMessageFailed = "SEND_MESSAGE_FAILED";
-
-        /// <summary>
-        /// Indicates that retrieving connector status information failed.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when an exception is thrown while attempting to
-        /// gather and return the current status information of the Facebook connector.
-        /// </remarks>
-        public const string StatusError = "STATUS_ERROR";
-
         #endregion
 
         #region Message Receiving
-
-        /// <summary>
-        /// Indicates that receiving a message from Facebook webhook failed.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when processing an incoming message webhook from Facebook fails,
-        /// typically due to malformed webhook data or processing errors.
-        /// </remarks>
-        public const string ReceiveMessageFailed = "RECEIVE_MESSAGE_FAILED";
 
         /// <summary>
         /// Indicates that the webhook data provided is invalid or malformed.

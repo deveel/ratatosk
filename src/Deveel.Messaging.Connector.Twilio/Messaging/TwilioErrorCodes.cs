@@ -138,15 +138,6 @@ namespace Deveel.Messaging
         public const string ConnectionFailed = "CONNECTION_FAILED";
 
         /// <summary>
-        /// Indicates that the connection test operation failed.
-        /// </summary>
-        /// <remarks>
-        /// This error is returned when an exception occurs during the connection
-        /// testing process, preventing verification of Twilio API connectivity.
-        /// </remarks>
-        public const string ConnectionTestFailed = "CONNECTION_TEST_FAILED";
-
-        /// <summary>
         /// Indicates that sending an SMS message through Twilio failed.
         /// </summary>
         /// <remarks>

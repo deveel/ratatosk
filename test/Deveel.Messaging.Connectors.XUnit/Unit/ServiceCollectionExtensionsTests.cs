@@ -39,8 +39,8 @@ namespace Deveel.Messaging.XUnit
 			services.AddChannelRegistry();
 
 			// Assert
-			Assert.Contains(services, descriptor => 
-				descriptor.ServiceType == typeof(IChannelRegistry) && 
+			Assert.Contains(services, descriptor =>
+				descriptor.ServiceType == typeof(IChannelRegistry) &&
 				descriptor.Lifetime == ServiceLifetime.Singleton);
 		}
 
@@ -52,7 +52,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.Throws<ArgumentNullException>(() => 
+			Assert.Throws<ArgumentNullException>(() =>
 				services.AddChannelConnector<TestConnector>());
 		}
 
@@ -64,7 +64,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.Throws<ArgumentNullException>(() => 
+			Assert.Throws<ArgumentNullException>(() =>
 				services.AddChannelConnector(typeof(TestConnector)));
 		}
 
@@ -76,7 +76,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.Throws<ArgumentNullException>(() => 
+			Assert.Throws<ArgumentNullException>(() =>
 				services.AddChannelConnector(null!));
 		}
 
@@ -88,7 +88,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.Throws<ArgumentException>(() => 
+			Assert.Throws<ArgumentException>(() =>
 				services.AddChannelConnector(typeof(string)));
 		}
 
@@ -170,9 +170,9 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			var exception = Assert.Throws<ArgumentException>(() => 
+			var exception = Assert.Throws<ArgumentException>(() =>
 				services.AddChannelConnector<ConnectorWithoutAttribute>());
-			
+
 			Assert.Contains("must be decorated with", exception.Message);
 		}
 
@@ -184,9 +184,9 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			var exception = Assert.Throws<ArgumentException>(() => 
+			var exception = Assert.Throws<ArgumentException>(() =>
 				services.AddChannelConnector(typeof(ConnectorWithoutAttribute)));
-			
+
 			Assert.Contains("must be decorated with", exception.Message);
 		}
 
@@ -224,19 +224,19 @@ namespace Deveel.Messaging.XUnit
 		{
 			public TestConnector(IChannelSchema schema) : base(schema) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
-				return Task.FromResult(ConnectorResult<bool>.Success(true));
+                return ValueTask.CompletedTask;
 			}
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 		}
 
@@ -245,19 +245,19 @@ namespace Deveel.Messaging.XUnit
 		{
 			public AnotherTestConnector(IChannelSchema schema) : base(schema) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
-				return Task.FromResult(ConnectorResult<bool>.Success(true));
+                return ValueTask.CompletedTask;
 			}
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 		}
 
@@ -266,16 +266,16 @@ namespace Deveel.Messaging.XUnit
 		{
 			public ConnectorWithoutAttribute(IChannelSchema schema) : base(schema) { }
 
-			protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+				=> ValueTask.CompletedTask;
 
-			protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 		}
 

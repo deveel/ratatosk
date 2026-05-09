@@ -104,7 +104,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<InvalidOperationException>(() => 
+		await Assert.ThrowsAsync<InvalidOperationException>(() =>
 			connector.TestConnectionAsync(CancellationToken.None));
 	}
 
@@ -140,7 +140,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() => 
+		await Assert.ThrowsAsync<NotSupportedException>(() =>
 			connector.SendMessageAsync(message, CancellationToken.None));
 	}
 
@@ -154,7 +154,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<ArgumentNullException>(() => 
+		await Assert.ThrowsAsync<ArgumentNullException>(() =>
 			connector.SendMessageAsync(null!, CancellationToken.None));
 	}
 
@@ -187,14 +187,14 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
-		var batch = new MessageBatch { 
+		var batch = new MessageBatch {
 			Id = Guid.NewGuid().ToString(),
 			Messages = new List<IMessage> { new Message { Id = Guid.NewGuid().ToString() } }
 		};
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() => 
+		await Assert.ThrowsAsync<NotSupportedException>(() =>
 			connector.SendBatchAsync(batch, CancellationToken.None));
 	}
 
@@ -206,13 +206,13 @@ public class ChannelConnectorBaseTests
 			.WithCapability(ChannelCapability.BulkMessaging);
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
-		var batch = new MessageBatch { 
+		var batch = new MessageBatch {
 			Id = Guid.NewGuid().ToString(),
-			Messages = new List<IMessage> { 
-				new Message { 
-					Id = Guid.NewGuid().ToString(), 
-					Content = new TextContent("This is a test message.") 
-				} 
+			Messages = new List<IMessage> {
+				new Message {
+					Id = Guid.NewGuid().ToString(),
+					Content = new TextContent("This is a test message.")
+				}
 			}
 		};
 
@@ -234,7 +234,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() => 
+		await Assert.ThrowsAsync<NotSupportedException>(() =>
 			connector.GetMessageStatusAsync("test-message", CancellationToken.None));
 	}
 
@@ -249,7 +249,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<ArgumentNullException>(() => 
+		await Assert.ThrowsAsync<ArgumentNullException>(() =>
 			connector.GetMessageStatusAsync(null!, CancellationToken.None));
 	}
 
@@ -288,7 +288,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() => 
+		await Assert.ThrowsAsync<NotSupportedException>(() =>
 			connector.ReceiveMessageStatusAsync(MessageSource.Text("test content"), CancellationToken.None));
 	}
 
@@ -302,7 +302,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() => 
+		await Assert.ThrowsAsync<NotSupportedException>(() =>
 			connector.ReceiveMessagesAsync(MessageSource.Text("test content"), CancellationToken.None));
 	}
 
@@ -315,7 +315,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() => 
+		await Assert.ThrowsAsync<NotSupportedException>(() =>
 			connector.GetHealthAsync(CancellationToken.None));
 	}
 
@@ -400,22 +400,22 @@ public class ChannelConnectorBaseTests
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
 		connector.SetStatePublic(state);
-		var message = new Message { 
-			Id = Guid.NewGuid().ToString(), 
-			Content = new TextContent("This is a test message.") 
+		var message = new Message {
+			Id = Guid.NewGuid().ToString(),
+			Content = new TextContent("This is a test message.")
 		};
 
 		// Act
 		// Assert
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
 		{
-			await Assert.ThrowsAsync<InvalidOperationException>(() => 
+			await Assert.ThrowsAsync<InvalidOperationException>(() =>
 				connector.TestConnectionAsync(CancellationToken.None));
 		}
 
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
 		{
-			await Assert.ThrowsAsync<InvalidOperationException>(() => 
+			await Assert.ThrowsAsync<InvalidOperationException>(() =>
 				connector.SendMessageAsync(message, CancellationToken.None));
 		}
 	}
@@ -468,13 +468,13 @@ public class ChannelConnectorBaseTests
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(CancellationToken.None);
 
-		var batch = new MessageBatch { 
+		var batch = new MessageBatch {
 			Id = Guid.NewGuid().ToString(),
-			Messages = new List<IMessage> { 
-				new Message { 
+			Messages = new List<IMessage> {
+				new Message {
 					Id = Guid.NewGuid().ToString(),
 					Content = new TextContent()
-				} 
+				}
 			}
 		};
 
@@ -521,8 +521,8 @@ public class ChannelConnectorBaseTests
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
-		var message = new Message { 
-			Id = "" 
+		var message = new Message {
+			Id = ""
 		}; // Empty ID
 
 		// Act
@@ -629,7 +629,7 @@ public class ChannelConnectorBaseTests
 				e.CanSend = true;
 				e.CanReceive = false;
 			});
-		
+
 		var connector = new TestConnector(schema);
 		var validMessage = new Message
 		{
@@ -672,32 +672,32 @@ public class ChannelConnectorBaseTests
 		public bool IsEndpointTypeSupportedPublic(EndpointType endpointType, bool asSender = false, bool asReceiver = false) =>
 			IsEndpointTypeSupported(endpointType, asSender, asReceiver);
 
-		protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+		protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 		{
 			if (ShouldThrowOnInitialization)
 				throw new InvalidOperationException("Test initialization failure");
 
 			if (ShouldFailInitialization)
-				return ConnectorResult<bool>.FailTask("INIT_FAILED", "Initialization failed");
+                throw new MessagingException("INIT_FAILED", "Initialization failed");
 
-			return ConnectorResult<bool>.SuccessTask(true);
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+		protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
 		{
-			return ConnectorResult<bool>.SuccessTask(true);
+            return ValueTask.CompletedTask;
 		}
 
-		protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+		protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			var result = new SendResult(message.Id, $"remote-{message.Id}");
-			return ConnectorResult<SendResult>.SuccessTask(result);
+			return Task.FromResult(result);
 		}
 
-		protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+		protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
 		{
 			var status = new StatusInfo("Test Status");
-			return ConnectorResult<StatusInfo>.SuccessTask(status);
+			return Task.FromResult(status);
 		}
 	}
 }
