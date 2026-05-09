@@ -32,7 +32,7 @@ namespace Deveel.Messaging.XUnit
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				registry.CreateConnectorAsync<DisposableFailingConnector>());
+				registry.CreateConnectorAsync<DisposableFailingConnector>(TestContext.Current.CancellationToken));
 
 			Assert.Contains("Failed to initialize connector", exception.Message);
 
@@ -55,7 +55,7 @@ namespace Deveel.Messaging.XUnit
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				registry.CreateConnectorAsync<AsyncDisposableExceptionConnector>());
+				registry.CreateConnectorAsync<AsyncDisposableExceptionConnector>(TestContext.Current.CancellationToken));
 
 			Assert.Contains("Failed to create instance", exception.Message);
 
@@ -73,7 +73,7 @@ namespace Deveel.Messaging.XUnit
 			AsyncDisposableFailingConnector.Reset();
 
 			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				registry.CreateConnectorAsync<AsyncDisposableFailingConnector>());
+				registry.CreateConnectorAsync<AsyncDisposableFailingConnector>(TestContext.Current.CancellationToken));
 
 			Assert.Contains("Failed to initialize connector", exception.Message);
 			Assert.True(AsyncDisposableFailingConnector.WasAsyncDisposed);
@@ -87,7 +87,7 @@ namespace Deveel.Messaging.XUnit
 			registry.RegisterConnector<SlowShutdownConnector>();
 
 			// Create a connector that will take time to shutdown
-			var connector = await registry.CreateConnectorAsync<SlowShutdownConnector>();
+			var connector = await registry.CreateConnectorAsync<SlowShutdownConnector>(TestContext.Current.CancellationToken);
 
 			// Act
 			registry.Dispose();
@@ -104,8 +104,8 @@ namespace Deveel.Messaging.XUnit
 			registry.RegisterConnector<ErrorDuringShutdownConnector>();
 			registry.RegisterConnector<TestConnector>();
 
-			var connector1 = await registry.CreateConnectorAsync<ErrorDuringShutdownConnector>();
-			var connector2 = await registry.CreateConnectorAsync<TestConnector>();
+			var connector1 = await registry.CreateConnectorAsync<ErrorDuringShutdownConnector>(TestContext.Current.CancellationToken);
+			var connector2 = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
 
 			// Act
 			await registry.DisposeAsync();
@@ -121,7 +121,7 @@ namespace Deveel.Messaging.XUnit
 			var registry = CreateRegistry();
 			registry.RegisterConnector<AsyncDisposableConnector>();
 
-			var connector = await registry.CreateConnectorAsync<AsyncDisposableConnector>();
+			var connector = await registry.CreateConnectorAsync<AsyncDisposableConnector>(TestContext.Current.CancellationToken);
 
 			// Act
 			await registry.DisposeAsync();
@@ -139,8 +139,8 @@ namespace Deveel.Messaging.XUnit
 			registry.RegisterConnector<ErrorDuringDisposalConnector>();
 			registry.RegisterConnector<TestConnector>();
 
-			var connector1 = await registry.CreateConnectorAsync<ErrorDuringDisposalConnector>();
-			var connector2 = await registry.CreateConnectorAsync<TestConnector>();
+			var connector1 = await registry.CreateConnectorAsync<ErrorDuringDisposalConnector>(TestContext.Current.CancellationToken);
+			var connector2 = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
 
 			// Act
 			await registry.DisposeAsync();
@@ -178,7 +178,7 @@ namespace Deveel.Messaging.XUnit
 			// Act
 			// Assert
 			await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				registry.CreateConnectorAsync<ConnectorWithoutProperConstructor>());
+				registry.CreateConnectorAsync<ConnectorWithoutProperConstructor>(TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -202,7 +202,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			var tasks = Enumerable.Range(0, 10)
-				.Select(_ => registry.CreateConnectorAsync<TestConnector>())
+				.Select(_ => registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken))
 				.ToArray();
 
 			var connectors = await Task.WhenAll(tasks);
@@ -249,7 +249,7 @@ namespace Deveel.Messaging.XUnit
 			var registry = CreateRegistry();
 			registry.RegisterConnector<TestConnector>();
 
-			var connector = await registry.CreateConnectorAsync<TestConnector>();
+			var connector = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
 
 			// Act
 			await registry.DisposeAsync();

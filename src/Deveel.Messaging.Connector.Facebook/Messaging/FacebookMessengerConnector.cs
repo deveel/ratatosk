@@ -285,7 +285,7 @@ namespace Deveel.Messaging
                         Type = GetFacebookAttachmentType(mediaContent.MediaType.ToString() ?? "file"),
                         Payload = new FacebookPayload
                         {
-                            Url = mediaContent.FileUrl,
+                            Url = mediaContent.FileUrl ?? string.Empty,
                             IsReusable = true
                         }
                     };

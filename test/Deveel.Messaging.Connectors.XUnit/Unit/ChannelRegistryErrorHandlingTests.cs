@@ -52,7 +52,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			await Assert.ThrowsAsync<ArgumentNullException>(() => registry.CreateConnectorAsync(null!));
+			await Assert.ThrowsAsync<ArgumentNullException>(() => registry.CreateConnectorAsync(null!, TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -65,7 +65,7 @@ namespace Deveel.Messaging.XUnit
 			// Act
 			// Assert
 			await Assert.ThrowsAsync<ArgumentNullException>(() =>
-				registry.CreateConnectorAsync(typeof(TestConnector), null!));
+				registry.CreateConnectorAsync(typeof(TestConnector), null!, TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -278,7 +278,7 @@ namespace Deveel.Messaging.XUnit
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				registry.CreateConnectorAsync<FailingInitializationConnector>());
+				registry.CreateConnectorAsync<FailingInitializationConnector>(TestContext.Current.CancellationToken));
 
 			Assert.Contains("Failed to initialize connector", exception.Message);
 		}
@@ -293,7 +293,7 @@ namespace Deveel.Messaging.XUnit
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				registry.CreateConnectorAsync<ExceptionDuringInitializationConnector>());
+				registry.CreateConnectorAsync<ExceptionDuringInitializationConnector>(TestContext.Current.CancellationToken));
 
 			Assert.Contains("Failed to initialize connector", exception.Message);
 		}
@@ -330,7 +330,7 @@ namespace Deveel.Messaging.XUnit
 			registry.RegisterConnector<ConnectorWithSchemaFactoryInstance>();
 
 			// Act
-			var connector = await registry.CreateConnectorAsync<ConnectorWithSchemaFactoryInstance>();
+			var connector = await registry.CreateConnectorAsync<ConnectorWithSchemaFactoryInstance>(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(connector);
@@ -351,7 +351,7 @@ namespace Deveel.Messaging.XUnit
 			});
 
 			// Act
-			var connector = await registry.CreateConnectorAsync<TestConnector>();
+			var connector = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(connector);
@@ -372,7 +372,7 @@ namespace Deveel.Messaging.XUnit
 			// Act
 			// Assert
 			var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				registry.CreateConnectorAsync<TestConnector>());
+				registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken));
 
 			Assert.Contains("Failed to create and initialize connector", exception.Message);
 		}

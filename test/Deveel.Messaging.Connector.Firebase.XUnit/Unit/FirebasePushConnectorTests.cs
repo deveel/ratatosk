@@ -87,7 +87,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
 
             // Act
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful initialization but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -107,7 +107,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings);
 
             // Act
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful);
@@ -126,7 +126,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings);
 
             // Act
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful);
@@ -148,7 +148,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
 
             // Act
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful);
@@ -163,7 +163,7 @@ namespace Deveel.Messaging
             var connector = await CreateInitializedConnectorAsync();
 
             // Act
-            var result = await connector.TestConnectionAsync(CancellationToken.None);
+            var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -184,10 +184,10 @@ namespace Deveel.Messaging
                 .ReturnsAsync(false);
 
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
-            await connector.InitializeAsync(CancellationToken.None);
+            await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Act
-            var result = await connector.TestConnectionAsync(CancellationToken.None);
+            var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful);
@@ -203,7 +203,7 @@ namespace Deveel.Messaging
             var message = FirebaseMockFactory.CreateDeviceTokenMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -231,7 +231,7 @@ namespace Deveel.Messaging
             var message = FirebaseMockFactory.CreateTopicMessage();
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -257,7 +257,7 @@ namespace Deveel.Messaging
             var connector = await CreateInitializedConnectorAsync();
 
             // Act
-            var result = await connector.GetStatusAsync(CancellationToken.None);
+            var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -272,7 +272,7 @@ namespace Deveel.Messaging
             var connector = await CreateInitializedConnectorAsync();
 
             // Act
-            var result = await connector.GetHealthAsync(CancellationToken.None);
+            var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -294,7 +294,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
 
             // Act
-            var result = await connector.GetHealthAsync(CancellationToken.None);
+            var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful);
@@ -419,7 +419,7 @@ namespace Deveel.Messaging
             var mockFirebaseService = FirebaseMockFactory.CreateMockFirebaseService();
             
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
             return connector;
@@ -434,7 +434,7 @@ namespace Deveel.Messaging
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
             return connector;
@@ -449,7 +449,7 @@ namespace Deveel.Messaging
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             
             Assert.True(result.Successful, $"Failed to initialize bulk connector: {result.Error?.ErrorMessage}");
             return connector;

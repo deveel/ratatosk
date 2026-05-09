@@ -79,7 +79,7 @@ public class TwilioSmsConnectorTests
         var connector = new TwilioSmsConnector(schema, connectionSettings);
 
         // Act
-        var result = await connector.InitializeAsync(CancellationToken.None);
+        var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -95,7 +95,7 @@ public class TwilioSmsConnectorTests
         var connector = new TwilioSmsConnector(schema, connectionSettings);
 
         // Act
-        var result = await connector.InitializeAsync(CancellationToken.None);
+        var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -114,7 +114,7 @@ public class TwilioSmsConnectorTests
         var connector = new TwilioSmsConnector(schema, connectionSettings);
 
         // Act
-        var result = await connector.InitializeAsync(CancellationToken.None);
+        var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful); // Should succeed now since FromNumber is no longer required at connection level
@@ -133,7 +133,7 @@ public class TwilioSmsConnectorTests
         var connector = new TwilioSmsConnector(schema, connectionSettings);
 
         // Act
-        var result = await connector.InitializeAsync(CancellationToken.None);
+        var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -147,10 +147,10 @@ public class TwilioSmsConnectorTests
         var schema = TwilioChannelSchemas.SimpleSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await connector.InitializeAsync(CancellationToken.None);
+        var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -168,7 +168,7 @@ public class TwilioSmsConnectorTests
         // Act
         // Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            connector.TestConnectionAsync(CancellationToken.None));
+            connector.TestConnectionAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -179,13 +179,13 @@ public class TwilioSmsConnectorTests
             .WithCapabilities(ChannelCapability.ReceiveMessages); // No send capability
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         var message = CreateTestMessage();
 
         // Act
         // Assert
         await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.SendMessageAsync(message, CancellationToken.None));
+            connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -195,12 +195,12 @@ public class TwilioSmsConnectorTests
         var schema = TwilioChannelSchemas.SimpleSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
         // Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => 
-            connector.SendMessageAsync(null!, CancellationToken.None));
+            connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -211,12 +211,12 @@ public class TwilioSmsConnectorTests
             .WithCapabilities(ChannelCapability.SendMessages); // No status query capability
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
         // Assert
         await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.GetMessageStatusAsync("test-message", CancellationToken.None));
+            connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -226,10 +226,10 @@ public class TwilioSmsConnectorTests
         var schema = TwilioChannelSchemas.SimpleSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await connector.GetHealthAsync(CancellationToken.None);
+        var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -246,10 +246,10 @@ public class TwilioSmsConnectorTests
         var schema = TwilioChannelSchemas.SimpleSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await connector.GetStatusAsync(CancellationToken.None);
+        var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -267,10 +267,10 @@ public class TwilioSmsConnectorTests
         var schema = TwilioChannelSchemas.SimpleSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        await connector.ShutdownAsync(CancellationToken.None);
+        await connector.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(ConnectorState.Shutdown, connector.State);

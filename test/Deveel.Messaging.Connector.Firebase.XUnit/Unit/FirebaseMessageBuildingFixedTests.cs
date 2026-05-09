@@ -33,7 +33,7 @@ namespace Deveel.Messaging
             message.With("Title", "Valid Test");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -64,7 +64,7 @@ namespace Deveel.Messaging
             message.With("CustomData", """{"action":"test","value":123}""");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -99,7 +99,7 @@ namespace Deveel.Messaging
                    .With("Color", "#FF5722");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -133,7 +133,7 @@ namespace Deveel.Messaging
                    .With("Sound", "notification.wav");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -166,7 +166,7 @@ namespace Deveel.Messaging
             message.With("CustomData", "invalid-json-{not-valid}");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful);
@@ -189,7 +189,7 @@ namespace Deveel.Messaging
             var message = CreateSimpleValidMessage();
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -207,7 +207,7 @@ namespace Deveel.Messaging
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
             
             return connector;

@@ -66,7 +66,7 @@ namespace Deveel.Messaging
                 .SetParameter("ApiKey", "test-api-key");
             var config = AuthenticationConfigurations.ApiKeyAuthentication();
 
-            var result = await authManager.AuthenticateAsync(connectionSettings, config);
+            var result = await authManager.AuthenticateAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccessful, $"Authentication failed: {result.ErrorCode} - {result.ErrorMessage}");
             Assert.NotNull(result.Credential);
@@ -87,7 +87,7 @@ namespace Deveel.Messaging
             var connector = new DebugTestConnector(schema, connectionSettings);
 
             // Just test initialization which includes authentication
-            var initResult = await connector.InitializeAsync(CancellationToken.None);
+            var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.True(initResult.Successful, $"Initialization failed: {initResult.Error?.ErrorCode} - {initResult.Error?.ErrorMessage}");
             Assert.Equal(ConnectorState.Ready, connector.State);
@@ -105,7 +105,7 @@ namespace Deveel.Messaging
                 .SetParameter("AuthToken", "test-token");
             var config = AuthenticationConfigurations.TwilioBasicAuthentication();
 
-            var result = await authManager.AuthenticateAsync(connectionSettings, config);
+            var result = await authManager.AuthenticateAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccessful, $"Authentication failed: {result.ErrorCode} - {result.ErrorMessage}");
             Assert.NotNull(result.Credential);
@@ -133,7 +133,7 @@ namespace Deveel.Messaging
             // Only authenticate - don't do any other initialization
             var authResult = await AuthenticateAsync(cancellationToken);
             if (!authResult.Successful)
-                throw new Exception($"Authentication failed during initialization: {authResult.Error.ErrorCode} - {authResult.Error.ErrorMessage}");
+                throw new Exception($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
         }
 
         protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)

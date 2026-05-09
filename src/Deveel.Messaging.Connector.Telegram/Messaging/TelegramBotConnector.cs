@@ -266,7 +266,7 @@ namespace Deveel.Messaging
 			// Validate message content based on type
 			if (message.Content is ITextContent textContent)
 			{
-				if (textContent.Text.Length > TelegramConnectorConstants.MaxMessageLength)
+				if (!string.IsNullOrEmpty(textContent.Text) && textContent.Text.Length > TelegramConnectorConstants.MaxMessageLength)
 				{
 					yield return new ValidationResult(
 						$"Message text cannot exceed {TelegramConnectorConstants.MaxMessageLength} characters",
@@ -393,7 +393,7 @@ namespace Deveel.Messaging
 		{
 			try
 			{
-                Logger.LogSettingUpWebhook(_webhookUrl);
+				Logger.LogSettingUpWebhook(_webhookUrl ?? string.Empty);
 
 				var maxConnections = ConnectionSettings.GetParameter("MaxConnections") as int?;
 				var dropPendingUpdates = ConnectionSettings.GetParameter("DropPendingUpdates") as bool? ?? false;
@@ -405,11 +405,11 @@ namespace Deveel.Messaging
 					secretToken: _secretToken,
 					cancellationToken: cancellationToken);
 
-                Logger.LogWebhookSetUp(_webhookUrl);
+				Logger.LogWebhookSetUp(_webhookUrl ?? string.Empty);
 			}
 			catch (Exception ex)
 			{
-                Logger.LogWebhookSetupFailed(_webhookUrl, ex);
+				Logger.LogWebhookSetupFailed(_webhookUrl ?? string.Empty, ex);
 				throw;
 			}
 		}

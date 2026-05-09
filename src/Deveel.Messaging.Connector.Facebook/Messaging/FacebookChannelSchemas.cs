@@ -10,12 +10,24 @@ namespace Deveel.Messaging
     /// </summary>
     public static class FacebookChannelSchemas
     {
+    /// <summary>
+    /// Gets the full Facebook Messenger schema for the default supported Graph API version.
+    /// </summary>
         public static ChannelSchema FacebookMessenger => FacebookSchemaBuilder.CreateFacebookMessenger(FacebookConnectorConstants.ConnectorSchemaVersion);
 
+    /// <summary>
+    /// Gets the simplified Facebook Messenger schema focused on basic outbound messaging.
+    /// </summary>
         public static ChannelSchema SimpleMessenger => FacebookSchemaBuilder.CreateSimpleMessenger(FacebookConnectorConstants.ConnectorSchemaVersion);
 
+    /// <summary>
+    /// Gets the Facebook Messenger schema optimized for notification scenarios.
+    /// </summary>
         public static ChannelSchema NotificationMessenger => FacebookSchemaBuilder.CreateNotificationMessenger(FacebookConnectorConstants.ConnectorSchemaVersion);
 
+    /// <summary>
+    /// Gets the Facebook Messenger schema with media-oriented capabilities.
+    /// </summary>
         public static ChannelSchema MediaMessenger => FacebookSchemaBuilder.CreateMediaMessenger(FacebookConnectorConstants.ConnectorSchemaVersion);
     }
 
@@ -24,12 +36,24 @@ namespace Deveel.Messaging
     /// </summary>
     public static class FacebookChannelSchemasV20
     {
+    /// <summary>
+    /// Gets the full Facebook Messenger schema for Graph API v20.0.
+    /// </summary>
         public static ChannelSchema FacebookMessenger => FacebookSchemaBuilder.CreateFacebookMessenger(FacebookConnectorConstants.GraphApiVersion20);
 
+    /// <summary>
+    /// Gets the simplified Facebook Messenger schema for Graph API v20.0.
+    /// </summary>
         public static ChannelSchema SimpleMessenger => FacebookSchemaBuilder.CreateSimpleMessenger(FacebookConnectorConstants.GraphApiVersion20);
 
+    /// <summary>
+    /// Gets the notification-focused Facebook Messenger schema for Graph API v20.0.
+    /// </summary>
         public static ChannelSchema NotificationMessenger => FacebookSchemaBuilder.CreateNotificationMessenger(FacebookConnectorConstants.GraphApiVersion20);
 
+    /// <summary>
+    /// Gets the media-capable Facebook Messenger schema for Graph API v20.0.
+    /// </summary>
         public static ChannelSchema MediaMessenger => FacebookSchemaBuilder.CreateMediaMessenger(FacebookConnectorConstants.GraphApiVersion20);
     }
 
@@ -38,12 +62,24 @@ namespace Deveel.Messaging
     /// </summary>
     public static class FacebookChannelSchemasV19
     {
+    /// <summary>
+    /// Gets the full Facebook Messenger schema for Graph API v19.0.
+    /// </summary>
         public static ChannelSchema FacebookMessenger => FacebookSchemaBuilder.CreateFacebookMessenger(FacebookConnectorConstants.GraphApiVersion19);
 
+    /// <summary>
+    /// Gets the simplified Facebook Messenger schema for Graph API v19.0.
+    /// </summary>
         public static ChannelSchema SimpleMessenger => FacebookSchemaBuilder.CreateSimpleMessenger(FacebookConnectorConstants.GraphApiVersion19);
 
+    /// <summary>
+    /// Gets the notification-focused Facebook Messenger schema for Graph API v19.0.
+    /// </summary>
         public static ChannelSchema NotificationMessenger => FacebookSchemaBuilder.CreateNotificationMessenger(FacebookConnectorConstants.GraphApiVersion19);
 
+    /// <summary>
+    /// Gets the media-capable Facebook Messenger schema for Graph API v19.0.
+    /// </summary>
         public static ChannelSchema MediaMessenger => FacebookSchemaBuilder.CreateMediaMessenger(FacebookConnectorConstants.GraphApiVersion19);
     }
 
@@ -52,12 +88,24 @@ namespace Deveel.Messaging
     /// </summary>
     public static class FacebookChannelSchemasV18
     {
+    /// <summary>
+    /// Gets the full Facebook Messenger schema for Graph API v18.0.
+    /// </summary>
         public static ChannelSchema FacebookMessenger => FacebookSchemaBuilder.CreateFacebookMessenger(FacebookConnectorConstants.GraphApiVersion18);
 
+    /// <summary>
+    /// Gets the simplified Facebook Messenger schema for Graph API v18.0.
+    /// </summary>
         public static ChannelSchema SimpleMessenger => FacebookSchemaBuilder.CreateSimpleMessenger(FacebookConnectorConstants.GraphApiVersion18);
 
+    /// <summary>
+    /// Gets the notification-focused Facebook Messenger schema for Graph API v18.0.
+    /// </summary>
         public static ChannelSchema NotificationMessenger => FacebookSchemaBuilder.CreateNotificationMessenger(FacebookConnectorConstants.GraphApiVersion18);
 
+    /// <summary>
+    /// Gets the media-capable Facebook Messenger schema for Graph API v18.0.
+    /// </summary>
         public static ChannelSchema MediaMessenger => FacebookSchemaBuilder.CreateMediaMessenger(FacebookConnectorConstants.GraphApiVersion18);
     }
 

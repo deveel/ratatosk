@@ -28,13 +28,13 @@ public class MessageReceivingTests
             });
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var messageText = "Hello, this is a test message!";
 
         // Act
         var source = MessageSource.Text(messageText);
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -64,7 +64,7 @@ public class MessageReceivingTests
             });
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate a webhook payload from a messaging service
         var webhookPayload = new
@@ -81,7 +81,7 @@ public class MessageReceivingTests
 
         // Act
         var source = MessageSource.Json(jsonPayload);
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -109,14 +109,14 @@ public class MessageReceivingTests
             });
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio webhook URL-encoded form data
         var formData = "MessageSid=SM987654321&From=%2B1234567890&To=%2B1987654321&Body=Hello%20from%20form%20data!&MessageStatus=received";
 
         // Act
         var source = MessageSource.UrlPost(formData);
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -145,7 +145,7 @@ public class MessageReceivingTests
             });
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate a batch of messages in JSON format
         var batchPayload = new
@@ -163,7 +163,7 @@ public class MessageReceivingTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -191,7 +191,7 @@ public class MessageReceivingTests
             });
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate multipart email content
         var multipartPayload = new
@@ -211,7 +211,7 @@ public class MessageReceivingTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -242,7 +242,7 @@ public class MessageReceivingTests
             });
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate MMS with media content
         var mediaPayload = new
@@ -259,7 +259,7 @@ public class MessageReceivingTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -287,7 +287,7 @@ public class MessageReceivingTests
             });
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate status webhook
         var statusPayload = new
@@ -303,7 +303,7 @@ public class MessageReceivingTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -320,14 +320,14 @@ public class MessageReceivingTests
             .WithCapability(ChannelCapability.SendMessages); // No receive capability
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var source = MessageSource.Text("Test message");
 
         // Act
         // Assert
         await Assert.ThrowsAsync<NotSupportedException>(() =>
-            connector.ReceiveMessagesAsync(source, CancellationToken.None));
+            connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -338,14 +338,14 @@ public class MessageReceivingTests
             .WithCapability(ChannelCapability.SendMessages); // No status handling capability
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var source = MessageSource.Text("Status update");
 
         // Act
         // Assert
         await Assert.ThrowsAsync<NotSupportedException>(() =>
-            connector.ReceiveMessageStatusAsync(source, CancellationToken.None));
+            connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -356,13 +356,13 @@ public class MessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages);
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var invalidJson = "{ invalid json content";
         var source = MessageSource.Json(invalidJson);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -378,12 +378,12 @@ public class MessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages);
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var source = MessageSource.Text("");
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -400,7 +400,7 @@ public class MessageReceivingTests
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var xmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?
             <Message>
@@ -413,7 +413,7 @@ public class MessageReceivingTests
         var source = MessageSource.Xml(xmlContent);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -433,13 +433,13 @@ public class MessageReceivingTests
             .AddContentType(MessageContentType.Binary);
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var binaryData = Encoding.UTF8.GetBytes("Binary message content");
         var source = MessageSource.Binary(binaryData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -465,14 +465,14 @@ public class MessageReceivingTests
             .AddContentType(MessageContentType.Binary);
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var encoding = Encoding.UTF8;
         var contentBytes = encoding.GetBytes(content);
         var source = new MessageSource(contentType, contentBytes.AsMemory(), encoding.WebName);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -489,13 +489,13 @@ public class MessageReceivingTests
             .AddContentType(MessageContentType.PlainText);
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
         var tasks = Enumerable.Range(1, 5).Select(async i =>
         {
             var source = MessageSource.Text($"Concurrent message {i}");
-            return await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+            return await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         });
 
         var results = await Task.WhenAll(tasks);
@@ -513,7 +513,7 @@ public class MessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages);
 
         var connector = new TestReceivingConnector(schema);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var source = MessageSource.Text("Test message");
         using var cts = new CancellationTokenSource();

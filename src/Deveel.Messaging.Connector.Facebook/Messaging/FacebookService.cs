@@ -52,7 +52,7 @@ namespace Deveel.Messaging
             try
             {
                 var request = new RestRequest($"/{FacebookConnectorConstants.GraphApiVersion}/{pageId}", Method.Get);
-                
+
                 // Facebook Graph API requires specific parameters for page information
                 request.AddParameter("fields", "id,name,category,access_token");
                 request.AddParameter("access_token", _pageAccessToken);
@@ -69,7 +69,7 @@ namespace Deveel.Messaging
                     return null;
 
                 var pageData = JsonSerializer.Deserialize<JsonElement>(response.Content);
-                
+
                 return new FacebookPageInfo
                 {
                     Id = GetJsonStringProperty(pageData, "id") ?? pageId,
@@ -99,10 +99,10 @@ namespace Deveel.Messaging
             try
             {
                 var restRequest = new RestRequest($"/{FacebookConnectorConstants.GraphApiVersion}/me/messages", Method.Post);
-                
+
                 // Facebook Graph API authentication
                 restRequest.AddParameter("access_token", _pageAccessToken);
-                
+
                 // Build message payload according to Facebook Messenger Platform API specification
                 var messagePayload = BuildFacebookMessagePayload(request);
                 restRequest.AddJsonBody(messagePayload);
@@ -119,7 +119,7 @@ namespace Deveel.Messaging
                     throw new InvalidOperationException("Facebook API returned empty response");
 
                 var responseData = JsonSerializer.Deserialize<JsonElement>(response.Content);
-                
+
                 return new FacebookMessageResponse
                 {
                     MessageId = GetJsonStringProperty(responseData, "message_id") ?? "",
@@ -139,8 +139,8 @@ namespace Deveel.Messaging
         {
             // Facebook Page Access Tokens typically start with specific patterns
             // and have minimum length requirements
-            return !string.IsNullOrWhiteSpace(token) && 
-                   token.Length >= 20 && 
+            return !string.IsNullOrWhiteSpace(token) &&
+                   token.Length >= 20 &&
                    !token.Contains(" ") &&
                    (token.StartsWith("EAA") || token.StartsWith("EAAG") || token.Contains("|"));
         }
@@ -161,9 +161,6 @@ namespace Deveel.Messaging
             if (request.Message.QuickReplies?.Count > 13)
                 throw new ArgumentException("Maximum 13 quick replies allowed (Facebook limit)");
 
-            // Also check from the request level (if it exists)
-            if (request.QuickReplies?.Count > 13)
-                throw new ArgumentException("Maximum 13 quick replies allowed (Facebook limit)");
 
             // Validate messaging type
             var validMessagingTypes = new[] { "RESPONSE", "UPDATE", "MESSAGE_TAG", "NON_PROMOTIONAL_SUBSCRIPTION" };
@@ -232,7 +229,7 @@ namespace Deveel.Messaging
             // Add quick replies with Facebook specification compliance
             if (message.QuickReplies != null && message.QuickReplies.Count > 0)
             {
-                content["quick_replies"] = message.QuickReplies.Select(qr => 
+                content["quick_replies"] = message.QuickReplies.Select(qr =>
                 {
                     var quickReply = new Dictionary<string, object>
                     {
@@ -264,14 +261,14 @@ namespace Deveel.Messaging
                     return $"HTTP {(int)response.StatusCode} {response.StatusCode}: {response.ErrorMessage}";
 
                 var errorData = JsonSerializer.Deserialize<JsonElement>(response.Content);
-                
+
                 if (errorData.TryGetProperty("error", out var error))
                 {
                     var message = GetJsonStringProperty(error, "message") ?? "Unknown error";
                     var code = GetJsonStringProperty(error, "code") ?? "";
                     var subcode = GetJsonStringProperty(error, "error_subcode") ?? "";
-                    
-                    return !string.IsNullOrEmpty(subcode) 
+
+                    return !string.IsNullOrEmpty(subcode)
                         ? $"Code {code} (Subcode {subcode}): {message}"
                         : $"Code {code}: {message}";
                 }
@@ -281,8 +278,8 @@ namespace Deveel.Messaging
             catch
             {
                 // When JSON parsing fails, return the raw content if it's not empty
-                return !string.IsNullOrEmpty(response.Content) 
-                    ? response.Content 
+                return !string.IsNullOrEmpty(response.Content)
+                    ? response.Content
                     : $"HTTP {(int)response.StatusCode} {response.StatusCode}: {response.ErrorMessage}";
             }
         }

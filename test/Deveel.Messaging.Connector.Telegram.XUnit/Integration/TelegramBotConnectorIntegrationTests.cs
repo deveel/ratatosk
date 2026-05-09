@@ -37,7 +37,7 @@ namespace Deveel.Messaging
 			};
 
 			// Act
-			var result = await connector.SendMessageAsync(message, CancellationToken.None);
+			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful, $"Send message failed: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -65,7 +65,7 @@ namespace Deveel.Messaging
 			var message = CreateMessageWithReplyMarkup();
 
 			// Act
-			var result = await connector.SendMessageAsync(message, CancellationToken.None);
+			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -80,7 +80,7 @@ namespace Deveel.Messaging
 			var message = CreateMediaMessageWithCaption();
 
 			// Act
-			var result = await connector.SendMessageAsync(message, CancellationToken.None);
+			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -99,7 +99,7 @@ namespace Deveel.Messaging
 			var message = CreateMediaMessage(mediaType);
 
 			// Act
-			var result = await connector.SendMessageAsync(message, CancellationToken.None);
+			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -114,7 +114,7 @@ namespace Deveel.Messaging
 			var message = CreateCompleteLocationMessage();
 
 			// Act
-			var result = await connector.SendMessageAsync(message, CancellationToken.None);
+			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -133,7 +133,7 @@ namespace Deveel.Messaging
 			var message = CreateTextMessageWithParseMode(parseMode);
 
 			// Act
-			var result = await connector.SendMessageAsync(message, CancellationToken.None);
+			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -161,7 +161,7 @@ namespace Deveel.Messaging
 			};
 
 			// Act
-			var result = await connector.SendMessageAsync(message, CancellationToken.None);
+			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -181,7 +181,7 @@ namespace Deveel.Messaging
 			var source = MessageSource.Json(webhookJson);
 
 			// Act
-			var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -202,7 +202,7 @@ namespace Deveel.Messaging
 			var source = MessageSource.Json(webhookJson);
 
 			// Act
-			var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -223,7 +223,7 @@ namespace Deveel.Messaging
 			var source = MessageSource.Json(webhookJson);
 
 			// Act
-			var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -246,7 +246,7 @@ namespace Deveel.Messaging
 			var source = MessageSource.Json(webhookJson);
 
 			// Act
-			var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -263,7 +263,7 @@ namespace Deveel.Messaging
 			var source = MessageSource.Json(webhookJson);
 
 			// Act
-			var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -294,7 +294,7 @@ namespace Deveel.Messaging
 			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
 
 			// Act
-			var result = await connector.InitializeAsync(CancellationToken.None);
+			var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -322,10 +322,10 @@ namespace Deveel.Messaging
 				.ReturnsAsync(TelegramMockFactory.CreateTestWebhookInfo());
 
 			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
-			await connector.InitializeAsync(CancellationToken.None);
+			await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 			// Act
-			var result = await connector.GetStatusAsync(CancellationToken.None);
+			var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.True(result.Successful);
@@ -351,12 +351,12 @@ namespace Deveel.Messaging
 			mockTelegramService.Setup(x => x.GetMeAsync(It.IsAny<CancellationToken>()))
 				.ReturnsAsync(TelegramMockFactory.CreateTestBot());
 
-			await connector.InitializeAsync(CancellationToken.None);
+			await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 			var message = TelegramMockFactory.CreateTestTextMessage();
 
 			// Act
-			var result = await connector.SendMessageAsync(message, CancellationToken.None);
+			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.False(result.Successful);
@@ -372,7 +372,7 @@ namespace Deveel.Messaging
 			var source = MessageSource.Json(malformedJson);
 
 			// Act
-			var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.False(result.Successful);
@@ -388,7 +388,7 @@ namespace Deveel.Messaging
 			var source = MessageSource.Json(emptyJson);
 
 			// Act
-			var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.False(result.Successful);
@@ -406,7 +406,7 @@ namespace Deveel.Messaging
 			var mockTelegramService = TelegramMockFactory.CreateSuccessfulSendMockService();
 			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
 
-			var result = await connector.InitializeAsync(CancellationToken.None);
+			var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 			Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
 
 			return connector;

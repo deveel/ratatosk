@@ -26,11 +26,11 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         var message = CreateWhatsAppTestMessage();
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -49,11 +49,11 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         var message = CreateWhatsAppTestMessage();
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -72,10 +72,10 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await connector.GetMessageStatusAsync("SM555666777", CancellationToken.None);
+        var result = await connector.GetMessageStatusAsync("SM555666777", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -98,10 +98,10 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             connectionSettings,
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await connector.TestConnectionAsync(CancellationToken.None);
+        var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -122,23 +122,23 @@ public class TwilioWhatsAppConnectorExtendedMockTests
 
         // Act
         // Assert
-        var initResult = await connector.InitializeAsync(CancellationToken.None);
+        var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
         Assert.True(initResult.Successful);
 
         // Act
         // Assert
-        var connectionResult = await connector.TestConnectionAsync(CancellationToken.None);
+        var connectionResult = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
         Assert.True(connectionResult.Successful);
 
         // Act
         // Assert
-        var sendResult = await connector.SendMessageAsync(message, CancellationToken.None);
+        var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
         Assert.True(sendResult.Successful);
         Assert.Equal("WhatsApp", sendResult.Value?.AdditionalData["Channel"]);
 
         // Act
         // Assert
-        var statusResult = await connector.GetMessageStatusAsync(sendResult.Value!.RemoteMessageId, CancellationToken.None);
+        var statusResult = await connector.GetMessageStatusAsync(sendResult.Value!.RemoteMessageId, TestContext.Current.CancellationToken);
         Assert.True(statusResult.Successful);
         Assert.Equal("WhatsApp", statusResult.Value?.Updates.First().AdditionalData["Channel"]);
 
@@ -159,11 +159,11 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidTemplateConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         var message = CreateWhatsAppTemplateMessage();
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -187,11 +187,11 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         var message = CreateWhatsAppTestMessage();
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful); // Message was sent, but has failed status
@@ -209,7 +209,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         
         // Create message with regular phone number (without whatsapp: prefix)
         var message = new Message
@@ -221,7 +221,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
         };
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -248,11 +248,11 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result1 = await connector.SendMessageAsync(CreateWhatsAppTestMessage("msg1"), CancellationToken.None);
-        var result2 = await connector.SendMessageAsync(CreateWhatsAppTestMessage("msg2"), CancellationToken.None);
+        var result1 = await connector.SendMessageAsync(CreateWhatsAppTestMessage("msg1"), TestContext.Current.CancellationToken);
+        var result2 = await connector.SendMessageAsync(CreateWhatsAppTestMessage("msg2"), TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result1.Successful);
@@ -279,24 +279,24 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         var message = CreateWhatsAppTestMessage();
 
         // Act
         // Assert
-        var sendResult = await connector.SendMessageAsync(message, CancellationToken.None);
+        var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
         Assert.False(sendResult.Successful);
         Assert.Contains("WhatsApp API error", sendResult.Error?.ErrorMessage);
 
         // Act
         // Assert
-        var statusResult = await connector.GetMessageStatusAsync("SM123", CancellationToken.None);
+        var statusResult = await connector.GetMessageStatusAsync("SM123", TestContext.Current.CancellationToken);
         Assert.False(statusResult.Successful);
         Assert.Contains("WhatsApp API error", statusResult.Error?.ErrorMessage);
 
         // Act
         // Assert
-        var connectionResult = await connector.TestConnectionAsync(CancellationToken.None);
+        var connectionResult = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
         Assert.False(connectionResult.Successful);
         Assert.Contains("WhatsApp API error", connectionResult.Error?.ErrorMessage);
     }
@@ -341,11 +341,11 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         var message = CreateWhatsAppTestMessage();
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -363,7 +363,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
             CreateValidWhatsAppConnectionSettings(),
             mockTwilioService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
         
         var message = new Message
         {
@@ -374,7 +374,7 @@ public class TwilioWhatsAppConnectorExtendedMockTests
         };
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);

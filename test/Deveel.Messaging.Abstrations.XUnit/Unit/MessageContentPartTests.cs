@@ -115,7 +115,7 @@ public class TextContentPartTests
     {
         // Arrange
         // Act
-        var part = new TextContentPart(null);
+        var part = new TextContentPart(null!);
 
         // Assert
         Assert.Null(part.Text);
@@ -267,7 +267,7 @@ public class HtmlContentPartTests
     {
         // Arrange
         // Act
-        var part = new HtmlContentPart(null);
+        var part = new HtmlContentPart(null!);
 
         // Assert
         Assert.NotNull(part.Html);

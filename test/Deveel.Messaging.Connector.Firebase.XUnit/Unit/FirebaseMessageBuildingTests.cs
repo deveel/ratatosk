@@ -39,7 +39,7 @@ namespace Deveel.Messaging
             message.With("Title", "Text Notification");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -72,7 +72,7 @@ namespace Deveel.Messaging
             message.With("Title", "JSON Data Message");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -108,7 +108,7 @@ namespace Deveel.Messaging
                    .With("ImageUrl", "https://example.com/image.jpg");
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -138,7 +138,7 @@ namespace Deveel.Messaging
             message.With("CustomData", @"{""userId"":123,""action"":""update"",""metadata"":{""version"":""2.0""}}");
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -172,7 +172,7 @@ namespace Deveel.Messaging
             message.With("CustomData", "invalid-json-{not-valid}");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.False(result.Successful);
@@ -211,7 +211,7 @@ namespace Deveel.Messaging
                    .With("ClickAction", "OPEN_ACTIVITY");
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -254,7 +254,7 @@ namespace Deveel.Messaging
                    .With("ThreadId", "conversation_123");
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -289,7 +289,7 @@ namespace Deveel.Messaging
             message.With("Priority", "normal");
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -324,7 +324,7 @@ namespace Deveel.Messaging
             message.With("CustomData", @"{""action"":""background_sync""}");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -358,7 +358,7 @@ namespace Deveel.Messaging
                    .With("Badge", "not-a-number"); // Invalid badge should trigger validation error
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful, "Expected validation failure for invalid badge number");
@@ -390,7 +390,7 @@ namespace Deveel.Messaging
                    .With("TimeToLive", "invalid-number"); // Invalid TTL should trigger validation error
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful, "Expected validation failure for invalid time to live");
@@ -423,7 +423,7 @@ namespace Deveel.Messaging
                    .With("MutableContent", "perhaps");  // Invalid boolean should trigger validation error
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful, "Expected validation failure for invalid boolean properties");
@@ -458,7 +458,7 @@ namespace Deveel.Messaging
                    .With("Body", longBody);
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Successful, "Expected message to fail validation due to excessive title/body length");
@@ -485,7 +485,7 @@ namespace Deveel.Messaging
             var message = CreateSimpleDeviceTokenMessage();
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -511,13 +511,13 @@ namespace Deveel.Messaging
             var schema = FirebaseChannelSchemas.FirebasePush;
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
             
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
             
             var message = CreateSimpleDeviceTokenMessage();
 
             // Act
-            await connector.SendMessageAsync(message, CancellationToken.None);
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -538,7 +538,7 @@ namespace Deveel.Messaging
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
             
             return connector;

@@ -21,7 +21,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema that supports HTML content
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -31,7 +31,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Subject", "HTML Test Email");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -50,7 +50,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema for multipart
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var multipartContent = new MultipartContent();
         multipartContent.Parts.Add(new TextContentPart("Plain text version"));
@@ -64,7 +64,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Subject", "Multipart Test Email");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -84,7 +84,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema since template schema is very restrictive
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var templateContent = new TemplateContent("d-1234567890abcdef", new Dictionary<string, object?>
         {
@@ -100,7 +100,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Subject", "Template Test Email"); // Subject is still required
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -119,7 +119,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SimpleEmail;
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -129,7 +129,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Subject", "Name Format Test");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -144,7 +144,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema for priority
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -155,7 +155,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Priority", "high");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -172,7 +172,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema since SimpleEmail/MarketingEmail don't have Categories
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -183,7 +183,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Categories", "newsletter,marketing");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -202,7 +202,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema for custom args
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -213,7 +213,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("CustomArgs", "{\"userId\":\"123\",\"campaignId\":\"abc\"}");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -232,7 +232,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema since SimpleEmail removes SendAt
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var scheduledTime = DateTime.UtcNow.AddHours(2);
         var message = new Message()
@@ -244,7 +244,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("SendAt", scheduledTime);
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -262,7 +262,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SimpleEmail;
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -272,7 +272,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Subject", "Test Email");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -288,7 +288,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SimpleEmail;
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -298,7 +298,7 @@ public class SendGridEmailConnectorExtendedMockTests
         // Missing Subject property
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -317,7 +317,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SimpleEmail;
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -327,7 +327,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Subject", "Test Email");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -343,7 +343,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SimpleEmail;
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -353,7 +353,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Subject", "Test Email");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -371,7 +371,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SimpleEmail;
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -381,7 +381,7 @@ public class SendGridEmailConnectorExtendedMockTests
             .With("Subject", "Sandbox Test Email");
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -402,7 +402,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema for tracking
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var message = new Message()
             .WithId(Guid.NewGuid().ToString())
@@ -413,7 +413,7 @@ public class SendGridEmailConnectorExtendedMockTests
 
 
         // Act
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -434,10 +434,10 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SendGridEmail; // Use full schema for status query
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await connector.GetMessageStatusAsync("test-message-id", CancellationToken.None);
+        var result = await connector.GetMessageStatusAsync("test-message-id", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -454,10 +454,10 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SimpleEmail;
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await connector.GetStatusAsync(CancellationToken.None);
+        var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
@@ -473,10 +473,10 @@ public class SendGridEmailConnectorExtendedMockTests
         var schema = SendGridChannelSchemas.SimpleEmail;
         var connector = new SendGridEmailConnector(schema, connectionSettings, mockService.Object);
 
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await connector.GetHealthAsync(CancellationToken.None);
+        var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");

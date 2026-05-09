@@ -41,7 +41,7 @@ public class TextContentTests
     {
         // Arrange
         // Act
-        var content = new TextContent(null);
+        var content = new TextContent(null!);
 
         // Assert
         Assert.Null(content.Text);

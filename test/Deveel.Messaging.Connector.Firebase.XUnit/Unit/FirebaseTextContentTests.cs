@@ -42,7 +42,7 @@ namespace Deveel.Messaging
             message.With("Title", "Test Notification");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -76,7 +76,7 @@ namespace Deveel.Messaging
             // Note: Body property is no longer part of the schema, so we test TextContent only
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -110,7 +110,7 @@ namespace Deveel.Messaging
             message.With("CustomData", @"{""action"":""silent""}");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -145,7 +145,7 @@ namespace Deveel.Messaging
             message.With("CustomData", @"{""type"":""silent""}");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -180,7 +180,7 @@ namespace Deveel.Messaging
             message.With("CustomData", @"{""source"":""json""}");
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -214,7 +214,7 @@ namespace Deveel.Messaging
             // Don't add any properties - only content
 
             // Act
-            var result = await connector.SendMessageAsync(message, CancellationToken.None);
+            var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
@@ -238,7 +238,7 @@ namespace Deveel.Messaging
             var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
-            var result = await connector.InitializeAsync(CancellationToken.None);
+            var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
             
             return connector;

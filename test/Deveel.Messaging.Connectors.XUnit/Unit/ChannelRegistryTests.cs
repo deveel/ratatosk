@@ -178,7 +178,7 @@ namespace Deveel.Messaging.XUnit
 			registry.RegisterConnector<TestConnector>();
 
 			// Act
-			var connector = await registry.CreateConnectorAsync<TestConnector>();
+			var connector = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(connector);
@@ -198,7 +198,7 @@ namespace Deveel.Messaging.XUnit
 				.RemoveCapability(ChannelCapability.ReceiveMessages);
 
 			// Act
-			var connector = await registry.CreateConnectorAsync<TestConnector>(runtimeSchema);
+			var connector = await registry.CreateConnectorAsync<TestConnector>(runtimeSchema, TestContext.Current.CancellationToken);
 
 			// Assert
 			Assert.NotNull(connector);
@@ -217,7 +217,7 @@ namespace Deveel.Messaging.XUnit
 			// Act
 			// Assert
 			await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-				await registry.CreateConnectorAsync<TestConnector>(incompatibleSchema));
+				await registry.CreateConnectorAsync<TestConnector>(incompatibleSchema, TestContext.Current.CancellationToken));
 		}
 
 		[Fact]
@@ -303,8 +303,8 @@ namespace Deveel.Messaging.XUnit
 			registry.RegisterConnector<TestConnector>();
 
 			// Create some connectors that will be tracked
-			var connector1 = await registry.CreateConnectorAsync<TestConnector>();
-			var connector2 = await registry.CreateConnectorAsync<TestConnector>();
+			var connector1 = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
+			var connector2 = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
 
 			// Verify connectors are in ready state
 			Assert.Equal(ConnectorState.Ready, connector1.State);
@@ -326,8 +326,8 @@ namespace Deveel.Messaging.XUnit
 			registry.RegisterConnector<TestConnector>();
 
 			// Create some connectors that will be tracked
-			var connector1 = await registry.CreateConnectorAsync<TestConnector>();
-			var connector2 = await registry.CreateConnectorAsync<TestConnector>();
+			var connector1 = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
+			var connector2 = await registry.CreateConnectorAsync<TestConnector>(TestContext.Current.CancellationToken);
 
 			// Verify connectors are in ready state
 			Assert.Equal(ConnectorState.Ready, connector1.State);

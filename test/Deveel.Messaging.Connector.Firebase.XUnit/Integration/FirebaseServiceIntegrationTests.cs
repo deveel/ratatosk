@@ -219,7 +219,7 @@ namespace Deveel.Messaging
             var results = new List<bool>();
             for (int i = 0; i < 3; i++)
             {
-                results.Add(await service.TestConnectionAsync());
+                results.Add(await service.TestConnectionAsync(TestContext.Current.CancellationToken));
             }
 
             // Assert
@@ -379,11 +379,11 @@ namespace Deveel.Messaging
             // Act
             // Assert
             var sendException = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.SendAsync(message));
+                service.SendAsync(message, cancellationToken: TestContext.Current.CancellationToken));
             var sendEachException = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.SendEachAsync(messages));
+                service.SendEachAsync(messages, cancellationToken: TestContext.Current.CancellationToken));
             var multicastException = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.SendMulticastAsync(multicastMessage));
+                service.SendMulticastAsync(multicastMessage, cancellationToken: TestContext.Current.CancellationToken));
 
             // All should have consistent error message
             Assert.Contains("Firebase service is not initialized", sendException.Message);
@@ -403,7 +403,7 @@ namespace Deveel.Messaging
 
             // Act
             var tasks = Enumerable.Range(1, 10)
-                .Select(_ => service.TestConnectionAsync())
+                .Select(_ => service.TestConnectionAsync(TestContext.Current.CancellationToken))
                 .ToArray();
 
             var results = await Task.WhenAll(tasks);

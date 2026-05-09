@@ -21,7 +21,7 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a valid SendGrid inbound parse webhook source
         var webhookData = "from=sender%40example.com&to=inbox%40yourdomain.com&subject=Test%20Email&text=Hello%20from%20SendGrid&envelope=%7B%22to%22%3A%5B%22inbox%40yourdomain.com%22%5D%2C%22from%22%3A%22sender%40example.com%22%7D";
@@ -29,7 +29,7 @@ public class SendGridEmailConnectorWebhookTests
 
         // Act
         // Assert
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid webhook data
         Assert.True(result.Successful);
@@ -54,7 +54,7 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a valid SendGrid event webhook source
         var statusData = "event=delivered&sg_message_id=14c5d75ce93.dfd.64b469.filter0001.16648.5515E0B88.0&email=recipient%40example.com&timestamp=1672531200";
@@ -62,7 +62,7 @@ public class SendGridEmailConnectorWebhookTests
 
         // Act
         // Assert
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid status callback data
         Assert.True(result.Successful);
@@ -86,7 +86,7 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a SendGrid inbound JSON webhook payload
         var webhookJson = """
@@ -104,7 +104,7 @@ public class SendGridEmailConnectorWebhookTests
         var source = MessageSource.Json(webhookJson);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -129,7 +129,7 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a SendGrid event JSON webhook payload
         var statusJson = """
@@ -147,7 +147,7 @@ public class SendGridEmailConnectorWebhookTests
         var source = MessageSource.Json(statusJson);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -168,14 +168,14 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create webhook with both HTML and text content
         var webhookData = "from=sender%40example.com&to=inbox%40yourdomain.com&subject=Mixed%20Content&text=Plain%20text%20content&html=%3Cp%3EHTML%20content%3C%2Fp%3E";
         var source = MessageSource.UrlPost(webhookData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -197,14 +197,14 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create webhook with only text content
         var webhookData = "from=sender%40example.com&to=inbox%40yourdomain.com&subject=Text%20Only&text=Only%20plain%20text%20content";
         var source = MessageSource.UrlPost(webhookData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -226,14 +226,14 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create an unsupported source type (XML)
         var xmlData = "<email>Not supported</email>";
         var source = MessageSource.Xml(xmlData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -252,14 +252,14 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create an unsupported source type (XML)
         var xmlData = "<status>Not supported</status>";
         var source = MessageSource.Xml(xmlData);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -316,7 +316,7 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var webhookData = "from=sender%40example.com&to=inbox%40yourdomain.com&subject=Test&text=Test";
         var source = MessageSource.UrlPost(webhookData);
@@ -324,7 +324,7 @@ public class SendGridEmailConnectorWebhookTests
         // Act
         // Assert
         await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.ReceiveMessagesAsync(source, CancellationToken.None));
+            connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -337,7 +337,7 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var statusData = "event=delivered&sg_message_id=123&email=test%40example.com";
         var source = MessageSource.UrlPost(statusData);
@@ -345,7 +345,7 @@ public class SendGridEmailConnectorWebhookTests
         // Act
         // Assert
         await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.ReceiveMessageStatusAsync(source, CancellationToken.None));
+            connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -358,14 +358,14 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create webhook with attachment information
         var webhookData = "from=sender%40example.com&to=inbox%40yourdomain.com&subject=With%20Attachments&text=Email%20with%20files&attachments=2&attachment1=document.pdf&attachment2=image.jpg";
         var source = MessageSource.UrlPost(webhookData);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -404,13 +404,13 @@ public class SendGridEmailConnectorWebhookTests
             .SetParameter("SandboxMode", false);
         
         var connector = new SendGridEmailConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var statusData = $"event={eventType}&sg_message_id=test123&email=test%40example.com&timestamp=1672531200";
         var source = MessageSource.UrlPost(statusData);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);

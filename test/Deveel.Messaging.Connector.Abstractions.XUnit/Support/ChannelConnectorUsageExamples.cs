@@ -24,14 +24,14 @@ public class ChannelConnectorUsageExamples
 		var connector = new ExampleEmailConnector(schema);
 
 		// Act
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var message = new Message
 		{
 			Id = Guid.NewGuid().ToString(),
 			Receiver = new Endpoint(EndpointType.EmailAddress, "test@example.com"),
 			Content = new TextContent("Hello World")
 		};
-		var result = await connector.SendMessageAsync(message, CancellationToken.None);
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(result.Successful);
@@ -58,15 +58,15 @@ public class ChannelConnectorUsageExamples
 		var connector = new ExampleSmsConnector(schema);
 
 		// Act
-		await connector.InitializeAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var message = new Message
 		{
 			Id = Guid.NewGuid().ToString(),
 			Receiver = new Endpoint(EndpointType.PhoneNumber, "+1234567890"),
 			Content = new TextContent("Hello SMS")
 		};
-		var sendResult = await connector.SendMessageAsync(message, CancellationToken.None);
-		var statusResult = await connector.GetMessageStatusAsync(sendResult.Value!.MessageId, CancellationToken.None);
+		var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+		var statusResult = await connector.GetMessageStatusAsync(sendResult.Value!.MessageId, TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(sendResult.Successful);
@@ -85,8 +85,8 @@ public class ChannelConnectorUsageExamples
 		var connector = new ExampleHealthConnector(schema);
 
 		// Act
-		await connector.InitializeAsync(CancellationToken.None);
-		var healthResult = await connector.GetHealthAsync(CancellationToken.None);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		var healthResult = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
 		// Assert
 		Assert.True(healthResult.Successful);

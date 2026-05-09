@@ -19,7 +19,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook for single SMS message
         var webhookJson = new
@@ -39,7 +39,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -63,7 +63,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook for batch of SMS messages
         var webhookJson = new
@@ -80,7 +80,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -108,7 +108,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook for WhatsApp message
         var webhookJson = new
@@ -126,7 +126,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -149,7 +149,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook with empty body (MMS or button response)
         var webhookJson = new
@@ -167,7 +167,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -186,7 +186,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON status callback
         var statusJson = new
@@ -205,7 +205,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -227,7 +227,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON status callback for failed message
         var statusJson = new
@@ -245,7 +245,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -276,7 +276,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var statusJson = new
         {
@@ -290,7 +290,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -305,7 +305,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook missing required MessageSid
         var invalidJson = new
@@ -320,7 +320,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -335,7 +335,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook missing From field
         var invalidJson = new
@@ -350,7 +350,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -365,14 +365,14 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Invalid JSON content
         var invalidJson = "{ \"MessageSid\": \"SM123\", \"From\": \"+123456789";
         var source = MessageSource.Json(invalidJson);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -387,14 +387,14 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Invalid JSON content
         var invalidJson = "{ \"MessageSid\": \"SM123\", \"MessageStatus\":";
         var source = MessageSource.Json(invalidJson);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Successful);
@@ -409,7 +409,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate comprehensive Twilio JSON webhook with all fields
         var complexWebhookJson = new
@@ -437,7 +437,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -458,7 +458,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio JSON webhook with Unicode content
         var unicodeMessage = "Hello! ?? Testing mojis and  special characters ??";
@@ -475,7 +475,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -493,7 +493,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Create a large message (SMS can be up to 1600 characters)
         var largeBody = new string('A', 1600);
@@ -511,7 +511,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);
@@ -519,8 +519,10 @@ public class TwilioSmsConnectorJsonTests
         Assert.Single(result.Value.Messages);
 
         var message = result.Value.Messages.First();
-        Assert.Equal(largeBody, ((ITextContent)message.Content!).Text);
-        Assert.Equal(1600, ((ITextContent)message.Content!).Text.Length);
+        var content = Assert.IsType<TextContent>(message.Content);
+        Assert.Equal(largeBody, content.Text);
+        Assert.NotNull(content.Text);
+        Assert.Equal(1600, content.Text.Length);
     }
 
     [Fact]
@@ -530,7 +532,7 @@ public class TwilioSmsConnectorJsonTests
         var schema = TwilioChannelSchemas.TwilioSms;
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
-        await connector.InitializeAsync(CancellationToken.None);
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate comprehensive Twilio JSON status callback with all possible fields
         var statusJson = new
@@ -556,7 +558,7 @@ public class TwilioSmsConnectorJsonTests
         var source = MessageSource.Json(jsonPayload);
 
         // Act
-        var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+        var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Successful);

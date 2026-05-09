@@ -36,6 +36,7 @@ namespace Deveel.Messaging
 		/// with the specified schema.
 		/// </summary>
 		/// <param name="schema">The schema describing the connector's capabilities and configuration.</param>
+		/// <param name="connectionSettings">The connector configuration values used to initialize and authenticate the connector.</param>
 		/// <param name="logger">A service used to log messages</param>
 		/// <param name="authenticationManager">Optional authentication manager for handling authentication flows</param>
 		/// <exception cref="ArgumentNullException">Thrown when <paramref name="schema"/> is null.</exception>
@@ -54,7 +55,10 @@ namespace Deveel.Messaging
 		/// <inheritdoc/>
 		public IChannelSchema Schema { get; }
 
-        public ConnectionSettings ConnectionSettings { get; }
+		/// <summary>
+		/// Gets the connection settings used by this connector instance.
+		/// </summary>
+		public ConnectionSettings ConnectionSettings { get; }
 
 		/// <summary>
 		/// Provides a service for the connector to log messages.
@@ -128,7 +132,11 @@ namespace Deveel.Messaging
 			}
 		}
 
-        protected virtual IDisposable? BeginConnectorLoggerScope()
+		/// <summary>
+		/// Begins a logging scope that enriches log entries with connector channel information.
+		/// </summary>
+		/// <returns>An <see cref="IDisposable"/> used to end the scope, or <see langword="null"/> when scoping is unavailable.</returns>
+		protected virtual IDisposable? BeginConnectorLoggerScope()
         {
             return Logger.BeginScope(
                 "[{ChannelType} v{ChannelVersion}]",
@@ -136,7 +144,12 @@ namespace Deveel.Messaging
                     Schema.Version);
         }
 
-        protected virtual IDisposable? BeginMessageLoggerScope(IMessage message)
+		/// <summary>
+		/// Begins a logging scope that enriches log entries with the message identifier.
+		/// </summary>
+		/// <param name="message">The message being processed.</param>
+		/// <returns>An <see cref="IDisposable"/> used to end the scope, or <see langword="null"/> when scoping is unavailable.</returns>
+		protected virtual IDisposable? BeginMessageLoggerScope(IMessage message)
         {
             return Logger.BeginScope("[MessageId:{MessageId}]", message.Id);
         }
