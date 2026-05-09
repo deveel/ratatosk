@@ -7,57 +7,52 @@ assembly-file-versioning-scheme: MajorMinorPatch
 # GitHub Flow:
 # - `main` is the only long-lived branch and publishes preview packages
 # - stable packages are produced only from version tags on commits already in `main`
+# NOTE: this file is authored for GitVersion 5.x syntax (eg `tag`,
+# `prevent-increment-of-merged-branch-version`). Keep CI and MSBuild GitVersion
+# versions aligned before introducing 6.x-style keys.
 branches:
   main:
     regex: ^master$|^main$
     tag: alpha
     increment: Patch
-    prevent-increment:
-      of-merged-branch: true
+    prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     source-branches: []
     tracks-release-branches: false
     is-release-branch: false
-    is-main-branch: true
     pre-release-weight: 55000
 
   feature:
     regex: ^features?[/-]
     tag: '{BranchName}'
     increment: Inherit
-    prevent-increment:
-      of-merged-branch: false
+    prevent-increment-of-merged-branch-version: false
     track-merge-target: false
     source-branches: [ main ]
     tracks-release-branches: false
     is-release-branch: false
-    is-main-branch: false
     pre-release-weight: 30000
 
   pull-request:
     regex: ^(pull|pull-requests|pr)[/-]
     tag: pr-{Number}
     increment: Inherit
-    prevent-increment:
-      of-merged-branch: true
+    prevent-increment-of-merged-branch-version: true
     track-merge-target: false
     source-branches: [ main, feature ]
     tracks-release-branches: false
     is-release-branch: false
-    is-main-branch: false
     pre-release-weight: 30000
 
   unknown:
     regex: ^(?!master$|main$|features?[/-].+|(pull|pull-requests|pr)[/-].+)(?<BranchName>.+)$
     tag: '{BranchName}'
     increment: Inherit
-    prevent-increment:
-      of-merged-branch: false
+    prevent-increment-of-merged-branch-version: false
     track-merge-target: false
     source-branches: [ main, feature, pull-request ]
     tracks-release-branches: false
     is-release-branch: false
-    is-main-branch: false
     pre-release-weight: 30000
 
   develop:
