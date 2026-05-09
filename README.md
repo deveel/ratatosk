@@ -1,180 +1,138 @@
 [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Abstractions/)
+[![codecov](https://codecov.io/gh/deveel/deveel.messaging/graph/badge.svg)](https://codecov.io/gh/deveel/deveel.messaging)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-512BD4)](https://dotnet.microsoft.com/)
-[![codecov](https://codecov.io/gh/deveel/deveel.messaging/graph/badge.svg)](https://codecov.io/gh/deveel/deveel.messaging)
 
-## Deveel Messaging Framework
+# Deveel Messaging
 
-The Deveel Messaging Framework is a .NET library for sending and receiving messages across multiple channels — SMS, email, push notifications, chat platforms — without tying your code to any specific provider.
+Deveel Messaging is a .NET framework that gives you one consistent way to work with SMS, email, push notifications, and chat channels.
 
-It gives you the core abstractions, a connector contract, and DI integration. Provider-specific packages plug in on top. What you write against the framework stays the same whether the message goes out through Twilio, SendGrid, Firebase, or anything else.
+Instead of coding directly against each provider SDK, you build an `IMessage`, send it through an `IChannelConnector`, and handle a predictable `ConnectorResult<T>`. That keeps your app code stable even if providers change.
 
-Routing, scheduling, and queueing are out of scope — those live in your application. This framework's job is to make sure every connector looks the same and every API call has a predictable result.
+## What this project includes
 
----
+- A shared message model (`IMessage`, endpoints, content types, properties)
+- Connector contracts and base classes for provider implementations
+- Channel schemas to declare capabilities and validate messages/settings
+- DI helpers and a channel registry for runtime connector discovery
+- Ready-to-use connectors for Twilio, SendGrid, Firebase, Facebook Messenger, and Telegram
 
-## Motivation
+## What this project does not do
 
-Every provider has its own SDK, its own authentication dance, its own quirky payload format. When your app needs SMS *and* email *and* push, you end up gluing together three different libraries that have nothing in common.
+- Queueing and scheduling
+- Durable storage for audit/history
+- Workflow orchestration or business retry policies
 
-This framework replaces all of that with a single `IChannelConnector` contract. You send an `IMessage`, you get back a typed result — whether it went through a Twilio REST call, an SMTP handshake, or an FCM payload is none of your business. Swapping or adding a provider is a one-line DI change, not a refactor.
-
----
+Those are application-level concerns, so you can choose your own architecture.
 
 ## Packages
 
-| Package | Description | NuGet |
+| Package | Purpose | NuGet |
 |---|---|---|
-| `Deveel.Messaging.Abstractions` | Core message model, endpoints, and content types | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions.svg)](https://www.nuget.org/packages/Deveel.Messaging.Abstractions/) |
-| `Deveel.Messaging.Connector.Abstractions` | Connector contract, channel schema, and base classes | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Abstractions/) |
-| `Deveel.Messaging.Connectors` | DI registration and connector registry | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connectors/) |
-| `Deveel.Messaging.Connector.Twilio` | Twilio SMS and WhatsApp connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Twilio/) |
-| `Deveel.Messaging.Connector.Sendgrid` | SendGrid email connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Sendgrid.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Sendgrid/) |
-| `Deveel.Messaging.Connector.Facebook` | Facebook Messenger connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Facebook.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Facebook/) |
-| `Deveel.Messaging.Connector.Firebase` | Firebase Cloud Messaging connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Firebase.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Firebase/) |
-| `Deveel.Messaging.Connector.Telegram` | Telegram Bot connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Telegram.svg)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Telegram/) |
+| `Deveel.Messaging.Abstractions` | Core message and endpoint model | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Abstractions/) |
+| `Deveel.Messaging.Connector.Abstractions` | Connector contracts, schemas, base classes | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Abstractions/) |
+| `Deveel.Messaging.Connectors` | DI and connector registry integration | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connectors/) |
+| `Deveel.Messaging.Connector.Twilio` | Twilio SMS and WhatsApp connectors | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Twilio/) |
+| `Deveel.Messaging.Connector.Sendgrid` | SendGrid email connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Sendgrid.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Sendgrid/) |
+| `Deveel.Messaging.Connector.Firebase` | Firebase push connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Firebase.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Firebase/) |
+| `Deveel.Messaging.Connector.Facebook` | Facebook Messenger connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Facebook.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Facebook/) |
+| `Deveel.Messaging.Connector.Telegram` | Telegram Bot connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Telegram.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Telegram/) |
 
----
-
-## Usage
-
-### Register a connector
+## Quick example
 
 ```csharp
-builder.Services
-    .AddTwilioConnector(options =>
-    {
-        options.AccountSid = configuration["Twilio:AccountSid"];
-        options.AuthToken  = configuration["Twilio:AuthToken"];
-    });
-```
+var message = Message.Create()
+    .From(PhoneEndpoint.Create("+15550001111"))
+    .To(PhoneEndpoint.Create("+15550002222"))
+    .WithText("Hello from Deveel Messaging")
+    .Build();
 
-### Send a message
+var result = await connector.SendMessageAsync(message, ct);
 
-```csharp
-public class NotificationService(IChannelConnector connector)
+if (!result.IsSuccess)
 {
-    public async Task SendSmsAsync(string to, string text, CancellationToken ct)
-    {
-        var message = Message.Create()
-            .From(PhoneEndpoint.Create("+15550001111"))
-            .To(PhoneEndpoint.Create(to))
-            .WithText(text)
-            .Build();
-
-        var result = await connector.SendMessageAsync(message, ct);
-
-        if (!result.IsSuccess)
-            throw new InvalidOperationException(result.Error.Description);
-    }
+    throw new InvalidOperationException(result.Error?.Description ?? "Failed to send message");
 }
 ```
-
-### Receive messages
-
-```csharp
-var received = await connector.ReceiveMessagesAsync(ct);
-
-foreach (var message in received.Messages)
-{
-    Console.WriteLine($"From: {message.From}  Body: {message.Content}");
-}
-```
-
-For full configuration options, content types, and connector-specific details see the [documentation](docs/README.md).
-
----
 
 ## Roadmap
 
-The framework is currently at **v0.3.1**. Here's what's coming — check [ROADMAP.md](ROADMAP.md) for the full story behind each item.
+The project roadmap is tracked in detail in [ROADMAP.md](ROADMAP.md). The summary below highlights the upcoming milestones and the main features planned for each release.
 
-**v0.4.0 — Framework Foundations**
-- [ ] Test Coverage Target (≥ 80%)
-- [ ] CI/CD Pipeline Hardening
-- [ ] Structured Logging Improvements
-- [ ] Documentation
+### v0.4.0 - Framework Foundations
 
-**v0.5.0 — Inbound Messaging**
-- [ ] Twilio Inbound Messages (SMS & WhatsApp)
-- [ ] SendGrid Inbound Messages (Inbound Parse)
-- [ ] Firebase Inbound Messages (Data & Notification Messages)
+Strengthens quality gates, release automation, observability, and docs completeness across the existing connector ecosystem.
 
-**v1.0.0 — First Stable Release**
-- [ ] API Freeze
-- [ ] NuGet GA Release
-- [ ] Interactive Content
-- [ ] Sender Identity Model
+- [x] **Test coverage target (>= 80%)** - Enforce minimum line coverage per library in CI.
+- [x] **CI/CD pipeline hardening** - Automate build, test, compatibility checks, signing, and NuGet publishing from release tags.
+- [x] **Structured logging improvements** - Standardize event IDs, scopes, and `LoggerMessage` patterns across connectors.
+- [ ] **Documentation completeness** - Complete XML API docs and connector guides with consistent coverage.
 
-**v1.1.0 — Resilience & Observability**
-- [ ] Retry Policies
-- [ ] OpenTelemetry Tracing & Metrics
-- [ ] Health Checks
-- [ ] Connector-Level Timeout Configuration
+### v0.5.0 - Inbound Messaging
 
-**v1.2.0 — New SaaS Connectors**
-- [ ] Slack Connector
-- [ ] Microsoft Teams Connector
-- [ ] WhatsApp Business API Connector (Direct Cloud API)
-- [ ] Viber Business Connector
-- [ ] LINE Connector
+Completes the receive-side model for current connectors to support bidirectional messaging scenarios.
 
-**v1.3.0 — Protocol Connectors**
-- [ ] Protocol Connector Base Classes
-- [ ] SMPP Connector
-- [ ] SMTP Connector
-- [ ] RCS Connector
-- [ ] APNs Connector (Direct)
+- [ ] **Twilio inbound messages (SMS/WhatsApp)** - Parse inbound payloads into framework messages and endpoints.
+- [ ] **SendGrid inbound parse support** - Map multipart inbound emails, content, and attachments into the message model.
+- [ ] **Firebase inbound messages** - Support upstream device data messages through the same receive abstractions.
 
-**v1.4.0 — Content Adaptation & Transcoding**
-- [ ] `IContentTranscoder` Abstraction
-- [ ] Built-In Transcoders
-- [ ] Channel-Aware Content Fallback
-- [ ] SMS Segmentation
-- [ ] Character Encoding Detection
+### v1.0.0 - First Stable Release
 
-**v1.5.0 — Address & Number Validation**
-- [ ] E.164 Normalization
-- [ ] HLR (Home Location Register) Lookup
-- [ ] Number Portability Awareness
-- [ ] Email Address Validation
-- [ ] `IAddressValidator` Abstraction
+Locks the public API and ships stable package releases with production-ready guarantees.
 
-**v1.6.0 — Tooling & Instrumentation**
-- [ ] `dotnet new` Connector Scaffold
-- [ ] ASP.NET Core Diagnostic Middleware
+- [ ] **API freeze and compatibility enforcement** - Prevent breaking API changes without a major version bump.
+- [ ] **NuGet GA release** - Publish stable `Deveel.Messaging.*` packages without prerelease suffixes.
+- [ ] **Interactive content model** - Add cross-channel abstractions for buttons, quick replies, carousels, and lists.
+- [ ] **Sender identity model** - Provide typed sender identities for phone, email, and bot-based channels.
 
-**v2.0.0 — Conversations**
-- [ ] `IConversation` Abstraction
-- [ ] Conversation State Model
-- [ ] Conversation Correlation
-- [ ] Multi-Channel Conversations
-- [ ] Multi-Tenant Channel Registry
-- [ ] xUnit Test Helpers for Conversation Flows
+### v1.1.0 and beyond - Platform Expansion
 
-**v2.1.0 — Message Templates**
-- [ ] `IMessageTemplate` Abstraction
-- [ ] Variable Substitution Engine
-- [ ] Per-Connector Template Rendering
-- [ ] Template Registry
+Extends resilience, observability, connectors, protocol support, and higher-level messaging capabilities.
 
----
+- [ ] **Resilience and observability** - Retry/circuit-breaker policies, OpenTelemetry signals, health checks, and timeout controls.
+- [ ] **New SaaS connectors** - Add Slack, Microsoft Teams, WhatsApp Business API, Viber, and LINE connectors.
+- [ ] **Protocol connectors** - Add SMPP, SMTP, RCS, and direct APNs support with shared protocol base classes.
+- [ ] **Content adaptation and validation** - Introduce transcoding, channel-aware fallback, segmentation, and address validation.
+- [ ] **Tooling and diagnostics** - Ship connector scaffolding templates and ASP.NET Core diagnostic middleware.
+- [ ] **Conversations and templates (v2.x)** - Add conversation state/correlation and provider-agnostic template modeling.
+
+For milestone-level detail, rationale, and dependencies, see [ROADMAP.md](ROADMAP.md).
+
+## Documentation
+
+If you want to go deeper, the documentation provides practical, step-by-step guidance for designing channels, wiring connectors, validating messages, and operating the framework in real projects.
+
+Start from the docs home and follow the path that best matches what you are building: [docs/README.md](docs/README.md).
+
+### Suggested reading paths
+
+- **First integration** - Start with the framework concepts, then wire a minimal implementation, and finally pick a connector guide for your channel.
+  ([Framework overview](docs/framework-overview.md) -> [Quick start](docs/quick-start.md) -> [Connector index](docs/connectors/README.md))
+- **Custom connector authoring** - Learn schema design first, then implement connector behavior, then register and resolve channels at runtime.
+  ([Channel schema usage](docs/channelschema-usage.md) -> [Connector implementation](docs/channelconnector-usage.md) -> [Channel registry guide](docs/channelregistry-guide.md))
+- **Validation-first integration** - Model endpoints, apply validation rules, and extend validation when channel-specific constraints grow.
+  ([Endpoint types](docs/endpointtype-usage.md) -> [Message validation examples](docs/validatemessage-usage-examples.md) -> [Validation extensions](docs/channelschema-validation-extension-usage.md))
 
 ## Contributing
 
-Found a bug? Have an idea for a new connector? Want to help move a milestone forward? Open an issue or a pull request on [GitHub](https://github.com/deveel/deveel.messaging) — all contributions are welcome.
+Contributions are welcome and appreciated.
 
-Check [CONTRIBUTING.md](CONTRIBUTING.md) for how to set up the dev environment and what we look for in a PR.
+If you want to contribute:
 
----
+- Open an issue to discuss bugs, features, or design changes
+- Check the existing documentation and package boundaries before proposing API changes
+- Submit focused pull requests with tests when behavior changes
+
+For local setup, coding conventions, and the contribution workflow, read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is released under the MIT License.
 
----
+You can use it in personal, academic, and commercial projects, including closed-source applications, provided that the license notice is preserved.
+
+See [LICENSE](LICENSE) for the full text and terms.
 
 ## Contributors
 
 [![Contributors](https://contrib.rocks/image?repo=deveel/deveel.messaging)](https://github.com/deveel/deveel.messaging/graphs/contributors)
-
