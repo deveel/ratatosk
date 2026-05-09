@@ -63,10 +63,10 @@ namespace Deveel.Messaging
         internal static partial void LogRefreshingAuthenticationCredential(this ILogger logger);
 
         [LoggerMessage(
-            EventId = ConnectorLoggerEventId.NoAuthenticationConfigurationFound,
+            EventId = ConnectorLoggerEventId.NoAuthenticationConfigurationFoundForType,
             Level = LogLevel.Warning,
-            Message = "Authentication configuration not found for credential type: {AuthenticationType}")]
-        internal static partial void LogAuthenticationConfigurationNotFound(this ILogger logger, AuthenticationType authenticationType);
+            Message = "Authentication configuration not found for credential type {AuthenticationType}")]
+        internal static partial void LogAuthenticationConfigurationNotFoundForType(this ILogger logger, AuthenticationType authenticationType);
 
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.AuthenticationCredentialRefreshed,
@@ -144,8 +144,8 @@ namespace Deveel.Messaging
 
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.StatusRead,
-            Level = LogLevel.Error,
-            Message = "Failed to read connector status")]
+            Level = LogLevel.Information,
+            Message = "Connector status read")]
         internal static partial void LogStatusRead(this ILogger logger);
 
         [LoggerMessage(
@@ -163,7 +163,7 @@ namespace Deveel.Messaging
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.HealthCheckSuccessful,
             Level = LogLevel.Information,
-            Message = "Connector health check was succesful")]
+            Message = "Connector health check was successful")]
         public static partial void LogHealthCheckSuccessful(this ILogger logger);
 
         [LoggerMessage(

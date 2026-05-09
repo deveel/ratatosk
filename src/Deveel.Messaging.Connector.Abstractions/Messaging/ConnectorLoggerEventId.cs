@@ -4,15 +4,16 @@ internal static class ConnectorLoggerEventId
 {
     public const int StartingAuthentication = LoggerEventId.BaseId + 10;
     public const int NoAuthenticationConfigurationFound = LoggerEventId.BaseId + 11;
-    public const int UsingAuthenticationConfiguration = LoggerEventId.BaseId + 12;
-    public const int AuthenticationSuccessful = LoggerEventId.BaseId + 13;
-    public const int AuthenticationFailed = LoggerEventId.BaseId + 14;
-    public const int AuthenticationException = LoggerEventId.BaseId + 15;
-    public const int NoCredentialToRefresh = LoggerEventId.BaseId + 16;
-    public const int RefreshingAuthenticationCredential = LoggerEventId.BaseId + 17;
-    public const int AuthenticationCredentialRefreshed = LoggerEventId.BaseId + 18;
-    public const int AuthenticationCredentialRefreshFailed = LoggerEventId.BaseId + 19;
-    public const int AuthenticationCredentialRefreshException = LoggerEventId.BaseId + 20;
+    public const int NoAuthenticationConfigurationFoundForType = LoggerEventId.BaseId + 12;
+    public const int UsingAuthenticationConfiguration = LoggerEventId.BaseId + 13;
+    public const int AuthenticationSuccessful = LoggerEventId.BaseId + 14;
+    public const int AuthenticationFailed = LoggerEventId.BaseId + 15;
+    public const int AuthenticationException = LoggerEventId.BaseId + 16;
+    public const int NoCredentialToRefresh = LoggerEventId.BaseId + 17;
+    public const int RefreshingAuthenticationCredential = LoggerEventId.BaseId + 18;
+    public const int AuthenticationCredentialRefreshed = LoggerEventId.BaseId + 19;
+    public const int AuthenticationCredentialRefreshFailed = LoggerEventId.BaseId + 20;
+    public const int AuthenticationCredentialRefreshException = LoggerEventId.BaseId + 21;
 
     public const int CheckingHealth = LoggerEventId.BaseId + 25;
     public const int HealthCheckSuccessful = LoggerEventId.BaseId + 26;

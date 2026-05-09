@@ -19,7 +19,7 @@ namespace Deveel.Messaging
 		public static partial void LogBotInitialized(this ILogger logger, string? botUsername, long botId);
 
         [LoggerMessage(
-            EventId = TelegramLoggerEventId.BotConnectionTestSuccessfull,
+            EventId = TelegramLoggerEventId.BotConnectionTestSuccessful,
             Level = LogLevel.Information,
             Message = "Bot connection test successful: @{BotUsername} ({BotId})")]
         public static partial void LogBotConnectionTestSuccessful(this ILogger logger, string? botUsername, long botId);
@@ -77,7 +77,7 @@ namespace Deveel.Messaging
 			Level = LogLevel.Warning,
 			Message = "Failed to remove webhook during shutdown")]
 		public static partial void LogWebhookRemovalFailed(this ILogger logger, Exception exception);
-        
+
 		[LoggerMessage(
 			EventId = 6002,
 			Level = LogLevel.Warning,

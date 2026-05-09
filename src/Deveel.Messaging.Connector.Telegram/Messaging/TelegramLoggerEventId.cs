@@ -6,5 +6,5 @@ public static class TelegramLoggerEventId
 
     public const int BotInitialized = BaseId + 1002;
 
-    public const int BotConnectionTestSuccessfull = BaseId + 2001;
+    public const int BotConnectionTestSuccessful = BaseId + 2001;
 }

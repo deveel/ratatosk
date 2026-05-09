@@ -272,7 +272,7 @@ namespace Deveel.Messaging
 
 				if (authConfig == null)
 				{
-					Logger.LogAuthenticationConfigurationNotFound(_authenticationCredential.AuthenticationType);
+					Logger.LogAuthenticationConfigurationNotFoundForType(_authenticationCredential.AuthenticationType);
 					return await AuthenticateAsync(cancellationToken);
 				}
 

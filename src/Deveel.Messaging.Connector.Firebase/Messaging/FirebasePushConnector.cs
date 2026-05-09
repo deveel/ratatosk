@@ -63,8 +63,6 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            using var loggerScope = Logger.BeginScope("ProjectId={ProjectId}", new { ProjectId = _projectId });
-
             // Perform authentication first
             var result = await AuthenticateAsync(cancellationToken);
             if (!result.Successful)
@@ -81,6 +79,8 @@ namespace Deveel.Messaging
             {
                 throw new MessagingException(ConnectorErrorCodes.InitializationError, "ProjectId is required");
             }
+
+            using var loggerScope = Logger.BeginScope("ProjectId={ProjectId}", _projectId);
 
             // Get the service account key from the authenticated credential
             if (AuthenticationCredential?.AuthenticationType == AuthenticationType.Certificate)
