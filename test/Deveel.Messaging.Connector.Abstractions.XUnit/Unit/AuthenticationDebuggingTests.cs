@@ -20,7 +20,7 @@ namespace Deveel.Messaging
         {
             // Step 1: Test if AuthenticationConfigurations works
             var config = AuthenticationConfigurations.ApiKeyAuthentication();
-            
+
             Assert.NotNull(config);
             Assert.Equal(AuthenticationType.ApiKey, config.AuthenticationType);
             Assert.Single(config.RequiredFields);
@@ -67,7 +67,7 @@ namespace Deveel.Messaging
             var config = AuthenticationConfigurations.ApiKeyAuthentication();
 
             var result = await authManager.AuthenticateAsync(connectionSettings, config);
-            
+
             Assert.True(result.IsSuccessful, $"Authentication failed: {result.ErrorCode} - {result.ErrorMessage}");
             Assert.NotNull(result.Credential);
             Assert.Equal(AuthenticationType.ApiKey, result.Credential.AuthenticationType);
@@ -88,7 +88,7 @@ namespace Deveel.Messaging
 
             // Just test initialization which includes authentication
             var initResult = await connector.InitializeAsync(CancellationToken.None);
-            
+
             Assert.True(initResult.Successful, $"Initialization failed: {initResult.Error?.ErrorCode} - {initResult.Error?.ErrorMessage}");
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
@@ -106,7 +106,7 @@ namespace Deveel.Messaging
             var config = AuthenticationConfigurations.TwilioBasicAuthentication();
 
             var result = await authManager.AuthenticateAsync(connectionSettings, config);
-            
+
             Assert.True(result.IsSuccessful, $"Authentication failed: {result.ErrorCode} - {result.ErrorMessage}");
             Assert.NotNull(result.Credential);
             Assert.Equal(AuthenticationType.Basic, result.Credential.AuthenticationType);
@@ -120,36 +120,35 @@ namespace Deveel.Messaging
     /// </summary>
     public class DebugTestConnector : ChannelConnectorBase
     {
-        private readonly ConnectionSettings _connectionSettings;
 
         public DebugTestConnector(IChannelSchema schema, ConnectionSettings connectionSettings)
-            : base(schema)
+            : base(schema, connectionSettings)
         {
-            _connectionSettings = connectionSettings;
         }
 
         public AuthenticationCredential? TestAuthenticationCredential => AuthenticationCredential;
 
-        protected override async Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+        protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             // Only authenticate - don't do any other initialization
-            var authResult = await AuthenticateAsync(_connectionSettings, cancellationToken);
-            return authResult.Successful ? ConnectorResult<bool>.Success(true) : authResult;
+            var authResult = await AuthenticateAsync(cancellationToken);
+            if (!authResult.Successful)
+                throw new Exception($"Authentication failed during initialization: {authResult.Error.ErrorCode} - {authResult.Error.ErrorMessage}");
         }
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
         {
-            return Task.FromResult(ConnectorResult<bool>.Success(true));
+            return ValueTask.CompletedTask;
         }
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
         {
             throw new NotSupportedException("Debugging connector doesn't support sending messages");
         }
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
-            return Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Debug Connector Ready")));
+            return Task.FromResult(new StatusInfo("Debug Connector Ready"));
         }
     }
 }

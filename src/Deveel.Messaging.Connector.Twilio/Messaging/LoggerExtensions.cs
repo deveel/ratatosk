@@ -10,77 +10,15 @@ namespace Deveel.Messaging
     /// <summary>
     /// Provides high-performance logging extensions for Twilio SMS Connector operations using source-generated logging methods.
     /// </summary>
-    internal static partial class TwilioSmsConnectorLoggerExtensions
+    internal static partial class LoggerExtensions
     {
-        #region Initialization Logging
-
-        [LoggerMessage(
-            EventId = 4001,
-            Level = LogLevel.Information,
-            Message = "Initializing Twilio SMS connector")]
-        internal static partial void LogInitializingConnector(this ILogger logger);
-
-        [LoggerMessage(
-            EventId = 4002,
-            Level = LogLevel.Information,
-            Message = "Twilio SMS connector initialized successfully")]
-        internal static partial void LogConnectorInitialized(this ILogger logger);
-
-        [LoggerMessage(
-            EventId = 4003,
-            Level = LogLevel.Error,
-            Message = "Connection settings validation failed: {Errors}")]
-        internal static partial void LogConnectionSettingsValidationFailed(this ILogger logger, string errors);
-
-        [LoggerMessage(
-            EventId = 4004,
-            Level = LogLevel.Error,
-            Message = "Failed to initialize Twilio SMS connector")]
-        internal static partial void LogInitializationFailed(this ILogger logger, Exception exception);
-
-        #endregion
-
-        #region Connection Testing Logging
-
-        [LoggerMessage(
-            EventId = 4101,
-            Level = LogLevel.Debug,
-            Message = "Testing Twilio connection...")]
-        internal static partial void LogTestingConnection(this ILogger logger);
-
-        [LoggerMessage(
-            EventId = 4102,
-            Level = LogLevel.Debug,
-            Message = "Connection test successful. Account: {AccountFriendlyName}")]
-        internal static partial void LogConnectionTestSuccessful(this ILogger logger, string? accountFriendlyName);
-
-        [LoggerMessage(
-            EventId = 4103,
-            Level = LogLevel.Error,
-            Message = "Connection test failed")]
-        internal static partial void LogConnectionTestFailed(this ILogger logger, Exception exception);
-
-        #endregion
-
         #region SMS Sending Logging
-
-        [LoggerMessage(
-            EventId = 4201,
-            Level = LogLevel.Debug,
-            Message = "Sending SMS message {MessageId}")]
-        internal static partial void LogSendingSms(this ILogger logger, string messageId);
 
         [LoggerMessage(
             EventId = 4202,
             Level = LogLevel.Information,
             Message = "SMS sent successfully. MessageId: {MessageId}, TwilioSid: {TwilioSid}, Status: {Status}")]
         internal static partial void LogSmsSent(this ILogger logger, string messageId, string twilioSid, string status);
-
-        [LoggerMessage(
-            EventId = 4203,
-            Level = LogLevel.Error,
-            Message = "Failed to send SMS message {MessageId}")]
-        internal static partial void LogSmsSendFailed(this ILogger logger, string messageId, Exception exception);
 
         [LoggerMessage(
             EventId = 4204,

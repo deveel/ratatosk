@@ -10,67 +10,25 @@ namespace Deveel.Messaging
 	/// <summary>
 	/// Provides logging extensions for the Telegram Bot connector.
 	/// </summary>
-	internal static partial class TelegramBotConnectorLoggerExtensions
+	internal static partial class LoggerExtensions
 	{
 		[LoggerMessage(
-			EventId = 1001,
-			Level = LogLevel.Information,
-			Message = "Initializing Telegram Bot connector...")]
-		public static partial void LogInitializingConnector(this ILogger logger);
-
-		[LoggerMessage(
-			EventId = 1002,
+			EventId = TelegramLoggerEventId.BotInitialized,
 			Level = LogLevel.Information,
 			Message = "Bot initialized successfully: @{BotUsername} ({BotId})")]
 		public static partial void LogBotInitialized(this ILogger logger, string? botUsername, long botId);
 
-		[LoggerMessage(
-			EventId = 1003,
-			Level = LogLevel.Information,
-			Message = "Telegram Bot connector initialized successfully")]
-		public static partial void LogConnectorInitialized(this ILogger logger);
-
-		[LoggerMessage(
-			EventId = 1004,
-			Level = LogLevel.Error,
-			Message = "Failed to initialize Telegram Bot connector")]
-		public static partial void LogInitializationFailed(this ILogger logger, Exception exception);
-
-		[LoggerMessage(
-			EventId = 2001,
-			Level = LogLevel.Debug,
-			Message = "Testing Telegram connection...")]
-		public static partial void LogTestingConnection(this ILogger logger);
-
-		[LoggerMessage(
-			EventId = 2002,
-			Level = LogLevel.Debug,
-			Message = "Connection test successful. Bot: @{BotUsername} ({BotId})")]
-		public static partial void LogConnectionTestSuccessful(this ILogger logger, string? botUsername, long botId);
-
-		[LoggerMessage(
-			EventId = 2003,
-			Level = LogLevel.Error,
-			Message = "Connection test failed")]
-		public static partial void LogConnectionTestFailed(this ILogger logger, Exception exception);
-
-		[LoggerMessage(
-			EventId = 3001,
-			Level = LogLevel.Debug,
-			Message = "Sending Telegram message {MessageId}")]
-		public static partial void LogSendingMessage(this ILogger logger, string messageId);
+        [LoggerMessage(
+            EventId = TelegramLoggerEventId.BotConnectionTestSuccessful,
+            Level = LogLevel.Information,
+            Message = "Bot connection test successful: @{BotUsername} ({BotId})")]
+        public static partial void LogBotConnectionTestSuccessful(this ILogger logger, string? botUsername, long botId);
 
 		[LoggerMessage(
 			EventId = 3002,
 			Level = LogLevel.Information,
 			Message = "Telegram message sent successfully. MessageId: {TelegramMessageId}, ChatId: {ChatId}")]
 		public static partial void LogMessageSent(this ILogger logger, int telegramMessageId, long chatId);
-
-		[LoggerMessage(
-			EventId = 3003,
-			Level = LogLevel.Error,
-			Message = "Failed to send Telegram message {MessageId}")]
-		public static partial void LogSendMessageFailed(this ILogger logger, string messageId, Exception exception);
 
 		[LoggerMessage(
 			EventId = 4001,
@@ -119,12 +77,6 @@ namespace Deveel.Messaging
 			Level = LogLevel.Warning,
 			Message = "Failed to remove webhook during shutdown")]
 		public static partial void LogWebhookRemovalFailed(this ILogger logger, Exception exception);
-
-		[LoggerMessage(
-			EventId = 6001,
-			Level = LogLevel.Error,
-			Message = "Failed to get connector status")]
-		public static partial void LogGetStatusFailed(this ILogger logger, Exception exception);
 
 		[LoggerMessage(
 			EventId = 6002,

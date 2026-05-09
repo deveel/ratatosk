@@ -45,7 +45,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM1234567890abcdef", message.Id);
         Assert.Equal("+1234567890", message.Sender?.Address);
@@ -86,16 +86,16 @@ public class TwilioSmsConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Equal(3, result.Value.Messages.Count);
-        
+
         var messages = result.Value.Messages.ToList();
         Assert.Equal("SM1111111111", messages[0].Id);
         Assert.Equal("SM2222222222", messages[1].Id);
         Assert.Equal("SM3333333333", messages[2].Id);
-        
+
         Assert.Equal("+1111111111", messages[0].Sender?.Address);
         Assert.Equal("+2222222222", messages[1].Sender?.Address);
         Assert.Equal("+3333333333", messages[2].Sender?.Address);
-        
+
         Assert.Equal("First message", ((ITextContent)messages[0].Content!).Text);
         Assert.Equal("Second message", ((ITextContent)messages[1].Content!).Text);
         Assert.Equal("Third message", ((ITextContent)messages[2].Content!).Text);
@@ -132,7 +132,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM9876543210abcdef", message.Id);
         Assert.Equal("whatsapp:+1234567890", message.Sender?.Address);
@@ -173,7 +173,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM4444444444", message.Id);
         Assert.Equal("", ((ITextContent)message.Content!).Text);
@@ -212,7 +212,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890abcdef", result.Value.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
-        
+
         // Check additional data
         Assert.True(result.Value.AdditionalData.ContainsKey("MessagePrice"));
         Assert.Equal("0.0075", result.Value.AdditionalData["MessagePrice"]);
@@ -252,7 +252,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890abcdef", result.Value.MessageId);
         Assert.Equal(MessageStatus.DeliveryFailed, result.Value.Status);
-        
+
         // Check error information
         Assert.True(result.Value.AdditionalData.ContainsKey("ErrorCode"));
         Assert.Equal("30008", result.Value.AdditionalData["ErrorCode"]);
@@ -377,7 +377,7 @@ public class TwilioSmsConnectorJsonTests
         // Assert
         Assert.False(result.Successful);
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.ReceiveMessageFailed, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error.ErrorCode);
     }
 
     [Fact]
@@ -399,7 +399,7 @@ public class TwilioSmsConnectorJsonTests
         // Assert
         Assert.False(result.Successful);
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.ReceiveStatusFailed, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveStatusError, result.Error.ErrorCode);
     }
 
     [Fact]
@@ -443,7 +443,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("SM1234567890abcdef", message.Id);
         Assert.Equal("+1234567890", message.Sender?.Address);
@@ -481,7 +481,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal(unicodeMessage, ((ITextContent)message.Content!).Text);
     }
@@ -517,7 +517,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal(largeBody, ((ITextContent)message.Content!).Text);
         Assert.Equal(1600, ((ITextContent)message.Content!).Text.Length);
@@ -563,7 +563,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890abcdef", result.Value.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
-        
+
         // Verify that all additional properties (except MessageSid and MessageStatus) are preserved
         Assert.True(result.Value.AdditionalData.ContainsKey("To"));
         Assert.True(result.Value.AdditionalData.ContainsKey("From"));
@@ -571,7 +571,7 @@ public class TwilioSmsConnectorJsonTests
         Assert.True(result.Value.AdditionalData.ContainsKey("MessagePrice"));
         Assert.True(result.Value.AdditionalData.ContainsKey("CustomField"));
         Assert.True(result.Value.AdditionalData.ContainsKey("Extra"));
-        
+
         Assert.Equal("custom_value", result.Value.AdditionalData["CustomField"]);
         Assert.Equal("additional_data", result.Value.AdditionalData["Extra"]);
     }

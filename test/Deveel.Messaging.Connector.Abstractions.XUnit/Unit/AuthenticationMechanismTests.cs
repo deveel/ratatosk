@@ -338,7 +338,7 @@ namespace Deveel.Messaging
             // Arrange
             var schema = new ChannelSchema("Test", "Test", "1.0.0")
                 .AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication());
-            
+
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "test-api-key");
 
@@ -377,44 +377,39 @@ namespace Deveel.Messaging
     /// </summary>
     public class TestAuthConnector : ChannelConnectorBase
     {
-        private readonly ConnectionSettings _connectionSettings;
-
-        public TestAuthConnector(IChannelSchema schema, ConnectionSettings connectionSettings) 
-            : base(schema)
+        public TestAuthConnector(IChannelSchema schema, ConnectionSettings connectionSettings)
+            : base(schema, connectionSettings)
         {
-            _connectionSettings = connectionSettings;
         }
 
         public AuthenticationCredential? TestAuthenticationCredential => AuthenticationCredential;
 
-        protected override async Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+        protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             // Try to authenticate if the schema has authentication configurations
             if (Schema.AuthenticationConfigurations.Any())
             {
-                var authResult = await AuthenticateAsync(_connectionSettings, cancellationToken);
+                var authResult = await AuthenticateAsync(cancellationToken);
                 if (!authResult.Successful)
                 {
-                    return authResult;
+                    throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error.ErrorCode} - {authResult.Error.ErrorMessage}");
                 }
             }
-
-            return ConnectorResult<bool>.Success(true);
         }
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
         {
-            return Task.FromResult(ConnectorResult<bool>.Success(true));
+            return ValueTask.CompletedTask;
         }
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
         }
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
-            return Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Test Status")));
+            return Task.FromResult(new StatusInfo("Test Status"));
         }
     }
 

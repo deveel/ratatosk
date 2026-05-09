@@ -21,8 +21,6 @@ namespace Deveel.Messaging
     [ChannelSchema(typeof(FacebookMessengerSchemaFactory))]
     public class FacebookMessengerConnector : ChannelConnectorBase
     {
-        private readonly ConnectionSettings _connectionSettings;
-        private readonly ILogger<FacebookMessengerConnector>? _logger;
         private readonly IFacebookService _facebookService;
         private readonly DateTime _startTime = DateTime.UtcNow;
 
@@ -40,11 +38,9 @@ namespace Deveel.Messaging
         /// <param name="logger">Optional logger for diagnostic and operational logging.</param>
         /// <exception cref="ArgumentNullException">Thrown when schema or connectionSettings is null.</exception>
         public FacebookMessengerConnector(IChannelSchema schema, ConnectionSettings connectionSettings, IFacebookService? facebookService = null, ILogger<FacebookMessengerConnector>? logger = null)
-            : base(schema)
+            : base(schema, connectionSettings, logger)
         {
-            _connectionSettings = connectionSettings ?? throw new ArgumentNullException(nameof(connectionSettings));
             _facebookService = facebookService ?? new FacebookService();
-            _logger = logger;
         }
 
         /// <summary>
@@ -60,156 +56,120 @@ namespace Deveel.Messaging
         }
 
         /// <inheritdoc/>
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
+            // Extract required parameters
+            _pageAccessToken = ConnectionSettings.GetParameter("PageAccessToken") as string;
+            _pageId = ConnectionSettings.GetParameter("PageId") as string;
+
+            // Extract optional parameters
+            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
+            _verifyToken = ConnectionSettings.GetParameter("VerifyToken") as string;
+
+            // Perform custom validation logic
+            if (string.IsNullOrWhiteSpace(_pageAccessToken))
+            {
+                throw new MessagingException(FacebookErrorCodes.MissingCredentials, "Page Access Token is required");
+            }
+
+            if (string.IsNullOrWhiteSpace(_pageId))
+            {
+                throw new MessagingException(FacebookErrorCodes.MissingPageId, "Page ID is required");
+            }
+
             try
             {
-                _logger?.LogInitializingConnector();
-
-                // Extract required parameters
-                _pageAccessToken = _connectionSettings.GetParameter("PageAccessToken") as string;
-                _pageId = _connectionSettings.GetParameter("PageId") as string;
-
-                // Extract optional parameters
-                _webhookUrl = _connectionSettings.GetParameter("WebhookUrl") as string;
-                _verifyToken = _connectionSettings.GetParameter("VerifyToken") as string;
-
-                // Perform custom validation logic
-                if (string.IsNullOrWhiteSpace(_pageAccessToken))
-                {
-                    return ConnectorResult<bool>.FailTask(FacebookErrorCodes.MissingCredentials,
-                        "Page Access Token is required");
-                }
-
-                if (string.IsNullOrWhiteSpace(_pageId))
-                {
-                    return ConnectorResult<bool>.FailTask(FacebookErrorCodes.MissingPageId,
-                        "Page ID is required");
-                }
-
                 // Initialize Facebook service with authentication validation
                 _facebookService.Initialize(_pageAccessToken);
-
-                _logger?.LogConnectorInitialized();
-                return ConnectorResult<bool>.SuccessTask(true);
-            } catch (ArgumentException ex)
-            {
-                _logger?.LogAuthenticationValidationFailed(ex.Message, ex);
-                return ConnectorResult<bool>.FailTask(FacebookErrorCodes.MissingCredentials,
-                    $"Facebook authentication error: {ex.Message}");
-            } catch (Exception ex)
-            {
-                _logger?.LogInitializationFailed(ex);
-                return ConnectorResult<bool>.FailTask(ConnectorErrorCodes.InitializationError, ex.Message);
             }
+            catch (ArgumentException ex)
+            {
+                throw new ConnectorException(FacebookErrorCodes.InvalidAccessToken, "Invalid Page Access Token format", ex);
+            }
+
+            return ValueTask.CompletedTask;
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        protected override async ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
         {
+            using var scope = Logger.BeginScope("PageID={PageId}", new
+            {
+                PageId = _pageId
+            });
+
             try
             {
-                _logger?.LogTestingConnection();
-
                 // Test connection by fetching page information using Graph API
                 var page = await _facebookService.FetchPageAsync(_pageId!, cancellationToken);
 
                 if (page == null)
                 {
-                    return ConnectorResult<bool>.Fail(FacebookErrorCodes.ConnectionFailed,
-                        "Unable to retrieve page information - page may not exist or access token may be invalid");
+                    throw new ConnectorException(FacebookErrorCodes.MissingPageId, "Unable to retrieve page information - page may not exist or access token may be invalid");
                 }
 
-                _logger?.LogConnectionTestSuccessful(page.Name, page.Category);
-                return ConnectorResult<bool>.Success(true);
+                Logger?.LogConnectionTestSuccessful(page.Name, page.Category);
             } catch (InvalidOperationException ex) when (ex.Message.Contains("Facebook Graph API error"))
             {
-                _logger?.LogConnectionTestGraphApiError(ex.Message, ex);
-                return ConnectorResult<bool>.Fail(FacebookErrorCodes.ConnectionTestFailed, ex.Message);
-            } catch (Exception ex)
-            {
-                _logger?.LogConnectionTestFailed(ex);
-                return ConnectorResult<bool>.Fail(FacebookErrorCodes.ConnectionTestFailed, ex.Message);
+                Logger?.LogConnectionTestGraphApiError(ex.Message, ex);
+                throw new ConnectorException(FacebookErrorCodes.ConnectionTestFailed,
+                    $"Facebook Graph API error during connection test: {ex.Message}", ex);
             }
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+        protected override async Task<SendResult> SendMessageCoreAsync(IMessage message,
+            CancellationToken cancellationToken)
         {
-            try
+            // Extract recipient User ID first to get the right error code
+            var recipientId = ExtractUserId(message.Receiver);
+            if (string.IsNullOrWhiteSpace(recipientId))
             {
-                _logger?.LogSendingMessage(message.Id);
-
-                // Extract recipient User ID first to get the right error code
-                var recipientId = ExtractUserId(message.Receiver);
-                if (string.IsNullOrWhiteSpace(recipientId))
-                {
-                    return ConnectorResult<SendResult>.Fail(FacebookErrorCodes.InvalidRecipient,
-                        "Recipient User ID is required and must be a valid Facebook PSID");
-                }
-
-                // Build Facebook message request with Graph API validation
-                var request = BuildMessageRequest(message, recipientId);
-
-                // Send the message with Facebook Graph API requirements
-                var response = await _facebookService.SendMessageAsync(request, cancellationToken);
-
-                _logger?.LogMessageSent(message.Id, response.MessageId);
-
-                var result = new SendResult(message.Id, response.MessageId)
-                {
-                    Status = MessageStatus.Sent,
-                    Timestamp = DateTime.UtcNow
-                };
-
-                // Add enhanced properties with Graph API information
-                result.AdditionalData["FacebookMessageId"] = response.MessageId;
-                result.AdditionalData["RecipientId"] = response.RecipientId;
-                result.AdditionalData["PageId"] = _pageId ?? "";
-                result.AdditionalData["HttpClient"] = "RestSharp";
-                result.AdditionalData["ApiVersion"] = FacebookConnectorConstants.GraphApiVersion;
-
-                return ConnectorResult<SendResult>.Success(result);
-            } catch (ArgumentException ex)
-            {
-                _logger?.LogMessageValidationError(message.Id, ex.Message, ex);
-                return ConnectorResult<SendResult>.Fail(FacebookErrorCodes.SendMessageFailed,
-                    $"Facebook validation error: {ex.Message}");
-            } catch (InvalidOperationException ex) when (ex.Message.Contains("Facebook Graph API error"))
-            {
-                _logger?.LogMessageGraphApiError(message.Id, ex.Message, ex);
-                return ConnectorResult<SendResult>.Fail(FacebookErrorCodes.SendMessageFailed, ex.Message);
-            } catch (Exception ex)
-            {
-                _logger?.LogMessageSendFailed(message.Id, ex);
-                return ConnectorResult<SendResult>.Fail(FacebookErrorCodes.SendMessageFailed, ex.Message);
+                throw new MessagingException(FacebookErrorCodes.InvalidRecipient,
+                    "Recipient User ID is required and must be a valid Facebook PSID");
             }
+
+            // Build Facebook message request with Graph API validation
+            var request = BuildMessageRequest(message, recipientId);
+
+            // Send the message with Facebook Graph API requirements
+            var response = await _facebookService.SendMessageAsync(request, cancellationToken);
+
+            Logger?.LogMessageSent(message.Id, response.MessageId);
+
+            var result = new SendResult(message.Id, response.MessageId)
+            {
+                Status = MessageStatus.Sent,
+                Timestamp = DateTime.UtcNow
+            };
+
+            // Add enhanced properties with Graph API information
+            result.AdditionalData["FacebookMessageId"] = response.MessageId;
+            result.AdditionalData["RecipientId"] = response.RecipientId;
+            result.AdditionalData["PageId"] = _pageId ?? "";
+            result.AdditionalData["HttpClient"] = "RestSharp";
+            result.AdditionalData["ApiVersion"] = FacebookConnectorConstants.GraphApiVersion;
+
+            return result;
         }
 
         /// <inheritdoc/>
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                var statusText = $"Facebook Messenger Connector (Page: {_pageId})";
-                var statusInfo = new StatusInfo("Ready", statusText);
+            var statusText = $"Facebook Messenger Connector (Page: {_pageId})";
+            var statusInfo = new StatusInfo("Ready", statusText);
 
-                statusInfo.AdditionalData["PageId"] = _pageId ?? "";
-                statusInfo.AdditionalData["State"] = State.ToString();
-                statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
-                statusInfo.AdditionalData["ApiVersion"] = FacebookConnectorConstants.GraphApiVersion;
-                statusInfo.AdditionalData["GraphApiCompliance"] = "Full";
+            statusInfo.AdditionalData["PageId"] = _pageId ?? "";
+            statusInfo.AdditionalData["State"] = State.ToString();
+            statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
+            statusInfo.AdditionalData["ApiVersion"] = FacebookConnectorConstants.GraphApiVersion;
+            statusInfo.AdditionalData["GraphApiCompliance"] = "Full";
 
-                return ConnectorResult<StatusInfo>.SuccessTask(statusInfo);
-            } catch (Exception ex)
-            {
-                _logger?.LogGetStatusFailed(ex);
-                return ConnectorResult<StatusInfo>.FailTask(FacebookErrorCodes.StatusError, ex.Message);
-            }
+            return Task.FromResult(statusInfo);
         }
 
         /// <inheritdoc/>
-        protected override async Task<ConnectorResult<ConnectorHealth>> GetConnectorHealthAsync(CancellationToken cancellationToken)
+        protected override async Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
         {
             var health = new ConnectorHealth
             {
@@ -229,15 +189,9 @@ namespace Deveel.Messaging
                 try
                 {
                     // Test connectivity by fetching page info using Graph API
-                    var testResult = await TestConnectorConnectionAsync(cancellationToken);
-                    if (!testResult.Successful)
-                    {
-                        health.IsHealthy = false;
-                        health.Issues.Add($"Connection test failed: {testResult.Error?.ErrorMessage}");
-                    } else
-                    {
-                        health.Metrics["LastSuccessfulApiCall"] = DateTime.UtcNow;
-                    }
+                    await TestConnectorConnectionAsync(cancellationToken);
+
+                    health.Metrics["LastSuccessfulApiCall"] = DateTime.UtcNow;
                 } catch (Exception ex)
                 {
                     health.IsHealthy = false;
@@ -249,37 +203,28 @@ namespace Deveel.Messaging
                 health.Issues.Add($"Health check failed: Connector is in {State} state");
             }
 
-            return ConnectorResult<ConnectorHealth>.Success(health);
+            return health;
         }
 
         /// <inheritdoc/>
-        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source,
+            CancellationToken cancellationToken)
         {
-            try
+            if (source.ContentType != MessageSource.JsonContentType)
             {
-                _logger?.LogReceivingMessage();
-
-                if (source.ContentType != MessageSource.JsonContentType)
-                {
-                    return ConnectorResult<ReceiveResult>.FailTask(FacebookErrorCodes.UnsupportedContentType,
-                        "Only JSON content type is supported for Facebook webhooks");
-                }
-
-                var messages = ParseFacebookWebhook(source);
-
-                if (messages.Count == 0)
-                {
-                    return ConnectorResult<ReceiveResult>.FailTask(FacebookErrorCodes.InvalidWebhookData,
-                        "No valid messages found in webhook data");
-                }
-
-                var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
-                return ConnectorResult<ReceiveResult>.SuccessTask(result);
-            } catch (Exception ex)
-            {
-                _logger?.LogReceiveMessageFailed(ex);
-                return ConnectorResult<ReceiveResult>.FailTask(FacebookErrorCodes.ReceiveMessageFailed, ex.Message);
+                throw new ConnectorException(FacebookErrorCodes.UnsupportedContentType,
+                    $"Unsupported content type: {source.ContentType}. Only application/json is supported for Facebook webhooks.");
             }
+
+            var messages = ParseFacebookWebhook(source);
+
+            if (messages.Count == 0)
+            {
+                throw new ConnectorException(FacebookErrorCodes.InvalidWebhookData,
+                    "No valid messages found in webhook data");
+            }
+
+            return Task.FromResult(new ReceiveResult(Guid.NewGuid().ToString(), messages));
         }
 
         private string? ExtractUserId(IEndpoint? endpoint)
@@ -362,7 +307,7 @@ namespace Deveel.Messaging
                         fbMessage.QuickReplies = JsonSerializer.Deserialize<List<FacebookQuickReply>>(quickRepliesJson, options);
                     } catch (JsonException ex)
                     {
-                        _logger?.LogQuickRepliesParsingFailed(quickRepliesJson, ex);
+                        Logger?.LogQuickRepliesParsingFailed(quickRepliesJson, ex);
                     }
                 }
             }
@@ -431,7 +376,7 @@ namespace Deveel.Messaging
                 return null;
 
             // Extract message ID and timestamp - handle missing mid property safely
-            var messageId = messageProperty.TryGetProperty("mid", out var midProperty) 
+            var messageId = messageProperty.TryGetProperty("mid", out var midProperty)
                 ? midProperty.GetString() ?? Guid.NewGuid().ToString()
                 : Guid.NewGuid().ToString();
             var timestamp = messageProperty.TryGetProperty("timestamp", out var timestampProperty)

@@ -26,8 +26,6 @@ namespace Deveel.Messaging
 	[ChannelSchema(typeof(TelegramBotSchemaFactory))]
 	public class TelegramBotConnector : ChannelConnectorBase
 	{
-		private readonly ConnectionSettings _connectionSettings;
-		private readonly ILogger<TelegramBotConnector>? _logger;
 		private readonly ITelegramService _telegramService;
 		private readonly DateTime _startTime = DateTime.UtcNow;
 
@@ -50,11 +48,10 @@ namespace Deveel.Messaging
 		/// <param name="logger">Optional logger for diagnostic and operational logging.</param>
 		/// <exception cref="ArgumentNullException">Thrown when schema or connectionSettings is null.</exception>
 		public TelegramBotConnector(IChannelSchema schema, ConnectionSettings connectionSettings, ITelegramService? telegramService = null, ILogger<TelegramBotConnector>? logger = null)
-			: base(schema, logger)
+			: base(schema, connectionSettings, logger)
 		{
-			_connectionSettings = connectionSettings ?? throw new ArgumentNullException(nameof(connectionSettings));
+            ArgumentNullException.ThrowIfNull(connectionSettings);
 			_telegramService = telegramService ?? new TelegramService();
-			_logger = logger;
 		}
 
 		/// <summary>
@@ -69,188 +66,128 @@ namespace Deveel.Messaging
 		{
 		}
 
-		/// <inheritdoc/>
-		protected override async Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-		{
-			try
-			{
-				_logger?.LogInformation("Initializing Telegram Bot connector...");
+        /// <inheritdoc/>
+        protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+        {
+            // Extract required parameters
+            _botToken = ConnectionSettings.GetParameter("BotToken") as string;
 
-				// Extract required parameters
-				_botToken = _connectionSettings.GetParameter("BotToken") as string;
+            // Extract optional parameters
+            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
+            _secretToken = ConnectionSettings.GetParameter("SecretToken") as string;
+            _disableWebPagePreview = ConnectionSettings.GetParameter("DisableWebPagePreview") as bool? ?? false;
+            _disableNotification = ConnectionSettings.GetParameter("DisableNotification") as bool? ?? false;
+            _parseMode = ConnectionSettings.GetParameter("ParseMode") as string ?? "Markdown";
+            _maxRetries = ConnectionSettings.GetParameter("MaxRetries") as int? ?? 3;
+            _timeoutSeconds = ConnectionSettings.GetParameter("TimeoutSeconds") as int? ?? 30;
 
-				// Extract optional parameters
-				_webhookUrl = _connectionSettings.GetParameter("WebhookUrl") as string;
-				_secretToken = _connectionSettings.GetParameter("SecretToken") as string;
-				_disableWebPagePreview = _connectionSettings.GetParameter("DisableWebPagePreview") as bool? ?? false;
-				_disableNotification = _connectionSettings.GetParameter("DisableNotification") as bool? ?? false;
-				_parseMode = _connectionSettings.GetParameter("ParseMode") as string ?? "Markdown";
-				_maxRetries = _connectionSettings.GetParameter("MaxRetries") as int? ?? 3;
-				_timeoutSeconds = _connectionSettings.GetParameter("TimeoutSeconds") as int? ?? 30;
+            // Validate required parameters
+            if (string.IsNullOrWhiteSpace(_botToken))
+            {
+                throw new MessagingException(TelegramErrorCodes.MissingBotToken, "Bot token is required for Telegram Bot API");
+            }
 
-				// Validate required parameters
-				if (string.IsNullOrWhiteSpace(_botToken))
-				{
-					return ConnectorResult<bool>.Fail(TelegramErrorCodes.MissingBotToken,
-						"Bot token is required for Telegram Bot API");
-				}
+            // Initialize Telegram service
+            _telegramService.Initialize(_botToken);
 
-				// Validate connection settings against schema
-				if (Schema is ChannelSchema channelSchema)
-				{
-					var validationResults = channelSchema.ValidateConnectionSettings(_connectionSettings);
-					var validationErrors = validationResults.ToList();
-					if (validationErrors.Count > 0)
-					{
-						_logger?.LogError("Connection settings validation failed: {Errors}",
-							string.Join(", ", validationErrors.Select(e => e.ErrorMessage)));
-						return ConnectorResult<bool>.ValidationFailed(TelegramErrorCodes.InvalidBotToken,
-							"Connection settings validation failed", validationErrors);
-					}
-				}
+            // Get bot information to verify the token
+            _botInfo = await _telegramService.GetMeAsync(cancellationToken);
+            Logger.LogBotInitialized(_botInfo.Username, _botInfo.Id);
 
-				// Initialize Telegram service
-				_telegramService.Initialize(_botToken);
+            // Set up webhook if URL is provided
+            if (!string.IsNullOrWhiteSpace(_webhookUrl))
+            {
+                await SetupWebhookAsync(cancellationToken);
+            }
+        }
 
-				// Get bot information to verify the token
-				_botInfo = await _telegramService.GetMeAsync(cancellationToken);
-				_logger?.LogInformation("Bot initialized successfully: @{BotUsername} ({BotId})",
-					_botInfo.Username, _botInfo.Id);
+        /// <inheritdoc/>
+        protected override async ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        {
+            // Test connection by calling getMe API
+            var botInfo = await _telegramService.GetMeAsync(cancellationToken);
 
-				// Set up webhook if URL is provided
-				if (!string.IsNullOrWhiteSpace(_webhookUrl))
-				{
-					await SetupWebhookAsync(cancellationToken);
-				}
+            if (botInfo == null)
+            {
+                throw new ConnectorException(ConnectorErrorCodes.ConnectionTestError, "Unable to retrieve bot information");
+            }
 
-				_logger?.LogInformation("Telegram Bot connector initialized successfully");
-				return ConnectorResult<bool>.Success(true);
-			}
-			catch (Exception ex)
-			{
-				_logger?.LogError(ex, "Failed to initialize Telegram Bot connector");
-				return ConnectorResult<bool>.Fail(ConnectorErrorCodes.InitializationError, ex.Message);
-			}
-		}
+            Logger.LogBotConnectionTestSuccessful(botInfo.Username, botInfo.Id);
+        }
 
-		/// <inheritdoc/>
-		protected override async Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-		{
-			try
-			{
-				_logger?.LogDebug("Testing Telegram connection...");
+        /// <inheritdoc/>
+        protected override async Task<SendResult> SendMessageCoreAsync(IMessage message,
+            CancellationToken cancellationToken)
+        {
+            // Extract chat ID from receiver
+            var chatId = ExtractChatId(message.Receiver);
+            if (chatId == null)
+            {
+                throw new ConnectorException(TelegramErrorCodes.InvalidChatId,
+                    "Receiver must contain a valid Telegram chat ID");
+            }
 
-				// Test connection by calling getMe API
-				var botInfo = await _telegramService.GetMeAsync(cancellationToken);
+            Telegram.Bot.Types.Message sentMessage = await SendMessageByContentType(message, chatId, cancellationToken);
 
-				if (botInfo == null)
-				{
-					return ConnectorResult<bool>.Fail(TelegramErrorCodes.ConnectionFailed,
-						"Unable to retrieve bot information");
-				}
+            Logger.LogMessageSent(sentMessage.MessageId, sentMessage.Chat.Id);
 
-				_logger?.LogDebug("Connection test successful. Bot: @{BotUsername} ({BotId})",
-					botInfo.Username, botInfo.Id);
-				return ConnectorResult<bool>.Success(true);
-			}
-			catch (Exception ex)
-			{
-				_logger?.LogError(ex, "Connection test failed");
-				return ConnectorResult<bool>.Fail(TelegramErrorCodes.ConnectionTestFailed, ex.Message);
-			}
-		}
+            var result = new SendResult(message.Id, sentMessage.MessageId.ToString())
+            {
+                Status = MessageStatus.Sent,
+                Timestamp = sentMessage.Date
+            };
 
-		/// <inheritdoc/>
-		protected override async Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-		{
-			try
-			{
-				_logger?.LogDebug("Sending Telegram message {MessageId}", message.Id);
+            // Add Telegram-specific properties
+            result.AdditionalData["TelegramMessageId"] = sentMessage.MessageId;
+            result.AdditionalData["ChatId"] = sentMessage.Chat.Id;
+            result.AdditionalData["ChatType"] = sentMessage.Chat.Type.ToString();
+            result.AdditionalData["BotId"] = _botInfo?.Id ?? 0;
+            result.AdditionalData["Date"] = sentMessage.Date;
 
-				// Extract chat ID from receiver
-				var chatId = ExtractChatId(message.Receiver);
-				if (chatId == null)
-				{
-					return ConnectorResult<SendResult>.Fail(TelegramErrorCodes.InvalidChatId,
-						"Receiver must contain a valid Telegram chat ID");
-				}
+            if (sentMessage.Chat.Username != null)
+            {
+                result.AdditionalData["ChatUsername"] = sentMessage.Chat.Username;
+            }
 
-				Telegram.Bot.Types.Message sentMessage = await SendMessageByContentType(message, chatId, cancellationToken);
+            return result;
+        }
 
-				_logger?.LogInformation("Telegram message sent successfully. MessageId: {TelegramMessageId}, ChatId: {ChatId}",
-					sentMessage.MessageId, sentMessage.Chat.Id);
+        /// <inheritdoc/>
+        protected override async Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        {
+            var statusInfo = new StatusInfo($"Telegram Bot Connector (@{_botInfo?.Username ?? "unknown"})");
 
-				var result = new SendResult(message.Id, sentMessage.MessageId.ToString())
-				{
-					Status = MessageStatus.Sent,
-					Timestamp = sentMessage.Date
-				};
+            statusInfo.AdditionalData["BotId"] = _botInfo?.Id ?? 0;
+            statusInfo.AdditionalData["BotUsername"] = _botInfo?.Username ?? "";
+            statusInfo.AdditionalData["BotFirstName"] = _botInfo?.FirstName ?? "";
+            statusInfo.AdditionalData["State"] = State.ToString();
+            statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
+            statusInfo.AdditionalData["WebhookUrl"] = _webhookUrl ?? "";
+            statusInfo.AdditionalData["HasWebhook"] = !string.IsNullOrWhiteSpace(_webhookUrl);
 
-				// Add Telegram-specific properties
-				result.AdditionalData["TelegramMessageId"] = sentMessage.MessageId;
-				result.AdditionalData["ChatId"] = sentMessage.Chat.Id;
-				result.AdditionalData["ChatType"] = sentMessage.Chat.Type.ToString();
-				result.AdditionalData["BotId"] = _botInfo?.Id ?? 0;
-				result.AdditionalData["Date"] = sentMessage.Date;
+            // Get webhook info if webhook is configured
+            if (!string.IsNullOrWhiteSpace(_webhookUrl))
+            {
+                try
+                {
+                    var webhookInfo = await _telegramService.GetWebhookInfoAsync(cancellationToken);
+                    statusInfo.AdditionalData["WebhookUrl"] = webhookInfo.Url ?? "";
+                    statusInfo.AdditionalData["WebhookPendingUpdateCount"] = webhookInfo.PendingUpdateCount;
+                    statusInfo.AdditionalData["WebhookLastErrorDate"] = webhookInfo.LastErrorDate?.ToString() ?? "";
+                    statusInfo.AdditionalData["WebhookLastErrorMessage"] = webhookInfo.LastErrorMessage ?? "";
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogGetWebhookInfoFailed(ex);
+                    statusInfo.AdditionalData["WebhookError"] = ex.Message;
+                }
+            }
 
-				if (sentMessage.Chat.Username != null)
-				{
-					result.AdditionalData["ChatUsername"] = sentMessage.Chat.Username;
-				}
+            return statusInfo;
+        }
 
-				return ConnectorResult<SendResult>.Success(result);
-			}
-			catch (Exception ex)
-			{
-				_logger?.LogError(ex, "Failed to send Telegram message {MessageId}", message.Id);
-				return ConnectorResult<SendResult>.Fail(TelegramErrorCodes.SendMessageFailed, ex.Message);
-			}
-		}
-
-		/// <inheritdoc/>
-		protected override async Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-		{
-			try
-			{
-				var statusInfo = new StatusInfo($"Telegram Bot Connector (@{_botInfo?.Username ?? "unknown"})");
-
-				statusInfo.AdditionalData["BotId"] = _botInfo?.Id ?? 0;
-				statusInfo.AdditionalData["BotUsername"] = _botInfo?.Username ?? "";
-				statusInfo.AdditionalData["BotFirstName"] = _botInfo?.FirstName ?? "";
-				statusInfo.AdditionalData["State"] = State.ToString();
-				statusInfo.AdditionalData["Uptime"] = DateTime.UtcNow - _startTime;
-				statusInfo.AdditionalData["WebhookUrl"] = _webhookUrl ?? "";
-				statusInfo.AdditionalData["HasWebhook"] = !string.IsNullOrWhiteSpace(_webhookUrl);
-
-				// Get webhook info if webhook is configured
-				if (!string.IsNullOrWhiteSpace(_webhookUrl))
-				{
-					try
-					{
-						var webhookInfo = await _telegramService.GetWebhookInfoAsync(cancellationToken);
-						statusInfo.AdditionalData["WebhookUrl"] = webhookInfo.Url ?? "";
-						statusInfo.AdditionalData["WebhookPendingUpdateCount"] = webhookInfo.PendingUpdateCount;
-						statusInfo.AdditionalData["WebhookLastErrorDate"] = webhookInfo.LastErrorDate?.ToString() ?? "";
-						statusInfo.AdditionalData["WebhookLastErrorMessage"] = webhookInfo.LastErrorMessage ?? "";
-					}
-					catch (Exception ex)
-					{
-						_logger?.LogWarning(ex, "Failed to get webhook info for status");
-						statusInfo.AdditionalData["WebhookError"] = ex.Message;
-					}
-				}
-
-				return ConnectorResult<StatusInfo>.Success(statusInfo);
-			}
-			catch (Exception ex)
-			{
-				_logger?.LogError(ex, "Failed to get connector status");
-				return ConnectorResult<StatusInfo>.Fail(TelegramErrorCodes.StatusError, ex.Message);
-			}
-		}
-
-		/// <inheritdoc/>
-		protected override async Task<ConnectorResult<ConnectorHealth>> GetConnectorHealthAsync(CancellationToken cancellationToken)
+        /// <inheritdoc/>
+		protected override async Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
 		{
 			var health = new ConnectorHealth
 			{
@@ -265,12 +202,7 @@ namespace Deveel.Messaging
 				try
 				{
 					// Test connectivity by calling getMe API
-					var testResult = await TestConnectorConnectionAsync(cancellationToken);
-					if (!testResult.Successful)
-					{
-						health.IsHealthy = false;
-						health.Issues.Add($"Connection test failed: {testResult.Error?.ErrorMessage}");
-					}
+					await TestConnectorConnectionAsync(cancellationToken);
 
 					// Check webhook health if configured
 					if (!string.IsNullOrWhiteSpace(_webhookUrl))
@@ -304,41 +236,31 @@ namespace Deveel.Messaging
 				health.Issues.Add($"Connector is in {State} state");
 			}
 
-			return ConnectorResult<ConnectorHealth>.Success(health);
+			return health;
 		}
 
-		/// <inheritdoc/>
-		protected override async Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
-		{
-			try
-			{
-				_logger?.LogDebug("Receiving Telegram message from webhook");
+        /// <inheritdoc/>
+        protected override async Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source,
+            CancellationToken cancellationToken)
+        {
+            if (source.ContentType == MessageSource.JsonContentType)
+            {
+                var messages = ParseTelegramWebhookJson(source);
 
-				if (source.ContentType == MessageSource.JsonContentType)
-				{
-					var messages = ParseTelegramWebhookJson(source);
+                if (messages.Count == 0)
+                {
+                    throw new ConnectorException(TelegramErrorCodes.InvalidWebhookData, "No valid messages found in webhook data");
+                }
 
-					if (messages.Count == 0)
-					{
-						return ConnectorResult<ReceiveResult>.Fail(TelegramErrorCodes.InvalidWebhookData,
-							"No valid messages found in webhook data");
-					}
+                // TODO: find a better way to generate the ID of the receive batch
+                return new ReceiveResult(Guid.NewGuid().ToString(), messages);
+            }
 
-					var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
-					return ConnectorResult<ReceiveResult>.Success(result);
-				}
+            throw new ConnectorException(TelegramErrorCodes.UnsupportedContentType,
+                 $"Unsupported content type: {source.ContentType}. Only JSON content type is supported for Telegram message receiving");
+        }
 
-				return ConnectorResult<ReceiveResult>.Fail(TelegramErrorCodes.UnsupportedContentType,
-					"Only JSON content type is supported for Telegram message receiving");
-			}
-			catch (Exception ex)
-			{
-				_logger?.LogError(ex, "Failed to receive Telegram message from webhook");
-				return ConnectorResult<ReceiveResult>.Fail(TelegramErrorCodes.ReceiveMessageFailed, ex.Message);
-			}
-		}
-
-		/// <inheritdoc/>
+        /// <inheritdoc/>
 		protected override async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
 			// Validate message content based on type
@@ -471,10 +393,10 @@ namespace Deveel.Messaging
 		{
 			try
 			{
-				_logger?.LogDebug("Setting up Telegram webhook: {WebhookUrl}", _webhookUrl);
+                Logger.LogSettingUpWebhook(_webhookUrl);
 
-				var maxConnections = _connectionSettings.GetParameter("MaxConnections") as int?;
-				var dropPendingUpdates = _connectionSettings.GetParameter("DropPendingUpdates") as bool? ?? false;
+				var maxConnections = ConnectionSettings.GetParameter("MaxConnections") as int?;
+				var dropPendingUpdates = ConnectionSettings.GetParameter("DropPendingUpdates") as bool? ?? false;
 
 				await _telegramService.SetWebhookAsync(
 					_webhookUrl!,
@@ -483,11 +405,11 @@ namespace Deveel.Messaging
 					secretToken: _secretToken,
 					cancellationToken: cancellationToken);
 
-				_logger?.LogInformation("Webhook set up successfully: {WebhookUrl}", _webhookUrl);
+                Logger.LogWebhookSetUp(_webhookUrl);
 			}
 			catch (Exception ex)
 			{
-				_logger?.LogError(ex, "Failed to set up webhook: {WebhookUrl}", _webhookUrl);
+                Logger.LogWebhookSetupFailed(_webhookUrl, ex);
 				throw;
 			}
 		}
@@ -927,14 +849,14 @@ namespace Deveel.Messaging
 				// Remove webhook if it was set up
 				if (!string.IsNullOrWhiteSpace(_webhookUrl))
 				{
-					_logger?.LogInformation("Removing Telegram webhook...");
+                    Logger.LogRemovingWebhook();
 					await _telegramService.DeleteWebhookAsync(cancellationToken: cancellationToken);
-					_logger?.LogInformation("Webhook removed successfully");
+                    Logger.LogWebhookRemoved();
 				}
 			}
 			catch (Exception ex)
 			{
-				_logger?.LogWarning(ex, "Failed to remove webhook during shutdown");
+                Logger.LogWebhookRemovalFailed(ex);
 			}
 
 			await base.ShutdownConnectorAsync(cancellationToken);

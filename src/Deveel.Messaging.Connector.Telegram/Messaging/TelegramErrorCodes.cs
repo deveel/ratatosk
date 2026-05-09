@@ -26,16 +26,6 @@ namespace Deveel.Messaging
 		public const string InvalidChatId = "INVALID_CHAT_ID";
 
 		/// <summary>
-		/// Error code for failed message sending.
-		/// </summary>
-		public const string SendMessageFailed = "SEND_MESSAGE_FAILED";
-
-		/// <summary>
-		/// Error code for failed connection testing.
-		/// </summary>
-		public const string ConnectionTestFailed = "CONNECTION_TEST_FAILED";
-
-		/// <summary>
 		/// Error code for unsupported content type.
 		/// </summary>
 		public const string UnsupportedContentType = "UNSUPPORTED_CONTENT_TYPE";
@@ -44,31 +34,6 @@ namespace Deveel.Messaging
 		/// Error code for invalid webhook data.
 		/// </summary>
 		public const string InvalidWebhookData = "INVALID_WEBHOOK_DATA";
-
-		/// <summary>
-		/// Error code for failed message receiving.
-		/// </summary>
-		public const string ReceiveMessageFailed = "RECEIVE_MESSAGE_FAILED";
-
-		/// <summary>
-		/// Error code for failed status query.
-		/// </summary>
-		public const string StatusQueryFailed = "STATUS_QUERY_FAILED";
-
-		/// <summary>
-		/// Error code for failed status receiving.
-		/// </summary>
-		public const string ReceiveStatusFailed = "RECEIVE_STATUS_FAILED";
-
-		/// <summary>
-		/// Error code for status error.
-		/// </summary>
-		public const string StatusError = "STATUS_ERROR";
-
-		/// <summary>
-		/// Error code for connection failure.
-		/// </summary>
-		public const string ConnectionFailed = "CONNECTION_FAILED";
 
 		/// <summary>
 		/// Error code for message text too long.

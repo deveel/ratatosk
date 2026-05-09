@@ -64,7 +64,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("null_values_123", message.Id);
         Assert.Equal("", ((ITextContent)message.Content!).Text); // null content should become empty string
@@ -83,7 +83,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         // Create very long content to test large payload handling
         var longContent = new string('A', 100000); // 100KB of text
         var longHtml = $"<html><body><p>{longContent}</p></body></html>";
-        
+
         var webhookJson = new
         {
             @event = "inbound",
@@ -105,7 +105,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("large_content_123", message.Id);
         Assert.Equal(MessageContentType.Html, message.Content!.ContentType);
@@ -124,7 +124,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         // Unicode content with various character sets
         var unicodeSubject = "???? - Test Email with mojis ?? and special chars ";
         var unicodeContent = "Hello! ??! Bonjour! ?????! ????????????! ?????";
-        
+
         var webhookJson = new
         {
             @event = "inbound",
@@ -146,7 +146,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal(unicodeContent, ((ITextContent)message.Content!).Text);
         Assert.Equal(unicodeSubject, message.Properties!["Subject"].Value);
@@ -246,7 +246,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("\"Test User\" <test.user+tag@sub.domain.co.uk>", message.Sender?.Address);
         Assert.Equal("inbox+filter@yourdomain.com", message.Receiver?.Address);
@@ -263,7 +263,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
 
         // Complex envelope data with multiple recipients
         var complexEnvelope = "{\"to\":[\"inbox@yourdomain.com\",\"backup@yourdomain.com\"],\"from\":\"sender@example.com\"}";
-        
+
         var webhookJson = new
         {
             @event = "inbound",
@@ -287,7 +287,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("complex_envelope_123", message.Id);
         Assert.True(message.Properties!.ContainsKey("envelope"));
@@ -336,7 +336,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.NotNull(result.Value);
         Assert.Equal("comprehensive_event_123", result.Value.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
-        
+
         // Verify that all additional properties are preserved
         Assert.True(result.Value.AdditionalData.ContainsKey("Channel"));
         Assert.Equal("Email", result.Value.AdditionalData["Channel"]);
@@ -392,7 +392,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         // Assert
         Assert.False(result.Successful);
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.ReceiveStatusFailed, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveStatusError, result.Error.ErrorCode);
     }
 
     [Fact]
@@ -423,7 +423,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Equal(2, result.Value.Messages.Count); // Only 2 valid messages
-        
+
         var messages = result.Value.Messages.ToList();
         Assert.Equal("valid_1", messages[0].Id);
         Assert.Equal("valid_2", messages[1].Id);
@@ -459,7 +459,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.Equal("case_sensitive_123", message.Id);
     }
@@ -498,7 +498,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
-        
+
         var message = result.Value.Messages.First();
         Assert.True(message.Properties!.ContainsKey("attachments"));
         Assert.Equal("2", message.Properties["attachments"].Value);

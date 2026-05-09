@@ -18,7 +18,7 @@ public class TwilioMessageReceivingTests
         // Arrange
         var schema = CreateTwilioSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -38,14 +38,14 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var receiveResult = result.Value;
         Assert.NotNull(receiveResult.BatchId);
         Assert.NotEmpty(receiveResult.BatchId);
         Assert.Single(receiveResult.Messages);
         Assert.IsAssignableFrom<IReadOnlyList<IMessage>>(receiveResult.Messages);
-        
+
         var message = receiveResult.Messages.First();
         Assert.Equal("SM1234567890", message.Id);
         Assert.Equal("+1234567890", message.Sender?.Address);
@@ -53,7 +53,7 @@ public class TwilioMessageReceivingTests
         Assert.Equal("+1987654321", message.Receiver?.Address);
         Assert.Equal(EndpointType.PhoneNumber, message.Receiver?.Type);
         Assert.Equal("Hello from Twilio SMS", ((ITextContent)message.Content!).Text);
-        
+
         // Check Twilio-specific properties
         Assert.NotNull(message.Properties);
         Assert.True(message.Properties.ContainsKey("NumSegments"));
@@ -68,7 +68,7 @@ public class TwilioMessageReceivingTests
         // Arrange
         var schema = CreateTwilioWhatsAppSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -88,20 +88,20 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var receiveResult = result.Value;
         Assert.NotNull(receiveResult.BatchId);
         Assert.NotEmpty(receiveResult.BatchId);
         Assert.Single(receiveResult.Messages);
         Assert.IsAssignableFrom<IReadOnlyList<IMessage>>(receiveResult.Messages);
-        
+
         var message = receiveResult.Messages.First();
         Assert.Equal("SM9876543210", message.Id);
         Assert.Equal("whatsapp:+1234567890", message.Sender?.Address);
         Assert.Equal("whatsapp:+1987654321", message.Receiver?.Address);
         Assert.Equal("Hello from WhatsApp", ((ITextContent)message.Content!).Text);
-        
+
         // Check WhatsApp-specific properties
         Assert.NotNull(message.Properties);
         Assert.True(message.Properties.ContainsKey("ProfileName"));
@@ -119,7 +119,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.MediaAttachments);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -141,20 +141,20 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var receiveResult = result.Value;
         Assert.NotNull(receiveResult.BatchId);
         Assert.NotEmpty(receiveResult.BatchId);
         Assert.Single(receiveResult.Messages);
         Assert.IsAssignableFrom<IReadOnlyList<IMessage>>(receiveResult.Messages);
-        
+
         var message = receiveResult.Messages.First();
         Assert.Equal("MM1234567890", message.Id);
         Assert.Equal("Check out this image!", ((ITextContent)message.Content!).Text);
         Assert.NotNull(message.Content);
         Assert.Equal(MessageContentType.PlainText, message.Content.ContentType);
-        
+
         // Check media properties
         Assert.NotNull(message.Properties);
         Assert.True(message.Properties.Count >= 5); // At least NumMedia, MediaUrl0, MediaContentType0, MessageStatus, AccountSid
@@ -176,7 +176,7 @@ public class TwilioMessageReceivingTests
         // Arrange
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.HandleMessageState);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -196,14 +196,14 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var statusResult = result.Value;
         Assert.Equal("SM1234567890", statusResult.MessageId);
         Assert.Equal(MessageStatus.Delivered, statusResult.Status);
         Assert.True(statusResult.Timestamp <= DateTimeOffset.UtcNow);
         Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-1)); // Recent timestamp
-        
+
         // Check additional Twilio status data
         Assert.NotNull(statusResult.AdditionalData);
         Assert.True(statusResult.AdditionalData.Count >= 2); // At least MessagePrice and MessagePriceUnit
@@ -219,7 +219,7 @@ public class TwilioMessageReceivingTests
         // Arrange
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.HandleMessageState);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -239,14 +239,14 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var statusResult = result.Value;
         Assert.Equal("SM1234567890", statusResult.MessageId);
         Assert.Equal(MessageStatus.DeliveryFailed, statusResult.Status);
         Assert.True(statusResult.Timestamp <= DateTimeOffset.UtcNow);
         Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-1)); // Recent timestamp
-        
+
         // Check error information
         Assert.NotNull(statusResult.AdditionalData);
         Assert.True(statusResult.AdditionalData.Count >= 2); // At least ErrorCode and ErrorMessage
@@ -254,7 +254,7 @@ public class TwilioMessageReceivingTests
         Assert.Equal("30008", statusResult.AdditionalData["ErrorCode"]);
         Assert.True(statusResult.AdditionalData.ContainsKey("ErrorMessage"));
         Assert.Equal("Unknown destination handset", statusResult.AdditionalData["ErrorMessage"]);
-        
+
         // Verify that error information is properly URL-decoded
         Assert.DoesNotContain("%20", statusResult.AdditionalData["ErrorMessage"].ToString());
         Assert.Contains(" ", statusResult.AdditionalData["ErrorMessage"].ToString());
@@ -266,7 +266,7 @@ public class TwilioMessageReceivingTests
         // Arrange
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -291,20 +291,20 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var receiveResult = result.Value;
         Assert.NotNull(receiveResult.BatchId);
         Assert.NotEmpty(receiveResult.BatchId);
         Assert.Single(receiveResult.Messages);
         Assert.IsAssignableFrom<IReadOnlyList<IMessage>>(receiveResult.Messages);
-        
+
         var message = receiveResult.Messages.First();
         Assert.Equal("SM1234567890", message.Id);
         Assert.Equal("+1234567890", message.Sender?.Address);
         Assert.Equal("+1987654321", message.Receiver?.Address);
         Assert.Equal("Hello from JSON webhook", ((ITextContent)message.Content!).Text);
-        
+
         // Verify that JSON parsing doesn't add extra properties (unlike form data parsing)
         Assert.Null(message.Properties); // JSON parsing doesn't add extra properties in this implementation
     }
@@ -321,7 +321,7 @@ public class TwilioMessageReceivingTests
         // Arrange
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.HandleMessageState);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -334,14 +334,14 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var statusResult = result.Value;
         Assert.Equal("SM1234567890", statusResult.MessageId);
         Assert.Equal(expectedStatus, statusResult.Status);
         Assert.True(statusResult.Timestamp <= DateTimeOffset.UtcNow);
         Assert.True(statusResult.Timestamp >= DateTimeOffset.UtcNow.AddMinutes(-1)); // Recent timestamp
-        
+
         // Verify that additional data is properly initialized even if empty
         Assert.NotNull(statusResult.AdditionalData);
     }
@@ -353,7 +353,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.BulkMessaging);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -377,19 +377,19 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var receiveResult = result.Value;
         Assert.NotNull(receiveResult.BatchId);
         Assert.NotEmpty(receiveResult.BatchId);
         Assert.Equal(3, receiveResult.Messages.Count);
         Assert.IsAssignableFrom<IReadOnlyList<IMessage>>(receiveResult.Messages);
-        
+
         var messages = receiveResult.Messages.ToList();
         Assert.Equal("SM1111111111", messages[0].Id);
         Assert.Equal("SM2222222222", messages[1].Id);
         Assert.Equal("SM3333333333", messages[2].Id);
-        
+
         // Verify each message has proper structure
         foreach (var message in messages)
         {
@@ -402,7 +402,7 @@ public class TwilioMessageReceivingTests
             Assert.StartsWith("+", message.Sender.Address); // Phone number format
             Assert.Equal("+1987654321", message.Receiver.Address); // Common receiver
         }
-        
+
         // Verify message content uniqueness
         var messageTexts = messages.Select(m => ((ITextContent)m.Content!).Text).ToList();
         Assert.Equal(3, messageTexts.Distinct().Count()); // All messages should have unique content
@@ -415,7 +415,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateTwilioWhatsAppSchema()
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.Templates);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -436,20 +436,20 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var receiveResult = result.Value;
         Assert.NotNull(receiveResult.BatchId);
         Assert.NotEmpty(receiveResult.BatchId);
         Assert.Single(receiveResult.Messages);
         Assert.IsAssignableFrom<IReadOnlyList<IMessage>>(receiveResult.Messages);
-        
+
         var message = receiveResult.Messages.First();
         Assert.Equal("SM1234567890", message.Id);
         Assert.NotNull(message.Content);
         Assert.Equal(MessageContentType.PlainText, message.Content.ContentType);
         Assert.Equal(string.Empty, ((ITextContent)message.Content).Text); // Empty body for template interactions
-        
+
         // Check template interaction properties
         Assert.NotNull(message.Properties);
         Assert.True(message.Properties.Count >= 4); // At least ButtonText, ButtonPayload, MessageStatus, AccountSid
@@ -461,7 +461,7 @@ public class TwilioMessageReceivingTests
         Assert.Equal("received", message.Properties["MessageStatus"].Value);
         Assert.True(message.Properties.ContainsKey("AccountSid"));
         Assert.Equal("AC1234567890", message.Properties["AccountSid"].Value);
-        
+
         // Verify WhatsApp endpoint format
         Assert.NotNull(message.Sender);
         Assert.NotNull(message.Receiver);
@@ -477,7 +477,7 @@ public class TwilioMessageReceivingTests
         // Arrange
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -491,14 +491,14 @@ public class TwilioMessageReceivingTests
         Assert.False(result.Successful);
         Assert.Null(result.Value);
         Assert.NotNull(result.Error);
-        
+
         // Assert
         Assert.NotNull(result.Error.ErrorCode);
         Assert.NotEmpty(result.Error.ErrorCode);
         Assert.Equal("MISSING_MESSAGE_SID", result.Error.ErrorCode);
         Assert.Contains("MessageSid", result.Error.ErrorMessage);
         Assert.Contains("required", result.Error.ErrorMessage);
-        
+
         // Verify error message provides meaningful information
         Assert.True(result.Error.ErrorMessage.Length > 10); // Should be descriptive
         Assert.DoesNotContain("null", result.Error.ErrorMessage.ToLowerInvariant()); // Should not contain null references
@@ -510,7 +510,7 @@ public class TwilioMessageReceivingTests
         // Arrange
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
-        
+
         var connector = new TwilioTestReceivingConnector(schema);
         await connector.InitializeAsync(CancellationToken.None);
 
@@ -526,23 +526,23 @@ public class TwilioMessageReceivingTests
         Assert.True(result.Successful);
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
+
         // Assert
         var receiveResult = result.Value;
         Assert.NotNull(receiveResult.BatchId);
         Assert.NotEmpty(receiveResult.BatchId);
         Assert.Single(receiveResult.Messages);
         Assert.IsAssignableFrom<IReadOnlyList<IMessage>>(receiveResult.Messages);
-        
+
         var message = receiveResult.Messages.First();
         Assert.Equal("SM1234567890", message.Id);
         Assert.NotNull(message.Content);
         Assert.Equal("Test message", ((ITextContent)message.Content).Text);
-        
+
         // Verify URL decoding was performed correctly
         Assert.DoesNotContain("%20", ((ITextContent)message.Content).Text);
         Assert.Contains(" ", ((ITextContent)message.Content).Text);
-        
+
         // Verify endpoints are properly parsed
         Assert.NotNull(message.Sender);
         Assert.NotNull(message.Receiver);
@@ -552,10 +552,10 @@ public class TwilioMessageReceivingTests
         Assert.Equal(EndpointType.PhoneNumber, message.Receiver.Type);
     }
 
-    // Helper methods to work around ref struct limitations  
+    // Helper methods to work around ref struct limitations
     private static Task<ConnectorResult<ReceiveResult>> TestReceiveMessage(
-        TwilioTestReceivingConnector connector, 
-        string content, 
+        TwilioTestReceivingConnector connector,
+        string content,
         string contentType)
     {
         if (contentType == MessageSource.UrlPostContentType)
@@ -576,8 +576,8 @@ public class TwilioMessageReceivingTests
     }
 
     private static Task<ConnectorResult<StatusUpdateResult>> TestReceiveStatus(
-        TwilioTestReceivingConnector connector, 
-        string content, 
+        TwilioTestReceivingConnector connector,
+        string content,
         string contentType)
     {
         if (contentType == MessageSource.UrlPostContentType)
@@ -602,93 +602,82 @@ public class TwilioMessageReceivingTests
     {
         public TwilioTestReceivingConnector(IChannelSchema schema) : base(schema) { }
 
-        protected override Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+        protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<bool>.Success(true));
+        protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+            => ValueTask.CompletedTask;
 
-        protected override Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<SendResult>.Success(new SendResult(message.Id, $"remote-{message.Id}")));
+        protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+            => Task.FromResult(new SendResult(message.Id, $"remote-{message.Id}"));
 
-        protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-            => Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Twilio Test Receiving Connector")));
+        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+            => Task.FromResult(new StatusInfo("Twilio Test Receiving Connector"));
 
-        protected override Task<ConnectorResult<ReceiveResult>> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source,
+            CancellationToken cancellationToken)
         {
-            try
+            if (source.ContentType == MessageSource.UrlPostContentType)
             {
-                if (source.ContentType == MessageSource.UrlPostContentType)
+                var formData = source.AsUrlPostData();
+                if (!formData.TryGetValue("MessageSid", out var messageSid))
                 {
-                    var formData = source.AsUrlPostData();
-                    if (!formData.TryGetValue("MessageSid", out var messageSid))
-                    {
-                        return ConnectorResult<ReceiveResult>.FailTask("MISSING_MESSAGE_SID", "MessageSid is required for Twilio webhooks");
-                    }
-
-                    var messages = ParseTwilioFormData(source);
-                    var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
-                    return ConnectorResult<ReceiveResult>.SuccessTask(result);
-                }
-                else if (source.ContentType == MessageSource.JsonContentType)
-                {
-                    var messages = ParseTwilioJson(source);
-                    var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
-                    return ConnectorResult<ReceiveResult>.SuccessTask(result);
+                    throw new ConnectorException("MISSING_MESSAGE_SID",
+                        "MessageSid is required for Twilio webhooks");
                 }
 
-                return ConnectorResult<ReceiveResult>.FailTask("UNSUPPORTED_CONTENT_TYPE", 
-                    "Only form data and JSON are supported for Twilio message receiving");
+                var messages = ParseTwilioFormData(source);
+                var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
+                return Task.FromResult(result);
             }
-            catch (Exception ex)
+            else if (source.ContentType == MessageSource.JsonContentType)
             {
-                return ConnectorResult<ReceiveResult>.FailTask("TWILIO_RECEIVE_ERROR", ex.Message);
+                var messages = ParseTwilioJson(source);
+                var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
+                return Task.FromResult(result);
             }
+
+            throw new ConnectorException("UNSUPPORTED_CONTENT_TYPE",
+                "Only form data and JSON are supported for Twilio message receiving");
         }
 
-        protected override Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        protected override Task<StatusUpdateResult> ReceiveMessageStatusCoreAsync(MessageSource source,
+            CancellationToken cancellationToken)
         {
-            try
+            if (source.ContentType == MessageSource.UrlPostContentType)
             {
-                if (source.ContentType == MessageSource.UrlPostContentType)
+                var formData = source.AsUrlPostData();
+                var messageId = formData.TryGetValue("MessageSid", out var sid) ? sid : "unknown";
+                var statusString = formData.TryGetValue("MessageStatus", out var status) ? status : "unknown";
+
+                var messageStatus = statusString.ToLowerInvariant() switch
                 {
-                    var formData = source.AsUrlPostData();
-                    var messageId = formData.TryGetValue("MessageSid", out var sid) ? sid : "unknown";
-                    var statusString = formData.TryGetValue("MessageStatus", out var status) ? status : "unknown";
-                    
-                    var messageStatus = statusString.ToLowerInvariant() switch
-                    {
-                        "delivered" => MessageStatus.Delivered,
-                        "sent" => MessageStatus.Sent,
-                        "failed" => MessageStatus.DeliveryFailed,
-                        "undelivered" => MessageStatus.DeliveryFailed,
-                        "received" => MessageStatus.Received,
-                        "queued" => MessageStatus.Queued,
-                        _ => MessageStatus.Unknown
-                    };
+                    "delivered" => MessageStatus.Delivered,
+                    "sent" => MessageStatus.Sent,
+                    "failed" => MessageStatus.DeliveryFailed,
+                    "undelivered" => MessageStatus.DeliveryFailed,
+                    "received" => MessageStatus.Received,
+                    "queued" => MessageStatus.Queued,
+                    _ => MessageStatus.Unknown
+                };
 
-                    var statusResult = new StatusUpdateResult(messageId, messageStatus);
-                    
-                    // Add additional Twilio data
-                    if (formData.TryGetValue("MessagePrice", out var price))
-                        statusResult.AdditionalData["MessagePrice"] = price;
-                    if (formData.TryGetValue("MessagePriceUnit", out var priceUnit))
-                        statusResult.AdditionalData["MessagePriceUnit"] = priceUnit;
-                    if (formData.TryGetValue("ErrorCode", out var errorCode))
-                        statusResult.AdditionalData["ErrorCode"] = errorCode;
-                    if (formData.TryGetValue("ErrorMessage", out var errorMessage))
-                        statusResult.AdditionalData["ErrorMessage"] = errorMessage;
+                var statusResult = new StatusUpdateResult(messageId, messageStatus);
 
-                    return Task.FromResult(ConnectorResult<StatusUpdateResult>.Success(statusResult));
-                }
+                // Add additional Twilio data
+                if (formData.TryGetValue("MessagePrice", out var price))
+                    statusResult.AdditionalData["MessagePrice"] = price;
+                if (formData.TryGetValue("MessagePriceUnit", out var priceUnit))
+                    statusResult.AdditionalData["MessagePriceUnit"] = priceUnit;
+                if (formData.TryGetValue("ErrorCode", out var errorCode))
+                    statusResult.AdditionalData["ErrorCode"] = errorCode;
+                if (formData.TryGetValue("ErrorMessage", out var errorMessage))
+                    statusResult.AdditionalData["ErrorMessage"] = errorMessage;
 
-                return Task.FromResult(ConnectorResult<StatusUpdateResult>.Fail("UNSUPPORTED_CONTENT_TYPE", 
-                    "Only form data is supported for Twilio status callbacks"));
+                return Task.FromResult(statusResult);
             }
-            catch (Exception ex)
-            {
-                return Task.FromResult(ConnectorResult<StatusUpdateResult>.Fail("TWILIO_STATUS_ERROR", ex.Message));
-            }
+
+            throw new ConnectorException("UNSUPPORTED_CONTENT_TYPE",
+                "Only form data is supported for Twilio status callbacks");
         }
 
         private List<IMessage> ParseTwilioFormData(MessageSource source)
@@ -762,7 +751,7 @@ public class TwilioMessageReceivingTests
 
         private IMessage ParseTwilioJsonMessage(JsonElement jsonData)
         {
-            var messageSid = jsonData.GetProperty("MessageSid").GetString() ?? 
+            var messageSid = jsonData.GetProperty("MessageSid").GetString() ??
                             throw new ArgumentException("MessageSid is required");
 
             var from = jsonData.TryGetProperty("From", out var fromProp) ? fromProp.GetString() ?? "" : "";

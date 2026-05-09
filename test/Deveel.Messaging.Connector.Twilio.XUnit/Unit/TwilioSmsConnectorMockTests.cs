@@ -73,11 +73,11 @@ public class TwilioSmsConnectorMockTests
         var message = new Message
         {
             Id = "test-message-id",
-            Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890"), 
+            Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890"),
             Receiver = new Endpoint(EndpointType.PhoneNumber, "+1987654321"),
             Content = new TextContent("Hello World")
         };
-        
+
         await connector.InitializeAsync(CancellationToken.None);
 
         // Act
@@ -85,7 +85,7 @@ public class TwilioSmsConnectorMockTests
 
         // Assert
         Assert.True(result.Successful, $"Expected successful result but got error: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
-        
+
         // Verify the Twilio service was called
         _mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -109,7 +109,7 @@ public class TwilioSmsConnectorMockTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(TwilioErrorCodes.SendMessageFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error?.ErrorCode);
         Assert.Contains("Twilio API error", result.Error?.ErrorMessage);
     }
 
@@ -136,7 +136,7 @@ public class TwilioSmsConnectorMockTests
         // Assert
         Assert.False(result.Successful);
         Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
-        
+
         // Verify Twilio service was not called
         _mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -186,7 +186,7 @@ public class TwilioSmsConnectorMockTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(TwilioErrorCodes.StatusQueryFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.GetMessageStatusError, result.Error?.ErrorCode);
         Assert.Contains("Message not found", result.Error?.ErrorMessage);
     }
 
@@ -230,7 +230,7 @@ public class TwilioSmsConnectorMockTests
 
         // Assert
         Assert.False(result.Successful);
-        Assert.Equal(TwilioErrorCodes.ConnectionTestFailed, result.Error?.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ConnectionTestError, result.Error?.ErrorCode);
         Assert.Contains("Invalid credentials", result.Error?.ErrorMessage);
     }
 
@@ -320,7 +320,7 @@ public class TwilioSmsConnectorMockTests
     {
         // Create a mock AccountResource using reflection
         var accountResource = (AccountResource)Activator.CreateInstance(typeof(AccountResource), true)!;
-        
+
         typeof(AccountResource).GetProperty("Sid")?.SetValue(accountResource, "AC1234567890123456789012345678901234");
         typeof(AccountResource).GetProperty("FriendlyName")?.SetValue(accountResource, "Test Account");
         typeof(AccountResource).GetProperty("Status")?.SetValue(accountResource, AccountResource.StatusEnum.Active);

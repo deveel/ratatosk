@@ -19,14 +19,9 @@ namespace Deveel.Messaging
 			// Assert that all expected error codes are defined
 			Assert.NotNull(TelegramErrorCodes.MissingBotToken);
 			Assert.NotNull(TelegramErrorCodes.InvalidBotToken);
-			Assert.NotNull(TelegramErrorCodes.ConnectionFailed);
-			Assert.NotNull(TelegramErrorCodes.ConnectionTestFailed);
-			Assert.NotNull(TelegramErrorCodes.SendMessageFailed);
-			Assert.NotNull(TelegramErrorCodes.ReceiveMessageFailed);
 			Assert.NotNull(TelegramErrorCodes.InvalidChatId);
 			Assert.NotNull(TelegramErrorCodes.InvalidWebhookData);
 			Assert.NotNull(TelegramErrorCodes.UnsupportedContentType);
-			Assert.NotNull(TelegramErrorCodes.StatusError);
 			Assert.NotNull(TelegramErrorCodes.MessageTooLong);
 			Assert.NotNull(TelegramErrorCodes.FileTooLarge);
 			Assert.NotNull(TelegramErrorCodes.InvalidMediaUrl);
@@ -43,16 +38,9 @@ namespace Deveel.Messaging
 			{
 				TelegramErrorCodes.MissingBotToken,
 				TelegramErrorCodes.InvalidBotToken,
-				TelegramErrorCodes.ConnectionFailed,
-				TelegramErrorCodes.ConnectionTestFailed,
-				TelegramErrorCodes.SendMessageFailed,
-				TelegramErrorCodes.ReceiveMessageFailed,
 				TelegramErrorCodes.InvalidChatId,
 				TelegramErrorCodes.InvalidWebhookData,
 				TelegramErrorCodes.UnsupportedContentType,
-				TelegramErrorCodes.StatusError,
-				TelegramErrorCodes.StatusQueryFailed,
-				TelegramErrorCodes.ReceiveStatusFailed,
 				TelegramErrorCodes.MessageTooLong,
 				TelegramErrorCodes.FileTooLarge,
 				TelegramErrorCodes.InvalidMediaUrl,
@@ -74,7 +62,7 @@ namespace Deveel.Messaging
 			Assert.True(TelegramConnectorConstants.MaxCaptionLength > 0);
 			Assert.True(TelegramConnectorConstants.MaxInlineKeyboardRows > 0);
 			Assert.True(TelegramConnectorConstants.MaxInlineKeyboardButtonsPerRow > 0);
-			
+
 			// Assert reasonable limits based on Telegram documentation
 			Assert.Equal(4096, TelegramConnectorConstants.MaxMessageLength);
 			Assert.Equal(1024, TelegramConnectorConstants.MaxCaptionLength);
@@ -83,14 +71,9 @@ namespace Deveel.Messaging
 		[Theory]
 		[InlineData("MISSING_BOT_TOKEN")]
 		[InlineData("INVALID_BOT_TOKEN")]
-		[InlineData("CONNECTION_FAILED")]
-		[InlineData("CONNECTION_TEST_FAILED")]
-		[InlineData("SEND_MESSAGE_FAILED")]
-		[InlineData("RECEIVE_MESSAGE_FAILED")]
 		[InlineData("INVALID_CHAT_ID")]
 		[InlineData("INVALID_WEBHOOK_DATA")]
 		[InlineData("UNSUPPORTED_CONTENT_TYPE")]
-		[InlineData("STATUS_ERROR")]
 		[InlineData("MESSAGE_TOO_LONG")]
 		[InlineData("FILE_TOO_LARGE")]
 		[InlineData("INVALID_MEDIA_URL")]
@@ -115,7 +98,7 @@ namespace Deveel.Messaging
 			// All error codes should be UPPER_CASE with underscores
 			var errorCodesType = typeof(TelegramErrorCodes);
 			var fields = errorCodesType.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-			
+
 			foreach (var field in fields.Where(f => f.IsLiteral && !f.IsInitOnly))
 			{
 				var value = field.GetValue(null)?.ToString();
@@ -131,7 +114,7 @@ namespace Deveel.Messaging
 			// Get all error code values and ensure none are null or empty
 			var errorCodesType = typeof(TelegramErrorCodes);
 			var fields = errorCodesType.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-			
+
 			foreach (var field in fields.Where(f => f.IsLiteral && !f.IsInitOnly))
 			{
 				var value = field.GetValue(null)?.ToString();

@@ -21,29 +21,14 @@ namespace Deveel.Messaging
         public const string InvalidApiKey = "SENDGRID_INVALID_API_KEY";
 
         /// <summary>
-        /// Error code indicating connection test failed.
-        /// </summary>
-        public const string ConnectionTestFailed = "SENDGRID_CONNECTION_TEST_FAILED";
-
-        /// <summary>
         /// Error code indicating connection failed.
         /// </summary>
         public const string ConnectionFailed = "SENDGRID_CONNECTION_FAILED";
 
         /// <summary>
-        /// Error code indicating invalid connection settings.
-        /// </summary>
-        public const string InvalidConnectionSettings = "SENDGRID_INVALID_CONNECTION_SETTINGS";
-
-        /// <summary>
         /// Error code indicating message sending failed.
         /// </summary>
         public const string SendMessageFailed = "SENDGRID_SEND_MESSAGE_FAILED";
-
-        /// <summary>
-        /// Error code indicating invalid message format.
-        /// </summary>
-        public const string InvalidMessage = "SENDGRID_INVALID_MESSAGE";
 
         /// <summary>
         /// Error code indicating invalid email address.
@@ -54,16 +39,6 @@ namespace Deveel.Messaging
         /// Error code indicating missing email content.
         /// </summary>
         public const string MissingEmailContent = "SENDGRID_MISSING_EMAIL_CONTENT";
-
-        /// <summary>
-        /// Error code indicating status query failed.
-        /// </summary>
-        public const string StatusQueryFailed = "SENDGRID_STATUS_QUERY_FAILED";
-
-        /// <summary>
-        /// Error code indicating general status error.
-        /// </summary>
-        public const string StatusError = "SENDGRID_STATUS_ERROR";
 
         /// <summary>
         /// Error code indicating API rate limit exceeded.
@@ -89,15 +64,5 @@ namespace Deveel.Messaging
         /// Error code indicating unsupported content type for webhook data.
         /// </summary>
         public const string UnsupportedContentType = "SENDGRID_UNSUPPORTED_CONTENT_TYPE";
-
-        /// <summary>
-        /// Error code indicating receive message operation failed.
-        /// </summary>
-        public const string ReceiveMessageFailed = "SENDGRID_RECEIVE_MESSAGE_FAILED";
-
-        /// <summary>
-        /// Error code indicating receive status operation failed.
-        /// </summary>
-        public const string ReceiveStatusFailed = "SENDGRID_RECEIVE_STATUS_FAILED";
     }
 }

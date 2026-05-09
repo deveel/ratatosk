@@ -26,7 +26,7 @@ namespace Deveel.Messaging
 		{
 			// Arrange
 			var connector = await CreateInitializedConnectorAsync();
-			
+
 			// Create a simpler message without inline keyboard for now to test basic functionality
 			// The keyboard validation is very strict and requires exact Telegram.Bot type matching
 			var message = new Message
@@ -49,11 +49,11 @@ namespace Deveel.Messaging
 		{
 			// Arrange
 			var connector = await CreateInitializedConnectorAsync();
-			
+
 			// Skip this test for now - the inline keyboard validation is very strict
 			// and requires understanding the exact Telegram.Bot InlineKeyboardButton serialization format
 			return;
-			
+
 			// TODO: Implement proper inline keyboard test once we understand the exact format expected
 		}
 
@@ -187,7 +187,7 @@ namespace Deveel.Messaging
 			Assert.True(result.Successful);
 			Assert.NotNull(result.Value);
 			Assert.Single(result.Value.Messages);
-			
+
 			var message = result.Value.Messages.First();
 			Assert.IsType<TextContent>(message.Content);
 			Assert.Equal("Hello from user!", ((TextContent)message.Content).Text);
@@ -208,7 +208,7 @@ namespace Deveel.Messaging
 			Assert.True(result.Successful);
 			Assert.NotNull(result.Value);
 			Assert.Single(result.Value.Messages);
-			
+
 			var message = result.Value.Messages.First();
 			Assert.IsType<MediaContent>(message.Content);
 			Assert.Equal(MediaType.Image, ((MediaContent)message.Content).MediaType);
@@ -229,7 +229,7 @@ namespace Deveel.Messaging
 			Assert.True(result.Successful);
 			Assert.NotNull(result.Value);
 			Assert.Single(result.Value.Messages);
-			
+
 			var message = result.Value.Messages.First();
 			Assert.IsType<LocationContent>(message.Content);
 			var locationContent = (LocationContent)message.Content;
@@ -269,7 +269,7 @@ namespace Deveel.Messaging
 			Assert.True(result.Successful);
 			Assert.NotNull(result.Value);
 			Assert.Single(result.Value.Messages);
-			
+
 			var message = result.Value.Messages.First();
 			Assert.True(message.Properties?.ContainsKey("ReplyToMessageId"));
 		}
@@ -289,7 +289,7 @@ namespace Deveel.Messaging
 				.SetParameter("SecretToken", "my-secret-token-123")
 				.SetParameter("MaxConnections", 50)
 				.SetParameter("DropPendingUpdates", true);
-			
+
 			var mockTelegramService = TelegramMockFactory.CreateMockTelegramService();
 			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
 
@@ -316,11 +316,11 @@ namespace Deveel.Messaging
 			var schema = TelegramChannelSchemas.WebhookBot;
 			var connectionSettings = TelegramMockFactory.CreateWebhookConnectionSettings();
 			var mockTelegramService = TelegramMockFactory.CreateMockTelegramService();
-			
+
 			// Setup webhook info mock
 			mockTelegramService.Setup(x => x.GetWebhookInfoAsync(It.IsAny<CancellationToken>()))
 				.ReturnsAsync(TelegramMockFactory.CreateTestWebhookInfo());
-			
+
 			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
 			await connector.InitializeAsync(CancellationToken.None);
 
@@ -345,14 +345,14 @@ namespace Deveel.Messaging
 			var connectionSettings = TelegramMockFactory.CreateTestConnectionSettings();
 			var mockTelegramService = TelegramMockFactory.CreateFailingMockService();
 			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
-			
+
 			// Initialize first
 			mockTelegramService.Setup(x => x.Initialize(It.IsAny<string>()));
 			mockTelegramService.Setup(x => x.GetMeAsync(It.IsAny<CancellationToken>()))
 				.ReturnsAsync(TelegramMockFactory.CreateTestBot());
-			
+
 			await connector.InitializeAsync(CancellationToken.None);
-			
+
 			var message = TelegramMockFactory.CreateTestTextMessage();
 
 			// Act
@@ -360,7 +360,7 @@ namespace Deveel.Messaging
 
 			// Assert
 			Assert.False(result.Successful);
-			Assert.Equal(TelegramErrorCodes.SendMessageFailed, result.Error?.ErrorCode);
+			Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error?.ErrorCode);
 		}
 
 		[Fact]
@@ -376,7 +376,7 @@ namespace Deveel.Messaging
 
 			// Assert
 			Assert.False(result.Successful);
-			Assert.Equal(TelegramErrorCodes.ReceiveMessageFailed, result.Error?.ErrorCode);
+			Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error?.ErrorCode);
 		}
 
 		[Fact]
@@ -405,10 +405,10 @@ namespace Deveel.Messaging
 			var connectionSettings = TelegramMockFactory.CreateTestConnectionSettings();
 			var mockTelegramService = TelegramMockFactory.CreateSuccessfulSendMockService();
 			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
-			
+
 			var result = await connector.InitializeAsync(CancellationToken.None);
 			Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
-			
+
 			return connector;
 		}
 
