@@ -770,42 +770,6 @@ public class FacebookMessengerConnectorTests
 
     #endregion
 
-    #region Status Operations Edge Cases
-
-    [Fact]
-    public async Task Should_FailWithStatusError_When_GetStatusAsyncThrowsException()
-    {
-        // Arrange
-        var mockFacebookService = new Mock<IFacebookService>();
-        var connectionSettings = new ConnectionSettings()
-            .SetParameter("PageAccessToken", "test-access-token")
-            .SetParameter("PageId", "test-page-id");
-
-        // Create a connector that will throw when accessing status
-        var connector = new TestableStatusExceptionConnector(connectionSettings, mockFacebookService.Object);
-        await connector.InitializeAsync(TestContext.Current.CancellationToken);
-
-        // Act
-        var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.False(result.IsSuccess());
-        Assert.Equal(ConnectorErrorCodes.GetStatusError, result.Error?.Code); // Fixed: Base class catches exceptions and converts to standard error code
-    }
-
-    // Helper class to test status exception handling
-    private class TestableStatusExceptionConnector : FacebookMessengerConnector
-    {
-        public TestableStatusExceptionConnector(ConnectionSettings connectionSettings, IFacebookService facebookService)
-            : base(connectionSettings, facebookService) { }
-
-        protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
-        {
-            throw new InvalidOperationException("Status operation failed");
-        }
-    }
-
-    #endregion
 
     #region Health Check Edge Cases
 

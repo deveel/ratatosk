@@ -59,12 +59,12 @@ namespace Deveel.Messaging
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             // Extract required parameters
-            _pageAccessToken = ConnectionSettings.GetParameter("PageAccessToken") as string;
-            _pageId = ConnectionSettings.GetParameter("PageId") as string;
+            _pageAccessToken = ConnectionSettings.GetParameter<string?>("PageAccessToken");
+            _pageId = ConnectionSettings.GetParameter<string?>("PageId");
 
             // Extract optional parameters
-            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
-            _verifyToken = ConnectionSettings.GetParameter("VerifyToken") as string;
+            _webhookUrl = ConnectionSettings.GetParameter<string?>("WebhookUrl");
+            _verifyToken = ConnectionSettings.GetParameter<string?>("VerifyToken");
 
             // Perform custom validation logic
             if (string.IsNullOrWhiteSpace(_pageAccessToken))

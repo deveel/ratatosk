@@ -20,6 +20,7 @@ namespace Deveel.Messaging
 	public class ConnectionSettings
 	{
 		private readonly IDictionary<string, object?> _parameters;
+		private IDictionary<string, ChannelParameter>? _channelParams;
 		private readonly IChannelSchema? _schema;
 
 		/// <summary>
@@ -105,12 +106,22 @@ namespace Deveel.Messaging
 			set => SetParameter(key, value);
 		}
 
-		private ChannelParameter? FindParameter(string key)
+		private ChannelParameter? FindSchemaParameter(string key)
 		{
+			if (_channelParams != null && _channelParams.TryGetValue(key, out var channelParam))
+				return channelParam;
+			
 			if (_schema == null)
 				return null;
 
-			return _schema.Parameters.FirstOrDefault(x => String.Equals(x.Name, key, StringComparison.OrdinalIgnoreCase));
+			channelParam = _schema.Parameters.FirstOrDefault(x => String.Equals(x.Name, key, StringComparison.OrdinalIgnoreCase));
+			if (channelParam == null)
+				return null;
+			
+			if (_channelParams == null)
+				_channelParams = new Dictionary<string, ChannelParameter>(StringComparer.OrdinalIgnoreCase);
+			
+			return _channelParams[key] = channelParam;
 		}
 
 		/// <summary>
@@ -152,7 +163,7 @@ namespace Deveel.Messaging
 
 			if (_schema != null)
 			{
-				var schemaParam = FindParameter(key);
+				var schemaParam = FindSchemaParameter(key);
 
 				if (schemaParam != null && schemaParam.DefaultValue != null)
 					value = schemaParam.DefaultValue;
@@ -180,15 +191,19 @@ namespace Deveel.Messaging
 		public T GetParameter<T>(string key)
 		{
 			var value = GetParameter(key);
-			if (value == null && _schema != null)
+
+			var schemaParam = FindSchemaParameter(key);
+			if (schemaParam != null)
 			{
-				var schemaParam = FindParameter(key);
+				if (!CanConvertTo(schemaParam.DataType, typeof(T)))
+					throw new InvalidCastException($"Cannot convert a value of type '{schemaParam.DataType}' to '{typeof(T)}'.");
+			}
+			else if (value != null && !CanConvertValueTo(value, typeof(T)))
+			{
+				throw new InvalidCastException($"Cannot convert value of type '{value.GetType()}' to type '{typeof(T)}'.");
 			}
 
-			if (value is T tValue)
-				return tValue;
-
-			throw new InvalidCastException($"The value for the key '{key}' cannot be cast to type '{typeof(T)}'.");
+			return ConvertTo<T>(value);
 		}
 
 		private void ValidateParameter(string key, object? value)
@@ -196,7 +211,7 @@ namespace Deveel.Messaging
 			if (_schema == null)
 				return;
 
-			var schemaParam = FindParameter(key);
+			var schemaParam = FindSchemaParameter(key);
 			if (schemaParam == null)
 				throw new ArgumentException($"The parameter {key} is not supported by this schema");
 
@@ -225,16 +240,17 @@ namespace Deveel.Messaging
 				_ => false,
 			};
 		}
-
-		private T ConvertTo<T>(DataType sourceType, object? value)
+		
+		private T ConvertTo<T>(object? value)
 		{
 			if (value is T tValue)
 				return tValue;
 			if (value == null)
+			{
+				if (typeof(T).IsValueType && Nullable.GetUnderlyingType(typeof(T)) == null)
+					throw new InvalidCastException($"Cannot convert null to non-nullable type '{typeof(T)}'.");
 				return default!;
-
-			if (!CanConvertTo(sourceType, typeof(T)))
-				throw new InvalidCastException($"Cannot convert value '{value}' from type '{sourceType}' to type '{typeof(T)}'.");
+			}
 
 			try
 			{
@@ -245,7 +261,7 @@ namespace Deveel.Messaging
 				throw new InvalidCastException($"Cannot convert value '{value}' to type '{typeof(T)}'.");
 			}
 		}
-
+		
 		private bool CanConvertTo(DataType sourceType, Type destType)
 		{
 			return sourceType switch
@@ -259,6 +275,29 @@ namespace Deveel.Messaging
 										 destType == typeof(short) || destType == typeof(sbyte) || destType == typeof(string),
 				_ => false,
 			};
+		}
+
+		private bool CanConvertValueTo(object value, Type destType)
+		{
+			var sourceType = value.GetType();
+
+			if (destType.IsAssignableFrom(sourceType))
+				return true;
+
+			if (value is IConvertible)
+			{
+				try
+				{
+					_ = Convert.ChangeType(value, destType, CultureInfo.InvariantCulture);
+					return true;
+				}
+				catch
+				{
+					return false;
+				}
+			}
+
+			return false;
 		}
 	}
 }

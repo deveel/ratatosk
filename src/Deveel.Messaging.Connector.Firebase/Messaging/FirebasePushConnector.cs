@@ -72,12 +72,9 @@ namespace Deveel.Messaging
                     result.Error?.Message ?? "Authentication failed");
 
             // Extract configuration from connection settings with proper handling of missing values
-            var projectIdParam = ConnectionSettings.GetParameter("ProjectId");
-            var dryRunParam = ConnectionSettings.GetParameter("DryRun");
-
-            _projectId = projectIdParam?.ToString();
-            _dryRun = dryRunParam != null && Convert.ToBoolean(dryRunParam);
-
+            _projectId = ConnectionSettings.GetParameter<string>("ProjectId");
+            _dryRun = ConnectionSettings.GetParameter<bool?>("DryRun") ?? false;
+            
             if (string.IsNullOrWhiteSpace(_projectId))
             {
                 throw new MessagingException(

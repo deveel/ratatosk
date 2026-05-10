@@ -73,13 +73,13 @@ namespace Deveel.Messaging
             _botToken = ConnectionSettings.GetParameter("BotToken") as string;
 
             // Extract optional parameters
-            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
-            _secretToken = ConnectionSettings.GetParameter("SecretToken") as string;
-            _disableWebPagePreview = ConnectionSettings.GetParameter("DisableWebPagePreview") as bool? ?? false;
-            _disableNotification = ConnectionSettings.GetParameter("DisableNotification") as bool? ?? false;
-            _parseMode = ConnectionSettings.GetParameter("ParseMode") as string ?? "Markdown";
-            _maxRetries = ConnectionSettings.GetParameter("MaxRetries") as int? ?? 3;
-            _timeoutSeconds = ConnectionSettings.GetParameter("TimeoutSeconds") as int? ?? 30;
+            _webhookUrl = ConnectionSettings.GetParameter<string>("WebhookUrl");
+            _secretToken = ConnectionSettings.GetParameter<string>("SecretToken");
+            _disableWebPagePreview = ConnectionSettings.GetParameter<bool?>("DisableWebPagePreview") ?? false;
+            _disableNotification = ConnectionSettings.GetParameter<bool?>("DisableNotification") ?? false;
+            _parseMode = ConnectionSettings.GetParameter<string?>("ParseMode") ?? "Markdown";
+            _maxRetries = ConnectionSettings.GetParameter<int?>("MaxRetries") ?? 3;
+            _timeoutSeconds = ConnectionSettings.GetParameter<int?>("TimeoutSeconds") ?? 60;
 
             // Validate required parameters
             if (string.IsNullOrWhiteSpace(_botToken))

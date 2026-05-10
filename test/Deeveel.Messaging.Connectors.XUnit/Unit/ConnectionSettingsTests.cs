@@ -427,11 +427,11 @@ public class ConnectionSettingsTests
 		// Assert
 		var exception = Assert.Throws<InvalidCastException>(() => 
 			settings.GetParameter<int>("StringParam"));
-		Assert.Contains("The value for the key 'StringParam' cannot be cast to type 'System.Int32'", exception.Message);
+		Assert.Contains("Cannot convert value of type 'System.String' to type 'System.Int32'", exception.Message);
 	}
 
 	[Fact]
-	public void Should_ReturnDefault_When_GetParameterGenericNullValueCorrectType()
+	public void Should_ReturnNull_When_GetParameterGenericNullValueCorrectType()
 	{
 		// Arrange
 		var settings = new ConnectionSettings()
@@ -440,8 +440,8 @@ public class ConnectionSettingsTests
 		// Act
 		// Assert
 		// when trying to cast to any type (even nullable ones)
-		Assert.Throws<InvalidCastException>(() => settings.GetParameter<string>("NullParam"));
-		Assert.Throws<InvalidCastException>(() => settings.GetParameter<string?>("NullParam"));
+		settings.GetParameter<string>("NullParam");
+		settings.GetParameter<string?>("NullParam");
 	}
 
 	[Fact]
@@ -453,12 +453,12 @@ public class ConnectionSettingsTests
 		// Act
 		// Assert
 		// The GetParameter<T> method throws InvalidCastException when trying to cast null to non-nullable types
-		Assert.Throws<InvalidCastException>(() => settings.GetParameter<string>("NonExisting"));
 		Assert.Throws<InvalidCastException>(() => settings.GetParameter<int>("NonExisting"));
 		Assert.Throws<InvalidCastException>(() => settings.GetParameter<bool>("NonExisting"));
 		
-		// The method doesn't handle nullable types well either, so this will also throw
-		Assert.Throws<InvalidCastException>(() => settings.GetParameter<string?>("NonExisting"));
+		// even if the key doesn't exist, it's possible to cast null to string
+		settings.GetParameter<string>("NonExisting");
+		settings.GetParameter<string?>("NonExisting");
 	}
 
 	[Fact]
@@ -863,9 +863,9 @@ public class ConnectionSettingsTests
 
 		// Act
 		// Assert
-		Assert.Throws<InvalidCastException>(() => settings.GetParameter<string>("NullStringParam"));
+		settings.GetParameter<string>("NullStringParam");
+		settings.GetParameter<string?>("NullStringParam");
 		Assert.Throws<InvalidCastException>(() => settings.GetParameter<int>("NullIntParam"));
-		Assert.Throws<InvalidCastException>(() => settings.GetParameter<string?>("NullStringParam"));
 	}
 
 	#endregion

@@ -432,17 +432,20 @@ namespace Deveel.Messaging
             // Validate required fields for Twilio SMS webhook
             if (!formData.TryGetValue("MessageSid", out var messageSid) || string.IsNullOrEmpty(messageSid))
             {
-                throw new ArgumentException("MessageSid is required for Twilio SMS webhooks");
+                throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData, Schema.ChannelType,
+                    "MessageSid is required for Twilio SMS webhooks");
             }
 
             if (!formData.TryGetValue("From", out var from) || string.IsNullOrEmpty(from))
             {
-                throw new ArgumentException("From field is required for Twilio SMS webhooks");
+                throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData, Schema.ChannelType,
+                    "From field is required for Twilio SMS webhooks");
             }
 
             if (!formData.TryGetValue("To", out var to) || string.IsNullOrEmpty(to))
             {
-                throw new ArgumentException("To field is required for Twilio SMS webhooks");
+                throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData, Schema.ChannelType,
+                    "To field is required for Twilio SMS webhooks");
             }
 
             // Body is optional for MMS messages

@@ -62,14 +62,14 @@ namespace Deveel.Messaging
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             // Extract required parameters first
-            _apiKey = ConnectionSettings.GetParameter("ApiKey") as string;
+            _apiKey = ConnectionSettings.GetParameter<string>("ApiKey");
 
             // Extract optional parameters
-            _sandboxMode = ConnectionSettings.GetParameter("SandboxMode") as bool? ?? false;
-            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
-            _trackingSettings = ConnectionSettings.GetParameter("TrackingSettings") as bool? ?? true;
-            _defaultFromName = ConnectionSettings.GetParameter("DefaultFromName") as string;
-            _defaultReplyTo = ConnectionSettings.GetParameter("DefaultReplyTo") as string;
+            _sandboxMode = ConnectionSettings.GetParameter<bool?>("SandboxMode") ?? false;
+            _webhookUrl = ConnectionSettings.GetParameter<string>("WebhookUrl");
+            _trackingSettings = ConnectionSettings.GetParameter<bool?>("TrackingSettings") ?? false;
+            _defaultFromName = ConnectionSettings.GetParameter<string>("DefaultFromName");
+            _defaultReplyTo = ConnectionSettings.GetParameter<string>("DefaultReplyTo");
 
             // Log configuration details
             Logger.LogSandboxMode(_sandboxMode);

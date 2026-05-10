@@ -22,7 +22,7 @@ namespace Deveel.Messaging
 	{
 		/// <summary>
 		/// Gets the schema describing the configurations, requirements,
-		/// constraints and capabilities of connector.
+		/// constraints and capabilities of the connector.
 		/// </summary>
 		IChannelSchema Schema { get; }
 
