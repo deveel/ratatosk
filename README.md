@@ -2,6 +2,7 @@
 [![codecov](https://codecov.io/gh/deveel/deveel.messaging/graph/badge.svg)](https://codecov.io/gh/deveel/deveel.messaging)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-512BD4)](https://dotnet.microsoft.com/)
+[![Documentation](https://img.shields.io/badge/docs-available-blue)](https://messaging.deveel.org)
 
 # Deveel Messaging
 
@@ -57,6 +58,22 @@ if (!result.IsSuccess)
 }
 ```
 
+## Documentation
+
+If you want to go deeper, the documentation provides practical, step-by-step guidance for designing channels, wiring connectors, validating messages, and operating the framework in real projects.
+
+Start from the docs home and follow the path that best matches what you are building: [docs/README.md](docs/README.md).
+
+### Suggested reading paths
+
+- **First integration** - Start with the framework concepts, then wire a minimal implementation, and finally pick a connector guide for your channel.
+  ([Framework overview](docs/framework-overview.md) -> [Quick start](docs/quick-start.md) -> [Connector index](docs/connectors/README.md))
+- **Custom connector authoring** - Learn schema design first, then implement connector behavior, then register and resolve channels at runtime.
+  ([Channel schema usage](docs/channelschema-usage.md) -> [Connector implementation](docs/channelconnector-usage.md) -> [Channel registry guide](docs/channelregistry-guide.md))
+- **Validation-first integration** - Model endpoints, apply validation rules, and extend validation when channel-specific constraints grow.
+  ([Endpoint types](docs/endpointtype-usage.md) -> [Message validation examples](docs/validatemessage-usage-examples.md) -> [Validation extensions](docs/channelschema-validation-extension-usage.md))
+
+
 ## Roadmap
 
 The project roadmap is tracked in detail in [ROADMAP.md](ROADMAP.md). The summary below highlights the upcoming milestones and the main features planned for each release.
@@ -99,21 +116,6 @@ Extends resilience, observability, connectors, protocol support, and higher-leve
 - [ ] **Conversations and templates (v2.x)** - Add conversation state/correlation and provider-agnostic template modeling.
 
 For milestone-level detail, rationale, and dependencies, see [ROADMAP.md](ROADMAP.md).
-
-## Documentation
-
-If you want to go deeper, the documentation provides practical, step-by-step guidance for designing channels, wiring connectors, validating messages, and operating the framework in real projects.
-
-Start from the docs home and follow the path that best matches what you are building: [docs/README.md](docs/README.md).
-
-### Suggested reading paths
-
-- **First integration** - Start with the framework concepts, then wire a minimal implementation, and finally pick a connector guide for your channel.
-  ([Framework overview](docs/framework-overview.md) -> [Quick start](docs/quick-start.md) -> [Connector index](docs/connectors/README.md))
-- **Custom connector authoring** - Learn schema design first, then implement connector behavior, then register and resolve channels at runtime.
-  ([Channel schema usage](docs/channelschema-usage.md) -> [Connector implementation](docs/channelconnector-usage.md) -> [Channel registry guide](docs/channelregistry-guide.md))
-- **Validation-first integration** - Model endpoints, apply validation rules, and extend validation when channel-specific constraints grow.
-  ([Endpoint types](docs/endpointtype-usage.md) -> [Message validation examples](docs/validatemessage-usage-examples.md) -> [Validation extensions](docs/channelschema-validation-extension-usage.md))
 
 ## Versioning and Releases
 

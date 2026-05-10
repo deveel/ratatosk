@@ -69,12 +69,16 @@ namespace Deveel.Messaging
             // Perform custom validation logic
             if (string.IsNullOrWhiteSpace(_pageAccessToken))
             {
-                throw new MessagingException(FacebookErrorCodes.MissingCredentials, "Page Access Token is required");
+                throw new MessagingException(
+                    FacebookErrorCodes.MissingCredentials, Schema.ChannelType,
+                    "Page Access Token is required");
             }
 
             if (string.IsNullOrWhiteSpace(_pageId))
             {
-                throw new MessagingException(FacebookErrorCodes.MissingPageId, "Page ID is required");
+                throw new MessagingException(
+                    FacebookErrorCodes.MissingPageId, Schema.ChannelType,
+                    "Page ID is required");
             }
 
             try
@@ -84,7 +88,9 @@ namespace Deveel.Messaging
             }
             catch (ArgumentException ex)
             {
-                throw new ConnectorException(FacebookErrorCodes.InvalidAccessToken, "Invalid Page Access Token format", ex);
+                throw new ConnectorException(
+                    FacebookErrorCodes.InvalidAccessToken, Schema.ChannelType,
+                    "Invalid Page Access Token format", ex);
             }
 
             return ValueTask.CompletedTask;
@@ -105,7 +111,10 @@ namespace Deveel.Messaging
 
                 if (page == null)
                 {
-                    throw new ConnectorException(FacebookErrorCodes.MissingPageId, "Unable to retrieve page information - page may not exist or access token may be invalid");
+                    throw new ConnectorException(
+                        FacebookErrorCodes.MissingPageId,
+                        Schema.ChannelType,
+                        "Unable to retrieve page information - page may not exist or access token may be invalid");
                 }
 
                 Logger?.LogConnectionTestSuccessful(page.Name, page.Category);
@@ -113,6 +122,7 @@ namespace Deveel.Messaging
             {
                 Logger?.LogConnectionTestGraphApiError(ex.Message, ex);
                 throw new ConnectorException(FacebookErrorCodes.ConnectionTestFailed,
+                    Schema.ChannelType,
                     $"Facebook Graph API error during connection test: {ex.Message}", ex);
             }
         }
@@ -126,6 +136,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(recipientId))
             {
                 throw new MessagingException(FacebookErrorCodes.InvalidRecipient,
+                    Schema.ChannelType,
                     "Recipient User ID is required and must be a valid Facebook PSID");
             }
 
@@ -213,6 +224,7 @@ namespace Deveel.Messaging
             if (source.ContentType != MessageSource.JsonContentType)
             {
                 throw new ConnectorException(FacebookErrorCodes.UnsupportedContentType,
+                    Schema.ChannelType,
                     $"Unsupported content type: {source.ContentType}. Only application/json is supported for Facebook webhooks.");
             }
 
@@ -221,6 +233,7 @@ namespace Deveel.Messaging
             if (messages.Count == 0)
             {
                 throw new ConnectorException(FacebookErrorCodes.InvalidWebhookData,
+                    Schema.ChannelType,
                     "No valid messages found in webhook data");
             }
 

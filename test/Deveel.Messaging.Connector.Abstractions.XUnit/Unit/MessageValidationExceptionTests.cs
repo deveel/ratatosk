@@ -30,11 +30,12 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "VALIDATION_001";
+            const string errorDomain = "TEST";
             const string message = "Message validation failed";
             var validationResults = BuildValidationResults(2);
 
             // Act
-            var exception = new MessageValidationException(errorCode, message, validationResults);
+            var exception = new MessageValidationException(errorCode, errorDomain, message, validationResults);
 
             // Assert
             Assert.Equal(errorCode, exception.ErrorCode);
@@ -48,10 +49,11 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "VALIDATION_002";
+            const string errorDomain = "TEST";
             var validationResults = BuildValidationResults();
 
             // Act
-            var exception = new MessageValidationException(errorCode, null, validationResults);
+            var exception = new MessageValidationException(errorCode, errorDomain, null, validationResults);
 
             // Assert
             Assert.Equal(errorCode, exception.ErrorCode);
@@ -63,13 +65,14 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "VALIDATION_003";
+            const string errorDomain = "TEST";
             var results = BuildValidationResults(3);
 
             // Act
-            IMessageValidationError error = new MessageValidationException(errorCode, "error", results);
+            IValidationError error = new MessageValidationException(errorCode, errorDomain, "error", results);
 
             // Assert
-            Assert.Equal(errorCode, error.ErrorCode);
+            Assert.Equal(errorCode, error.Code);
             Assert.Equal(3, error.ValidationResults.Count);
         }
 
@@ -85,7 +88,7 @@ namespace Deveel.Messaging
             var validationResults = BuildValidationResults(1);
 
             // Act
-            var exception = new MessageValidationException(errorCode, validationResults);
+            var exception = new MessageValidationException(errorCode, "TEST", validationResults);
 
             // Assert
             Assert.Equal(errorCode, exception.ErrorCode);
@@ -103,7 +106,7 @@ namespace Deveel.Messaging
             var results = BuildValidationResults();
 
             // Act & Assert
-            Assert.ThrowsAny<ArgumentException>(() => new MessageValidationException(errorCode!, results));
+            Assert.ThrowsAny<ArgumentException>(() => new MessageValidationException(errorCode!, "TEST", results));
         }
 
         #endregion

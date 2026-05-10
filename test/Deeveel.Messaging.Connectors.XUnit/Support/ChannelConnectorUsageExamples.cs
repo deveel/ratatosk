@@ -34,7 +34,7 @@ public class ChannelConnectorUsageExamples
 		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(result.Successful);
+		Assert.True(result.IsSuccess());
 		Assert.NotNull(result.Value);
 		Assert.Equal(message.Id, result.Value.MessageId);
 		Assert.StartsWith("email-", result.Value.RemoteMessageId);
@@ -69,8 +69,8 @@ public class ChannelConnectorUsageExamples
 		var statusResult = await connector.GetMessageStatusAsync(sendResult.Value!.MessageId, TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(sendResult.Successful);
-		Assert.True(statusResult.Successful);
+		Assert.True(sendResult.IsSuccess());
+		Assert.True(statusResult.IsSuccess());
 		Assert.Equal(message.Id, statusResult.Value!.MessageId);
 		Assert.Single(statusResult.Value.Updates);
 	}
@@ -89,7 +89,7 @@ public class ChannelConnectorUsageExamples
 		var healthResult = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(healthResult.Successful);
+		Assert.True(healthResult.IsSuccess());
 		Assert.NotNull(healthResult.Value);
 		Assert.True(healthResult.Value.IsHealthy);
 		Assert.Equal(ConnectorState.Ready, healthResult.Value.State);

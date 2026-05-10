@@ -42,7 +42,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.Is<FirebaseAdmin.Messaging.Message>(m => 
@@ -75,7 +75,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.IsAny<FirebaseAdmin.Messaging.Message>(), 
@@ -175,11 +175,11 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.False(result.Successful);
+			Assert.False(result.IsSuccess());
             Assert.NotNull(result.Error);
 
-            var validationError = Assert.IsType<MessageValidationError>(result.Error);
-            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, validationError.ErrorCode);
+            var validationError = Assert.IsType<OperationValidationError>(result.Error);
+            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, validationError.Code);
         }
 
         #endregion
@@ -327,7 +327,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.Is<FirebaseAdmin.Messaging.Message>(m => 
@@ -361,8 +361,8 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful, "Expected validation failure for invalid badge number");
-            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
+            Assert.False(result.IsSuccess(), "Expected validation failure for invalid badge number");
+            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.Code);
             
             // Verify Firebase service was NOT called due to validation failure
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -393,8 +393,8 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful, "Expected validation failure for invalid time to live");
-            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
+            Assert.False(result.IsSuccess(), "Expected validation failure for invalid time to live");
+            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.Code);
             
             // Verify Firebase service was NOT called due to validation failure
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -426,8 +426,8 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful, "Expected validation failure for invalid boolean properties");
-            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
+            Assert.False(result.IsSuccess(), "Expected validation failure for invalid boolean properties");
+            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.Code);
             
             // Verify Firebase service was NOT called due to validation failure
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -461,8 +461,8 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful, "Expected message to fail validation due to excessive title/body length");
-            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
+            Assert.False(result.IsSuccess(), "Expected message to fail validation due to excessive title/body length");
+            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.Code);
             
             // Verify Firebase service was NOT called due to validation failure
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -512,7 +512,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
             
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-            Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
             
             var message = CreateSimpleDeviceTokenMessage();
 
@@ -539,7 +539,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-            Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
             
             return connector;
         }

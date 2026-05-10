@@ -28,9 +28,9 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error.ErrorCode);
+        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -97,7 +97,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(2, result.Value.Messages.Count); // Only 2 valid messages
 
@@ -132,7 +132,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -177,7 +177,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -211,7 +211,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("unknown", result.Value.MessageId); // Should default to "unknown"
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
@@ -243,7 +243,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890", result.Value.MessageId);
         Assert.Equal(MessageStatus.Unknown, result.Value.Status); // Should default to Unknown
@@ -277,7 +277,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -312,9 +312,9 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error.ErrorCode);
+        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -346,7 +346,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -382,7 +382,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890", result.Value.MessageId);
         Assert.Equal(MessageStatus.DeliveryFailed, result.Value.Status);
@@ -415,9 +415,9 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error.ErrorCode);
+        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -442,9 +442,9 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error?.Code);
     }
 
     [Fact]
@@ -484,7 +484,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -527,7 +527,7 @@ public class TwilioWhatsAppConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 

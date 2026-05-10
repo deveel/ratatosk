@@ -41,7 +41,7 @@ public class MessageReceivingIntegrationTests
         };
 
         // Act
-        var results = new List<ConnectorResult<ReceiveResult>>();
+        var results = new List<OperationResult<ReceiveResult>>();
         foreach (var webhookData in webhookMessages)
         {
             var source = MessageSource.UrlPost(webhookData);
@@ -50,7 +50,7 @@ public class MessageReceivingIntegrationTests
         }
 
         // Assert
-        Assert.All(results, result => Assert.True(result.Successful));
+        Assert.All(results, result => Assert.True(result.IsSuccess()));
         Assert.Equal(3, processedMessages.Count);
 
         // Verify message content
@@ -100,7 +100,7 @@ public class MessageReceivingIntegrationTests
         }
 
         // Assert
-        Assert.True(receiveResult.Successful);
+        Assert.True(receiveResult.IsSuccess());
         Assert.True(messageStatuses.ContainsKey(messageId));
 
         var statuses = messageStatuses[messageId];
@@ -148,7 +148,7 @@ public class MessageReceivingIntegrationTests
         var processingTime = endTime - startTime;
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(batchSize, processedMessages.Count);
         Assert.True(processingTime.TotalSeconds < 5); // Should process quickly
 
@@ -197,10 +197,10 @@ public class MessageReceivingIntegrationTests
 
             if (testCase.ShouldSucceed)
             {
-                Assert.True(result.Successful, $"Expected success for: {testCase.Data}");
+                Assert.True(result.IsSuccess(), $"Expected success for: {testCase.Data}");
             } else
             {
-                Assert.False(result.Successful, $"Expected failure for: {testCase.Data}");
+                Assert.False(result.IsSuccess(), $"Expected failure for: {testCase.Data}");
             }
         }
     }
@@ -259,7 +259,7 @@ public class MessageReceivingIntegrationTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(3, attemptCount); // Should have made 3 attempts
     }
 
@@ -283,7 +283,7 @@ public class MessageReceivingIntegrationTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Single(transformedMessages);
 
         var transformedMessage = transformedMessages.First();
@@ -331,7 +331,7 @@ public class MessageReceivingIntegrationTests
         var results = await Task.WhenAll(tasks);
 
         // Assert
-        Assert.All(results, result => Assert.True(result.Successful));
+        Assert.All(results, result => Assert.True(result.IsSuccess()));
         Assert.Equal(messageCount, receivedMessages.Count);
 
         // Verify all message IDs are unique

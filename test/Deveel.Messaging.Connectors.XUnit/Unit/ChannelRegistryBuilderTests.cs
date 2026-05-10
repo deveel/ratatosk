@@ -1,12 +1,6 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Xunit;
 
 namespace Deveel.Messaging.XUnit {
 	[Trait("Category", "Unit")]
@@ -115,16 +109,16 @@ namespace Deveel.Messaging.XUnit {
 			public TestConnector(IChannelSchema schema) { Schema = schema; }
 			public IChannelSchema Schema { get; }
 			public ConnectorState State => ConnectorState.Ready;
-			public Task<ConnectorResult<bool>> InitializeAsync(CancellationToken cancellationToken) => Task.FromResult(ConnectorResult<bool>.Success(true));
-			public Task<ConnectorResult<bool>> TestConnectionAsync(CancellationToken cancellationToken) => Task.FromResult(ConnectorResult<bool>.Success(true));
-			public Task<ConnectorResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
-			public Task<ConnectorResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken) => throw new NotImplementedException();
-			public Task<ConnectorResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
-			public Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken) => throw new NotImplementedException();
+			public Task<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken) => Task.FromResult(OperationResult<bool>.Success(true));
+			public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken) => Task.FromResult(OperationResult<bool>.Success(true));
+			public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
+			public Task<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken) => throw new NotImplementedException();
+			public Task<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+			public Task<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken) => throw new NotImplementedException();
 			public IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
-			public Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken) => throw new NotImplementedException();
-			public Task<ConnectorResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken) => throw new NotImplementedException();
-			public Task<ConnectorResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+			public Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken) => throw new NotImplementedException();
+			public Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken) => throw new NotImplementedException();
+			public Task<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
 			public Task ShutdownAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
 		}
 		private class TestSchemaFactory : IChannelSchemaFactory {

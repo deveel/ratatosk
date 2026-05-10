@@ -45,6 +45,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deveel.Messaging.Connector.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deveel.Messaging.Connector.Telegram.XUnit", "test\Deveel.Messaging.Connector.Telegram.XUnit\Deveel.Messaging.Connector.Telegram.XUnit.csproj", "{D6BAA05A-DB2C-5209-2E20-6A6BBCE22BC8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deeveel.Messaging.Connectors.XUnit", "test\Deeveel.Messaging.Connectors.XUnit\Deeveel.Messaging.Connectors.XUnit.csproj", "{AFD255F4-767A-409A-9435-0059530D83A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -247,6 +249,18 @@ Global
 		{D6BAA05A-DB2C-5209-2E20-6A6BBCE22BC8}.Release|x64.Build.0 = Release|Any CPU
 		{D6BAA05A-DB2C-5209-2E20-6A6BBCE22BC8}.Release|x86.ActiveCfg = Release|Any CPU
 		{D6BAA05A-DB2C-5209-2E20-6A6BBCE22BC8}.Release|x86.Build.0 = Release|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Debug|x64.Build.0 = Debug|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Debug|x86.Build.0 = Debug|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Release|x64.ActiveCfg = Release|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Release|x64.Build.0 = Release|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Release|x86.ActiveCfg = Release|Any CPU
+		{AFD255F4-767A-409A-9435-0059530D83A2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -268,6 +282,7 @@ Global
 		{6DE730ED-C03C-7F63-E5C3-06920CD5B0FE} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{7AB2FDCA-D49E-0329-5707-469617078EB8} = {0F91077D-AC47-4319-96FF-09CA6EE50CC6}
 		{D6BAA05A-DB2C-5209-2E20-6A6BBCE22BC8} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{AFD255F4-767A-409A-9435-0059530D83A2} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {64BF9420-C7A8-4D2B-804F-41EB2E83437F}

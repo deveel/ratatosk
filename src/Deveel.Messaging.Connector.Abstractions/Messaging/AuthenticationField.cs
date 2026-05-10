@@ -14,7 +14,7 @@ namespace Deveel.Messaging
 	/// authentication, including its expected data type, validation rules, and role 
 	/// in the authentication process.
 	/// </remarks>
-	public class AuthenticationField
+	public sealed class AuthenticationField
 	{
 		/// <summary>
 		/// Initializes a new instance of the <see cref="AuthenticationField"/> class.
@@ -24,7 +24,7 @@ namespace Deveel.Messaging
 		/// <exception cref="ArgumentNullException">Thrown when fieldName is null or whitespace.</exception>
 		public AuthenticationField(string fieldName, DataType dataType)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(fieldName, nameof(fieldName));
+			ArgumentException.ThrowIfNullOrWhiteSpace(fieldName, nameof(fieldName));
 			FieldName = fieldName;
 			DataType = dataType;
 			IsSensitive = false;

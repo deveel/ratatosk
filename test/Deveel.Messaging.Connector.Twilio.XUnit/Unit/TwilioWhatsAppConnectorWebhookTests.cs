@@ -32,7 +32,7 @@ public class TwilioWhatsAppConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid webhook data
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
         
@@ -64,7 +64,7 @@ public class TwilioWhatsAppConnectorWebhookTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid status callback data
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal("SM1234567890", result.Value?.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value?.Status);
         
@@ -105,7 +105,7 @@ public class TwilioWhatsAppConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
         
@@ -145,7 +145,7 @@ public class TwilioWhatsAppConnectorWebhookTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal("SM1234567890abcdef", result.Value?.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value?.Status); // "read" maps to Delivered for WhatsApp
         Assert.Equal("WhatsApp", result.Value?.AdditionalData["Channel"]);
@@ -172,7 +172,7 @@ public class TwilioWhatsAppConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
         
@@ -208,10 +208,10 @@ public class TwilioWhatsAppConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.UnsupportedContentType, result.Error.ErrorCode);
-        Assert.Contains("Only form data and JSON are supported", result.Error.ErrorMessage);
+        Assert.Equal(TwilioErrorCodes.UnsupportedContentType, result.Error?.Code);
+        Assert.Contains("Only form data and JSON are supported", result.Error?.Message);
     }
 
     [Fact]
@@ -234,10 +234,10 @@ public class TwilioWhatsAppConnectorWebhookTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.UnsupportedContentType, result.Error.ErrorCode);
-        Assert.Contains("Only form data and JSON are supported", result.Error.ErrorMessage);
+        Assert.Equal(TwilioErrorCodes.UnsupportedContentType, result.Error?.Code);
+        Assert.Contains("Only form data and JSON are supported", result.Error?.Message);
     }
 
     [Fact]

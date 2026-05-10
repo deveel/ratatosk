@@ -89,7 +89,7 @@ namespace Deveel.Messaging
             // Just test initialization which includes authentication
             var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
-            Assert.True(initResult.Successful, $"Initialization failed: {initResult.Error?.ErrorCode} - {initResult.Error?.ErrorMessage}");
+            Assert.True(initResult.IsSuccess(), $"Initialization failed: {initResult.Error?.Code} - {initResult.Error?.Message}");
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
             Assert.Equal(AuthenticationType.ApiKey, connector.TestAuthenticationCredential.AuthenticationType);
@@ -132,8 +132,8 @@ namespace Deveel.Messaging
         {
             // Only authenticate - don't do any other initialization
             var authResult = await AuthenticateAsync(cancellationToken);
-            if (!authResult.Successful)
-                throw new Exception($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
+            if (!authResult.IsSuccess())
+                throw new Exception($"Authentication failed during initialization: {authResult.Error?.Code} - {authResult.Error?.Message}");
         }
 
         protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)

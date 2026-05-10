@@ -42,7 +42,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -83,7 +83,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(3, result.Value.Messages.Count);
 
@@ -129,7 +129,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -170,7 +170,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -208,7 +208,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890abcdef", result.Value.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
@@ -248,7 +248,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890abcdef", result.Value.MessageId);
         Assert.Equal(MessageStatus.DeliveryFailed, result.Value.Status);
@@ -293,7 +293,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(expectedStatus, result.Value.Status);
     }
@@ -323,9 +323,9 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error.ErrorCode);
+        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -353,9 +353,9 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error.ErrorCode);
+        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -375,9 +375,9 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveMessagesError, result.Error?.Code);
     }
 
     [Fact]
@@ -397,9 +397,9 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(ConnectorErrorCodes.ReceiveStatusError, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveStatusError, result.Error?.Code);
     }
 
     [Fact]
@@ -440,7 +440,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -478,7 +478,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -514,7 +514,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -561,7 +561,7 @@ public class TwilioSmsConnectorJsonTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("SM1234567890abcdef", result.Value.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);

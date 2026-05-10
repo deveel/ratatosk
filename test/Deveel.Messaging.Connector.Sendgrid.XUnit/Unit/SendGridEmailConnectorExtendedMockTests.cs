@@ -34,7 +34,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         mockService.Verify(x => x.SendEmailAsync(
             It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
                 m.HtmlContent == "<h1>HTML Email</h1><p>This is an HTML email.</p>"),
@@ -67,7 +67,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         mockService.Verify(x => x.SendEmailAsync(
             It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
                 m.PlainTextContent == "Plain text version" &&
@@ -103,7 +103,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         mockService.Verify(x => x.SendEmailAsync(
             It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
                 m.TemplateId == "d-1234567890abcdef"),
@@ -132,7 +132,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         // Just verify the message was sent successfully - header verification may be too strict for mocks
         mockService.Verify(x => x.SendEmailAsync(It.IsAny<SendGrid.Helpers.Mail.SendGridMessage>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -186,7 +186,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         mockService.Verify(x => x.SendEmailAsync(
             It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
                 m.Categories != null && m.Categories.Contains("newsletter") && m.Categories.Contains("marketing")),
@@ -216,7 +216,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         mockService.Verify(x => x.SendEmailAsync(
             It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
                 m.CustomArgs != null && m.CustomArgs.ContainsKey("userId")),
@@ -247,7 +247,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         mockService.Verify(x => x.SendEmailAsync(
             It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m => m.SendAt.HasValue),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -275,8 +275,8 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Contains("not valid", result.Error?.ErrorMessage);
+        Assert.False(result.IsSuccess());
+        Assert.Contains("not valid", result.Error?.Message);
     }
 
     [Fact]
@@ -301,11 +301,12 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        // The error might be about missing property or validation failed
-        Assert.True(result.Error?.ErrorMessage?.ToLowerInvariant().Contains("subject") == true ||
-                   result.Error?.ErrorMessage?.ToLowerInvariant().Contains("missing") == true ||
-                   result.Error?.ErrorMessage?.ToLowerInvariant().Contains("validation") == true);
+        Assert.False(result.IsSuccess());
+        Assert.NotNull(result.Error);
+        var validationError = Assert.IsAssignableFrom<IValidationError>(result.Error);
+        
+        Assert.Contains(validationError.ValidationResults, 
+            vr => vr.MemberNames.Contains("Subject", StringComparer.InvariantCultureIgnoreCase));
     }
 
     [Fact]
@@ -330,7 +331,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
     }
 
@@ -356,10 +357,10 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         // Note: This test might get validation failed first, so let's check for either error
-        Assert.True(result.Error?.ErrorCode == SendGridErrorCodes.RateLimitExceeded ||
-                   result.Error?.ErrorCode == "MESSAGE_VALIDATION_FAILED");
+        Assert.True(result.Error?.Code == SendGridErrorCodes.RateLimitExceeded ||
+                   result.Error?.Code == "MESSAGE_VALIDATION_FAILED");
     }
 
     [Fact]
@@ -384,7 +385,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         mockService.Verify(x => x.SendEmailAsync(
             It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
                 m.MailSettings != null &&
@@ -416,7 +417,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         mockService.Verify(x => x.SendEmailAsync(
             It.Is<SendGrid.Helpers.Mail.SendGridMessage>(m =>
                 m.TrackingSettings != null &&
@@ -440,7 +441,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.GetMessageStatusAsync("test-message-id", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         Assert.NotNull(result.Value);
         mockService.Verify(x => x.GetEmailActivityAsync("test-message-id", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -460,7 +461,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         Assert.Contains("SendGrid", result.Value.Status);
     }
 
@@ -479,7 +480,7 @@ public class SendGridEmailConnectorExtendedMockTests
         var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         Assert.NotNull(result.Value);
         // Note: The health check includes a connection test, which might fail in some test environments
         // The important thing is that the result is successful and we get a health object back

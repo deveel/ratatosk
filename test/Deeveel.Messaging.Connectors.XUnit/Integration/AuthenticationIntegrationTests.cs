@@ -40,7 +40,7 @@ namespace Deveel.Messaging
             var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(initResult.Successful, $"Expected successful initialization but got: {initResult.Error?.ErrorCode} - {initResult.Error?.ErrorMessage}");
+            Assert.True(initResult.IsSuccess(), $"Expected successful initialization but got: {initResult.Error?.Code} - {initResult.Error?.Message}");
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
             Assert.Equal(AuthenticationType.ApiKey, connector.TestAuthenticationCredential.AuthenticationType);
@@ -75,7 +75,7 @@ namespace Deveel.Messaging
             var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(initResult.Successful, $"Expected successful initialization but got: {initResult.Error?.ErrorCode} - {initResult.Error?.ErrorMessage}");
+            Assert.True(initResult.IsSuccess(), $"Expected successful initialization but got: {initResult.Error?.Code} - {initResult.Error?.Message}");
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
             Assert.Equal(AuthenticationType.Basic, connector.TestAuthenticationCredential.AuthenticationType);
@@ -109,7 +109,7 @@ namespace Deveel.Messaging
             var apiKeyConnector = new TestFlexibleConnector(schema, apiKeySettings);
             var apiKeyInitResult = await apiKeyConnector.InitializeAsync(TestContext.Current.CancellationToken);
 
-            Assert.True(apiKeyInitResult.Successful);
+            Assert.True(apiKeyInitResult.IsSuccess());
             Assert.Equal(AuthenticationType.ApiKey, apiKeyConnector.TestAuthenticationCredential!.AuthenticationType);
 
             // Test with basic auth (should pick basic auth)
@@ -120,7 +120,7 @@ namespace Deveel.Messaging
             var basicConnector = new TestFlexibleConnector(schema, basicSettings);
             var basicInitResult = await basicConnector.InitializeAsync(TestContext.Current.CancellationToken);
 
-            Assert.True(basicInitResult.Successful);
+            Assert.True(basicInitResult.IsSuccess());
             Assert.Equal(AuthenticationType.Basic, basicConnector.TestAuthenticationCredential!.AuthenticationType);
         }
 
@@ -139,7 +139,7 @@ namespace Deveel.Messaging
 
             // Act
             var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-            Assert.True(initResult.Successful);
+            Assert.True(initResult.IsSuccess());
 
             var initialCredential = connector.TestAuthenticationCredential;
             Assert.NotNull(initialCredential);
@@ -178,8 +178,8 @@ namespace Deveel.Messaging
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             var authResult = await AuthenticateAsync(cancellationToken);
-            if (!authResult.Successful)
-                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
+            if (!authResult.IsSuccess())
+                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.Code} - {authResult.Error?.Message}");
         }
 
         protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
@@ -222,8 +222,8 @@ namespace Deveel.Messaging
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             var authResult = await AuthenticateAsync(cancellationToken);
-            if (!authResult.Successful)
-                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
+            if (!authResult.IsSuccess())
+                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.Code} - {authResult.Error?.Message}");
         }
 
         protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
@@ -266,8 +266,8 @@ namespace Deveel.Messaging
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             var authResult = await AuthenticateAsync(cancellationToken);
-            if (!authResult.Successful)
-                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
+            if (!authResult.IsSuccess())
+                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.Code} - {authResult.Error?.Message}");
         }
 
         protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
@@ -306,8 +306,8 @@ namespace Deveel.Messaging
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             var authResult = await AuthenticateAsync(cancellationToken);
-            if (!authResult.Successful)
-                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
+            if (!authResult.IsSuccess())
+                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.Code} - {authResult.Error?.Message}");
         }
 
         protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
@@ -346,8 +346,8 @@ namespace Deveel.Messaging
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             var authResult = await AuthenticateAsync(cancellationToken);
-            if (!authResult.Successful)
-                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
+            if (!authResult.IsSuccess())
+                throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.Code} - {authResult.Error?.Message}");
         }
 
         protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)

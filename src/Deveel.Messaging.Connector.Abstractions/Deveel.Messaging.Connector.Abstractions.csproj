@@ -26,4 +26,8 @@
       <_Parameter1>Deveel.Messaging.Connector.Abstractions.XUnit</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Deveel.Results" Version="1.2.1" />
+  </ItemGroup>
 </Project>

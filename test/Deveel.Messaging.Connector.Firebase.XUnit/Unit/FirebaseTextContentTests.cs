@@ -45,7 +45,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.Is<FirebaseAdmin.Messaging.Message>(m => 
@@ -79,7 +79,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.Is<FirebaseAdmin.Messaging.Message>(m => 
@@ -113,7 +113,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             // Should create a data-only message with title but no body
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -148,7 +148,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             // Should create a data-only message
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -183,7 +183,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             // Should create a data-only message since JsonContent doesn't provide notification body
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -217,7 +217,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.Is<FirebaseAdmin.Messaging.Message>(m => 
@@ -239,7 +239,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-            Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
             
             return connector;
         }

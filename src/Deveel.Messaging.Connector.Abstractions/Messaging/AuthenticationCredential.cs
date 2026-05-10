@@ -18,7 +18,7 @@ namespace Deveel.Messaging
         /// <param name="expiresAt">Optional expiration time for the credential.</param>
         public AuthenticationCredential(AuthenticationType authenticationType, string credentialValue, DateTime? expiresAt = null)
         {
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(credentialValue, nameof(credentialValue));
+            ArgumentException.ThrowIfNullOrWhiteSpace(credentialValue, nameof(credentialValue));
             AuthenticationType = authenticationType;
             CredentialValue = credentialValue;
             ExpiresAt = expiresAt;

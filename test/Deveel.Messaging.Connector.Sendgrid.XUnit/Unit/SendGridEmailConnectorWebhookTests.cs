@@ -32,7 +32,7 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid webhook data
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
         
@@ -65,7 +65,7 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid status callback data
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal("14c5d75ce93.dfd.64b469.filter0001.16648.5515E0B88.0", result.Value?.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value?.Status);
         
@@ -107,7 +107,7 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
         
@@ -150,7 +150,7 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal("bounce_message_123", result.Value?.MessageId);
         Assert.Equal(MessageStatus.DeliveryFailed, result.Value?.Status); // bounce maps to DeliveryFailed
         Assert.Equal("Email", result.Value?.AdditionalData["Channel"]);
@@ -178,7 +178,7 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
         
@@ -207,7 +207,7 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
         
@@ -236,10 +236,10 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.UnsupportedContentType, result.Error.ErrorCode);
-        Assert.Contains("Only JSON and form data are supported", result.Error.ErrorMessage);
+        Assert.Equal(SendGridErrorCodes.UnsupportedContentType, result.Error?.Code);
+        Assert.Contains("Only JSON and form data are supported", result.Error?.Message);
     }
 
     [Fact]
@@ -262,10 +262,10 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.UnsupportedContentType, result.Error.ErrorCode);
-        Assert.Contains("Only JSON and form data are supported", result.Error.ErrorMessage);
+        Assert.Equal(SendGridErrorCodes.UnsupportedContentType, result.Error?.Code);
+        Assert.Contains("Only JSON and form data are supported", result.Error?.Message);
     }
 
     [Fact]
@@ -368,7 +368,7 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
         
@@ -413,7 +413,7 @@ public class SendGridEmailConnectorWebhookTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(expectedStatus, result.Value.Status);
         Assert.Equal("Email", result.Value.AdditionalData["Channel"]);

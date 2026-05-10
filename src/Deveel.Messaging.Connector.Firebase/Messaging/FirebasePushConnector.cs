@@ -65,8 +65,11 @@ namespace Deveel.Messaging
         {
             // Perform authentication first
             var result = await AuthenticateAsync(cancellationToken);
-            if (!result.Successful)
-                throw new ConnectorException(result.Error?.ErrorCode ?? ConnectorErrorCodes.AuthenticationFailed, result.Error?.ErrorMessage ?? "Authentication failed");
+            if (!result.IsSuccess())
+                throw new ConnectorException(
+                    result.Error?.Code ?? ConnectorErrorCodes.AuthenticationFailed,
+                    result.Error?.Domain ?? Schema.ChannelType,
+                    result.Error?.Message ?? "Authentication failed");
 
             // Extract configuration from connection settings with proper handling of missing values
             var projectIdParam = ConnectionSettings.GetParameter("ProjectId");
@@ -77,7 +80,10 @@ namespace Deveel.Messaging
 
             if (string.IsNullOrWhiteSpace(_projectId))
             {
-                throw new MessagingException(ConnectorErrorCodes.InitializationError, "ProjectId is required");
+                throw new MessagingException(
+                    ConnectorErrorCodes.InitializationError,
+                    Schema.ChannelType,
+                    "ProjectId is required");
             }
 
             using var loggerScope = Logger.BeginScope("ProjectId={ProjectId}", _projectId);
@@ -90,6 +96,7 @@ namespace Deveel.Messaging
             else
             {
                 throw new MessagingException(ConnectorErrorCodes.InitializationError,
+                    Schema.ChannelType,
                     "Service account authentication is required for Firebase");
             }
 
@@ -104,6 +111,7 @@ namespace Deveel.Messaging
 
             if (!isConnected)
                 throw new ConnectorException(ConnectorErrorCodes.ConnectionTestError,
+                    Schema.ChannelType,
                     "Firebase connection test failed");
         }
 

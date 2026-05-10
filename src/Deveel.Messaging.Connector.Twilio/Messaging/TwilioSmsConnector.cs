@@ -76,7 +76,9 @@ namespace Deveel.Messaging
             // Perform custom validation logic
             if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
             {
-                throw new MessagingException(TwilioErrorCodes.MissingCredentials, "Account SID and Auth Token are required for Twilio SMS connector");
+                throw new MessagingException(
+                    TwilioErrorCodes.MissingCredentials, Schema.ChannelType,
+                    "Account SID and Auth Token are required for Twilio SMS connector");
             }
 
             // Initialize Twilio client
@@ -115,6 +117,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(senderNumber) && string.IsNullOrWhiteSpace(_messagingServiceSid))
             {
                 throw new ConnectorException(TwilioErrorCodes.MissingFromNumber,
+                    Schema.ChannelType,
                     "Sender phone number is required when MessagingServiceSid is not configured");
             }
 
@@ -123,6 +126,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(toNumber))
             {
                 throw new ConnectorException(TwilioErrorCodes.InvalidRecipient,
+                    Schema.ChannelType,
                     "Recipient phone number is required and must be in E.164 format");
             }
 

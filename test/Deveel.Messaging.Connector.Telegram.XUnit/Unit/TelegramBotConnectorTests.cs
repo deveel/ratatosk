@@ -94,7 +94,7 @@ namespace Deveel.Messaging
 			var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 			Assert.Equal(ConnectorState.Ready, connector.State);
 			mockTelegramService.Verify(x => x.Initialize(It.IsAny<string>()), Times.Once);
 			mockTelegramService.Verify(x => x.GetMeAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -113,8 +113,8 @@ namespace Deveel.Messaging
 			var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.False(result.Successful);
-			Assert.Equal(TelegramErrorCodes.MissingBotToken, result.Error?.ErrorCode);
+			Assert.False(result.IsSuccess());
+			Assert.Equal(TelegramErrorCodes.MissingBotToken, result.Error?.Code);
 			Assert.Equal(ConnectorState.Error, connector.State);
 		}
 
@@ -144,7 +144,7 @@ namespace Deveel.Messaging
 			var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful, $"Initialization failed: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+			Assert.True(result.IsSuccess(), $"Initialization failed: {result.Error?.Code} - {result.Error?.Message}");
 			mockTelegramService.Verify(x => x.SetWebhookAsync(
 				It.IsAny<string>(), 
 				It.IsAny<InputFile?>(), 
@@ -171,7 +171,7 @@ namespace Deveel.Messaging
 			var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.False(result.Successful);
+			Assert.False(result.IsSuccess());
 		}
 
 		#endregion
@@ -188,7 +188,7 @@ namespace Deveel.Messaging
 			var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 		}
 
 		[Fact]
@@ -221,7 +221,7 @@ namespace Deveel.Messaging
 			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 			Assert.NotNull(result.Value);
 			Assert.Equal(message.Id, result.Value.MessageId);
 		}
@@ -237,7 +237,7 @@ namespace Deveel.Messaging
 			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 			Assert.NotNull(result.Value);
 			Assert.Equal(message.Id, result.Value.MessageId);
 		}
@@ -253,12 +253,12 @@ namespace Deveel.Messaging
 			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
-			if (!result.Successful)
+			if (!result.IsSuccess())
 			{
 				// Add more detailed error information to help debug
-				Assert.True(result.Successful, $"Send failed. Error Code: {result.Error?.ErrorCode}, Error Message: {result.Error?.ErrorMessage}");
+				Assert.True(result.IsSuccess(), $"Send failed. Error Code: {result.Error?.Code}, Error Message: {result.Error?.Message}");
 			}
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 			Assert.NotNull(result.Value);
 			Assert.Equal(message.Id, result.Value.MessageId);
 		}
@@ -279,9 +279,9 @@ namespace Deveel.Messaging
 			var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.False(result.Successful);
+			Assert.False(result.IsSuccess());
 			// The base connector validates the message first, so we get MESSAGE_VALIDATION_FAILED
-			Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
+			Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.Code);
 		}
 
 		[Fact]
@@ -427,7 +427,7 @@ namespace Deveel.Messaging
 			var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 			Assert.Contains("Telegram Bot Connector", result.Value.Status);
 		}
 
@@ -441,7 +441,7 @@ namespace Deveel.Messaging
 			var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 			Assert.NotNull(result.Value);
 			Assert.True(result.Value.IsHealthy);
 			Assert.Equal(ConnectorState.Ready, result.Value.State);
@@ -460,7 +460,7 @@ namespace Deveel.Messaging
 			var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 			Assert.NotNull(result.Value);
 			Assert.False(result.Value.IsHealthy);
 			Assert.Equal(ConnectorState.Uninitialized, result.Value.State);
@@ -482,7 +482,7 @@ namespace Deveel.Messaging
 			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.True(result.Successful);
+			Assert.True(result.IsSuccess());
 			Assert.NotNull(result.Value);
 			Assert.NotEmpty(result.Value.Messages);
 		}
@@ -498,8 +498,8 @@ namespace Deveel.Messaging
 			var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
 			// Assert
-			Assert.False(result.Successful);
-			Assert.Equal(TelegramErrorCodes.UnsupportedContentType, result.Error?.ErrorCode);
+			Assert.False(result.IsSuccess());
+			Assert.Equal(TelegramErrorCodes.UnsupportedContentType, result.Error?.Code);
 		}
 
 		[Fact]
@@ -550,8 +550,8 @@ namespace Deveel.Messaging
 			var result = await connector.GetMessageStatusAsync("test-message-id", TestContext.Current.CancellationToken);
 			
 			// The base implementation should return a "Not Supported" error rather than throw
-			Assert.False(result.Successful);
-			Assert.Contains("not supported", result.Error?.ErrorMessage ?? "", StringComparison.OrdinalIgnoreCase);
+			Assert.False(result.IsSuccess());
+			Assert.Contains("not supported", result.Error?.Message ?? "", StringComparison.OrdinalIgnoreCase);
 		}
 
 		#endregion
@@ -604,7 +604,7 @@ namespace Deveel.Messaging
 			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
 			
 			var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-			Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+			Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
 			
 			return connector;
 		}

@@ -82,7 +82,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
@@ -98,8 +98,8 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal("MISSING_CREDENTIALS", result.Error?.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal("MISSING_CREDENTIALS", result.Error?.Code);
         Assert.Equal(ConnectorState.Error, connector.State);
     }
 
@@ -117,7 +117,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful); // Should succeed now since FromNumber is no longer required at connection level
+        Assert.True(result.IsSuccess()); // Should succeed now since FromNumber is no longer required at connection level
         Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
@@ -136,7 +136,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
@@ -153,8 +153,8 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal("ALREADY_INITIALIZED", result.Error?.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal("ALREADY_INITIALIZED", result.Error?.Code);
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(ConnectorState.Ready, result.Value.State);
         // Note: IsHealthy might be false due to connection test with test credentials
@@ -252,7 +252,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         // StatusInfo is a value type, no need for NotNull check
         Assert.Contains("Twilio SMS Connector", result.Value.Status);
         Assert.True(result.Value.AdditionalData.ContainsKey("AccountSid"));

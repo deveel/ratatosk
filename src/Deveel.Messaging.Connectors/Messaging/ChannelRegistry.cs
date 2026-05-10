@@ -313,12 +313,12 @@ namespace Deveel.Messaging
 				var initResult = await connector.InitializeAsync(cancellationToken);
 				
 				// Check if initialization was successful
-				if (!initResult.Successful)
+				if (!initResult.IsSuccess())
 				{
 					await DisposeConnectorOnFailureAsync(connector);
 					
 					throw new InvalidOperationException(
-						$"Failed to initialize connector of type '{registration.ConnectorType.Name}': {initResult.Error?.ErrorMessage ?? "Unknown error"}");
+						$"Failed to initialize connector of type '{registration.ConnectorType.Name}': {initResult.Error?.Message ?? "Unknown error"}");
 				}
 
 				return connector;

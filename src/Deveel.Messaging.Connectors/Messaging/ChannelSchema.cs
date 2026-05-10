@@ -41,9 +41,9 @@ namespace Deveel.Messaging
 		/// </remarks>
 		public ChannelSchema(string channelProvider, string channelType, string version)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(channelProvider, nameof(channelProvider));
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(channelType, nameof(channelType));
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(version, nameof(version));
+			ArgumentException.ThrowIfNullOrWhiteSpace(channelProvider, nameof(channelProvider));
+			ArgumentException.ThrowIfNullOrWhiteSpace(channelType, nameof(channelType));
+			ArgumentException.ThrowIfNullOrWhiteSpace(version, nameof(version));
 
 			ChannelProvider = channelProvider;
 			ChannelType = channelType;

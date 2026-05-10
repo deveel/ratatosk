@@ -35,7 +35,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveMessage(connector, webhookData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -85,7 +85,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveMessage(connector, webhookData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -138,7 +138,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveMessage(connector, webhookData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -193,7 +193,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveStatus(connector, statusData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -236,7 +236,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveStatus(connector, statusData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -288,7 +288,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveMessage(connector, jsonPayload, MessageSource.JsonContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -331,7 +331,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveStatus(connector, statusData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -374,7 +374,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveMessage(connector, jsonPayload, MessageSource.JsonContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -433,7 +433,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveMessage(connector, webhookData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -488,21 +488,21 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveMessage(connector, invalidWebhookData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.Null(result.Value);
         Assert.NotNull(result.Error);
 
         // Assert
-        Assert.NotNull(result.Error.ErrorCode);
-        Assert.NotEmpty(result.Error.ErrorCode);
-        Assert.NotNull(result.Error.ErrorMessage);
-        Assert.Equal("MISSING_MESSAGE_SID", result.Error.ErrorCode);
-        Assert.Contains("MessageSid", result.Error.ErrorMessage);
-        Assert.Contains("required", result.Error.ErrorMessage);
+        Assert.NotNull(result.Error?.Code);
+        Assert.NotEmpty(result.Error.Code);
+        Assert.NotNull(result.Error?.Message);
+        Assert.Equal("MISSING_MESSAGE_SID", result.Error?.Code);
+        Assert.Contains("MessageSid", result.Error?.Message);
+        Assert.Contains("required", result.Error?.Message);
 
         // Verify error message provides meaningful information
-        Assert.True(result.Error.ErrorMessage.Length > 10); // Should be descriptive
-        Assert.DoesNotContain("null", result.Error.ErrorMessage.ToLowerInvariant()); // Should not contain null references
+        Assert.True(result.Error?.Message.Length > 10); // Should be descriptive
+        Assert.DoesNotContain("null", result.Error?.Message.ToLowerInvariant()); // Should not contain null references
     }
 
     [Fact]
@@ -524,7 +524,7 @@ public class TwilioMessageReceivingTests
         var result = await TestReceiveMessage(connector, webhookData, MessageSource.UrlPostContentType);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
@@ -554,7 +554,7 @@ public class TwilioMessageReceivingTests
     }
 
     // Helper methods to work around ref struct limitations
-    private static Task<ConnectorResult<ReceiveResult>> TestReceiveMessage(
+    private static Task<OperationResult<ReceiveResult>> TestReceiveMessage(
         TwilioTestReceivingConnector connector,
         string content,
         string contentType)
@@ -576,7 +576,7 @@ public class TwilioMessageReceivingTests
         }
     }
 
-    private static Task<ConnectorResult<StatusUpdateResult>> TestReceiveStatus(
+    private static Task<OperationResult<StatusUpdateResult>> TestReceiveStatus(
         TwilioTestReceivingConnector connector,
         string content,
         string contentType)
@@ -623,7 +623,7 @@ public class TwilioMessageReceivingTests
                 var formData = source.AsUrlPostData();
                 if (!formData.TryGetValue("MessageSid", out var messageSid))
                 {
-                    throw new ConnectorException("MISSING_MESSAGE_SID",
+                    throw new ConnectorException("MISSING_MESSAGE_SID", "Twilio",
                         "MessageSid is required for Twilio webhooks");
                 }
 

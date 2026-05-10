@@ -33,7 +33,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             Assert.NotNull(result.Value);
             Assert.Equal(message.Id, result.Value.MessageId);
             Assert.NotNull(result.Value.RemoteMessageId);
@@ -66,7 +66,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             Assert.NotNull(result.Value);
             Assert.Equal(message.Id, result.Value.MessageId);
 
@@ -93,7 +93,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             Assert.NotNull(result.Value);
             Assert.Equal(message.Id, result.Value.MessageId);
             Assert.NotNull(result.Value.RemoteMessageId);
@@ -123,7 +123,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
 
             // Verify Firebase service was called - just check it was called, not the exact structure
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -145,8 +145,8 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful);
-            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.ErrorCode);
+            Assert.False(result.IsSuccess());
+            Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.Code);
             
             // Verify Firebase service was NOT called due to validation failure
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -171,7 +171,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
             
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-            Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
             
             var batch = CreateSimpleMessageBatch();
 
@@ -193,7 +193,7 @@ namespace Deveel.Messaging
             var result = await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
             Assert.NotNull(result.Value);
             Assert.Empty(result.Value.MessageResults);
         }
@@ -214,9 +214,9 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful);
-            Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error?.ErrorCode);
-            Assert.Contains("Firebase send failed", result.Error?.ErrorMessage);
+            Assert.False(result.IsSuccess());
+            Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error?.Code);
+            Assert.Contains("Firebase send failed", result.Error?.Message);
         }
 
         [Fact]
@@ -231,8 +231,8 @@ namespace Deveel.Messaging
             var result = await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful);
-            Assert.Equal(ConnectorErrorCodes.SendBatchError, result.Error?.ErrorCode);
+            Assert.False(result.IsSuccess());
+            Assert.Equal(ConnectorErrorCodes.SendBatchError, result.Error?.Code);
         }
 
         [Fact]
@@ -268,7 +268,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
 
             // Verify Android-specific configuration
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -299,7 +299,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
 
             // Verify iOS-specific configuration
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -329,7 +329,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-            Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
             
             return connector;
         }

@@ -44,7 +44,7 @@ public class ChannelConnectorBaseTests
 		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(result.Successful);
+		Assert.True(result.IsSuccess());
 		Assert.Equal(ConnectorState.Ready, connector.State);
 	}
 
@@ -60,8 +60,8 @@ public class ChannelConnectorBaseTests
 		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.False(result.Successful);
-		Assert.Equal("ALREADY_INITIALIZED", result.Error?.ErrorCode);
+		Assert.False(result.IsSuccess());
+		Assert.Equal("ALREADY_INITIALIZED", result.Error?.Code);
 	}
 
 	[Fact]
@@ -75,7 +75,7 @@ public class ChannelConnectorBaseTests
 		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.False(result.Successful);
+		Assert.False(result.IsSuccess());
 		Assert.Equal(ConnectorState.Error, connector.State);
 	}
 
@@ -90,9 +90,9 @@ public class ChannelConnectorBaseTests
 		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.False(result.Successful);
+		Assert.False(result.IsSuccess());
 		Assert.Equal(ConnectorState.Error, connector.State);
-		Assert.Equal("INITIALIZATION_ERROR", result.Error?.ErrorCode);
+		Assert.Equal("INITIALIZATION_ERROR", result.Error?.Code);
 	}
 
 	[Fact]
@@ -120,7 +120,7 @@ public class ChannelConnectorBaseTests
 		var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(result.Successful);
+		Assert.True(result.IsSuccess());
 		Assert.True(result.Value);
 	}
 
@@ -175,7 +175,7 @@ public class ChannelConnectorBaseTests
 		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(result.Successful);
+		Assert.True(result.IsSuccess());
 		Assert.NotNull(result.Value);
 		Assert.Equal(message.Id, result.Value.MessageId);
 	}
@@ -220,8 +220,8 @@ public class ChannelConnectorBaseTests
 		var result = await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.False(result.Successful);
-		Assert.Contains("Batch sending is not supported", result.Error!.ErrorMessage!);
+		Assert.False(result.IsSuccess());
+		Assert.Contains("Batch sending is not supported", result.Error!.Message!);
 	}
 
 	[Fact]
@@ -332,7 +332,7 @@ public class ChannelConnectorBaseTests
 		var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(result.Successful);
+		Assert.True(result.IsSuccess());
 		Assert.NotNull(result.Value);
 		Assert.Equal(ConnectorState.Ready, result.Value.State);
 		Assert.True(result.Value.IsHealthy);
@@ -351,7 +351,7 @@ public class ChannelConnectorBaseTests
 		var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(result.Successful);
+		Assert.True(result.IsSuccess());
 		Assert.NotNull(result.Value);
 		Assert.Equal(ConnectorState.Error, result.Value.State);
 		Assert.False(result.Value.IsHealthy);
@@ -431,7 +431,7 @@ public class ChannelConnectorBaseTests
 		var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.True(result.Successful);
+		Assert.True(result.IsSuccess());
 		Assert.Equal("Test Status", result.Value.Status);
 	}
 
@@ -453,9 +453,15 @@ public class ChannelConnectorBaseTests
 		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.False(result.Successful);
-		Assert.Equal("MESSAGE_VALIDATION_FAILED", result.Error?.ErrorCode);
-		Assert.Contains("validation", result.Error?.ErrorMessage?.ToLowerInvariant());
+		Assert.False(result.IsSuccess());
+		Assert.Equal("MESSAGE_VALIDATION_FAILED", result.Error?.Code);
+		var validationError = Assert.IsAssignableFrom<IValidationError>(result.Error);
+		Assert.NotEmpty(validationError.ValidationResults);
+		Assert.Contains(validationError.ValidationResults, 
+			r => 
+				r.ErrorMessage != null &&
+				r.ErrorMessage.Contains("not supported") && 
+				r.ErrorMessage.Contains("PlainText"));
 	}
 
 	[Fact]
@@ -482,9 +488,15 @@ public class ChannelConnectorBaseTests
 		var result = await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken);
 
 		// Assert
-		Assert.False(result.Successful);
-		Assert.Equal("BATCH_VALIDATION_FAILED", result.Error?.ErrorCode);
-		Assert.Contains("validation failed", result.Error?.ErrorMessage?.ToLowerInvariant());
+		Assert.False(result.IsSuccess());
+		Assert.Equal("BATCH_VALIDATION_FAILED", result.Error?.Code);
+		var validationError = Assert.IsAssignableFrom<IValidationError>(result.Error);
+		Assert.NotEmpty(validationError.ValidationResults);
+		Assert.Contains(validationError.ValidationResults, 
+			r => 
+				r.ErrorMessage != null &&
+				r.ErrorMessage.Contains("not supported") && 
+				r.ErrorMessage.Contains("PlainText"));
 	}
 
 	[Fact]

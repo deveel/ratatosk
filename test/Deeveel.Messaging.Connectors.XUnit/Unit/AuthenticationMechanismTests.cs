@@ -348,7 +348,7 @@ namespace Deveel.Messaging
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
             Assert.Equal(AuthenticationType.ApiKey, connector.TestAuthenticationCredential.AuthenticationType);
@@ -366,7 +366,7 @@ namespace Deveel.Messaging
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.Null(connector.TestAuthenticationCredential);
         }
@@ -390,9 +390,9 @@ namespace Deveel.Messaging
             if (Schema.AuthenticationConfigurations.Any())
             {
                 var authResult = await AuthenticateAsync(cancellationToken);
-                if (!authResult.Successful)
+                if (!authResult.IsSuccess())
                 {
-                    throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.ErrorCode} - {authResult.Error?.ErrorMessage}");
+                    throw new InvalidOperationException($"Authentication failed during initialization: {authResult.Error?.Code} - {authResult.Error?.Message}");
                 }
             }
         }

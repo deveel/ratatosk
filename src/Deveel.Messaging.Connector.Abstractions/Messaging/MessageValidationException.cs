@@ -15,7 +15,7 @@ namespace Deveel.Messaging
 	/// This exception provides details about the validation errors
 	/// encountered during message processing.
 	/// </remarks>
-	public sealed class MessageValidationException : MessagingException, IMessageValidationError
+	public sealed class MessageValidationException : MessagingException, IValidationError
 	{
 		/// <summary>
 		/// Initializes a new instance of the <see cref="MessageValidationException"/> class 
@@ -27,8 +27,8 @@ namespace Deveel.Messaging
 		/// A read-only list of <see cref="ValidationResult"/> objects that provide details about 
 		/// the validation errors.
 		/// </param>
-		public MessageValidationException(string errorCode, string? message, IReadOnlyList<ValidationResult> validationResults)
-			: base(errorCode, message)
+		public MessageValidationException(string errorCode, string errorDomain, string? message, IReadOnlyList<ValidationResult> validationResults)
+			: base(errorCode, errorDomain, message)
 		{
 			ValidationResults = validationResults;
 		}
@@ -39,8 +39,8 @@ namespace Deveel.Messaging
 		/// </summary>
 		/// <param name="errorCode">The error code that represents the validation error.</param>
 		/// <param name="validationResults">A read-only list of <see cref="ValidationResult"/> objects that contain details about the validation errors.</param>
-		public MessageValidationException(string errorCode, IReadOnlyList<ValidationResult> validationResults)
-			: base(errorCode)
+		public MessageValidationException(string errorCode, string errorDomain, IReadOnlyList<ValidationResult> validationResults)
+			: base(errorCode, errorDomain)
 		{
 			ValidationResults = validationResults;
 		}

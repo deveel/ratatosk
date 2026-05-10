@@ -71,7 +71,10 @@ namespace Deveel.Messaging
             // Perform custom validation logic
             if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
             {
-                throw new MessagingException(TwilioErrorCodes.MissingCredentials, "Account SID and Auth Token are required for Twilio WhatsApp connector");
+                throw new MessagingException(
+                    TwilioErrorCodes.MissingCredentials,
+                    Schema.ChannelType,
+                    "Account SID and Auth Token are required for Twilio WhatsApp connector");
             }
 
             // Initialize Twilio client
@@ -88,7 +91,10 @@ namespace Deveel.Messaging
 
             if (account == null)
             {
-                throw new ConnectorException(TwilioErrorCodes.ConnectionFailed, "Unable to retrieve account information from Twilio API");
+                throw new ConnectorException(
+                    TwilioErrorCodes.ConnectionFailed,
+                    Schema.ChannelType,
+                    "Unable to retrieve account information from Twilio API");
             }
         }
 
@@ -104,6 +110,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(senderNumber))
             {
                 throw new ConnectorException(TwilioErrorCodes.MissingFromNumber,
+                    Schema.ChannelType,
                     "Sender WhatsApp phone number is required and must be in format 'whatsapp:+1234567890'");
             }
 
@@ -112,6 +119,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(toNumber))
             {
                 throw new ConnectorException(TwilioErrorCodes.InvalidRecipient,
+                    Schema.ChannelType,
                     "Recipient WhatsApp phone number is required and must be in format 'whatsapp:+1234567890'");
             }
 
@@ -150,6 +158,7 @@ namespace Deveel.Messaging
                 else
                 {
                     throw new ConnectorException(TwilioErrorCodes.InvalidMessage,
+                        Schema.ChannelType,
                         "Template content must have a valid TemplateId (ContentSid) for WhatsApp template messages");
                 }
             }
@@ -373,7 +382,10 @@ namespace Deveel.Messaging
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData, "No valid messages found in webhook data");
+                    throw new ConnectorException(
+                        TwilioErrorCodes.InvalidWebhookData,
+                        Schema.ChannelType,
+                        "No valid messages found in webhook data");
                 }
 
                 var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
@@ -386,7 +398,10 @@ namespace Deveel.Messaging
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData, "No valid messages found in webhook JSON");
+                    throw new ConnectorException(
+                        TwilioErrorCodes.InvalidWebhookData,
+                        Schema.ChannelType,
+                        "No valid messages found in webhook JSON");
                 }
 
                 var result = new ReceiveResult(Guid.NewGuid().ToString(), messages);
@@ -394,6 +409,7 @@ namespace Deveel.Messaging
             }
 
             throw new ConnectorException(TwilioErrorCodes.UnsupportedContentType,
+                Schema.ChannelType,
                 "Only form data and JSON are supported for Twilio WhatsApp message receiving");
         }
 
@@ -416,6 +432,7 @@ namespace Deveel.Messaging
             }
 
             throw new ConnectorException(TwilioErrorCodes.UnsupportedContentType,
+                Schema.ChannelType,
                 "Only form data and JSON are supported for Twilio WhatsApp status callbacks");
         }
 

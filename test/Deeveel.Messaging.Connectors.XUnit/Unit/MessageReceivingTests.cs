@@ -37,7 +37,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -84,7 +84,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -119,7 +119,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -166,7 +166,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(3, result.Value.Messages.Count);
         Assert.Equal("batch-123", result.Value.BatchId);
@@ -214,7 +214,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -262,7 +262,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -306,7 +306,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("SM123456789", result.Value.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
@@ -365,9 +365,9 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Contains("JSON", result.Error.ErrorMessage);
+        Assert.Contains("JSON", result.Error.Message);
     }
 
     [Fact]
@@ -386,7 +386,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Empty(result.Value.Messages);
     }
@@ -416,7 +416,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -442,7 +442,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -475,7 +475,7 @@ public class MessageReceivingTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.NotEmpty(result.Value.Messages);
     }
@@ -501,7 +501,7 @@ public class MessageReceivingTests
         var results = await Task.WhenAll(tasks);
 
         // Assert
-        Assert.All(results, result => Assert.True(result.Successful));
+        Assert.All(results, result => Assert.True(result.IsSuccess()));
         Assert.All(results, result => Assert.Single(result.Value!.Messages));
     }
 
@@ -523,7 +523,7 @@ public class MessageReceivingTests
 		var result = await connector.ReceiveMessagesAsync(source, cts.Token);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
 	}
 
@@ -960,11 +960,15 @@ public class TestReceivingConnector : ChannelConnectorBase
         }
         catch (JsonException ex)
         {
-            throw new ConnectorException("JSON_PARSE_ERROR", $"Failed to parse JSON content: {ex.Message}", ex);
+            throw new ConnectorException("JSON_PARSE_ERROR",
+                "TEST",
+                $"Failed to parse JSON content: {ex.Message}", ex);
         }
         catch (Exception ex)
         {
-            throw new ConnectorException("RECEIVE_ERROR", $"An error occurred while receiving messages: {ex.Message}", ex);
+            throw new ConnectorException(
+                "RECEIVE_ERROR", "TEST",
+                $"An error occurred while receiving messages: {ex.Message}", ex);
         }
     }
 

@@ -284,34 +284,34 @@ namespace Deveel.Messaging.XUnit
 			public IChannelSchema Schema { get; } = CreateTestSchema();
 			public ConnectorState State => ConnectorState.Ready;
 
-			public Task<ConnectorResult<bool>> InitializeAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			public Task<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
+				=> Task.FromResult(OperationResult<bool>.Success(true));
 
-			public Task<ConnectorResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
+				=> Task.FromResult(OperationResult<bool>.Success(true));
 
-			public Task<ConnectorResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
+			public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
+			public Task<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
+			public Task<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
+			public Task<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
+			public Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
+			public Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
+			public Task<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public Task ShutdownAsync(CancellationToken cancellationToken)
@@ -323,34 +323,34 @@ namespace Deveel.Messaging.XUnit
 			public IChannelSchema Schema { get; } = CreateTestSchema();
 			public ConnectorState State => ConnectorState.Ready;
 
-			public Task<ConnectorResult<bool>> InitializeAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			public Task<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
+				=> Task.FromResult(OperationResult<bool>.Success(true));
 
-			public Task<ConnectorResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
+				=> Task.FromResult(OperationResult<bool>.Success(true));
 
-			public Task<ConnectorResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
+			public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
+			public Task<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
+			public Task<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
+			public Task<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
+			public Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
+			public Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
+			public Task<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public Task ShutdownAsync(CancellationToken cancellationToken)
