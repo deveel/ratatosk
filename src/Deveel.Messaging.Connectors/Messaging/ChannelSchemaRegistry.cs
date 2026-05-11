@@ -25,7 +25,7 @@ namespace Deveel.Messaging
 		/// </summary>
 		/// <param name="namedConnectors">
 		/// Descriptors for named connectors registered via
-		/// <see cref="MessagingBuilder.AddConnector{TConnector}(string,IChannelSchema?,IReadOnlyDictionary{string,object?}?,Func{IServiceProvider,IChannelSchema,TConnector}?)"/>.
+		/// <see cref="MessagingBuilder.AddConnector{TConnector}(string)"/>.
 		/// </param>
 		/// <param name="directConnectors">
 		/// Any <see cref="IChannelConnector"/> instances registered directly

@@ -8,6 +8,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Deveel.Messaging
 {
+    /// <summary>
+    /// Provides a fluent API for configuring a connector before
+    /// registering it into the messaging services.
+    /// </summary>
+    /// <typeparam name="TConnector">
+    /// The type of the connector being configured.
+    /// </typeparam>
     public sealed class ChannelConnectorBuilder<TConnector>
         where TConnector : class, IChannelConnector
     {
@@ -24,10 +31,26 @@ namespace Deveel.Messaging
             MessagingBuilder = messagingBuilder;
         }
 
+        /// <summary>
+        /// Gets the parent <see cref="MessagingBuilder"/> instance
+        /// that is used to register the connector.
+        /// </summary>
         public MessagingBuilder MessagingBuilder { get; }
 
         // ── Schema override ────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Overrides the default schema of the connector with the given one.
+        /// </summary>
+        /// <param name="schema">
+        /// The schema to use for the connector.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="schema"/> is <c>null</c>.
+        /// </exception>
         public ChannelConnectorBuilder<TConnector> WithSchema(IChannelSchema schema)
         {
             ArgumentNullException.ThrowIfNull(schema, nameof(schema));
@@ -37,6 +60,19 @@ namespace Deveel.Messaging
 
         // ── Connection settings ────────────────────────────────────────────────
 
+        /// <summary>
+        /// Configures the connector using a connection string.
+        /// </summary>
+        /// <param name="connectionString">
+        /// The connection string to parse and apply as settings.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown if <paramref name="connectionString"/> is <c>null</c>
+        /// or empty.
+        /// </exception>
         public ChannelConnectorBuilder<TConnector> WithConnectionString(string connectionString)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(connectionString, nameof(connectionString));
@@ -48,6 +84,19 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Configures the connector using a named configuration section.
+        /// </summary>
+        /// <param name="configurationSection">
+        /// The name of the configuration section that contains the settings.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown if <paramref name="configurationSection"/> is <c>null</c>
+        /// or empty.
+        /// </exception>
         public ChannelConnectorBuilder<TConnector> WithSettings(string configurationSection)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(configurationSection, nameof(configurationSection));
@@ -55,6 +104,18 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Sets a single setting value for the connector.
+        /// </summary>
+        /// <param name="key">
+        /// The name of the setting.
+        /// </param>
+        /// <param name="value">
+        /// The value of the setting.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
         public ChannelConnectorBuilder<TConnector> WithSetting(string key, object? value)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(key, nameof(key));
@@ -62,6 +123,18 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Configures the settings of the connector using a delegate.
+        /// </summary>
+        /// <param name="configure">
+        /// A delegate that receives a dictionary of settings to configure.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="configure"/> is <c>null</c>.
+        /// </exception>
         public ChannelConnectorBuilder<TConnector> WithSettings(
             Action<IDictionary<string, object?>> configure)
         {
@@ -72,6 +145,17 @@ namespace Deveel.Messaging
 
         // ── Factory override ───────────────────────────────────────────────────
 
+        /// <summary>
+        /// Overrides the default factory used to create the connector
+        /// with a custom factory type.
+        /// </summary>
+        /// <typeparam name="TFactory">
+        /// The type of the custom factory that implements
+        /// <see cref="IChannelConnectorFactory{TConnector}"/>.
+        /// </typeparam>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
         public ChannelConnectorBuilder<TConnector> WithFactory<TFactory>()
             where TFactory : class, IChannelConnectorFactory<TConnector>
         {
@@ -80,6 +164,19 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Overrides the default factory used to create the connector
+        /// with a provided factory instance.
+        /// </summary>
+        /// <param name="factory">
+        /// The factory instance to use for creating the connector.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="factory"/> is <c>null</c>.
+        /// </exception>
         public ChannelConnectorBuilder<TConnector> WithFactory(IChannelConnectorFactory<TConnector> factory)
         {
             ArgumentNullException.ThrowIfNull(factory, nameof(factory));

@@ -10,6 +10,10 @@ using System.Reflection;
 
 namespace Deveel.Messaging
 {
+    /// <summary>
+    /// Provides a builder for configuring and registering messaging
+    /// connectors into a service collection.
+    /// </summary>
     public sealed class MessagingBuilder
     {
         internal MessagingBuilder(IServiceCollection services)
@@ -19,16 +23,43 @@ namespace Deveel.Messaging
             services.TryAddSingleton<IChannelSchemaRegistry, ChannelSchemaRegistry>();
         }
 
+        /// <summary>
+        /// Gets the collection of services that is used to register
+        /// the messaging components.
+        /// </summary>
         public IServiceCollection Services { get; }
 
         // ── Unnamed connector registration ────────────────────────────────────
 
+        /// <summary>
+        /// Registers a connector of the specified type into the services.
+        /// </summary>
+        /// <typeparam name="TConnector">
+        /// The type of the connector to register.
+        /// </typeparam>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
         public MessagingBuilder AddConnector<TConnector>()
             where TConnector : class, IChannelConnector
         {
             return AddConnector(typeof(TConnector));
         }
 
+        /// <summary>
+        /// Registers a connector of the specified type into the services.
+        /// </summary>
+        /// <param name="connectorType">
+        /// The type of the connector to register.
+        /// </param>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if the <paramref name="connectorType"/> is <c>null</c>.
+        /// </exception>
         public MessagingBuilder AddConnector(Type connectorType)
         {
             ArgumentNullException.ThrowIfNull(connectorType, nameof(connectorType));
@@ -50,6 +81,19 @@ namespace Deveel.Messaging
 
         // ── Named + fluent connector registration ─────────────────────────────
 
+        /// <summary>
+        /// Registers a named connector of the specified type.
+        /// </summary>
+        /// <typeparam name="TConnector">
+        /// The type of the connector to register.
+        /// </typeparam>
+        /// <param name="connectorName">
+        /// The name that identifies the connector instance.
+        /// </param>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
         public MessagingBuilder AddConnector<TConnector>(string connectorName)
             where TConnector : class, IChannelConnector
         {
@@ -57,6 +101,22 @@ namespace Deveel.Messaging
             return AddConnector<TConnector>(connectorName, _ => { });
         }
 
+        /// <summary>
+        /// Registers a connector with a configuration action.
+        /// </summary>
+        /// <typeparam name="TConnector">
+        /// The type of the connector to register.
+        /// </typeparam>
+        /// <param name="configure">
+        /// An action to configure the connector builder.
+        /// </param>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="configure"/> is <c>null</c>.
+        /// </exception>
         public MessagingBuilder AddConnector<TConnector>(
             Action<ChannelConnectorBuilder<TConnector>> configure)
             where TConnector : class, IChannelConnector
@@ -85,6 +145,26 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Registers a named connector with a configuration action.
+        /// </summary>
+        /// <typeparam name="TConnector">
+        /// The type of the connector to register.
+        /// </typeparam>
+        /// <param name="connectorName">
+        /// The name that identifies the connector instance.
+        /// </param>
+        /// <param name="configure">
+        /// An action to configure the connector builder.
+        /// </param>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="connectorName"/> or
+        /// <paramref name="configure"/> is <c>null</c>.
+        /// </exception>
         public MessagingBuilder AddConnector<TConnector>(
             string connectorName,
             Action<ChannelConnectorBuilder<TConnector>> configure)
