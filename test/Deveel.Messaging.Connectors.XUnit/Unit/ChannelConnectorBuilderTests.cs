@@ -138,51 +138,80 @@ namespace Deveel.Messaging.XUnit
 		}
 
 		[Fact]
-		public void Should_UseCustomFactory_When_UseFactoryIsSet()
+		public void Should_ParseConnectionString_When_WithConnectionStringIsUsed()
 		{
 			// Arrange
-			var factoryCalled = false;
 			var services = CreateServices();
 
 			// Act
 			services.AddMessaging()
 				.AddConnector<TestConnector>(b => b
-					.UseFactory((sp, schema, settings) =>
-					{
-						factoryCalled = true;
-						return new TestConnector(schema, settings);
-					}));
+					.WithConnectionString("AccountSid=ACtest;AuthToken=tok123"));
+
+			var provider = services.BuildServiceProvider();
+			var connector = (TestConnector)provider.GetRequiredService<TestConnector>();
+
+			// Assert
+			Assert.Equal("ACtest", connector.ConnectionSettings.GetParameter("AccountSid"));
+			Assert.Equal("tok123", connector.ConnectionSettings.GetParameter("AuthToken"));
+		}
+
+		[Fact]
+		public void Should_ParseQuotedValuesInConnectionString_When_WithConnectionStringIsUsed()
+		{
+			// Arrange
+			var services = CreateServices();
+
+			// Act
+			services.AddMessaging()
+				.AddConnector<TestConnector>(b => b
+					.WithConnectionString("ApiKey=\"secret;key=123\""));
+
+			var provider = services.BuildServiceProvider();
+			var connector = (TestConnector)provider.GetRequiredService<TestConnector>();
+
+			// Assert
+			Assert.Equal("secret;key=123", connector.ConnectionSettings.GetParameter("ApiKey"));
+		}
+
+		[Fact]
+		public void Should_UseCustomFactory_When_WithFactoryInstanceIsSet()
+		{
+			// Arrange
+			var factory = new CustomTestConnectorFactory();
+			var services = CreateServices();
+
+			// Act
+			services.AddMessaging()
+				.AddConnector<TestConnector>(b => b
+					.WithFactory(factory));
 
 			var provider = services.BuildServiceProvider();
 			provider.GetRequiredService<TestConnector>();
 
 			// Assert
-			Assert.True(factoryCalled);
+			Assert.True(factory.WasCalled);
 		}
 
 		[Fact]
-		public void Should_PassSettingsToCustomFactory_When_UseFactoryAndWithSettingAreCombined()
+		public void Should_PassSettingsToCustomFactory_When_WithFactoryAndWithSettingAreCombined()
 		{
 			// Arrange
+			var factory = new CustomTestConnectorFactory();
 			var services = CreateServices();
-			ConnectionSettings? captured = null;
 
 			// Act
 			services.AddMessaging()
 				.AddConnector<TestConnector>(b => b
 					.WithSetting("From", "+15550000001")
-					.UseFactory((sp, schema, settings) =>
-					{
-						captured = settings;
-						return new TestConnector(schema, settings);
-					}));
+					.WithFactory(factory));
 
 			var provider = services.BuildServiceProvider();
 			provider.GetRequiredService<TestConnector>();
 
 			// Assert
-			Assert.NotNull(captured);
-			Assert.Equal("+15550000001", captured!.GetParameter("From"));
+			Assert.NotNull(factory.LastSettings);
+			Assert.Equal("+15550000001", factory.LastSettings!.GetParameter("From"));
 		}
 
 		[Fact]
@@ -368,21 +397,17 @@ namespace Deveel.Messaging.XUnit
 		public void Should_UseCustomFactory_When_NamedBuilderHasFactoryOverride()
 		{
 			// Arrange
-			var factoryCalled = false;
+			var factory = new CustomTestConnectorFactory();
 			var services = CreateServices();
 			services.AddMessaging()
 				.AddConnector<TestConnector>("promo", b => b
-					.UseFactory((sp, schema, settings) =>
-					{
-						factoryCalled = true;
-						return new TestConnector(schema, settings);
-					}));
+					.WithFactory(factory));
 
 			var provider = services.BuildServiceProvider();
 			provider.GetRequiredKeyedService<IChannelConnector>("promo");
 
 			// Assert
-			Assert.True(factoryCalled);
+			Assert.True(factory.WasCalled);
 		}
 
 		[Fact]
@@ -524,7 +549,7 @@ namespace Deveel.Messaging.XUnit
 		}
 
 		[Fact]
-		public void Should_ThrowArgumentNullException_When_UseFactoryReceivesNull()
+		public void Should_ThrowArgumentNullException_When_WithFactoryReceivesNull()
 		{
 			// Arrange
 			var services = CreateServices();
@@ -532,7 +557,7 @@ namespace Deveel.Messaging.XUnit
 			// Act & Assert
 			Assert.Throws<ArgumentNullException>(() =>
 				services.AddMessaging().AddConnector<TestConnector>(b =>
-					b.UseFactory(null!)));
+					b.WithFactory((IChannelConnectorFactory<TestConnector>)null!)));
 		}
 
 		[Fact]
@@ -604,6 +629,23 @@ namespace Deveel.Messaging.XUnit
 		private sealed class TestSchemaFactory : IChannelSchemaFactory
 		{
 			public IChannelSchema CreateSchema() => new DummySchema("TestProvider", "TestType");
+		}
+
+		private sealed class CustomTestConnectorFactory : IChannelConnectorFactory<TestConnector>
+		{
+			public bool WasCalled { get; private set; }
+			public ConnectionSettings? LastSettings { get; private set; }
+
+			public TestConnector Create(ConnectionSettings settings)
+				=> Create(settings, null);
+
+			public TestConnector Create(ConnectionSettings settings, IChannelSchema? schema)
+			{
+				WasCalled = true;
+				LastSettings = settings;
+				var testSchema = schema ?? new TestSchemaFactory().CreateSchema();
+				return new TestConnector(testSchema, settings);
+			}
 		}
 
 		private sealed class DummySchema : IChannelSchema

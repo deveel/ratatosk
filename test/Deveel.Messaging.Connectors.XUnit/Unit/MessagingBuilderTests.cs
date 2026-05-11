@@ -52,22 +52,32 @@ namespace Deveel.Messaging.XUnit
 			services.AddMessaging()
 				.AddConnector<TestConnector>();
 
-			// At least one IChannelConnector registration should exist.
 			Assert.Contains(services, d =>
 				d.ServiceType == typeof(IChannelConnector) &&
 				d.Lifetime == ServiceLifetime.Singleton);
 		}
 
 		[Fact]
-		public void Should_ResolveConnectorByConcretType_When_ServiceProviderIsBuilt()
+		public void Should_RegisterFactoryByDefault_When_AddConnectorIsInvoked()
 		{
 			var services = CreateServices();
 			services.AddMessaging()
-				.AddConnector<TestConnector>((sp, schema) => new TestConnector(schema));
+				.AddConnector<TestConnector>();
+
+			Assert.Contains(services, d =>
+				d.ServiceType == typeof(IChannelConnectorFactory<TestConnector>));
+		}
+
+		[Fact]
+		public void Should_ResolveConnectorByConcreteType_When_ServiceProviderIsBuilt()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>();
 
 			var provider = services.BuildServiceProvider();
-
 			var connector = provider.GetRequiredService<TestConnector>();
+
 			Assert.NotNull(connector);
 		}
 
@@ -78,8 +88,8 @@ namespace Deveel.Messaging.XUnit
 			services.AddMessaging().AddConnector<TestConnector>();
 
 			var provider = services.BuildServiceProvider();
-
 			var connectors = provider.GetServices<IChannelConnector>().ToList();
+
 			Assert.Contains(connectors, c => c is TestConnector);
 		}
 
@@ -91,8 +101,8 @@ namespace Deveel.Messaging.XUnit
 			services.AddMessaging().AddConnector<AnotherTestConnector>();
 
 			var provider = services.BuildServiceProvider();
-
 			var connectors = provider.GetServices<IChannelConnector>().ToList();
+
 			Assert.Contains(connectors, c => c is TestConnector);
 			Assert.Contains(connectors, c => c is AnotherTestConnector);
 		}
@@ -105,8 +115,8 @@ namespace Deveel.Messaging.XUnit
 				.AddConnector<TestConnector>("marketing");
 
 			var provider = services.BuildServiceProvider();
-
 			var connector = provider.GetRequiredKeyedService<IChannelConnector>("marketing");
+
 			Assert.NotNull(connector);
 			Assert.IsType<TestConnector>(connector);
 		}
@@ -119,8 +129,8 @@ namespace Deveel.Messaging.XUnit
 				.AddConnector<TestConnector>("marketing");
 
 			var provider = services.BuildServiceProvider();
-
 			var descriptors = provider.GetServices<NamedConnectorDescriptor>().ToList();
+
 			Assert.Contains(descriptors, d => d.Name == "marketing");
 		}
 
@@ -133,7 +143,6 @@ namespace Deveel.Messaging.XUnit
 				.AddConnector<TestConnector>("support");
 
 			var provider = services.BuildServiceProvider();
-
 			var marketing = provider.GetRequiredKeyedService<IChannelConnector>("marketing");
 			var support   = provider.GetRequiredKeyedService<IChannelConnector>("support");
 
@@ -148,41 +157,67 @@ namespace Deveel.Messaging.XUnit
 			var builder = services.AddMessaging();
 
 			Assert.Throws<ArgumentException>(() =>
-				builder.AddConnector("my-connector", typeof(ConnectorWithoutAttribute)));
+				builder.AddConnector<ConnectorWithoutAttribute>("my-connector"));
 		}
 
 		[Fact]
-		public void Should_ExposeSettings_When_AddConnectorWithNameAndSettings()
+		public void Should_ExposeSettings_When_AddConnectorWithNameAndConnectionString()
 		{
 			var services = CreateServices();
-			var settings = new Dictionary<string, object?> { ["PhoneNumber"] = "+15550001111" };
 			services.AddMessaging()
-				.AddConnector<TestConnector>("support", settings: settings);
+				.AddConnector<TestConnector>("support", b => b
+					.WithConnectionString("PhoneNumber=+15550001111"));
 
 			var provider = services.BuildServiceProvider();
-
 			var descriptor = provider.GetServices<NamedConnectorDescriptor>()
 				.First(d => d.Name == "support");
+
 			Assert.Equal("+15550001111", descriptor.GetSetting<string>("PhoneNumber"));
 		}
 
 		[Fact]
-		public void Should_UseFactory_When_AddConnectorWithNameAndConnectorFactory()
+		public void Should_UseCustomFactoryType_When_WithFactoryIsUsed()
 		{
-			var factoryCalled = false;
 			var services = CreateServices();
 			services.AddMessaging()
-				.AddConnector<TestConnector>("marketing",
-					connectorFactory: (sp, schema) =>
-					{
-						factoryCalled = true;
-						return new TestConnector(schema);
-					});
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithFactory<CustomTestConnectorFactory>());
+
+			// The custom factory should be registered in DI
+			Assert.Contains(services, d =>
+				d.ServiceType == typeof(IChannelConnectorFactory<TestConnector>) &&
+				d.ImplementationType == typeof(CustomTestConnectorFactory));
+		}
+
+		[Fact]
+		public void Should_CreateConnectorViaCustomFactory_When_WithFactoryIsUsed()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithFactory<CustomTestConnectorFactory>());
 
 			var provider = services.BuildServiceProvider();
+			var connector = provider.GetRequiredService<TestConnector>();
 
-			provider.GetRequiredKeyedService<IChannelConnector>("marketing");
-			Assert.True(factoryCalled);
+			Assert.NotNull(connector);
+			Assert.Equal("CustomFactory", connector.CreatedBy);
+		}
+
+		[Fact]
+		public void Should_CreateConnectorViaCustomFactoryInstance_When_WithFactoryInstanceIsUsed()
+		{
+			var factory = new CustomTestConnectorFactory();
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithFactory(factory));
+
+			var provider = services.BuildServiceProvider();
+			var connector = provider.GetRequiredService<TestConnector>();
+
+			Assert.NotNull(connector);
+			Assert.Equal("CustomFactory", connector.CreatedBy);
 		}
 
 		// ── Test connector types ──────────────────────────────────────────────
@@ -190,9 +225,17 @@ namespace Deveel.Messaging.XUnit
 		[ChannelSchema(typeof(TestSchemaFactory))]
 		private class TestConnector : IChannelConnector
 		{
-			public TestConnector(IChannelSchema schema) { Schema = schema; }
+			public TestConnector(IChannelSchema schema, ConnectionSettings? settings = null)
+			{
+				Schema = schema;
+				ConnectionSettings = settings ?? new ConnectionSettings();
+			}
+
 			public IChannelSchema Schema { get; }
+			public ConnectionSettings ConnectionSettings { get; }
+			public string? CreatedBy { get; set; }
 			public ConnectorState State => ConnectorState.Uninitialized;
+
 			public Task<OperationResult<bool>> InitializeAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
 			public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
 			public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
@@ -209,9 +252,11 @@ namespace Deveel.Messaging.XUnit
 		[ChannelSchema(typeof(AnotherTestSchemaFactory))]
 		private class AnotherTestConnector : IChannelConnector
 		{
-			public AnotherTestConnector(IChannelSchema schema) { Schema = schema; }
+			public AnotherTestConnector(IChannelSchema schema, ConnectionSettings? settings = null) { Schema = schema; }
+
 			public IChannelSchema Schema { get; }
 			public ConnectorState State => ConnectorState.Uninitialized;
+
 			public Task<OperationResult<bool>> InitializeAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
 			public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
 			public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
@@ -227,9 +272,10 @@ namespace Deveel.Messaging.XUnit
 
 		private class ConnectorWithoutAttribute : IChannelConnector
 		{
-			public ConnectorWithoutAttribute(IChannelSchema schema) { Schema = schema; }
+			public ConnectorWithoutAttribute(IChannelSchema schema, ConnectionSettings? settings = null) { Schema = schema; }
 			public IChannelSchema Schema { get; }
 			public ConnectorState State => ConnectorState.Uninitialized;
+
 			public Task<OperationResult<bool>> InitializeAsync(CancellationToken ct) => throw new NotImplementedException();
 			public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => throw new NotImplementedException();
 			public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
@@ -271,6 +317,21 @@ namespace Deveel.Messaging.XUnit
 			public IReadOnlyList<MessagePropertyConfiguration> MessageProperties => new List<MessagePropertyConfiguration>();
 			public IReadOnlyList<MessageContentType> ContentTypes => new List<MessageContentType>();
 			public IReadOnlyList<AuthenticationConfiguration> AuthenticationConfigurations => new List<AuthenticationConfiguration>();
+		}
+
+		private class CustomTestConnectorFactory : IChannelConnectorFactory<TestConnector>
+		{
+			public TestConnector Create(ConnectionSettings settings)
+				=> Create(settings, null);
+
+			public TestConnector Create(ConnectionSettings settings, IChannelSchema? schema)
+			{
+				var testSchema = schema ?? new TestSchemaFactory().CreateSchema();
+				return new TestConnector(testSchema, settings)
+				{
+					CreatedBy = "CustomFactory"
+				};
+			}
 		}
 	}
 }

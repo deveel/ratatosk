@@ -237,7 +237,7 @@ namespace Deveel.Messaging.XUnit
 		[ChannelSchema(typeof(TestSchemaFactory))]
 		private class TestConnector : ChannelConnectorBase
 		{
-			public TestConnector(IChannelSchema schema) : base(schema) { }
+			public TestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
@@ -251,7 +251,7 @@ namespace Deveel.Messaging.XUnit
 		[ChannelSchema(typeof(AnotherTestSchemaFactory))]
 		private class AnotherTestConnector : ChannelConnectorBase
 		{
-			public AnotherTestConnector(IChannelSchema schema) : base(schema) { }
+			public AnotherTestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);

@@ -11,9 +11,6 @@ using Xunit;
 
 namespace Deveel.Messaging.XUnit
 {
-	/// <summary>
-	/// Extended tests for MessagingBuilder covering edge cases and error handling.
-	/// </summary>
 	[Trait("Category", "Unit")]
 	[Trait("Layer", "Application")]
 	[Trait("Feature", "MessagingBuilder")]
@@ -69,29 +66,6 @@ namespace Deveel.Messaging.XUnit
 		}
 
 		[Fact]
-		public void Should_ReturnBuilderForChaining_When_AddConnectorWithFactory()
-		{
-			var services = new ServiceCollection();
-			var builder = services.AddMessaging();
-
-			var result = builder.AddConnector<TestConnector>((sp, schema) => new TestConnector(schema));
-
-			Assert.Same(builder, result);
-		}
-
-		[Fact]
-		public void Should_ReturnBuilderForChaining_When_AddConnectorByTypeWithFactory()
-		{
-			var services = new ServiceCollection();
-			var builder = services.AddMessaging();
-
-			var result = builder.AddConnector(typeof(TestConnector),
-				(sp, schema) => new TestConnector(schema));
-
-			Assert.Same(builder, result);
-		}
-
-		[Fact]
 		public void Should_AllowMultipleConnectorRegistrations_When_BuilderIsInvoked()
 		{
 			var services = new ServiceCollection();
@@ -101,7 +75,6 @@ namespace Deveel.Messaging.XUnit
 				.AddConnector<AnotherTestConnector>()
 				.AddConnector(typeof(ThirdTestConnector));
 
-			// IChannelSchemaRegistry (not IChannelRegistry) is the registered service.
 			Assert.Contains(services, d => d.ServiceType == typeof(IChannelSchemaRegistry));
 		}
 
@@ -114,27 +87,8 @@ namespace Deveel.Messaging.XUnit
 
 			var provider = services.BuildServiceProvider();
 
-			// Connector resolvable as concrete type.
 			var connector = provider.GetService<TestConnector>();
 			Assert.NotNull(connector);
-		}
-
-		[Fact]
-		public void Should_UseFactory_When_ConnectorIsCreatedAfterRegistration()
-		{
-			var factoryCalled = false;
-			var services = new ServiceCollection();
-			services.AddMessaging()
-				.AddConnector<TestConnector>((sp, schema) =>
-				{
-					factoryCalled = true;
-					return new TestConnector(schema);
-				});
-
-			var provider = services.BuildServiceProvider();
-			provider.GetRequiredService<TestConnector>();
-
-			Assert.True(factoryCalled);
 		}
 
 		[Fact]
@@ -144,7 +98,7 @@ namespace Deveel.Messaging.XUnit
 			services.AddMessaging()
 				.AddConnector<TestConnector>()
 				.AddConnector<AnotherTestConnector>()
-				.AddConnector(typeof(ThirdTestConnector), (sp, schema) => new ThirdTestConnector(schema));
+				.AddConnector(typeof(ThirdTestConnector));
 
 			var provider = services.BuildServiceProvider();
 			var connectors = provider.GetServices<IChannelConnector>().ToList();
@@ -191,7 +145,7 @@ namespace Deveel.Messaging.XUnit
 		[ChannelSchema(typeof(TestSchemaFactory))]
 		private class TestConnector : ChannelConnectorBase
 		{
-			public TestConnector(IChannelSchema schema) : base(schema) { }
+			public TestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) { SetState(ConnectorState.Ready); return ValueTask.CompletedTask; }
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
@@ -201,7 +155,7 @@ namespace Deveel.Messaging.XUnit
 		[ChannelSchema(typeof(AnotherTestSchemaFactory))]
 		private class AnotherTestConnector : ChannelConnectorBase
 		{
-			public AnotherTestConnector(IChannelSchema schema) : base(schema) { }
+			public AnotherTestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) { SetState(ConnectorState.Ready); return ValueTask.CompletedTask; }
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
@@ -211,7 +165,7 @@ namespace Deveel.Messaging.XUnit
 		[ChannelSchema(typeof(ThirdTestSchemaFactory))]
 		private class ThirdTestConnector : ChannelConnectorBase
 		{
-			public ThirdTestConnector(IChannelSchema schema) : base(schema) { }
+			public ThirdTestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) { SetState(ConnectorState.Ready); return ValueTask.CompletedTask; }
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
@@ -220,7 +174,7 @@ namespace Deveel.Messaging.XUnit
 
 		private class ConnectorWithoutAttribute : ChannelConnectorBase
 		{
-			public ConnectorWithoutAttribute(IChannelSchema schema) : base(schema) { }
+			public ConnectorWithoutAttribute(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();

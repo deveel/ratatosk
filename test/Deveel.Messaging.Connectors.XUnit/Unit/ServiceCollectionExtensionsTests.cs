@@ -10,9 +10,6 @@ using Xunit;
 
 namespace Deveel.Messaging.XUnit
 {
-	/// <summary>
-	/// Tests for ServiceCollectionExtensions covering AddMessaging and backward-compatible AddChannelConnector.
-	/// </summary>
 	[Trait("Category", "Unit")]
 	[Trait("Layer", "Application")]
 	[Trait("Feature", "ServiceCollectionExtensions")]
@@ -86,17 +83,6 @@ namespace Deveel.Messaging.XUnit
 		}
 
 		[Fact]
-		public void Should_ReturnSameBuilder_When_AddConnectorWithFactoryIsInvoked()
-		{
-			var services = new ServiceCollection();
-			var builder = services.AddMessaging();
-
-			var result = builder.AddConnector<TestConnector>((sp, schema) => new TestConnector(schema));
-
-			Assert.Same(builder, result);
-		}
-
-		[Fact]
 		public void Should_ThrowArgumentException_When_AddConnectorWithConnectorWithoutSchemaAttribute()
 		{
 			var services = new ServiceCollection();
@@ -132,116 +118,10 @@ namespace Deveel.Messaging.XUnit
 
 		#endregion
 
-		#region AddChannelConnector (obsolete — backward-compatibility coverage)
-
-#pragma warning disable CS0618
-
-		[Fact]
-		public void Should_ThrowArgumentNullException_When_AddChannelConnectorWithNullServices()
-		{
-			IServiceCollection services = null!;
-			Assert.Throws<ArgumentNullException>(() => services.AddChannelConnector<TestConnector>());
-		}
-
-		[Fact]
-		public void Should_ThrowArgumentNullException_When_AddChannelConnectorByTypeWithNullServices()
-		{
-			IServiceCollection services = null!;
-			Assert.Throws<ArgumentNullException>(() => services.AddChannelConnector(typeof(TestConnector)));
-		}
-
-		[Fact]
-		public void Should_ThrowArgumentNullException_When_AddChannelConnectorByTypeWithNullConnectorType()
-		{
-			var services = new ServiceCollection();
-			Assert.Throws<ArgumentNullException>(() => services.AddChannelConnector(null!));
-		}
-
-		[Fact]
-		public void Should_ThrowArgumentException_When_AddChannelConnectorByTypeWithNonConnectorType()
-		{
-			var services = new ServiceCollection();
-			Assert.Throws<ArgumentException>(() => services.AddChannelConnector(typeof(string)));
-		}
-
-		[Fact]
-		public void Should_RegisterCorrectly_When_AddChannelConnectorGeneric()
-		{
-			var services = new ServiceCollection();
-			var result = services.AddChannelConnector<TestConnector>();
-
-			Assert.Same(services, result);
-			Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IChannelSchemaRegistry));
-		}
-
-		[Fact]
-		public void Should_RegisterCorrectly_When_AddChannelConnectorByType()
-		{
-			var services = new ServiceCollection();
-			var result = services.AddChannelConnector(typeof(TestConnector));
-
-			Assert.Same(services, result);
-			Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IChannelSchemaRegistry));
-		}
-
-		[Fact]
-		public void Should_RegisterCorrectly_When_AddChannelConnectorWithFactory()
-		{
-			var services = new ServiceCollection();
-			var result = services.AddChannelConnector<TestConnector>((sp, schema) => new TestConnector(schema));
-
-			Assert.Same(services, result);
-			Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IChannelSchemaRegistry));
-		}
-
-		[Fact]
-		public void Should_RegisterCorrectly_When_AddChannelConnectorByTypeWithFactory()
-		{
-			var services = new ServiceCollection();
-			var result = services.AddChannelConnector(typeof(TestConnector), (sp, schema) => new TestConnector(schema));
-
-			Assert.Same(services, result);
-			Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IChannelSchemaRegistry));
-		}
-
-		[Fact]
-		public void Should_ThrowArgumentException_When_AddChannelConnectorWithConnectorWithoutSchemaAttribute()
-		{
-			var services = new ServiceCollection();
-			var exception = Assert.Throws<ArgumentException>(() =>
-				services.AddChannelConnector<ConnectorWithoutAttribute>());
-
-			Assert.Contains("must be decorated with", exception.Message);
-		}
-
-		[Fact]
-		public void Should_ThrowArgumentException_When_AddChannelConnectorByTypeWithConnectorWithoutSchemaAttribute()
-		{
-			var services = new ServiceCollection();
-			var exception = Assert.Throws<ArgumentException>(() =>
-				services.AddChannelConnector(typeof(ConnectorWithoutAttribute)));
-
-			Assert.Contains("must be decorated with", exception.Message);
-		}
-
-		[Fact]
-		public void Should_DoNotThrow_When_AddChannelConnectorMultipleCalls()
-		{
-			var services = new ServiceCollection();
-			services.AddChannelConnector<TestConnector>();
-			services.AddChannelConnector<AnotherTestConnector>();
-
-			Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IChannelSchemaRegistry));
-		}
-
-#pragma warning restore CS0618
-
-		#endregion
-
 		[ChannelSchema(typeof(TestSchemaFactory))]
 		private class TestConnector : ChannelConnectorBase
 		{
-			public TestConnector(IChannelSchema schema) : base(schema) { }
+			public TestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
@@ -255,7 +135,7 @@ namespace Deveel.Messaging.XUnit
 		[ChannelSchema(typeof(AnotherTestSchemaFactory))]
 		private class AnotherTestConnector : ChannelConnectorBase
 		{
-			public AnotherTestConnector(IChannelSchema schema) : base(schema) { }
+			public AnotherTestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 			{
 				SetState(ConnectorState.Ready);
@@ -268,7 +148,7 @@ namespace Deveel.Messaging.XUnit
 
 		private class ConnectorWithoutAttribute : ChannelConnectorBase
 		{
-			public ConnectorWithoutAttribute(IChannelSchema schema) : base(schema) { }
+			public ConnectorWithoutAttribute(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
