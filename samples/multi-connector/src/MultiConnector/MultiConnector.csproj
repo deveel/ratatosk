@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>MultiConnector</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Deveel.Messaging.Abstractions">
+      <HintPath>..\..\libs\Deveel.Messaging.Abstractions.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Deveel.Messaging.Connector.Abstractions">
+      <HintPath>..\..\libs\Deveel.Messaging.Connector.Abstractions.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Deveel.Messaging.Connectors">
+      <HintPath>..\..\libs\Deveel.Messaging.Connectors.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Deveel.Messaging.Connector.Facebook">
+      <HintPath>..\..\libs\Deveel.Messaging.Connector.Facebook.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Deveel.Messaging.Connector.Firebase">
+      <HintPath>..\..\libs\Deveel.Messaging.Connector.Firebase.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Deveel.Messaging.Connector.Sendgrid">
+      <HintPath>..\..\libs\Deveel.Messaging.Connector.Sendgrid.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Deveel.Messaging.Connector.Telegram">
+      <HintPath>..\..\libs\Deveel.Messaging.Connector.Telegram.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Deveel.Messaging.Connector.Twilio">
+      <HintPath>..\..\libs\Deveel.Messaging.Connector.Twilio.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Deveel.Results" Version="1.2.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+
+</ItemGroup>
+
+  <Target Name="EnsureConnectorLibs" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('..\..\libs\Deveel.Messaging.Connector.Facebook.dll')" Text="Run ./build-libs.sh from the sample root to populate libs/ before building this sample." />
+  </Target>
+</Project>

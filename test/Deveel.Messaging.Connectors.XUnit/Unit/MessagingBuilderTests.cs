@@ -112,7 +112,7 @@ namespace Deveel.Messaging.XUnit
 		{
 			var services = CreateServices();
 			services.AddMessaging()
-				.AddConnector<TestConnector>("marketing");
+				.AddConnector<TestConnector>("marketing", _ => { });
 
 			var provider = services.BuildServiceProvider();
 			var connector = provider.GetRequiredKeyedService<IChannelConnector>("marketing");
@@ -126,7 +126,7 @@ namespace Deveel.Messaging.XUnit
 		{
 			var services = CreateServices();
 			services.AddMessaging()
-				.AddConnector<TestConnector>("marketing");
+				.AddConnector<TestConnector>("marketing", _ => { });
 
 			var provider = services.BuildServiceProvider();
 			var descriptors = provider.GetServices<NamedConnectorDescriptor>().ToList();
@@ -139,8 +139,8 @@ namespace Deveel.Messaging.XUnit
 		{
 			var services = CreateServices();
 			services.AddMessaging()
-				.AddConnector<TestConnector>("marketing")
-				.AddConnector<TestConnector>("support");
+				.AddConnector<TestConnector>("marketing", _ => { })
+				.AddConnector<TestConnector>("support", _ => { });
 
 			var provider = services.BuildServiceProvider();
 			var marketing = provider.GetRequiredKeyedService<IChannelConnector>("marketing");

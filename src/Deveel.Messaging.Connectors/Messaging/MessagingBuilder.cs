@@ -79,10 +79,32 @@ namespace Deveel.Messaging
             return this;
         }
 
-        // ── Named + fluent connector registration ─────────────────────────────
+        // ── Connection string overloads ────────────────────────────────────────
 
         /// <summary>
-        /// Registers a named connector of the specified type.
+        /// Registers a connector using a connection string that is parsed
+        /// into the settings for the connector.
+        /// </summary>
+        /// <typeparam name="TConnector">
+        /// The type of the connector to register.
+        /// </typeparam>
+        /// <param name="connectionString">
+        /// The connection string to parse and apply as settings.
+        /// </param>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        public MessagingBuilder AddConnector<TConnector>(string connectionString)
+            where TConnector : class, IChannelConnector
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString, nameof(connectionString));
+            return AddConnector<TConnector>(c => c.WithConnectionString(connectionString));
+        }
+
+        /// <summary>
+        /// Registers a named connector using a connection string that is parsed
+        /// into the settings for the connector.
         /// </summary>
         /// <typeparam name="TConnector">
         /// The type of the connector to register.
@@ -90,16 +112,22 @@ namespace Deveel.Messaging
         /// <param name="connectorName">
         /// The name that identifies the connector instance.
         /// </param>
+        /// <param name="connectionString">
+        /// The connection string to parse and apply as settings.
+        /// </param>
         /// <returns>
         /// Returns the current <see cref="MessagingBuilder"/> instance
         /// to allow chaining.
         /// </returns>
-        public MessagingBuilder AddConnector<TConnector>(string connectorName)
+        public MessagingBuilder AddConnector<TConnector>(string connectorName, string connectionString)
             where TConnector : class, IChannelConnector
         {
             ArgumentNullException.ThrowIfNullOrWhiteSpace(connectorName, nameof(connectorName));
-            return AddConnector<TConnector>(connectorName, _ => { });
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString, nameof(connectionString));
+            return AddConnector<TConnector>(connectorName, c => c.WithConnectionString(connectionString));
         }
+
+        // ── Named + fluent connector registration ─────────────────────────────
 
         /// <summary>
         /// Registers a connector with a configuration action.

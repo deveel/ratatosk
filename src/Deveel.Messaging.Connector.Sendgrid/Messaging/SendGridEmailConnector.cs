@@ -19,6 +19,7 @@ namespace Deveel.Messaging
     /// sending emails, querying message status, health monitoring, and webhook support
     /// for receiving email events and status updates.
     /// </remarks>
+    [ChannelSchema(typeof(SendGridEmailSchemaFactory))]
     public class SendGridEmailConnector : ChannelConnectorBase
     {
         private readonly ISendGridService _sendGridService;

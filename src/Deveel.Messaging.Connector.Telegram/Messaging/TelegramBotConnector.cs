@@ -23,7 +23,7 @@ namespace Deveel.Messaging
 	/// sending messages, receiving messages via webhooks or long polling, media support,
 	/// inline keyboards, and health monitoring.
 	/// </remarks>
-	[ChannelSchema(typeof(TelegramBotSchemaFactory))]
+	[ChannelSchema(typeof(TelegramBotConnectorSchemaFactory))]
 	public class TelegramBotConnector : ChannelConnectorBase
 	{
 		private readonly ITelegramService _telegramService;
