@@ -1,80 +1,79 @@
 # Deveel Messaging
 
-Welcome to the documentation home for `deveel.messaging`.
+A .NET framework for multi-channel messaging. It provides a single, provider-agnostic programming model for sending and receiving messages through different channel backends — SMS, email, push notifications, and instant messaging.
 
-This site is the practical guide to the framework: start fast, understand the core model, wire connectors, then tune and migrate when you need to.
+The same `Message` object, the same `IChannelConnector` interface, and the same `OperationResult<T>` handling pattern work for Twilio, SendGrid, Firebase, Facebook Messenger, Telegram, and any custom provider you implement.
 
-If you are reading this in GitBook, this page is meant to be the homepage.
+```csharp
+var message = new Message()
+    .WithId("order-confirm-123")
+    .WithPhoneSender("+15550001111")
+    .WithPhoneReceiver("+15550002222")
+    .WithTextContent("Your order has been confirmed!");
 
-## What this framework gives you
+var result = await connector.SendMessageAsync(message, ct);
+```
 
-- A shared message model for SMS, email, push, and chat
-- Strongly-typed endpoints and schema-driven validation
-- Connector abstractions that keep provider code isolated
-- DI-friendly registration and a channel registry for runtime wiring
-- Ready-made connectors for Twilio, SendGrid, Firebase, Facebook Messenger, and Telegram
+The `Message` and `connector.SendMessageAsync()` call stay identical regardless of whether the connector is Twilio SMS, SendGrid email, Firebase push, or any other provider. Only the connector type and endpoint types change.
 
-## What to read first
+## Motivations
 
-If you are new here, follow this order:
+Modern applications need to reach users across multiple channels — SMS for transaction alerts, email for receipts and marketing, push notifications for mobile engagement, and chat apps for conversational support. Each channel has its own SDK, its own message format, its own authentication model, and its own error semantics. Wiring each one independently leads to:
 
-- [Framework overview](framework-overview.md)
-- [Quick start](quick-start.md)
-- [Installation and setup](installation-setup.md)
+- **Duplicated infrastructure** — every channel reimplements the same patterns: connection lifecycle, retries, logging, credential management, input validation
+- **Provider lock-in** — business logic becomes coupled to Twilio's SMS model or SendGrid's email model; switching providers means rewriting
+- **Inconsistent developer experience** — each SDK has different conventions, error handling, and configuration models
+- **Difficult cross-channel routing** — sending the same notification through SMS and email requires building separate message objects and calling separate APIs
 
-## Core concepts
+Deveel Messaging solves these problems by defining a **unified message model** (`IMessage`), a **contract-driven connector interface** (`IChannelConnector`), and a **schema system** (`IChannelSchema`) that lets each connector declare its capabilities and constraints. Business code depends only on the abstractions; channel-specific details are encapsulated behind the connector boundary.
 
-- [Channel schema usage](channelschema-usage.md)
-- [Endpoint types](endpointtype-usage.md)
-- [Channel registry guide](channelregistry-guide.md)
-- [Connector implementation](channelconnector-usage.md)
+The framework is deliberately focused on the messaging contract and connector consistency. It does not include queueing, scheduling, persistence, or retries — those concerns belong to your application layer, where you can choose the tools that fit your architecture.
 
-## Validation and auth
+## Features
 
-- [Message validation examples](validatemessage-usage-examples.md)
-- [Validation test example](validatemessage-test-example.md)
-- [Validation extensions](channelschema-validation-extension-usage.md)
-- [Authentication mechanism](authentication-mechanism.md)
-- [Enhanced authentication configuration](enhanced-authentication-configuration.md)
+- **Unified message model** — `Message` with fluent builder, typed endpoints, and 8 content types (text, HTML, media, binary, JSON, location, template, multipart)
+- **Schema-driven validation** — every connector declares its capabilities, parameters, and constraints via `IChannelSchema`; validate messages before they reach the provider
+- **Pluggable authentication** — API key, token, basic auth, OAuth 2.0 client credentials, Firebase service account, or custom providers
+- **DI-first design** — `AddMessaging()` + `AddConnector<T>()` integration with `Microsoft.Extensions.DependencyInjection`
+- **Standardized results** — all operations return `OperationResult<T>` with success/failure/validation semantics
+- **Schema derivation** — derive restricted schemas from a master for tenant isolation or feature tiers
+- **Extensible** — implement `ChannelConnectorBase` to add any provider; built-in logging scopes, state management, and error wrapping
 
-## Advanced topics
+## Packages
 
-- [Advanced configuration](advanced-configuration.md)
-- [Schema derivation guide](channelschema-derivation-guide.md)
+| Package | Description | NuGet |
+|---|---|---|
+| `Deveel.Messaging.Abstractions` | Message model with fluent builder, typed endpoints, eight content types, properties, and batch support. No external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Abstractions) |
+| `Deveel.Messaging.Connector.Abstractions` | Contracts for connectors, schemas, authentication, validation, and result types. Reference when building custom connector libraries. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Connector.Abstractions) |
+| `Deveel.Messaging.Connectors` | DI integration, abstract connector base class with state management and error wrapping, fluent schema builder, schema registry, and a builder API for configuring named connector instances. Reference in every host application. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors)](https://nuget.org/packages/Deveel.Messaging.Connectors) |
+| `Deveel.Messaging.Connector.Twilio` | Twilio SMS, MMS, and WhatsApp messaging with status callbacks and template support. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio)](https://nuget.org/packages/Deveel.Messaging.Connector.Twilio) |
+| `Deveel.Messaging.Connector.Sendgrid` | SendGrid transactional and bulk email with HTML, multipart, templates, attachments, and event webhook processing. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Sendgrid)](https://nuget.org/packages/Deveel.Messaging.Connector.Sendgrid) |
+| `Deveel.Messaging.Connector.Firebase` | Firebase Cloud Messaging push notifications for device tokens and topics, with batch sends and dry-run mode. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Firebase)](https://nuget.org/packages/Deveel.Messaging.Connector.Firebase) |
+| `Deveel.Messaging.Connector.Facebook` | Facebook Messenger Page-based messaging with text, media, quick replies, and webhook inbound processing. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Facebook)](https://nuget.org/packages/Deveel.Messaging.Connector.Facebook) |
+| `Deveel.Messaging.Connector.Telegram` | Telegram bot messaging with rich text, media, locations, and webhook-based update processing. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Telegram)](https://nuget.org/packages/Deveel.Messaging.Connector.Telegram) |
 
-## Connector guides
+## Reading path
 
-- [Connector index](connectors/README.md)
-- [Twilio SMS connector](connectors/twilio-sms-connector.md)
-- [Twilio WhatsApp connector](connectors/twilio-whatsapp-connector.md)
-- [SendGrid email connector](connectors/sendgrid-email-connector.md)
-- [Firebase push connector](connectors/firebase-push-connector.md)
-- [Facebook Messenger connector](connectors/facebook-messenger-connector.md)
-- [Telegram bot connector](connectors/telegram-bot-connector.md)
+**New to the framework:**
 
-## Suggested reading paths
+1. [Framework overview](framework-overview.md) — concepts and building blocks
+2. [Installation](installation.md) — package selection and DI wiring
+3. [Quickstart](quickstart.md) — send your first message in 5 minutes
 
-### First project
+**Core concepts:**
 
-1. [Framework overview](framework-overview.md)
-2. [Quick start](quick-start.md)
-3. [Connector index](connectors/README.md)
+- [Message model](messaging-model.md) — Message builder, endpoints, all content types, properties
+- [Channel schema](channel-schema.md) — defining connector contracts and validation rules
+- [Schema derivation](schema-derivation.md) — creating restricted schemas from master schemas
+- [Message validation](message-validation.md) — pre-flight validation before connector calls
 
-### Custom connector authoring
+**Building and wiring:**
 
-1. [Channel schema usage](channelschema-usage.md)
-2. [Connector implementation](channelconnector-usage.md)
-3. [Channel registry guide](channelregistry-guide.md)
+- [Connector implementation](connector-implementation.md) — writing custom connectors with `ChannelConnectorBase`
+- [Authentication](authentication.md) — auth providers, credential management, OAuth flows
+- [Result types](result-types.md) — `OperationResult<T>`, send results, health data
+- [Advanced configuration](advanced.md) — security, multi-tenancy, health checks, testing
 
-### Working with existing code
+**Connector guides:**
 
-1. [Endpoint types](endpointtype-usage.md)
-2. [Message validation examples](validatemessage-usage-examples.md)
-
-## Short version
-
-If you only want the path of least resistance:
-
-1. Read [Framework overview](framework-overview.md)
-2. Try [Quick start](quick-start.md)
-3. Open one channel guide from [Connector index](connectors/README.md)
+- [Connector index](connectors/README.md) — all supported providers
