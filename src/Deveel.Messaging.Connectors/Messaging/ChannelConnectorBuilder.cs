@@ -77,8 +77,8 @@ namespace Deveel.Messaging
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(connectionString, nameof(connectionString));
 
-            var parsed = ConnectionStringParser.Parse(connectionString);
-            foreach (var (key, value) in parsed)
+            var settings = ConnectionSettings.Parse(connectionString);
+            foreach (var (key, value) in settings.Parameters)
                 _fluentSettings[key] = value;
 
             return this;

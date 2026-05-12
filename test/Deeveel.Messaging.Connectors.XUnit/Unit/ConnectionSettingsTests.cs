@@ -912,4 +912,206 @@ public class ConnectionSettingsTests
 	}
 
 	#endregion
+
+	#region Parse Tests
+
+	[Fact]
+	public void Should_ParseSingleKeyValue_When_SimplePairProvided()
+	{
+		var settings = ConnectionSettings.Parse("Key=Value");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("Value", settings["Key"]);
+	}
+
+	[Fact]
+	public void Should_ParseMultiplePairs_When_SemicolonSeparated()
+	{
+		var settings = ConnectionSettings.Parse("Key1=Value1;Key2=Value2;Key3=Value3");
+
+		Assert.Equal(3, settings.Parameters.Count);
+		Assert.Equal("Value1", settings["Key1"]);
+		Assert.Equal("Value2", settings["Key2"]);
+		Assert.Equal("Value3", settings["Key3"]);
+	}
+
+	[Fact]
+	public void Should_IgnoreWhitespace_When_SurroundingKeysAndValues()
+	{
+		var settings = ConnectionSettings.Parse("  Key1 = Value1 ;  Key2  =Value2  ");
+
+		Assert.Equal(2, settings.Parameters.Count);
+		Assert.Equal("Value1", settings["Key1"]);
+		Assert.Equal("Value2", settings["Key2"]);
+	}
+
+	[Fact]
+	public void Should_HandleEmptyValue_When_NoEqualsSign()
+	{
+		var settings = ConnectionSettings.Parse("KeyWithoutValue");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("", settings["KeyWithoutValue"]);
+	}
+
+	[Fact]
+	public void Should_HandleEmptyValue_When_EqualsWithNoValue()
+	{
+		var settings = ConnectionSettings.Parse("Key=");
+
+		Assert.Single(settings.Parameters);
+		Assert.Null(settings["Key"]);
+	}
+
+	[Fact]
+	public void Should_ParseDoubleQuotedValue_When_QuotesAreUsed()
+	{
+		var settings = ConnectionSettings.Parse("ApiKey=\"my secret key\"");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("my secret key", settings["ApiKey"]);
+	}
+
+	[Fact]
+	public void Should_ParseSingleQuotedValue_When_QuotesAreUsed()
+	{
+		var settings = ConnectionSettings.Parse("Token='my token value'");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("my token value", settings["Token"]);
+	}
+
+	[Fact]
+	public void Should_HandleSemicolonInQuotedValue_When_DoubleQuotes()
+	{
+		var settings = ConnectionSettings.Parse("ConnStr=\"Server=db;Port=5432\";Timeout=30");
+
+		Assert.Equal(2, settings.Parameters.Count);
+		Assert.Equal("Server=db;Port=5432", settings["ConnStr"]);
+		Assert.Equal("30", settings["Timeout"]);
+	}
+
+	[Fact]
+	public void Should_HandleEscapeSequence_When_InQuotedValue()
+	{
+		var settings = ConnectionSettings.Parse("Path=\"c:\\\\folder\\\\file.txt\"");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("c:\\folder\\file.txt", settings["Path"]);
+	}
+
+	[Fact]
+	public void Should_HandleEscapedQuote_When_InQuotedValue()
+	{
+		var settings = ConnectionSettings.Parse("Name=\"said \\\"hello\\\"\"");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("said \"hello\"", settings["Name"]);
+	}
+
+	[Fact]
+	public void Should_UseOrdinalIgnoreCase_When_DuplicateKeysExist()
+	{
+		var settings = ConnectionSettings.Parse("Key=First;key=Second");
+
+		var entry = Assert.Single(settings.Parameters);
+		Assert.Equal("Second", entry.Value);
+	}
+
+	[Fact]
+	public void Should_ThrowArgumentNullException_When_ConnectionStringIsNull()
+	{
+		Assert.Throws<ArgumentNullException>(() => ConnectionSettings.Parse(null!));
+	}
+
+	[Fact]
+	public void Should_ThrowArgumentException_When_ConnectionStringIsEmpty()
+	{
+		Assert.Throws<ArgumentException>(() => ConnectionSettings.Parse(""));
+	}
+
+	[Fact]
+	public void Should_ThrowArgumentException_When_ConnectionStringIsWhitespace()
+	{
+		Assert.Throws<ArgumentException>(() => ConnectionSettings.Parse("   "));
+	}
+
+	[Fact]
+	public void Should_ReturnEmpty_When_TrailingSemicolon()
+	{
+		var settings = ConnectionSettings.Parse("Key=Value;");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("Value", settings["Key"]);
+	}
+
+	[Fact]
+	public void Should_StopAtFirstEmptySegment_When_MultipleSemicolons()
+	{
+		var settings = ConnectionSettings.Parse("A=1;;;B=2;;");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("1", settings["A"]);
+	}
+
+	[Fact]
+	public void Should_TrimTrailingWhitespace_When_InUnquotedValue()
+	{
+		var settings = ConnectionSettings.Parse("Key=Value   ");
+
+		Assert.Single(settings.Parameters);
+		Assert.Equal("Value", settings["Key"]);
+	}
+
+	[Fact]
+	public void Should_ParseComplexConnectionString_When_MultipleTypesProvided()
+	{
+		var settings = ConnectionSettings.Parse(
+			"Host=localhost;Port=5432;Database=my_db;User=admin;Password=\"p@ss;word\"");
+
+		Assert.Equal(5, settings.Parameters.Count);
+		Assert.Equal("localhost", settings["Host"]);
+		Assert.Equal("5432", settings["Port"]);
+		Assert.Equal("my_db", settings["Database"]);
+		Assert.Equal("admin", settings["User"]);
+		Assert.Equal("p@ss;word", settings["Password"]);
+	}
+
+	[Theory]
+	[InlineData("A=1", "A", "1")]
+	[InlineData("A=1;B=2", "B", "2")]
+	[InlineData("Empty=", "Empty", null)]
+	[InlineData(" Key = Val ", "Key", "Val")]
+	[InlineData("X='quoted'", "X", "quoted")]
+	public void Should_ParseVariations_When_InputsAreValid(string connectionString, string key, string? expected)
+	{
+		var settings = ConnectionSettings.Parse(connectionString);
+
+		Assert.NotNull(settings.Parameters);
+		Assert.Equal(expected, settings[key]);
+	}
+
+	[Fact]
+	public void Should_ParseKeyOnly_When_MultipleKeysWithoutValues()
+	{
+		var settings = ConnectionSettings.Parse("Flag1;Flag2;Flag3");
+
+		Assert.Equal(3, settings.Parameters.Count);
+		Assert.Equal("", settings["Flag1"]);
+		Assert.Equal("", settings["Flag2"]);
+		Assert.Equal("", settings["Flag3"]);
+	}
+
+	[Fact]
+	public void Should_HandleMixedKeys_When_WithAndWithoutValues()
+	{
+		var settings = ConnectionSettings.Parse("WithVal=hello;Flag;Another=world");
+
+		Assert.Equal(3, settings.Parameters.Count);
+		Assert.Equal("hello", settings["WithVal"]);
+		Assert.Equal("", settings["Flag"]);
+		Assert.Equal("world", settings["Another"]);
+	}
+
+	#endregion
 }
