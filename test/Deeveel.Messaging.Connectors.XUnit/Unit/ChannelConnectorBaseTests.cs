@@ -96,16 +96,18 @@ public class ChannelConnectorBaseTests
 	}
 
 	[Fact]
-	public async Task Should_ThrowInvalidOperationException_When_TestConnectionAsyncWhenNotOperational()
+	public async Task Should_AutoInitialize_When_TestConnectionAsyncWhenNotInitialized()
 	{
 		// Arrange
 		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
 		var connector = new TestConnector(schema);
 
 		// Act
+		var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
+
 		// Assert
-		await Assert.ThrowsAsync<InvalidOperationException>(() =>
-			connector.TestConnectionAsync(TestContext.Current.CancellationToken));
+		Assert.True(result.IsSuccess());
+		Assert.Equal(ConnectorState.Ready, connector.State);
 	}
 
 	[Fact]
@@ -390,7 +392,6 @@ public class ChannelConnectorBaseTests
 	}
 
 	[Theory]
-	[InlineData(ConnectorState.Uninitialized)]
 	[InlineData(ConnectorState.Initializing)]
 	[InlineData(ConnectorState.ShuttingDown)]
 	[InlineData(ConnectorState.Shutdown)]
@@ -418,6 +419,26 @@ public class ChannelConnectorBaseTests
 			await Assert.ThrowsAsync<InvalidOperationException>(() =>
 				connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
 		}
+	}
+
+	[Fact]
+	public async Task Should_AutoInitialize_When_SendMessageAsyncWhenNotInitialized()
+	{
+		// Arrange
+		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var connector = new TestConnector(schema);
+		var message = new Message {
+			Id = Guid.NewGuid().ToString(),
+			Content = new TextContent("This is a test message.")
+		};
+
+		// Act
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+
+		// Assert
+		Assert.True(result.IsSuccess());
+		Assert.Equal(ConnectorState.Ready, connector.State);
+		Assert.Equal(message.Id, result.Value?.MessageId);
 	}
 
 	[Fact]

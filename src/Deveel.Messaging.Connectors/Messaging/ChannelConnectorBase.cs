@@ -115,6 +115,23 @@ namespace Deveel.Messaging
 		}
 
 		/// <summary>
+		/// Ensures that the connector is initialized before performing an operation.
+		/// If the connector is in <see cref="ConnectorState.Uninitialized"/> state,
+		/// it will automatically call <see cref="InitializeAsync"/> to initialize it.
+		/// </summary>
+		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+		/// <exception cref="InvalidOperationException">
+		/// Thrown when the connector is not in an operational state after initialization.
+		/// </exception>
+		protected async Task EnsureInitializedAsync(CancellationToken cancellationToken)
+		{
+			if (State == ConnectorState.Uninitialized)
+				await InitializeAsync(cancellationToken);
+
+			ValidateOperationalState();
+		}
+
+		/// <summary>
 		/// Validates that the connector is in an operational state (Ready or Error).
 		/// </summary>
 		/// <exception cref="InvalidOperationException">
@@ -384,7 +401,7 @@ namespace Deveel.Messaging
 		/// <inheritdoc/>
 		public async Task<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
 		{
-			ValidateOperationalState();
+			await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
@@ -426,7 +443,7 @@ namespace Deveel.Messaging
 		{
 			ArgumentNullException.ThrowIfNull(message);
 			ValidateCapability(ChannelCapability.SendMessages);
-			ValidateOperationalState();
+			await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
             using var messageScope = BeginMessageLoggerScope(message);
@@ -491,7 +508,7 @@ namespace Deveel.Messaging
 		{
 			ArgumentNullException.ThrowIfNull(batch);
 			ValidateCapability(ChannelCapability.BulkMessaging);
-			ValidateOperationalState();
+			await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
@@ -601,7 +618,7 @@ namespace Deveel.Messaging
 		{
 			ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
 			ValidateCapability(ChannelCapability.MessageStatusQuery);
-			ValidateOperationalState();
+			await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
@@ -718,7 +735,7 @@ namespace Deveel.Messaging
 		public async Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
 		{
 			ValidateCapability(ChannelCapability.HandleMessageState);
-			ValidateOperationalState();
+			await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
@@ -760,7 +777,7 @@ namespace Deveel.Messaging
 		public async Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
 		{
 			ValidateCapability(ChannelCapability.ReceiveMessages);
-			ValidateOperationalState();
+			await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
