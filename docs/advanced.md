@@ -120,18 +120,16 @@ services.AddHealthChecks()
 ```csharp
 public async Task<bool> VerifyConnectorAsync(IChannelConnector connector)
 {
-    // Lightweight check
     var testResult = await connector.TestConnectionAsync(CancellationToken.None);
-    if (testResult.IsFailure)
+    if (testResult.IsFailure())
         return false;
 
-    // Detailed health
     var health = await connector.GetHealthAsync(CancellationToken.None);
-    return health.Data?.IsHealthy ?? false;
+    return health.IsSuccess() && health.Value?.IsHealthy == true;
 }
 ```
 
-### Recommended health check pattern
+### Health check pattern
 
 ```csharp
 public class MessagingHealthCheck : IHealthCheck
@@ -147,9 +145,9 @@ public class MessagingHealthCheck : IHealthCheck
         foreach (var connector in _connectors)
         {
             var health = await connector.GetHealthAsync(ct);
-            data[$"{connector.Schema.GetLogicalIdentity()}_healthy"] = health.Data?.IsHealthy;
-            data[$"{connector.Schema.GetLogicalIdentity()}_state"] = health.Data?.State.ToString();
-            healthy &= health.Data?.IsHealthy ?? false;
+            data[$"{connector.Schema.ChannelProvider}/{connector.Schema.ChannelType}_healthy"] = health.Value?.IsHealthy;
+            data[$"{connector.Schema.ChannelProvider}/{connector.Schema.ChannelType}_state"] = health.Value?.State.ToString();
+            healthy &= health.Value?.IsHealthy ?? false;
         }
 
         return healthy
@@ -184,10 +182,9 @@ For production monitoring, track per-connector metrics:
 | Metric | Source | What it detects |
 |---|---|---|
 | Send attempts | Count before `SendMessageAsync` call | Volume trends |
-| Send success rate | `OperationResult.IsSuccess` | Provider degradation |
+| Send success rate | `OperationResult.IsSuccess()` | Provider degradation |
 | Send latency | Stopwatch around `SendMessageAsync` | Provider performance |
-| Error codes | `OperationResult.Error.ErrorCode` | Failure type distribution |
-| Validation failures | `OperationResult.IsValidationFailure` | Application bugs |
+| Error codes | `OperationResult.Error.Code` | Failure type distribution |
 | Connection state | `Connector.State` | Connectivity issues |
 
 ```csharp
@@ -206,8 +203,8 @@ public class MetricsDecorator : IChannelConnector
         _meters.CreateCounter("messaging.sends").Add(1);
         _meters.CreateHistogram("messaging.latency").Record(sw.ElapsedMilliseconds);
 
-        if (result.IsFailure)
-            _meters.CreateCounter($"messaging.errors.{result.Error?.ErrorCode}").Add(1);
+        if (result.IsFailure())
+            _meters.CreateCounter($"messaging.errors.{result.Error?.Code}").Add(1);
 
         return result;
     }
@@ -343,12 +340,9 @@ mockConnector.Setup(x => x.Schema)
 mockConnector.Setup(x => x.SendMessageAsync(
         It.IsAny<IMessage>(), It.IsAny<CancellationToken>()))
     .ReturnsAsync((IMessage msg, CancellationToken _) =>
-        OperationResult<SendResult>.Success(new SendResult
-        {
-            MessageId = msg.Id,
-            RemoteMessageId = "mock-remote-id",
-            Status = MessageStatus.Sent
-        }));
+        OperationResult<SendResult>.Success(new SendResult(
+            msg.Id,
+            "mock-remote-id")));
 
 // Inject mockConnector.Object into your service
 var service = new NotificationService(mockConnector.Object);

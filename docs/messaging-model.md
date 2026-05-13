@@ -4,6 +4,8 @@ At the core of the framework is the `IMessage` interface and its concrete implem
 
 `Message` is both the data class and the fluent builder. Construct with `new Message()` and chain `With*()` calls — each returns the same instance, so there is no `.Build()` or finalizer step. The design avoids allocating intermediate builder objects and keeps construction straightforward.
 
+For applications that prefer a builder separate from the model, use `MessageBuilder` — a dedicated builder class with `From()`/`To()` methods and a final `.Build()` call. See the [framework overview](framework-overview.md) for an example.
+
 The message carries five pieces of information:
 - **Identity** — a unique `Id` string you assign
 - **Routing** — `Sender` and `Receiver` endpoints, each tagged with their type
@@ -288,10 +290,10 @@ batch.Messages.Add(msg3);
 
 var result = await connector.SendBatchAsync(batch, ct);
 
-if (result.IsSuccess)
+if (result.IsSuccess())
 {
-    Console.WriteLine($"Batch {result.Data!.BatchId} sent");
-    foreach (var (msgId, sendResult) in result.Data.MessageResults)
+    Console.WriteLine($"Batch {result.Value!.BatchId} sent");
+    foreach (var (msgId, sendResult) in result.Value.MessageResults)
         Console.WriteLine($"  {msgId}: {sendResult.Status}");
 }
 ```
@@ -320,13 +322,13 @@ public enum MessageStatus
 }
 ```
 
-`IMessageState` captures a message's status at a point in time, used by `GetMessageStatusAsync` queries and `ReceiveMessageStatusAsync` webhook receivers.
+`StatusUpdatesResult` captures the status history of a message, used by `GetMessageStatusAsync` queries and `ReceiveMessageStatusAsync` webhook receivers.
 
 ```csharp
 var statusResult = await connector.GetMessageStatusAsync("msg-1", ct);
-if (statusResult.IsSuccess)
+if (statusResult.IsSuccess())
 {
-    foreach (var update in statusResult.Data!.Updates)
+    foreach (var update in statusResult.Value!.Updates)
         Console.WriteLine($"[{update.Timestamp}] {update.Status}: {update.Description}");
 }
 ```

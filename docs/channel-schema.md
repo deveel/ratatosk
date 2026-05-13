@@ -101,9 +101,7 @@ schema
     .AddParameter(new ChannelParameter("Timeout", DataType.Integer)
     {
         IsRequired = false,
-        DefaultValue = 30000,
-        MinValue = 1000,
-        MaxValue = 60000
+        DefaultValue = 30000
     });
 ```
 

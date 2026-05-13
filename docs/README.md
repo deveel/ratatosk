@@ -31,12 +31,13 @@ The framework is deliberately focused on the messaging contract and connector co
 
 ## Features
 
-- **Unified message model** — `Message` with fluent builder, typed endpoints, and 8 content types (text, HTML, media, binary, JSON, location, template, multipart)
+- **Unified message model** — `Message` with fluent builder, `MessageBuilder` dedicated builder, typed endpoints, and 8 content types (text, HTML, media, binary, JSON, location, template, multipart)
 - **Schema-driven validation** — every connector declares its capabilities, parameters, and constraints via `IChannelSchema`; validate messages before they reach the provider
 - **Pluggable authentication** — API key, token, basic auth, OAuth 2.0 client credentials, Firebase service account, or custom providers
 - **DI-first design** — `AddMessaging()` + `AddConnector<T>()` integration with `Microsoft.Extensions.DependencyInjection`
-- **Standardized results** — all operations return `OperationResult<T>` with success/failure/validation semantics
+- **Standardized results** — all operations return `OperationResult<T>` with success/failure semantics
 - **Schema derivation** — derive restricted schemas from a master for tenant isolation or feature tiers
+- **IMessagingClient facade** — high-level client with lazy initialization and named channel routing; simplifies connector lifecycle
 - **Extensible** — implement `ChannelConnectorBase` to add any provider; built-in logging scopes, state management, and error wrapping
 
 ## Packages
@@ -44,8 +45,9 @@ The framework is deliberately focused on the messaging contract and connector co
 | Package | Description | NuGet |
 |---|---|---|
 | `Deveel.Messaging.Abstractions` | Message model with fluent builder, typed endpoints, eight content types, properties, and batch support. No external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Abstractions) |
+| `Deveel.Messaging` | DI registration (`AddMessaging`), `IMessagingClient` facade, `MessageBuilder`, connector factory, and service collection extensions. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging)](https://nuget.org/packages/Deveel.Messaging) |
 | `Deveel.Messaging.Connector.Abstractions` | Contracts for connectors, schemas, authentication, validation, and result types. Reference when building custom connector libraries. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Connector.Abstractions) |
-| `Deveel.Messaging.Connectors` | DI integration, abstract connector base class with state management and error wrapping, fluent schema builder, schema registry, and a builder API for configuring named connector instances. Reference in every host application. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors)](https://nuget.org/packages/Deveel.Messaging.Connectors) |
+| `Deveel.Messaging.Connectors` | Abstract connector base class (`ChannelConnectorBase`) with state management and error wrapping, fluent schema builder (`ChannelSchema`), schema registry, auth manager, and connector builder API. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors)](https://nuget.org/packages/Deveel.Messaging.Connectors) |
 | `Deveel.Messaging.Connector.Twilio` | Twilio SMS, MMS, and WhatsApp messaging with status callbacks and template support. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio)](https://nuget.org/packages/Deveel.Messaging.Connector.Twilio) |
 | `Deveel.Messaging.Connector.Sendgrid` | SendGrid transactional and bulk email with HTML, multipart, templates, attachments, and event webhook processing. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Sendgrid)](https://nuget.org/packages/Deveel.Messaging.Connector.Sendgrid) |
 | `Deveel.Messaging.Connector.Firebase` | Firebase Cloud Messaging push notifications for device tokens and topics, with batch sends and dry-run mode. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Firebase)](https://nuget.org/packages/Deveel.Messaging.Connector.Firebase) |
@@ -66,6 +68,7 @@ The framework is deliberately focused on the messaging contract and connector co
 - [Channel schema](channel-schema.md) — defining connector contracts and validation rules
 - [Schema derivation](schema-derivation.md) — creating restricted schemas from master schemas
 - [Message validation](message-validation.md) — pre-flight validation before connector calls
+- [IMessagingClient facade](quickstart.md#6-imessagingclient-facade) — high-level client with lazy initialization and named channel routing
 
 **Building and wiring:**
 

@@ -4,11 +4,11 @@ Every interaction with the framework follows the same lifecycle regardless of wh
 
 1. **Configure** — build a `ConnectionSettings` with the provider credentials
 2. **Initialize** — create the connector and call `InitializeAsync()` to authenticate and transition to ready state
-3. **Build** — construct an `IMessage` using the fluent `Message` builder
+3. **Build** — construct an `IMessage` using the fluent `Message` builder or `MessageBuilder`
 4. **Send** — call `SendMessageAsync()` and handle the `OperationResult<T>`
-5. **Handle** — check `.IsSuccess`, read `.Data`, or inspect `.Error`
+5. **Handle** — check `.IsSuccess()`, read the result value, or inspect `.Error`
 
-This guide walks through each step twice: first with direct instantiation (clear, explicit, good for understanding), then with DI registration (the pattern you would use in a real application).
+This guide walks through the pattern with direct instantiation (clear, explicit, good for understanding), DI registration (the pattern you would use in a real application), and the `IMessagingClient` facade (the simplest path for most apps).
 
 ## 1. Create a project
 
@@ -153,6 +153,49 @@ public async Task<IActionResult> TwilioWebhook(
     return BadRequest(result.Error?.ErrorMessage);
 }
 ```
+
+## 6. IMessagingClient facade
+
+For applications that use DI, the `IMessagingClient` facade simplifies further by managing connector resolution, lazy initialization, and caching. You register named connectors at startup and then call `SendAsync` by channel name.
+
+```csharp
+// Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services
+    .AddMessaging()
+    .AddConnector<TwilioSmsConnector>("sms", cfg => cfg
+        .WithSettings("Twilio"))
+    .AddConnector<SendGridEmailConnector>("email", cfg => cfg
+        .WithSettings("SendGrid"))
+    .AddClient();   // registers IMessagingClient
+
+builder.Services.AddSingleton<NotificationService>();
+var app = builder.Build();
+app.Run();
+
+// NotificationService.cs
+public class NotificationService(IMessagingClient messagingClient)
+{
+    public async Task SendSmsAsync(string to, string text)
+    {
+        var message = new MessageBuilder()
+            .WithId(Guid.NewGuid().ToString("n"))
+            .FromPhone("+15550001111")
+            .ToPhone(to)
+            .WithText(text)
+            .Build();
+
+        var result = await messagingClient.SendAsync("sms", message, default);
+
+        if (result.IsFailure())
+            throw new InvalidOperationException(
+                $"SMS failed: {result.Error?.Message}");
+    }
+}
+```
+
+The client automatically initializes the connector on first use (configurable via `MessagingClientOptions.AutoInitialize`).
 
 ## Next steps
 

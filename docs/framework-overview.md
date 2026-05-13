@@ -87,10 +87,28 @@ var smsResult = await twilioConnector.SendMessageAsync(message, ct);
 - `ReceiveMessageStatusAsync` — outbound status change signaling
 - `GetMessageStatusAsync` — pulls the delivery state from the provider
 - `ReceiveMessagesAsync` — inbound messaging operation
-- `TestConnectionAsync` / `GetHealthAsync` — diagnostic perations of the connector
+- `TestConnectionAsync` / `GetHealthAsync` — diagnostic operations of the connector
 - `ValidateMessageAsync` — per-message validation
 
-**`ChannelConnectorBase`** — abstract base class that implements `IChannelConnector`. Provides state management, capability validation, message validation, authentication integration, structured logging scopes, and standardized error wrapping. To build a connector you override 4 abstract methods and optionally 6 virtual methods.
+**`ChannelConnectorBase`** — abstract base class that implements `IChannelConnector`. Provides state management, capability validation, message validation, authentication integration, structured logging scopes, and standardized error wrapping. To build a connector you override 4 abstract methods and optionally 7 virtual methods.
+
+### Messaging client
+
+**`IMessagingClient`** — a high-level facade that resolves named connectors from DI, handles lazy initialization, and exposes the 4 most common operations (`SendAsync`, `ReceiveAsync`, `GetStatusAsync`, `ReceiveMessageStatusAsync`). Callers do not manage connector state directly. Register it via `.AddClient()` on the `MessagingBuilder`.
+
+### Message builder
+
+**`MessageBuilder`** — an alternative fluent builder that separates construction from the model. Use it when the `Message` class's self-builder pattern is not desired:
+
+```csharp
+var message = new MessageBuilder()
+    .WithId("msg-1")
+    .FromPhone("+15551234567")
+    .ToEmail("user@example.com")
+    .WithText("Hello!")
+    .WithSubject("Greeting")
+    .Build();
+```
 
 ### Results
 
@@ -107,10 +125,11 @@ var smsResult = await twilioConnector.SendMessageAsync(message, ct);
 ## Package responsibilities
 
 | Package | Role | Dependencies |
-|---|---|---|
+|---|---|---|---|
 | `Deveel.Messaging.Abstractions` | Message model, endpoints, content types. Pure model — no infrastructure. | None |
+| `Deveel.Messaging` | `AddMessaging()` DI entry point, `MessagingBuilder`, `IMessagingClient` facade, `MessageBuilder`, `ChannelConnectorFactory`. | `Connector.Abstractions` |
 | `Deveel.Messaging.Connector.Abstractions` | Interfaces for connectors, schemas, auth, and result types. Contracts only. | `Abstractions` |
-| `Deveel.Messaging.Connectors` | `AddMessaging()` DI entry point, `ChannelConnectorBase`, `ChannelSchema` builder, `ChannelSchemaRegistry`, authentication manager, `ChannelConnectorBuilder`. | `Connector.Abstractions` |
+| `Deveel.Messaging.Connectors` | `ChannelConnectorBase`, `ChannelSchema` builder, `ChannelSchemaRegistry`, authentication manager, `ChannelConnectorBuilder`. | `Connector.Abstractions` |
 | `Deveel.Messaging.Connector.*` | Provider-specific implementations. Each references `Connectors` or `Connector.Abstractions`. | Provider SDK + `Connectors` |
 
 ## What the framework does not do

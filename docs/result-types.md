@@ -3,8 +3,8 @@
 If every connector used its own error model — one throwing exceptions, another returning tuples, a third using custom error objects — the application code that calls connectors would be a mess of adapters and conditionals. The framework standardizes on a single result type for every operation: `OperationResult<T>`.
 
 The result type carries three possible outcomes:
-- **Success** — the operation completed, and `.Data` contains the result
-- **Validation failure** — the input did not pass schema validation, and `.ValidationErrors` describes what was wrong
+- **Success** — the operation completed, and `.Value` contains the result
+- **Validation failure** — the input did not pass schema validation
 - **Failure** — the operation failed, and `.Error` provides a machine-readable code and a human-readable message
 
 This tri-state model avoids the ambiguity of throwing exceptions for validation errors (which are not exceptional — they indicate caller bugs) and distinguishes transient provider failures from preventable input errors.
@@ -19,32 +19,33 @@ Every connector operation returns an `OperationResult<T>`. This gives you a cons
 
 | Property | Type | Description |
 |---|---|---|
-| `IsSuccess` | `bool` | Operation completed successfully |
-| `IsFailure` | `bool` | Operation failed |
-| `IsValidationFailure` | `bool` | Input validation failed |
-| `Data` | `T?` | Result value (non-null when `IsSuccess`) |
+| `IsSuccess()` | `bool` | Operation completed successfully (method) |
+| `IsFailure()` | `bool` | Operation failed (method) |
+| `Value` | `T?` | Result value (non-null when `IsSuccess`) |
 | `Error` | `IMessagingError?` | Error code and message (non-null when `IsFailure`) |
-| `ValidationErrors` | `IEnumerable<ValidationResult>?` | Collection of validation details |
+
+Note: `OperationResult<T>` is provided by the `Deveel.Results` package. Use `.IsSuccess()` and `.IsFailure()` as methods.
 
 ### Usage patterns
 
 ```csharp
 var result = await connector.SendMessageAsync(message, ct);
 
-if (result.IsSuccess)
+if (result.IsSuccess())
 {
-    var sendResult = result.Data!;
+    var sendResult = result.Value!;
     Console.WriteLine($"Sent: {sendResult.RemoteMessageId}");
 }
-else if (result.IsValidationFailure)
+else if (result.IsFailure() && result.Error is IValidationError)
 {
+    var validationError = (IValidationError)result.Error;
     Console.WriteLine("Validation errors:");
-    foreach (var error in result.ValidationErrors!)
+    foreach (var error in validationError.Errors)
         Console.WriteLine($"  - {error.ErrorMessage}");
 }
 else
 {
-    Console.WriteLine($"Error [{result.Error!.ErrorCode}]: {result.Error.ErrorMessage}");
+    Console.WriteLine($"Error [{result.Error!.Code}]: {result.Error.Message}");
 }
 ```
 
@@ -75,12 +76,12 @@ Returned by `IChannelConnector.SendMessageAsync`.
 ```csharp
 var result = await connector.SendMessageAsync(message, ct);
 
-if (result.IsSuccess)
+if (result.IsSuccess())
 {
-    Console.WriteLine($"Local ID: {result.Data!.MessageId}");
-    Console.WriteLine($"Provider ID: {result.Data.RemoteMessageId}");
-    Console.WriteLine($"Initial status: {result.Data.Status}");
-    Console.WriteLine($"Timestamp: {result.Data.Timestamp}");
+    Console.WriteLine($"Local ID: {result.Value!.MessageId}");
+    Console.WriteLine($"Provider ID: {result.Value.RemoteMessageId}");
+    Console.WriteLine($"Initial status: {result.Value.Status}");
+    Console.WriteLine($"Timestamp: {result.Value.Timestamp}");
 }
 ```
 
@@ -126,17 +127,17 @@ batch.Messages.Add(msg2);
 
 var result = await connector.SendBatchAsync(batch, ct);
 
-if (result.IsSuccess)
+if (result.IsSuccess())
 {
-    var data = result.Data!;
+    var data = result.Value!;
     Console.WriteLine($"Batch {data.BatchId}: {data.MessageResults.Count} messages");
 
     foreach (var (msgId, sendResult) in data.MessageResults)
     {
         if (sendResult.Status == MessageStatus.Sent)
-            Console.WriteLine($"  {msgId}: ✓ ({sendResult.RemoteMessageId})");
+            Console.WriteLine($"  {msgId}: sent ({sendResult.RemoteMessageId})");
         else
-            Console.WriteLine($"  {msgId}: ✗ ({sendResult.Status})");
+            Console.WriteLine($"  {msgId}: {sendResult.Status}");
     }
 }
 ```
@@ -155,9 +156,9 @@ Returned by `IChannelConnector.ReceiveMessagesAsync`.
 var source = new MessageSource("application/json", webhookBody);
 var result = await connector.ReceiveMessagesAsync(source, ct);
 
-if (result.IsSuccess)
+if (result.IsSuccess())
 {
-    var data = result.Data!;
+    var data = result.Value!;
     Console.WriteLine($"Received {data.Messages.Count} message(s)");
 
     foreach (var message in data.Messages)
@@ -205,9 +206,9 @@ Returned by `IChannelConnector.ReceiveMessageStatusAsync` and `GetMessageStatusA
 // Get message delivery history
 var statusResult = await connector.GetMessageStatusAsync("msg-1", ct);
 
-if (statusResult.IsSuccess)
+if (statusResult.IsSuccess())
 {
-    foreach (var update in statusResult.Data!.Updates)
+    foreach (var update in statusResult.Value!.Updates)
     {
         Console.WriteLine(
             $"[{update.Timestamp:O}] {update.Status}" +
@@ -240,11 +241,10 @@ Returned by `IChannelConnector.GetStatusAsync`.
 ```csharp
 var status = await connector.GetStatusAsync(ct);
 
-if (status.IsSuccess)
+if (status.IsSuccess())
 {
-    var info = status.Data!;
+    var info = status.Value!;
     Console.WriteLine($"Connector status: {info.Status}");
-    // "connected", "degraded", "disconnected", etc.
 
     if (info.Description != null)
         Console.WriteLine($"Details: {info.Description}");
@@ -267,9 +267,9 @@ Returned by `IChannelConnector.GetHealthAsync`.
 ```csharp
 var health = await connector.GetHealthAsync(ct);
 
-if (health.IsSuccess)
+if (health.IsSuccess())
 {
-    var h = health.Data!;
+    var h = health.Value!;
     Console.WriteLine($"Healthy: {h.IsHealthy}");
     Console.WriteLine($"State: {h.State}");
     Console.WriteLine($"Uptime: {h.Uptime}");
@@ -305,12 +305,12 @@ if (health.IsSuccess)
 ```csharp
 public interface IMessagingError
 {
-    string ErrorCode { get; }
-    string? ErrorMessage { get; }
+    string Code { get; }
+    string? Message { get; }
 }
 ```
 
-The `MessagingError` readonly struct implements this. Standard error code conventions:
+Standard error code conventions:
 
 | Code | Meaning |
 |---|---|

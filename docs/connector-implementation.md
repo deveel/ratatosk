@@ -243,13 +243,15 @@ States and transitions:
 
 ```
 Uninitialized ──InitializeAsync()──▶ Initializing ──▶ Ready
-                                        │                │
+                                        │                │            ──▶ Disconnected
                                         ▼                ▼
                                       Error          ShuttingDown
                                         │                │
                                         ▼                ▼
                                       Error            Shutdown
 ```
+
+The `Disconnected` state represents a temporary loss of connectivity (transient, may recover). `Error` indicates an unrecoverable failure. `Shutdown` is terminal.
 
 The base class prevents operations when not in `Ready` state. Calling `SendMessageAsync` on a connector that hasn't been initialized returns a failure result with `INVALID_STATE` error code.
 

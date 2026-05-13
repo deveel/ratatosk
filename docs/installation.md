@@ -22,7 +22,7 @@ dotnet add package Deveel.Messaging.Connectors
 dotnet add package Deveel.Messaging.Connector.Twilio
 dotnet add package Deveel.Messaging.Connector.Sendgrid
 dotnet add package Deveel.Messaging.Connector.Firebase
-dotnote add package Deveel.Messaging.Connector.Facebook
+dotnet add package Deveel.Messaging.Connector.Facebook
 dotnet add package Deveel.Messaging.Connector.Telegram
 
 # Custom connector authoring — needed only if you build your own connector
@@ -53,6 +53,8 @@ builder.Services
 ```
 
 `AddMessaging()` returns a `MessagingBuilder` instance. Each `AddConnector<T>()` call registers the connector as a singleton in DI and also registers the connector's schema in the `IChannelSchemaRegistry`. Connectors are resolved as `IChannelConnector` from DI.
+
+Call `.AddClient()` on the builder to register the `IMessagingClient` facade, which handles lazy connector initialization and named-channel routing (see [Quickstart](quickstart.md#6-imessagingclient-facade)).
 
 ### What AddMessaging registers
 

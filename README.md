@@ -8,7 +8,7 @@
 
 Deveel Messaging is a .NET framework that gives you one consistent way to work with SMS, email, push notifications, and chat channels.
 
-Instead of coding directly against each provider SDK, you build an `IMessage`, send it through an `IChannelConnector`, and handle a predictable `ConnectorResult<T>`. That keeps your app code stable even if providers change.
+Instead of coding directly against each provider SDK, you build an `IMessage`, send it through an `IChannelConnector`, and handle a predictable `OperationResult<T>`. That keeps your app code stable even if providers change.
 
 The repository currently targets `.NET 8`, `.NET 9`, and `.NET 10`.
 
@@ -33,8 +33,9 @@ Those are application-level concerns, so you can choose your own architecture.
 | Package | Purpose | NuGet |
 |---|---|---|
 | `Deveel.Messaging.Abstractions` | Core message and endpoint model | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Abstractions/) |
-| `Deveel.Messaging.Connector.Abstractions` | Connector contracts, schemas, base classes | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Abstractions/) |
-| `Deveel.Messaging.Connectors` | DI and connector registry integration | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connectors/) |
+| `Deveel.Messaging` | DI registration, `IMessagingClient` facade, `MessageBuilder`, connector factory | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging/) |
+| `Deveel.Messaging.Connector.Abstractions` | Connector contracts, schemas, auth, result types | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Abstractions/) |
+| `Deveel.Messaging.Connectors` | `ChannelConnectorBase`, `ChannelSchema`, auth manager, schema registry | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connectors/) |
 | `Deveel.Messaging.Connector.Twilio` | Twilio SMS and WhatsApp connectors | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Twilio/) |
 | `Deveel.Messaging.Connector.Sendgrid` | SendGrid email connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Sendgrid.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Sendgrid/) |
 | `Deveel.Messaging.Connector.Firebase` | Firebase push connector | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Firebase.svg?label=NuGet)](https://www.nuget.org/packages/Deveel.Messaging.Connector.Firebase/) |
@@ -44,17 +45,17 @@ Those are application-level concerns, so you can choose your own architecture.
 ## Quick example
 
 ```csharp
-var message = Message.Create()
-    .From(PhoneEndpoint.Create("+15550001111"))
-    .To(PhoneEndpoint.Create("+15550002222"))
-    .WithText("Hello from Deveel Messaging")
-    .Build();
+var message = new Message()
+    .WithId("order-confirm-123")
+    .WithPhoneSender("+15550001111")
+    .WithPhoneReceiver("+15550002222")
+    .WithTextContent("Hello from Deveel Messaging");
 
 var result = await connector.SendMessageAsync(message, ct);
 
-if (!result.IsSuccess)
+if (!result.IsSuccess())
 {
-    throw new InvalidOperationException(result.Error?.Description ?? "Failed to send message");
+    throw new InvalidOperationException(result.Error?.Message ?? "Failed to send message");
 }
 ```
 
@@ -67,11 +68,11 @@ Start from the docs home and follow the path that best matches what you are buil
 ### Suggested reading paths
 
 - **First integration** - Start with the framework concepts, then wire a minimal implementation, and finally pick a connector guide for your channel.
-  ([Framework overview](docs/framework-overview.md) -> [Quick start](docs/quick-start.md) -> [Connector index](docs/connectors/README.md))
-- **Custom connector authoring** - Learn schema design first, then implement connector behavior, then register and resolve channels at runtime.
-  ([Channel schema usage](docs/channelschema-usage.md) -> [Connector implementation](docs/channelconnector-usage.md) -> [Channel registry guide](docs/channelregistry-guide.md))
+  ([Framework overview](docs/framework-overview.md) -> [Quickstart](docs/quickstart.md) -> [Connector index](docs/connectors/README.md))
+- **Custom connector authoring** - Learn schema design first, then implement connector behaviour, then register and resolve channels at runtime.
+  ([Channel schema](docs/channel-schema.md) -> [Connector implementation](docs/connector-implementation.md) -> [Installation](docs/installation.md))
 - **Validation-first integration** - Model endpoints, apply validation rules, and extend validation when channel-specific constraints grow.
-  ([Endpoint types](docs/endpointtype-usage.md) -> [Message validation examples](docs/validatemessage-usage-examples.md) -> [Validation extensions](docs/channelschema-validation-extension-usage.md))
+  ([Message model](docs/messaging-model.md) -> [Message validation](docs/message-validation.md) -> [Channel schema](docs/channel-schema.md))
 
 
 ## Roadmap

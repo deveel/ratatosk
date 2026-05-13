@@ -196,9 +196,9 @@ AuthenticationResult.Failure("INVALID_CREDENTIALS", "API key is invalid");
 ## AuthenticationCredential
 
 ```csharp
-var apiKey = AuthenticationCredential.CreateApiKey("Provider", "sk-...");
-var token = AuthenticationCredential.CreateToken("Provider", "eyJ...", expiresAt: DateTime.UtcNow.AddHours(1));
-var basic = AuthenticationCredential.CreateBasic("Provider", "username", "password");
+var apiKey = AuthenticationCredential.CreateApiKey("sk-...");
+var token = AuthenticationCredential.CreateToken("eyJ...", expiresAt: DateTime.UtcNow.AddHours(1), tokenType: "Bearer");
+var basic = AuthenticationCredential.CreateBasic("username", "password");
 ```
 
 Properties:
