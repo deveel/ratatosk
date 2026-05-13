@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Deveel.Messaging\Deveel.Messaging.csproj" />
     <ProjectReference Include="..\Deveel.Messaging.Connectors\Deveel.Messaging.Connectors.csproj" />
   </ItemGroup>
 

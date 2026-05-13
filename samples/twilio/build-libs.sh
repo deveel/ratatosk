@@ -25,6 +25,7 @@ copy_artifacts() {
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Abstractions/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Abstractions"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connector.Abstractions/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connector.Abstractions"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connectors/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connectors"
+copy_artifacts "$REPO_ROOT/src/Deveel.Messaging/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connector.Twilio/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connector.Twilio"
 
 echo "Connector libraries copied to $LIBS_DIR"

@@ -19,6 +19,10 @@
       <HintPath>..\..\libs\Deveel.Messaging.Connectors.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="Deveel.Messaging">
+      <HintPath>..\..\libs\Deveel.Messaging.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <Reference Include="Deveel.Messaging.Connector.Facebook">
       <HintPath>..\..\libs\Deveel.Messaging.Connector.Facebook.dll</HintPath>
       <Private>true</Private>
@@ -40,6 +44,6 @@
   </ItemGroup>
 
   <Target Name="EnsureConnectorLibs" BeforeTargets="ResolveReferences">
-    <Error Condition="!Exists('..\..\libs\Deveel.Messaging.Connectors.dll') or !Exists('..\..\libs\Deveel.Messaging.Connector.Facebook.dll')" Text="Run ./build-libs.sh from the sample root to populate libs/ before building this sample." />
+    <Error Condition="!Exists('..\..\libs\Deveel.Messaging.dll') or !Exists('..\..\libs\Deveel.Messaging.Connectors.dll') or !Exists('..\..\libs\Deveel.Messaging.Connector.Facebook.dll')" Text="Run ./build-libs.sh from the sample root to populate libs/ before building this sample." />
   </Target>
 </Project>

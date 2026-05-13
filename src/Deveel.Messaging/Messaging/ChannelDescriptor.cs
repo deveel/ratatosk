@@ -28,7 +28,7 @@ namespace Deveel.Messaging
 		/// </exception>
 		public ChannelDescriptor(string channelId, Type connectorType, IChannelSchema masterSchema)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+			ArgumentException.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
 			ArgumentNullException.ThrowIfNull(connectorType, nameof(connectorType));
 			ArgumentNullException.ThrowIfNull(masterSchema, nameof(masterSchema));
 

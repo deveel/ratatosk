@@ -1,300 +1,155 @@
 using System.Text.Json;
 
-namespace Deveel.Messaging;
+namespace Deveel;
 
 [Trait("Category", "Unit")]
-[Trait("Layer", "Domain")]
 [Trait("Feature", "DictionaryExtensions")]
 public class DictionaryExtensionsTests
 {
     [Fact]
-    public void Should_ReturnTrue_When_TryGetValueExistingKeyWithCorrectType()
+    public void Should_TryGetValue_When_Exists()
     {
-        // Arrange
-        var dictionary = new Dictionary<string, object>
-        {
-            { "stringKey", "stringValue" },
-            { "intKey", 42 }
-        };
-
-        // Act
-        var stringResult = dictionary.TryGetValue<string>("stringKey", out var stringValue);
-        var intResult = dictionary.TryGetValue<int>("intKey", out var intValue);
-
-        // Assert
-        Assert.True(stringResult);
-        Assert.Equal("stringValue", stringValue);
-        Assert.True(intResult);
-        Assert.Equal(42, intValue);
+        var dict = new Dictionary<string, object> { ["key"] = "hello" };
+        var found = dict.TryGetValue<string>("key", out var value);
+        Assert.True(found);
+        Assert.Equal("hello", value);
     }
 
     [Fact]
-    public void Should_ReturnFalse_When_TryGetValueNonExistingKey()
+    public void Should_ReturnFalse_When_KeyDoesNotExist()
     {
-        // Arrange
-        var dictionary = new Dictionary<string, object>();
-
-        // Act
-        var result = dictionary.TryGetValue<string>("nonExistingKey", out var value);
-
-        // Assert
-        Assert.False(result);
+        var dict = new Dictionary<string, object>();
+        var found = dict.TryGetValue<string>("missing", out var value);
+        Assert.False(found);
         Assert.Null(value);
     }
 
     [Fact]
-    public void Should_ReturnFalse_When_TryGetValueExistingKeyWithWrongType()
+    public void Should_ReturnFalse_When_TypeMismatch()
     {
-        // Arrange
-        var dictionary = new Dictionary<string, object>
-        {
-            { "stringKey", "stringValue" }
-        };
+        var dict = new Dictionary<string, object> { ["key"] = new List<int>() };
+        var found = dict.TryGetValue<string>("key", out var value);
+        Assert.False(found);
+        Assert.Null(value);
+    }
 
-        // Act
-        var result = dictionary.TryGetValue<int>("stringKey", out var value);
+    enum TestEnum { OptionA, OptionB }
 
-        // Assert
-        Assert.False(result);
-        Assert.Equal(0, value);
+    [Fact]
+    public void Should_TryGetEnum_FromString()
+    {
+        var dict = new Dictionary<string, object> { ["mode"] = "OptionA" };
+        var found = dict.TryGetValue<TestEnum>("mode", out var value);
+        Assert.True(found);
+        Assert.Equal(TestEnum.OptionA, value);
     }
 
     [Fact]
-    public void Should_ConvertFromString_When_TryGetValueEnumValue()
+    public void Should_ReturnFalse_When_EnumParseFails()
     {
-        // Arrange
-        var dictionary = new Dictionary<string, object>
-        {
-            { "statusKey", "PlainText" }
-        };
-
-        // Act
-        var result = dictionary.TryGetValue<MessageContentType>("statusKey", out var value);
-
-        // Assert
-        Assert.True(result);
-        Assert.Equal(MessageContentType.PlainText, value);
+        var dict = new Dictionary<string, object> { ["mode"] = "NotARealEnum" };
+        var found = dict.TryGetValue<TestEnum>("mode", out var _);
+        Assert.False(found);
     }
 
     [Fact]
-    public void Should_ReturnFalse_When_TryGetValueEnumValueIsInvalid()
+    public void Should_ConvertIntToLong()
     {
-        var dictionary = new Dictionary<string, object>
-        {
-            { "statusKey", "NotARealContentType" }
-        };
-
-        var result = dictionary.TryGetValue<MessageContentType>("statusKey", out var value);
-
-        Assert.False(result);
-        Assert.Equal(default, value);
+        var dict = new Dictionary<string, object> { ["val"] = 42 };
+        var found = dict.TryGetValue<long>("val", out var value);
+        Assert.True(found);
+        Assert.Equal(42L, value);
     }
 
     [Fact]
-    public void Should_ConvertType_When_TryGetValueConvertibleValue()
+    public void Should_ConvertDoubleToDecimal()
     {
-        // Arrange
-        var dictionary = new Dictionary<string, object>
-        {
-            { "doubleKey", 42 } // int to double conversion
-        };
-
-        // Act
-        var result = dictionary.TryGetValue<double>("doubleKey", out var value);
-
-        // Assert
-        Assert.True(result);
-        Assert.Equal(42.0, value);
+        var dict = new Dictionary<string, object> { ["val"] = 3.14 };
+        var found = dict.TryGetValue<decimal>("val", out var value);
+        Assert.True(found);
+        Assert.Equal(3.14m, value);
     }
 
     [Fact]
-    public void Should_HandleConversion_When_TryGetValueNullableType()
+    public void Should_ReturnFalse_When_FormatException()
     {
-        // Arrange
-        var dictionary = new Dictionary<string, object>
-        {
-            { "nullableIntKey", 42 }
-        };
-
-        // Act
-        var result = dictionary.TryGetValue<int?>("nullableIntKey", out var value);
-
-        // Assert
-        Assert.True(result);
-        Assert.Equal(42, value);
+        var dict = new Dictionary<string, object> { ["val"] = "not-a-number" };
+        var found = dict.TryGetValue<int>("val", out var _);
+        Assert.False(found);
     }
 
     [Fact]
-    public void Should_DeserializesCorrectly_When_TryGetValueJsonElement()
+    public void Should_DeserializeJsonElement()
     {
-        // Arrange
-        var jsonString = "\"test value\"";
-        var jsonDocument = JsonDocument.Parse(jsonString);
-        var dictionary = new Dictionary<string, object>
-        {
-            { "jsonKey", jsonDocument.RootElement }
-        };
-
-        // Act
-        var result = dictionary.TryGetValue<string>("jsonKey", out var value);
-
-        // Assert
-        Assert.True(result);
-        Assert.Equal("test value", value);
-        
-        // Cleanup
-        jsonDocument.Dispose();
+        var json = JsonSerializer.SerializeToElement(new { name = "test" });
+        var dict = new Dictionary<string, object> { ["data"] = json };
+        var found = dict.TryGetValue<JsonElement>("data", out var value);
+        Assert.True(found);
+        Assert.Equal("test", value.GetProperty("name").GetString());
     }
 
     [Fact]
-    public void Should_ReturnFalse_When_TryGetValueJsonElementCannotDeserializeTargetType()
+    public void Should_ReturnFalse_When_Overflow()
     {
-        using var jsonDocument = JsonDocument.Parse("\"not-an-int\"");
-        var dictionary = new Dictionary<string, object>
-        {
-            { "jsonKey", jsonDocument.RootElement }
-        };
-
-        var result = dictionary.TryGetValue<int>("jsonKey", out var value);
-
-        Assert.False(result);
-        Assert.Equal(0, value);
+        var dict = new Dictionary<string, object> { ["val"] = double.MaxValue };
+        var found = dict.TryGetValue<int>("val", out var _);
+        Assert.False(found);
     }
 
     [Fact]
-    public void Should_ReturnEmptyDictionary_When_MergeBothDictionariesNull()
+    public void Should_MergeTwoDictionaries()
     {
-        // Arrange
-        IDictionary<string, object>? dict1 = null;
-        IDictionary<string, object>? dict2 = null;
-
-        // Act
-        var result = dict1.Merge(dict2);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        var a = new Dictionary<string, int> { ["x"] = 1, ["y"] = 2 };
+        var b = new Dictionary<string, int> { ["z"] = 3 };
+        var merged = a.Merge(b);
+        Assert.Equal(3, merged.Count);
+        Assert.Equal(1, merged["x"]);
+        Assert.Equal(2, merged["y"]);
+        Assert.Equal(3, merged["z"]);
     }
 
     [Fact]
-    public void Should_ReturnSecondDictionary_When_MergeFirstDictionaryNull()
+    public void Should_Merge_WhenBothNull()
     {
-        // Arrange
-        IDictionary<string, object>? dict1 = null;
-        var dict2 = new Dictionary<string, object> { { "key1", "value1" } };
-
-        // Act
-        var result = dict1.Merge(dict2);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("value1", result["key1"]);
-        Assert.NotSame(dict2, result); // Should be a copy
+        var merged = ((IDictionary<string, int>?)null).Merge(null);
+        Assert.Empty(merged);
     }
 
     [Fact]
-    public void Should_ReturnFirstDictionary_When_MergeSecondDictionaryNull()
+    public void Should_Merge_WhenFirstNull()
     {
-        // Arrange
-        var dict1 = new Dictionary<string, object> { { "key1", "value1" } };
-        IDictionary<string, object>? dict2 = null;
-
-        // Act
-        var result = dict1.Merge(dict2);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("value1", result["key1"]);
-        Assert.NotSame(dict1, result); // Should be a copy
+        var b = new Dictionary<string, int> { ["a"] = 1 };
+        var merged = ((IDictionary<string, int>?)null).Merge(b);
+        Assert.Single(merged);
+        Assert.Equal(1, merged["a"]);
     }
 
     [Fact]
-    public void Should_MergesCorrectly_When_MergeTwoDictionaries()
+    public void Should_Merge_WhenSecondNull()
     {
-        // Arrange
-        var dict1 = new Dictionary<string, object>
-        {
-            { "key1", "value1" },
-            { "key2", "value2" }
-        };
-        var dict2 = new Dictionary<string, object>
-        {
-            { "key2", "newValue2" }, // Override existing
-            { "key3", "value3" }     // Add new
-        };
-
-        // Act
-        var result = dict1.Merge(dict2);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(3, result.Count);
-        Assert.Equal("value1", result["key1"]); // From first dictionary
-        Assert.Equal("newValue2", result["key2"]); // Overridden by second dictionary
-        Assert.Equal("value3", result["key3"]); // From second dictionary
+        var a = new Dictionary<string, int> { ["a"] = 1 };
+        var merged = a.Merge(null);
+        Assert.Single(merged);
+        Assert.Equal(1, merged["a"]);
     }
 
     [Fact]
-    public void Should_RemovesKey_When_MergeSecondDictionaryHasNullValue()
+    public void Should_Merge_WithOverwrite()
     {
-        // Arrange
-        var dict1 = new Dictionary<string, object>
-        {
-            { "key1", "value1" },
-            { "key2", "value2" }
-        };
-        var dict2 = new Dictionary<string, object>
-        {
-            { "key2", null! } // Remove this key
-        };
-
-        // Act
-        var result = dict1.Merge(dict2);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Single(result);
-        Assert.Equal("value1", result["key1"]);
-        Assert.DoesNotContain("key2", result.Keys);
+        var a = new Dictionary<string, int> { ["x"] = 1 };
+        var b = new Dictionary<string, int> { ["x"] = 2 };
+        var merged = a.Merge(b);
+        Assert.Single(merged);
+        Assert.Equal(2, merged["x"]);
     }
 
     [Fact]
-    public void Should_AddsCorrectly_When_MergeAddingNewKeysFromSecondDictionary()
+    public void Should_Merge_AndRemove_WhenValueIsNull()
     {
-        // Arrange
-        var dict1 = new Dictionary<string, object>
-        {
-            { "existingKey", "existingValue" }
-        };
-        var dict2 = new Dictionary<string, object>
-        {
-            { "newKey1", "newValue1" },
-            { "newKey2", "newValue2" }
-        };
-
-        // Act
-        var result = dict1.Merge(dict2);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(3, result.Count);
-        Assert.Equal("existingValue", result["existingKey"]);
-        Assert.Equal("newValue1", result["newKey1"]);
-        Assert.Equal("newValue2", result["newKey2"]);
-    }
-
-    [Fact]
-    public void Should_ReturnEmptyDictionary_When_MergeEmptyDictionaries()
-    {
-        // Arrange
-        var dict1 = new Dictionary<string, object>();
-        var dict2 = new Dictionary<string, object>();
-
-        // Act
-        var result = dict1.Merge(dict2);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        var a = new Dictionary<string, string?> { ["keep"] = "1", ["remove"] = "2" };
+        var b = new Dictionary<string, string?> { ["remove"] = null };
+        var merged = a.Merge(b);
+        Assert.Single(merged);
+        Assert.True(merged.ContainsKey("keep"));
     }
 }

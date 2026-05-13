@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Deveel.Messaging\Deveel.Messaging.csproj" />
     <ProjectReference Include="..\..\src\Deveel.Messaging.Connectors\Deveel.Messaging.Connectors.csproj" />
   </ItemGroup>
 

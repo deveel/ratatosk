@@ -29,6 +29,7 @@ copy_artifacts() {
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connectors/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Abstractions"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connectors/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connector.Abstractions"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connectors/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connectors"
+copy_artifacts "$REPO_ROOT/src/Deveel.Messaging/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connector.Facebook/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connector.Facebook"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connector.Firebase/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connector.Firebase"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connector.Sendgrid/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connector.Sendgrid"

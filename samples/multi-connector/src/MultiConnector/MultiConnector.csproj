@@ -19,6 +19,10 @@
       <HintPath>..\..\libs\Deveel.Messaging.Connectors.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="Deveel.Messaging">
+      <HintPath>..\..\libs\Deveel.Messaging.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <Reference Include="Deveel.Messaging.Connector.Facebook">
       <HintPath>..\..\libs\Deveel.Messaging.Connector.Facebook.dll</HintPath>
       <Private>true</Private>

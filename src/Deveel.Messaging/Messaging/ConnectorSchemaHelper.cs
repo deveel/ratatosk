@@ -1,10 +1,4 @@
-//
-// Copyright (c) Antonello Provenzano and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
-
 using Microsoft.Extensions.DependencyInjection;
-
 using System.Reflection;
 
 namespace Deveel.Messaging
