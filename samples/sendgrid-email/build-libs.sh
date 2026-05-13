@@ -24,6 +24,7 @@ copy_artifacts() {
 
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Abstractions/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Abstractions"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connector.Abstractions/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connector.Abstractions"
+copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connectors/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connectors"
 copy_artifacts "$REPO_ROOT/src/Deveel.Messaging.Connector.Sendgrid/bin/$CONFIGURATION/$FRAMEWORK" "Deveel.Messaging.Connector.Sendgrid"
 
 echo "Connector libraries copied to $LIBS_DIR"

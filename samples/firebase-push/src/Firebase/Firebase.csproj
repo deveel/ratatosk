@@ -15,6 +15,10 @@
       <HintPath>..\..\libs\Deveel.Messaging.Connector.Abstractions.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="Deveel.Messaging.Connectors">
+      <HintPath>..\..\libs\Deveel.Messaging.Connectors.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <Reference Include="Deveel.Messaging.Connector.Firebase">
       <HintPath>..\..\libs\Deveel.Messaging.Connector.Firebase.dll</HintPath>
       <Private>true</Private>
@@ -23,6 +27,7 @@
 
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" />
+    <PackageReference Include="Deveel.Results" Version="1.2.1" />
     <PackageReference Include="FirebaseAdmin" Version="2.4.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
@@ -33,9 +38,10 @@
   <ItemGroup>
     <Compile Include="..\..\..\shared\SampleConfigurationStore.cs" Link="Support\SampleConfigurationStore.cs" />
     <Compile Include="..\..\..\shared\SampleConsolePrompts.cs" Link="Support\SampleConsolePrompts.cs" />
+    <Compile Include="..\..\..\shared\SampleOutputHelper.cs" Link="Support\SampleOutputHelper.cs" />
   </ItemGroup>
 
   <Target Name="EnsureConnectorLibs" BeforeTargets="ResolveReferences">
-    <Error Condition="!Exists('..\..\libs\Deveel.Messaging.Connector.Firebase.dll')" Text="Run ./build-libs.sh from the sample root to populate libs/ before building this sample." />
+    <Error Condition="!Exists('..\..\libs\Deveel.Messaging.Connectors.dll') or !Exists('..\..\libs\Deveel.Messaging.Connector.Firebase.dll')" Text="Run ./build-libs.sh from the sample root to populate libs/ before building this sample." />
   </Target>
 </Project>
