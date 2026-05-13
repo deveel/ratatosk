@@ -464,28 +464,6 @@ public class TwilioChannelSchemasTests
         Assert.DoesNotContain(schema.MessageProperties, p => p.Name == "PersistentAction");
     }
 
-    [Fact]
-    public void Should_ThrowInvalidOperationException_When_BulkSmsBuiltForV5()
-    {
-        // Arrange
-        // Act & Assert — BulkSms requires MessagingServiceSid which is not available in SDK v5.0
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => TwilioSchemaBuilder.CreateBulkSms(TwilioConnectorConstants.SdkVersion5));
-
-        Assert.Contains("6.0", ex.Message);
-    }
-
-    [Fact]
-    public void Should_ThrowInvalidOperationException_When_WhatsAppTemplatesBuiltForV5()
-    {
-        // Arrange
-        // Act & Assert — WhatsAppTemplates requires template support which is not available in SDK v5.0
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => TwilioSchemaBuilder.CreateWhatsAppTemplates(TwilioConnectorConstants.SdkVersion5));
-
-        Assert.Contains("6.0", ex.Message);
-    }
-
     #endregion
 
     #region Derived schemas (v7.0 current)

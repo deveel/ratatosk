@@ -10,10 +10,10 @@ namespace Deveel.Messaging.XUnit.Unit
     {
         private class TestSchema : IChannelSchema
         {
-            public string ChannelProvider => "Test";
-            public string ChannelType => "Test";
+            public string ChannelProvider => "PublicTest";
+            public string ChannelType => "HelperTest";
             public string Version => "1.0";
-            public string? DisplayName => "Test Schema";
+            public string? DisplayName => "Public Test Schema";
             public bool IsStrict => false;
             public ChannelCapability Capabilities => ChannelCapability.SendMessages;
             public IReadOnlyList<ChannelEndpointConfiguration> Endpoints => new List<ChannelEndpointConfiguration>();
@@ -28,14 +28,17 @@ namespace Deveel.Messaging.XUnit.Unit
             public IChannelSchema CreateSchema() => new TestSchema();
         }
 
-        private class NonSchemaType { }
-
         [ChannelSchema(typeof(TestSchemaFactory))]
-        private class SchemaConnector : IChannelConnector
+        private class ConnectorWithFactory : IChannelConnector
         {
-            public SchemaConnector(IChannelSchema schema) { Schema = schema; State = ConnectorState.Uninitialized; }
+            public ConnectorWithFactory(IChannelSchema schema, ConnectionSettings? settings = null)
+            {
+                Schema = schema;
+                ConnectionSettings = settings ?? new ConnectionSettings();
+            }
             public IChannelSchema Schema { get; }
-            public ConnectorState State { get; }
+            public ConnectionSettings ConnectionSettings { get; }
+            public ConnectorState State => ConnectorState.Uninitialized;
             public Task<OperationResult<bool>> InitializeAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
             public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
             public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
@@ -50,11 +53,16 @@ namespace Deveel.Messaging.XUnit.Unit
         }
 
         [ChannelSchema(typeof(TestSchema))]
-        private class DirectSchemaConnector : IChannelConnector
+        private class ConnectorWithDirectSchema : IChannelConnector
         {
-            public DirectSchemaConnector(IChannelSchema schema) { Schema = schema; State = ConnectorState.Uninitialized; }
+            public ConnectorWithDirectSchema(IChannelSchema schema, ConnectionSettings? settings = null)
+            {
+                Schema = schema;
+                ConnectionSettings = settings ?? new ConnectionSettings();
+            }
             public IChannelSchema Schema { get; }
-            public ConnectorState State { get; }
+            public ConnectionSettings ConnectionSettings { get; }
+            public ConnectorState State => ConnectorState.Uninitialized;
             public Task<OperationResult<bool>> InitializeAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
             public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
             public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
@@ -69,50 +77,68 @@ namespace Deveel.Messaging.XUnit.Unit
         }
 
         [Fact]
-        public void Should_DiscoverSchemaViaFactory()
+        public void Should_DiscoverSchema_When_ConnectorHasFactoryAttribute()
         {
-            var services = new ServiceCollection().BuildServiceProvider();
-            var schema = ConnectorSchemaHelper.DiscoverConnectorSchema(services, typeof(SchemaConnector));
+            var services = new ServiceCollection();
+            services.AddMessaging().AddConnector<ConnectorWithFactory>();
+            var provider = services.BuildServiceProvider();
 
-            Assert.NotNull(schema);
-            Assert.Equal("Test", schema.ChannelProvider);
-            Assert.Equal("Test", schema.ChannelType);
+            var connector = provider.GetRequiredService<ConnectorWithFactory>();
+
+            Assert.NotNull(connector);
+            Assert.Equal("PublicTest", connector.Schema.ChannelProvider);
+            Assert.Equal("HelperTest", connector.Schema.ChannelType);
         }
 
         [Fact]
-        public void Should_Throw_When_NoChannelSchemaAttribute()
+        public void Should_DiscoverSchema_When_ConnectorHasDirectSchemaAttribute()
         {
-            var services = new ServiceCollection().BuildServiceProvider();
-            Assert.Throws<ArgumentException>(() =>
-                ConnectorSchemaHelper.DiscoverConnectorSchema(services, typeof(string)));
+            var services = new ServiceCollection();
+            services.AddMessaging().AddConnector<ConnectorWithDirectSchema>();
+            var provider = services.BuildServiceProvider();
+
+            var connector = provider.GetRequiredService<ConnectorWithDirectSchema>();
+
+            Assert.NotNull(connector.Schema);
+            Assert.Equal("PublicTest", connector.Schema.ChannelProvider);
+            Assert.Equal("HelperTest", connector.Schema.ChannelType);
         }
 
         [Fact]
-        public void Should_CreateSchemaFromFactoryType()
+        public void Should_Throw_When_ConnectorHasNoSchemaAttribute()
         {
-            var services = new ServiceCollection().BuildServiceProvider();
-            var schema = ConnectorSchemaHelper.CreateSchema(services, typeof(TestSchemaFactory));
+            var services = new ServiceCollection();
+            var builder = services.AddMessaging();
 
-            Assert.NotNull(schema);
-            Assert.Equal("Test", schema.ChannelProvider);
+            Assert.Throws<ArgumentException>(() => builder.AddConnector(typeof(string)));
         }
 
         [Fact]
-        public void Should_CreateSchemaFromDirectType()
+        public void Should_RegisterConnector_WithNamedRegistration()
         {
-            var services = new ServiceCollection().BuildServiceProvider();
-            var schema = ConnectorSchemaHelper.CreateSchema(services, typeof(TestSchema));
+            var services = new ServiceCollection();
+            services.AddMessaging()
+                .AddConnector<ConnectorWithFactory>("test-channel", _ => { });
+            var provider = services.BuildServiceProvider();
 
-            Assert.NotNull(schema);
-            Assert.Equal("Test", schema.ChannelProvider);
+            var connector = provider.GetRequiredKeyedService<IChannelConnector>("test-channel");
+
+            Assert.NotNull(connector);
+            Assert.Equal("PublicTest", connector.Schema.ChannelProvider);
         }
 
         [Fact]
-        public void Should_Throw_When_TypeIsNotSchemaOrFactory()
+        public void Should_RegisterConnector_WithConnectionString()
         {
-            var services = new ServiceCollection().BuildServiceProvider();
-            Assert.Throws<InvalidOperationException>(() =>
-                ConnectorSchemaHelper.CreateSchema(services, typeof(NonSchemaType)));
+            var services = new ServiceCollection();
+            services.AddMessaging()
+                .AddConnector<ConnectorWithFactory>("cfg", b => b.WithConnectionString("Key=Value"));
+            var provider = services.BuildServiceProvider();
+
+            var connector = provider.GetRequiredKeyedService<IChannelConnector>("cfg");
+
+            Assert.NotNull(connector);
+            Assert.Equal("PublicTest", connector.Schema.ChannelProvider);
         }
     }
 }

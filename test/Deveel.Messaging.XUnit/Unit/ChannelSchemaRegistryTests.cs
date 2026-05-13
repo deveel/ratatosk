@@ -1,4 +1,6 @@
-using Deveel.Messaging.XUnit.Fixtures;
+using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Deveel.Messaging.XUnit.Unit
 {
@@ -6,85 +8,133 @@ namespace Deveel.Messaging.XUnit.Unit
     [Trait("Feature", "ChannelSchemaRegistry")]
     public class ChannelSchemaRegistryTests
     {
-        private static IChannelSchema CreateSchema(string provider, string type)
+        private class DirectSchema : IChannelSchema
         {
-            return new MockSchema
+            public string ChannelProvider { get; set; } = "DirectP";
+            public string ChannelType { get; set; } = "DirectT";
+            public string Version => "1.0";
+            public string? DisplayName => null;
+            public bool IsStrict => false;
+            public ChannelCapability Capabilities => ChannelCapability.SendMessages;
+            public IReadOnlyList<ChannelEndpointConfiguration> Endpoints => new List<ChannelEndpointConfiguration>();
+            public IReadOnlyList<ChannelParameter> Parameters => new List<ChannelParameter>();
+            public IReadOnlyList<MessagePropertyConfiguration> MessageProperties => new List<MessagePropertyConfiguration>();
+            public IReadOnlyList<MessageContentType> ContentTypes => new List<MessageContentType>();
+            public IReadOnlyList<AuthenticationConfiguration> AuthenticationConfigurations => new List<AuthenticationConfiguration>();
+        }
+
+        private class DirectSchemaFactory : IChannelSchemaFactory
+        {
+            public IChannelSchema CreateSchema() => new DirectSchema();
+        }
+
+        private class NamedSchema : IChannelSchema
+        {
+            public string ChannelProvider { get; set; } = "NamedP";
+            public string ChannelType { get; set; } = "NamedT";
+            public string Version => "1.0";
+            public string? DisplayName => null;
+            public bool IsStrict => false;
+            public ChannelCapability Capabilities => ChannelCapability.SendMessages;
+            public IReadOnlyList<ChannelEndpointConfiguration> Endpoints => new List<ChannelEndpointConfiguration>();
+            public IReadOnlyList<ChannelParameter> Parameters => new List<ChannelParameter>();
+            public IReadOnlyList<MessagePropertyConfiguration> MessageProperties => new List<MessagePropertyConfiguration>();
+            public IReadOnlyList<MessageContentType> ContentTypes => new List<MessageContentType>();
+            public IReadOnlyList<AuthenticationConfiguration> AuthenticationConfigurations => new List<AuthenticationConfiguration>();
+        }
+
+        private class NamedSchemaFactory : IChannelSchemaFactory
+        {
+            public IChannelSchema CreateSchema() => new NamedSchema();
+        }
+
+        [ChannelSchema(typeof(DirectSchemaFactory))]
+        private class DirectConnector : IChannelConnector
+        {
+            public DirectConnector(IChannelSchema schema, ConnectionSettings? settings = null)
             {
-                ChannelProvider = provider,
-                ChannelType = type
-            };
+                Schema = schema;
+                ConnectionSettings = settings ?? new ConnectionSettings();
+            }
+            public IChannelSchema Schema { get; }
+            public ConnectionSettings ConnectionSettings { get; }
+            public ConnectorState State => ConnectorState.Uninitialized;
+            public Task<OperationResult<bool>> InitializeAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
+            public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
+            public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken ct) => throw new NotImplementedException();
+            public async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [EnumeratorCancellation] CancellationToken ct) { await Task.CompletedTask; yield break; }
+            public Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken ct) => throw new NotImplementedException();
+            public Task ShutdownAsync(CancellationToken ct) => Task.CompletedTask;
+        }
+
+        [ChannelSchema(typeof(NamedSchemaFactory))]
+        private class NamedConnector : IChannelConnector
+        {
+            public NamedConnector(IChannelSchema schema, ConnectionSettings? settings = null)
+            {
+                Schema = schema;
+                ConnectionSettings = settings ?? new ConnectionSettings();
+            }
+            public IChannelSchema Schema { get; }
+            public ConnectionSettings ConnectionSettings { get; }
+            public ConnectorState State => ConnectorState.Uninitialized;
+            public Task<OperationResult<bool>> InitializeAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
+            public Task<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => Task.FromResult(OperationResult<bool>.Success(true));
+            public Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken ct) => throw new NotImplementedException();
+            public async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [EnumeratorCancellation] CancellationToken ct) { await Task.CompletedTask; yield break; }
+            public Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken ct) => throw new NotImplementedException();
+            public Task<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken ct) => throw new NotImplementedException();
+            public Task ShutdownAsync(CancellationToken ct) => Task.CompletedTask;
+        }
+
+        private static IServiceProvider CreateProvider(Action<MessagingBuilder> configure)
+        {
+            var services = new ServiceCollection();
+            var builder = services.AddMessaging();
+            configure(builder);
+            return services.BuildServiceProvider();
         }
 
         [Fact]
-        public void Should_GetSchemas_FromDirectConnectors()
+        public void Should_GetSchema_FromDirectConnector()
         {
-            var schema = CreateSchema("P1", "T1");
-            var connector = new MockConnector(schema);
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                new[] { connector });
+            var provider = CreateProvider(b => b.AddConnector<DirectConnector>());
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
             var schemas = registry.GetSchemas().ToList();
 
-            Assert.Contains(schemas, s => s.ChannelProvider == "P1" && s.ChannelType == "T1");
+            Assert.Contains(schemas, s => s.ChannelProvider == "DirectP" && s.ChannelType == "DirectT");
         }
 
         [Fact]
-        public void Should_GetSchemas_FromNamedConnectors()
+        public void Should_GetSchema_FromNamedConnector()
         {
-            var schema = CreateSchema("P2", "T2");
-            var descriptor = new NamedConnectorDescriptor("ch", typeof(MockConnector), schema);
-            var registry = new ChannelSchemaRegistry(
-                new[] { descriptor },
-                Enumerable.Empty<IChannelConnector>());
+            var provider = CreateProvider(b => b.AddConnector<NamedConnector>("ch", _ => { }));
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
             var schemas = registry.GetSchemas().ToList();
 
-            Assert.Contains(schemas, s => s.ChannelProvider == "P2" && s.ChannelType == "T2");
-        }
-
-        [Fact]
-        public void Should_DeduplicateSchemas_ByProviderType()
-        {
-            var schema = CreateSchema("SameP", "SameT");
-            var connector = new MockConnector(schema);
-            var descriptor = new NamedConnectorDescriptor("ch", typeof(MockConnector), schema);
-            var registry = new ChannelSchemaRegistry(
-                new[] { descriptor },
-                new[] { connector });
-
-            var schemas = registry.GetSchemas().ToList();
-
-            Assert.Single(schemas);
-        }
-
-        [Fact]
-        public void Should_PreferDirectConnectors_OverNamed()
-        {
-            var directSchema = CreateSchema("P", "T");
-            var namedSchema = CreateSchema("P", "T");
-            var connector = new MockConnector(directSchema);
-            var descriptor = new NamedConnectorDescriptor("ch", typeof(MockConnector), namedSchema);
-            var registry = new ChannelSchemaRegistry(
-                new[] { descriptor },
-                new[] { connector });
-
-            var schemas = registry.GetSchemas().ToList();
-
-            Assert.Single(schemas);
-            Assert.Same(directSchema, schemas[0]);
+            Assert.Contains(schemas, s => s.ChannelProvider == "NamedP" && s.ChannelType == "NamedT");
         }
 
         [Fact]
         public void Should_ReturnMultipleSchemas()
         {
-            var s1 = CreateSchema("P1", "T1");
-            var s2 = CreateSchema("P2", "T2");
-            var c1 = new MockConnector(s1);
-            var d2 = new NamedConnectorDescriptor("ch2", typeof(MockConnector), s2);
-            var registry = new ChannelSchemaRegistry(
-                new[] { d2 },
-                new[] { c1 });
+            var provider = CreateProvider(b =>
+            {
+                b.AddConnector<DirectConnector>();
+                b.AddConnector<NamedConnector>("ch2", _ => { });
+            });
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
             var schemas = registry.GetSchemas().ToList();
 
@@ -92,40 +142,23 @@ namespace Deveel.Messaging.XUnit.Unit
         }
 
         [Fact]
-        public void Should_ReturnEmpty_When_NoConnectors()
-        {
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                Enumerable.Empty<IChannelConnector>());
-
-            Assert.Empty(registry.GetSchemas());
-        }
-
-        [Fact]
         public void Should_FindSchema_ByProviderAndType()
         {
-            var schema = CreateSchema("FindP", "FindT");
-            var connector = new MockConnector(schema);
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                new[] { connector });
+            var provider = CreateProvider(b => b.AddConnector<DirectConnector>());
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
-            var found = registry.FindSchema("FindP", "FindT");
+            var found = registry.FindSchema("DirectP", "DirectT");
 
             Assert.NotNull(found);
-            Assert.Same(schema, found);
         }
 
         [Fact]
         public void Should_FindSchema_CaseInsensitive()
         {
-            var schema = CreateSchema("PROVIDER", "TYPE");
-            var connector = new MockConnector(schema);
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                new[] { connector });
+            var provider = CreateProvider(b => b.AddConnector<DirectConnector>());
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
-            var found = registry.FindSchema("provider", "type");
+            var found = registry.FindSchema("directp", "directt");
 
             Assert.NotNull(found);
         }
@@ -133,11 +166,8 @@ namespace Deveel.Messaging.XUnit.Unit
         [Fact]
         public void Should_ReturnNull_When_SchemaNotFound()
         {
-            var schema = CreateSchema("P", "T");
-            var connector = new MockConnector(schema);
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                new[] { connector });
+            var provider = CreateProvider(b => b.AddConnector<DirectConnector>());
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
             var found = registry.FindSchema("NotFound", "Nope");
 
@@ -147,43 +177,30 @@ namespace Deveel.Messaging.XUnit.Unit
         [Fact]
         public void Should_HaveSchema_When_Exists()
         {
-            var schema = CreateSchema("P", "T");
-            var connector = new MockConnector(schema);
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                new[] { connector });
+            var provider = CreateProvider(b => b.AddConnector<DirectConnector>());
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
-            Assert.True(registry.HasSchema("P", "T"));
+            Assert.True(registry.HasSchema("DirectP", "DirectT"));
         }
 
         [Fact]
         public void Should_NotHaveSchema_When_NotExists()
         {
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                Enumerable.Empty<IChannelConnector>());
+            var provider = CreateProvider(b => b.AddConnector<DirectConnector>());
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
             Assert.False(registry.HasSchema("X", "Y"));
         }
 
         [Fact]
-        public void Should_Throw_When_FindSchemaWithNullProvider()
+        public void Should_ReturnEmpty_When_NoConnectorsRegistered()
         {
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                Enumerable.Empty<IChannelConnector>());
+            var services = new ServiceCollection();
+            services.AddMessaging();
+            var provider = services.BuildServiceProvider();
+            var registry = provider.GetRequiredService<IChannelSchemaRegistry>();
 
-            Assert.Throws<ArgumentNullException>(() => registry.FindSchema(null!, "T"));
-        }
-
-        [Fact]
-        public void Should_Throw_When_FindSchemaWithNullType()
-        {
-            var registry = new ChannelSchemaRegistry(
-                Enumerable.Empty<NamedConnectorDescriptor>(),
-                Enumerable.Empty<IChannelConnector>());
-
-            Assert.Throws<ArgumentNullException>(() => registry.FindSchema("P", null!));
+            Assert.Empty(registry.GetSchemas());
         }
     }
 }

@@ -27,10 +27,4 @@
   <ItemGroup>
     <PackageReference Include="Telegram.Bot" Version="22.0.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Deveel.Messaging.Connector.Telegram.XUnit</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
 </Project>

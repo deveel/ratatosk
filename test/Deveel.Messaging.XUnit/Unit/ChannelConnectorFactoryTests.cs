@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
 using Deveel.Messaging.XUnit.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,12 +11,15 @@ namespace Deveel.Messaging.XUnit.Unit
     [Trait("Feature", "ChannelConnectorFactory")]
     public class ChannelConnectorFactoryTests
     {
+        private static IServiceProvider CreateServices()
+            => new ServiceCollection()
+                .AddSingleton<ILogger<MockConnector>>(NullLogger<MockConnector>.Instance)
+                .BuildServiceProvider();
+
         [Fact]
         public void Should_CreateConnector_WithSettings()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<ILogger<MockConnector>>(NullLogger<MockConnector>.Instance)
-                .BuildServiceProvider();
+            var services = CreateServices();
             var factory = new ChannelConnectorFactory<MockConnector>(services);
             var settings = new ConnectionSettings();
 
@@ -27,12 +32,9 @@ namespace Deveel.Messaging.XUnit.Unit
         [Fact]
         public void Should_PoolConnectors_WithSameSettings()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<ILogger<MockConnector>>(NullLogger<MockConnector>.Instance)
-                .BuildServiceProvider();
+            var services = CreateServices();
             var factory = new ChannelConnectorFactory<MockConnector>(services);
-            var settings = new ConnectionSettings()
-                .SetParameter("key", "value");
+            var settings = new ConnectionSettings().SetParameter("key", "value");
 
             var c1 = factory.Create(settings);
             var c2 = factory.Create(settings);
@@ -43,9 +45,7 @@ namespace Deveel.Messaging.XUnit.Unit
         [Fact]
         public void Should_CreateDifferentConnectors_WithDifferentSettings()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<ILogger<MockConnector>>(NullLogger<MockConnector>.Instance)
-                .BuildServiceProvider();
+            var services = CreateServices();
             var factory = new ChannelConnectorFactory<MockConnector>(services);
             var s1 = new ConnectionSettings().SetParameter("key", "A");
             var s2 = new ConnectionSettings().SetParameter("key", "B");
@@ -59,12 +59,10 @@ namespace Deveel.Messaging.XUnit.Unit
         [Fact]
         public void Should_CreateWithExplicitSchema()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<ILogger<MockConnector>>(NullLogger<MockConnector>.Instance)
-                .BuildServiceProvider();
+            var services = CreateServices();
             var factory = new ChannelConnectorFactory<MockConnector>(services);
             var settings = new ConnectionSettings();
-            var schema = new MockSchemaFactory().CreateSchema();
+            var schema = new MockSchema();
 
             var connector = factory.Create(settings, schema);
 
@@ -84,14 +82,11 @@ namespace Deveel.Messaging.XUnit.Unit
         [Fact]
         public void Should_PoolBySettingsAndSchema()
         {
-            var services = new ServiceCollection()
-                .AddSingleton<ILogger<MockConnector>>(NullLogger<MockConnector>.Instance)
-                .BuildServiceProvider();
+            var services = CreateServices();
             var factory = new ChannelConnectorFactory<MockConnector>(services);
-            var settings = new ConnectionSettings().SetParameter("x", "1");
             var schema = new MockSchema();
 
-            var c1 = factory.Create(settings, schema);
+            var c1 = factory.Create(new ConnectionSettings().SetParameter("x", "1"), schema);
             var c2 = factory.Create(new ConnectionSettings().SetParameter("x", "1"), schema);
 
             Assert.Same(c1, c2);
@@ -99,96 +94,46 @@ namespace Deveel.Messaging.XUnit.Unit
         }
 
         [Fact]
-        public void Should_PoolKey_Equality()
+        public void Should_NotPool_WhenSchemaIsDifferent()
         {
-            var s1 = new ConnectionSettings().SetParameter("a", "1");
-            var s2 = new ConnectionSettings().SetParameter("a", "1");
+            var services = CreateServices();
+            var factory = new ChannelConnectorFactory<MockConnector>(services);
+            var settings = new ConnectionSettings().SetParameter("x", "1");
+
+            var c1 = factory.Create(settings, new MockSchema { ChannelProvider = "A" });
+            var c2 = factory.Create(settings, new MockSchema { ChannelProvider = "B" });
+
+            Assert.NotSame(c1, c2);
+        }
+
+        [Fact]
+        public void Should_Pool_WhenSettingsKeyEquality()
+        {
+            var services = CreateServices();
+            var factory = new ChannelConnectorFactory<MockConnector>(services);
             var schema = new MockSchema();
 
-            var key1 = new ChannelConnectorFactory<MockConnector>.ConnectorPoolKey(s1, schema);
-            var key2 = new ChannelConnectorFactory<MockConnector>.ConnectorPoolKey(s2, schema);
+            var c1 = factory.Create(
+                new ConnectionSettings().SetParameter("a", "1").SetParameter("b", "2"), schema);
+            var c2 = factory.Create(
+                new ConnectionSettings().SetParameter("b", "2").SetParameter("a", "1"), schema);
 
-            Assert.Equal(key1, key2);
-            Assert.True(key1 == key2);
-            Assert.False(key1 != key2);
-            Assert.Equal(key1.GetHashCode(), key2.GetHashCode());
+            Assert.Same(c1, c2);
         }
 
         [Fact]
-        public void Should_PoolKey_Inequality_DifferentSettings()
+        public void Should_NotPool_WhenSettingsMissingKeys()
         {
-            var s1 = new ConnectionSettings().SetParameter("a", "1");
-            var s2 = new ConnectionSettings().SetParameter("a", "2");
+            var services = CreateServices();
+            var factory = new ChannelConnectorFactory<MockConnector>(services);
             var schema = new MockSchema();
 
-            var key1 = new ChannelConnectorFactory<MockConnector>.ConnectorPoolKey(s1, schema);
-            var key2 = new ChannelConnectorFactory<MockConnector>.ConnectorPoolKey(s2, schema);
+            var c1 = factory.Create(
+                new ConnectionSettings().SetParameter("a", "1").SetParameter("b", "2"), schema);
+            var c2 = factory.Create(
+                new ConnectionSettings().SetParameter("a", "1"), schema);
 
-            Assert.NotEqual(key1, key2);
-            Assert.True(key1 != key2);
-        }
-
-        [Fact]
-        public void Should_PoolKey_Inequality_DifferentSchema()
-        {
-            var settings = new ConnectionSettings().SetParameter("a", "1");
-            var s1 = new MockSchema();
-            var s2 = new MockSchema();
-
-            var key1 = new ChannelConnectorFactory<MockConnector>.ConnectorPoolKey(settings, s1);
-            var key2 = new ChannelConnectorFactory<MockConnector>.ConnectorPoolKey(settings, s2);
-
-            Assert.NotEqual(key1, key2);
-        }
-
-        [Fact]
-        public void Should_ConnectionSettingsKey_Equality()
-        {
-            var s1 = new ConnectionSettings().SetParameter("a", "1").SetParameter("b", "2");
-            var s2 = new ConnectionSettings().SetParameter("b", "2").SetParameter("a", "1");
-
-            var key1 = new ChannelConnectorFactory<MockConnector>.ConnectionSettingsKey(s1);
-            var key2 = new ChannelConnectorFactory<MockConnector>.ConnectionSettingsKey(s2);
-
-            Assert.Equal(key1, key2);
-            Assert.Equal(key1.GetHashCode(), key2.GetHashCode());
-            Assert.False(key1.Equals("not-a-key"));
-        }
-
-        [Fact]
-        public void Should_ConnectionSettingsKey_Inequality_DifferentCount()
-        {
-            var s1 = new ConnectionSettings().SetParameter("a", "1");
-            var s2 = new ConnectionSettings().SetParameter("a", "1").SetParameter("b", "2");
-
-            var key1 = new ChannelConnectorFactory<MockConnector>.ConnectionSettingsKey(s1);
-            var key2 = new ChannelConnectorFactory<MockConnector>.ConnectionSettingsKey(s2);
-
-            Assert.NotEqual(key1, key2);
-        }
-
-        [Fact]
-        public void Should_ConnectionSettingsKey_Inequality_DifferentValue()
-        {
-            var s1 = new ConnectionSettings().SetParameter("a", "1");
-            var s2 = new ConnectionSettings().SetParameter("a", "2");
-
-            var key1 = new ChannelConnectorFactory<MockConnector>.ConnectionSettingsKey(s1);
-            var key2 = new ChannelConnectorFactory<MockConnector>.ConnectionSettingsKey(s2);
-
-            Assert.NotEqual(key1, key2);
-        }
-
-        [Fact]
-        public void Should_ConnectionSettingsKey_Inequality_MissingKey()
-        {
-            var s1 = new ConnectionSettings().SetParameter("a", "1").SetParameter("b", "2");
-            var s2 = new ConnectionSettings().SetParameter("a", "1");
-
-            var key1 = new ChannelConnectorFactory<MockConnector>.ConnectionSettingsKey(s1);
-            var key2 = new ChannelConnectorFactory<MockConnector>.ConnectionSettingsKey(s2);
-
-            Assert.NotEqual(key1, key2);
+            Assert.NotSame(c1, c2);
         }
 
         [Fact]
