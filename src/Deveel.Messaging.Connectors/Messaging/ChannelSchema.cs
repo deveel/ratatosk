@@ -24,6 +24,12 @@ namespace Deveel.Messaging
         private readonly IList<AuthenticationConfiguration> authenticationConfigurations;
         private readonly IList<ChannelEndpointConfiguration> endpoints;
 
+        /// <summary>
+        /// Constructs a new channel schema with the specified provider, type, and version.
+        /// </summary>
+        /// <param name="channelProvider">The channel provider identifier.</param>
+        /// <param name="channelType">The type of communication channel.</param>
+        /// <param name="version">The version of the schema.</param>
         public ChannelSchema(string channelProvider, string channelType, string version)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(channelProvider, nameof(channelProvider));
@@ -42,6 +48,14 @@ namespace Deveel.Messaging
             Capabilities = ChannelCapability.SendMessages;
         }
 
+        /// <summary>
+        /// Constructs a new channel schema by copying from an existing schema.
+        /// </summary>
+        /// <param name="sourceSchema">The source schema to copy from.</param>
+        /// <param name="derivedDisplayName">
+        /// An optional display name for the derived schema; if not provided,
+        /// a default copy label is used.
+        /// </param>
         public ChannelSchema(IChannelSchema sourceSchema, string? derivedDisplayName = null)
         {
             ArgumentNullException.ThrowIfNull(sourceSchema, nameof(sourceSchema));
@@ -149,28 +163,42 @@ namespace Deveel.Messaging
             this.endpoints = new List<ChannelEndpointConfiguration>(endpoints);
         }
 
+        /// <inheritdoc/>
         public string ChannelProvider { get; }
 
+        /// <inheritdoc/>
         public string ChannelType { get; }
 
+        /// <inheritdoc/>
         public string Version { get; }
 
+        /// <inheritdoc/>
         public string? DisplayName { get; set; }
 
+        /// <inheritdoc/>
         public bool IsStrict { get; set; }
 
+        /// <inheritdoc/>
         public ChannelCapability Capabilities { get; set; }
 
+        /// <inheritdoc/>
         public IReadOnlyList<ChannelParameter> Parameters => parameters.AsReadOnly();
 
+        /// <inheritdoc/>
         public IReadOnlyList<MessagePropertyConfiguration> MessageProperties => messageProperties.AsReadOnly();
 
+        /// <inheritdoc/>
         public IReadOnlyList<MessageContentType> ContentTypes => contentTypes.AsReadOnly();
 
+        /// <inheritdoc/>
         public IReadOnlyList<AuthenticationConfiguration> AuthenticationConfigurations => authenticationConfigurations.AsReadOnly();
 
+        /// <inheritdoc/>
         public IReadOnlyList<ChannelEndpointConfiguration> Endpoints => endpoints.AsReadOnly();
 
+        /// <summary>
+        /// Gets the distinct authentication types supported by the schema.
+        /// </summary>
         public IEnumerable<AuthenticationType> AuthenticationTypes =>
             AuthenticationConfigurations.Select(c => c.AuthenticationType).Distinct();
     }

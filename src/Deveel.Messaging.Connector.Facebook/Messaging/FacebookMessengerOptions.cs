@@ -1,15 +1,32 @@
 namespace Deveel.Messaging
 {
+    /// <summary>
+    /// Provides options for configuring the Facebook Messenger connector.
+    /// </summary>
     public class FacebookMessengerOptions : IConnectorOptions
     {
+        /// <summary>
+        /// Gets or sets the page access token used to authenticate
+        /// with the Facebook Messenger API.
+        /// </summary>
         public string? PageAccessToken { get; set; }
 
+        /// <summary>
+        /// Gets or sets the identifier of the Facebook page.
+        /// </summary>
         public string? PageId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the webhook URL for receiving messages.
+        /// </summary>
         public string? WebhookUrl { get; set; }
 
+        /// <summary>
+        /// Gets or sets the verify token used to validate webhook subscriptions.
+        /// </summary>
         public string? VerifyToken { get; set; }
 
+        /// <inheritdoc/>
         public ConnectionSettings ToConnectionSettings()
         {
             var settings = new ConnectionSettings();

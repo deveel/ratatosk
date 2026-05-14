@@ -558,6 +558,7 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             foreach (var connector in _connectors.Values)
@@ -579,6 +580,7 @@ namespace Deveel.Messaging
             _lock.Dispose();
         }
 
+        /// <inheritdoc/>
         public async ValueTask DisposeAsync()
         {
             foreach (var connector in _connectors.Values)

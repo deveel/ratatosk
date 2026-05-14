@@ -1,15 +1,31 @@
 namespace Deveel.Messaging
 {
+    /// <summary>
+    /// Provides options for configuring the Twilio WhatsApp connector.
+    /// </summary>
     public class TwilioWhatsAppOptions : IConnectorOptions
     {
+        /// <summary>
+        /// Gets or sets the Twilio account SID.
+        /// </summary>
         public string? AccountSid { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Twilio authentication token.
+        /// </summary>
         public string? AuthToken { get; set; }
 
+        /// <summary>
+        /// Gets or sets the webhook URL for incoming messages.
+        /// </summary>
         public string? WebhookUrl { get; set; }
 
+        /// <summary>
+        /// Gets or sets the status callback URL for delivery status updates.
+        /// </summary>
         public string? StatusCallback { get; set; }
 
+        /// <inheritdoc/>
         public ConnectionSettings ToConnectionSettings()
         {
             var settings = new ConnectionSettings();
