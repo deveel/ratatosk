@@ -81,8 +81,7 @@ app.MapPost("/{channel}/message", async (
     if (!sendResult.IsSuccess())
         return Results.Problem(sendResult.Error?.Message, statusCode: 502);
 
-    logger.LogInformation("Message {MessageId} sent via {Channel}: local={LocalId} remote={RemoteId} status={Status}",
-        message.Id, channel, sendResult.Value!.MessageId, sendResult.Value!.RemoteMessageId, sendResult.Value!.Status);
+    logger.LogMessageSent(message.Id, channel, sendResult.Value!.MessageId, sendResult.Value!.RemoteMessageId, sendResult.Value!.Status.ToString());
 
     return Results.Ok(new
     {
@@ -108,8 +107,7 @@ app.MapPost("/{channel}/message/status", async (
     if (!result.IsSuccess())
         return Results.Problem(result.Error?.Message, statusCode: 502);
 
-    logger.LogInformation("Status update received via {Channel}: id={Id} status={Status}",
-        channel, result.Value!.MessageId, result.Value!.Status);
+    logger.LogStatusUpdateReceived(channel, result.Value!.MessageId, result.Value!.Status.ToString());
 
     return Results.Ok(new
     {
@@ -134,8 +132,7 @@ app.MapPost("/{channel}/receive", async (
     if (!result.IsSuccess())
         return Results.Problem(result.Error?.Message, statusCode: 502);
 
-    logger.LogInformation("Received {Count} message(s) via {Channel}",
-        result.Value!.Messages.Count, channel);
+    logger.LogMessagesReceived(result.Value!.Messages.Count, channel);
 
     return Results.Ok(new
     {

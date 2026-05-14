@@ -46,8 +46,7 @@ namespace Deveel.Messaging
             ArgumentNullException.ThrowIfNull(provider, nameof(provider));
 
             _providers.Add(provider);
-            _logger.LogDebug("Registered authentication provider: {ProviderName} for {Scheme}",
-                provider.DisplayName, provider.Scheme);
+            _logger.LogAuthenticationProviderRegistered(provider.DisplayName, provider.Scheme);
         }
 
         /// <inheritdoc/>
@@ -58,12 +57,12 @@ namespace Deveel.Messaging
 
             try
             {
-                _logger.LogDebug("Authenticating using {Scheme} authentication", configuration.Scheme);
+                _logger.LogUsingAuthenticationConfiguration(configuration.Scheme);
 
                 var provider = FindProvider(configuration);
                 if (provider == null)
                 {
-                    _logger.LogWarning("No authentication provider found for {Scheme}", configuration.Scheme);
+                    _logger.LogAuthenticationProviderNotFound(configuration.Scheme);
                     return AuthenticationResult.Failure($"No authentication provider available for scheme '{configuration.Scheme}'", "NO_PROVIDER");
                 }
 
@@ -72,38 +71,37 @@ namespace Deveel.Messaging
 
                 if (cachedCredential != null && !ShouldRefreshCredential(cachedCredential))
                 {
-                    _logger.LogDebug("Using cached credential for {Scheme}", configuration.Scheme);
+                    _logger.LogUsingCachedCredential(configuration.Scheme);
                     return AuthenticationResult.Success(cachedCredential);
                 }
 
                 AuthenticationResult result;
                 if (cachedCredential != null && ShouldRefreshCredential(cachedCredential))
                 {
-                    _logger.LogDebug("Refreshing credential for {Scheme}", configuration.Scheme);
+                    _logger.LogRefreshingAuthenticationCredential();
                     result = await provider.RefreshCredentialAsync(cachedCredential, connectionSettings, configuration, cancellationToken);
                 }
                 else
                 {
-                    _logger.LogDebug("Obtaining new credential for {Scheme}", configuration.Scheme);
+                    _logger.LogObtainingNewCredential(configuration.Scheme);
                     result = await provider.ObtainCredentialAsync(connectionSettings, configuration, cancellationToken);
                 }
 
                 if (result.IsSuccessful && result.Credential != null)
                 {
                     CacheCredential(cacheKey, result.Credential);
-                    _logger.LogInformation("Successfully authenticated using {Scheme}", configuration.Scheme);
+                    _logger.LogAuthenticationSuccessful(configuration.Scheme);
                 }
                 else
                 {
-                    _logger.LogWarning("Authentication failed for {Scheme}: {ErrorMessage}",
-                        configuration.Scheme, result.ErrorMessage);
+                    _logger.LogAuthenticationFailedWithMessage(configuration.Scheme, result.ErrorMessage);
                 }
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during authentication");
+                _logger.LogAuthenticationException(ex);
                 return AuthenticationResult.Failure($"Authentication error: {ex.Message}", "AUTHENTICATION_ERROR");
             }
         }
@@ -114,7 +112,7 @@ namespace Deveel.Messaging
             lock (_cacheLock)
             {
                 _credentialCache.Clear();
-                _logger.LogDebug("Authentication credential cache cleared");
+                _logger.LogCacheCleared();
             }
         }
 
@@ -130,7 +128,7 @@ namespace Deveel.Messaging
             {
                 if (_credentialCache.Remove(cacheKey))
                 {
-                    _logger.LogDebug("Invalidated cached credential for {Scheme}", configuration.Scheme);
+                    _logger.LogCredentialInvalidated(configuration.Scheme);
                 }
             }
         }
@@ -142,7 +140,7 @@ namespace Deveel.Messaging
             RegisterProvider(new BasicAuthenticationProvider());
             RegisterProvider(new ClientCredentialsAuthenticationProvider());
 
-            _logger.LogDebug("Registered default authentication providers");
+            _logger.LogDefaultProvidersRegistered();
         }
 
         private IAuthenticationProvider? FindProvider(AuthenticationConfiguration configuration)

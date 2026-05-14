@@ -186,9 +186,7 @@ namespace Deveel.Messaging
             {
                 var messageId = ExtractMessageIdFromResponse(response);
 
-                Logger.LogInformation(
-                    "Email message sent successfully. MessageId: {MessageId}, StatusCode: {StatusCode}",
-                    messageId ?? message.Id, response.StatusCode);
+                Logger.LogEmailSent(messageId ?? message.Id, response.StatusCode.ToString());
 
                 var result = new SendResult(message.Id, messageId ?? Guid.NewGuid().ToString())
                 {
@@ -208,8 +206,7 @@ namespace Deveel.Messaging
             else
             {
                 var errorMessage = await response.Body.ReadAsStringAsync();
-                Logger.LogError("Failed to send email. StatusCode: {StatusCode}, Error: {Error}",
-                    response.StatusCode, errorMessage);
+                Logger.LogEmailSendFailed(response.StatusCode.ToString(), errorMessage);
 
                 var errorCode = response.StatusCode == HttpStatusCode.TooManyRequests
                     ? SendGridErrorCodes.RateLimitExceeded
@@ -224,7 +221,7 @@ namespace Deveel.Messaging
         protected override async Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId,
             CancellationToken cancellationToken)
         {
-            Logger.LogDebug("Querying status for message {MessageId}", messageId);
+            Logger.LogQueryingMessageStatus(messageId);
 
             // Note: SendGrid doesn't provide a direct message status API like Twilio
             // In a real implementation, you would need to:
@@ -322,7 +319,7 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to extract message ID from SendGrid response");
+                Logger.LogExtractMessageIdFailed(ex);
             }
 
             return null;

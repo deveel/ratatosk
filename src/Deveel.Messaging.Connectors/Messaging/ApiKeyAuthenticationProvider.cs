@@ -36,7 +36,7 @@ namespace Deveel.Messaging
                 var value = GetStringParameter(connectionSettings, field.FieldName);
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    _logger.LogDebug("Found API key in field: {Field}", field.FieldName);
+                    _logger.LogFoundCredentials(AuthenticationScheme.ApiKey, field.FieldName);
                     var credential = AuthenticationCredential.ForApiKey(value);
                     credential.Properties["FieldName"] = field.FieldName;
                     return Task.FromResult(Success(credential));

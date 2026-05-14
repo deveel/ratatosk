@@ -36,7 +36,7 @@ namespace Deveel.Messaging
                 var value = GetStringParameter(connectionSettings, field.FieldName);
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    _logger.LogDebug("Found bearer token in field: {Field}", field.FieldName);
+                    _logger.LogFoundCredentials(AuthenticationScheme.Bearer, field.FieldName);
 
                     var tokenType = GetStringParameter(connectionSettings, "TokenType") ?? "Bearer";
 

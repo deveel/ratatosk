@@ -45,8 +45,7 @@ namespace Deveel.Messaging
                     var password = GetStringParameter(connectionSettings, credential.FieldName);
                     if (!string.IsNullOrWhiteSpace(password))
                     {
-                        _logger.LogDebug("Found basic auth credentials: {UserField}, {PassField}",
-                            principal.FieldName, credential.FieldName);
+                        _logger.LogFoundCredentials(AuthenticationScheme.Basic, principal.FieldName);
 
                         var authCredential = AuthenticationCredential.ForBasic(username, password);
                         authCredential.Properties["UserField"] = principal.FieldName;

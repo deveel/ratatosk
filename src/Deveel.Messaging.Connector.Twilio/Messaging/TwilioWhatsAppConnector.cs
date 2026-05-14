@@ -151,8 +151,7 @@ namespace Deveel.Messaging
                         }
                         catch (Exception ex)
                         {
-                            Logger?.LogWarning(ex,
-                                "Failed to serialize template parameters to JSON for message {MessageId}", message.Id);
+                            Logger?.LogTemplateParamsSerializationFailed(message.Id, ex);
                         }
                     }
                 }
@@ -186,8 +185,7 @@ namespace Deveel.Messaging
             // Send the message
             var messageResource = await _twilioService.CreateMessageAsync(createMessageOptions, cancellationToken);
 
-            Logger?.LogInformation("WhatsApp message sent successfully. MessageSid: {MessageSid}, Status: {Status}",
-                messageResource.Sid, messageResource.Status);
+            Logger?.LogWhatsAppSent(messageResource.Sid, messageResource.Status.ToString());
 
             var result = new SendResult(message.Id, messageResource.Sid)
             {
@@ -216,7 +214,7 @@ namespace Deveel.Messaging
         protected override async Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId,
             CancellationToken cancellationToken)
         {
-            Logger?.LogDebug("Querying WhatsApp message status for {MessageId}", messageId);
+            Logger?.LogQueryingMessageStatus(messageId);
 
             // Assume messageId is the Twilio SID
             var messageResource = await _twilioService.FetchMessageAsync(messageId, cancellationToken);
@@ -321,7 +319,7 @@ namespace Deveel.Messaging
                     }
                     catch (UriFormatException ex)
                     {
-                        Logger?.LogWarning(ex, "Invalid media URL format: {MediaUrl}", mediaContent.FileUrl);
+                        Logger?.LogInvalidMediaUrl(mediaContent.FileUrl, ex);
                         return null;
                     }
                 }

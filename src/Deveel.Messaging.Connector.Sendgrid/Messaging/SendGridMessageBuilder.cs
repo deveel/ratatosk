@@ -126,7 +126,7 @@ namespace Deveel.Messaging
                     }
                     catch (JsonException ex)
                     {
-                        _logger?.LogWarning(ex, "Failed to parse CustomArgs as JSON: {CustomArgs}", customArgs);
+                        _logger?.LogCustomArgsParseFailed(customArgs, ex);
                     }
                 }
             }

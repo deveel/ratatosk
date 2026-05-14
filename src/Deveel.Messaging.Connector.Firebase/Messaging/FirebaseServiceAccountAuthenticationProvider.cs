@@ -61,7 +61,7 @@ namespace Deveel.Messaging
                 {
                     if (!File.Exists(serviceAccountKey))
                     {
-                        return Task.FromResult(Failure($"Service account key file not found: {serviceAccountKey}", "SERVICE_ACCOUNT_FILE_NOT_FOUND"));
+                        return Task.FromResult(Failure("Service account key file not found", "SERVICE_ACCOUNT_FILE_NOT_FOUND"));
                     }
                     
                     _logger.LogUsingServiceAccountKeyFile();

@@ -59,4 +59,33 @@ internal static class ConnectorLoggerEventId
     public const int ReceivingMessage = LoggerEventId.BaseId + 110;
     public const int MessageReceived = LoggerEventId.BaseId + 111;
     public const int MessageReceiveFailed = LoggerEventId.BaseId + 112;
+
+    // Authentication Manager events
+    public const int AuthenticationProviderRegistered = LoggerEventId.BaseId + 120;
+    public const int AuthenticationProviderNotFound = LoggerEventId.BaseId + 121;
+    public const int UsingCachedCredential = LoggerEventId.BaseId + 122;
+    public const int ObtainingNewCredential = LoggerEventId.BaseId + 123;
+    public const int AuthenticationFailedWithMessage = LoggerEventId.BaseId + 124;
+    public const int CacheCleared = LoggerEventId.BaseId + 125;
+    public const int CredentialInvalidated = LoggerEventId.BaseId + 126;
+    public const int DefaultProvidersRegistered = LoggerEventId.BaseId + 127;
+    public const int AutoAuthenticationFailed = LoggerEventId.BaseId + 128;
+
+    // Provider-specific events
+    public const int FoundCredentials = LoggerEventId.BaseId + 130;
+    public const int ObtainingAccessToken = LoggerEventId.BaseId + 131;
+    public const int TokenRequestSent = LoggerEventId.BaseId + 132;
+    public const int TokenRequestFailed = LoggerEventId.BaseId + 133;
+    public const int MissingAccessToken = LoggerEventId.BaseId + 134;
+    public const int TokenObtained = LoggerEventId.BaseId + 135;
+    public const int NetworkErrorDuringTokenRequest = LoggerEventId.BaseId + 136;
+    public const int TokenRequestTimedOut = LoggerEventId.BaseId + 137;
+    public const int TokenParseFailed = LoggerEventId.BaseId + 138;
+    public const int UnexpectedTokenError = LoggerEventId.BaseId + 139;
+    public const int RefreshingWithRefreshToken = LoggerEventId.BaseId + 140;
+    public const int NoRefreshTokenAvailable = LoggerEventId.BaseId + 141;
+    public const int TokenRefreshError = LoggerEventId.BaseId + 142;
+    public const int TokenRefreshFailedWithStatus = LoggerEventId.BaseId + 143;
+    public const int RetryingTokenObtainment = LoggerEventId.BaseId + 144;
+    public const int TokenRefreshed = LoggerEventId.BaseId + 145;
 }

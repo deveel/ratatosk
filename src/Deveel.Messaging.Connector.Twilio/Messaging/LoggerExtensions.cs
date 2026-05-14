@@ -82,6 +82,34 @@ namespace Deveel.Messaging
             Message = "Default from number: {FromNumber}")]
         internal static partial void LogDefaultFromNumber(this ILogger logger, string fromNumber);
 
+        [LoggerMessage(
+            EventId = 4206,
+            Level = LogLevel.Warning,
+            Message = "Invalid media URL format: {MediaUrl}")]
+        internal static partial void LogInvalidMediaUrl(this ILogger logger, string mediaUrl, Exception exception);
+
+        [LoggerMessage(
+            EventId = 4207,
+            Level = LogLevel.Debug,
+            Message = "Querying status for message {MessageId}")]
+        internal static partial void LogQueryingMessageStatus(this ILogger logger, string messageId);
+
+        #endregion
+
+        #region WhatsApp Sending Logging
+
+        [LoggerMessage(
+            EventId = 4401,
+            Level = LogLevel.Information,
+            Message = "WhatsApp message sent successfully. MessageSid: {MessageSid}, Status: {Status}")]
+        internal static partial void LogWhatsAppSent(this ILogger logger, string messageSid, string status);
+
+        [LoggerMessage(
+            EventId = 4402,
+            Level = LogLevel.Warning,
+            Message = "Failed to serialize template parameters to JSON for message {MessageId}")]
+        internal static partial void LogTemplateParamsSerializationFailed(this ILogger logger, string messageId, Exception exception);
+
         #endregion
     }
 }

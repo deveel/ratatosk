@@ -86,6 +86,160 @@ namespace Deveel.Messaging
             Message = "Unexpected error during authentication refresh")]
         internal static partial void LogAuthenticationRefreshException(this ILogger logger, Exception exception);
 
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.AuthenticationProviderRegistered,
+            Level = LogLevel.Debug,
+            Message = "Registered authentication provider: {ProviderName} for {Scheme}")]
+        internal static partial void LogAuthenticationProviderRegistered(this ILogger logger, string providerName, AuthenticationScheme scheme);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.AuthenticationProviderNotFound,
+            Level = LogLevel.Warning,
+            Message = "No authentication provider found for {Scheme}")]
+        internal static partial void LogAuthenticationProviderNotFound(this ILogger logger, AuthenticationScheme scheme);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.UsingCachedCredential,
+            Level = LogLevel.Debug,
+            Message = "Using cached credential for {Scheme}")]
+        internal static partial void LogUsingCachedCredential(this ILogger logger, AuthenticationScheme scheme);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.ObtainingNewCredential,
+            Level = LogLevel.Debug,
+            Message = "Obtaining new credential for {Scheme}")]
+        internal static partial void LogObtainingNewCredential(this ILogger logger, AuthenticationScheme scheme);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.AuthenticationFailedWithMessage,
+            Level = LogLevel.Warning,
+            Message = "Authentication failed for {Scheme}: {ErrorMessage}")]
+        internal static partial void LogAuthenticationFailedWithMessage(this ILogger logger, AuthenticationScheme scheme, string? errorMessage);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.CacheCleared,
+            Level = LogLevel.Debug,
+            Message = "Authentication credential cache cleared")]
+        internal static partial void LogCacheCleared(this ILogger logger);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.CredentialInvalidated,
+            Level = LogLevel.Debug,
+            Message = "Invalidated cached credential for {Scheme}")]
+        internal static partial void LogCredentialInvalidated(this ILogger logger, AuthenticationScheme scheme);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.DefaultProvidersRegistered,
+            Level = LogLevel.Debug,
+            Message = "Registered default authentication providers")]
+        internal static partial void LogDefaultProvidersRegistered(this ILogger logger);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.AutoAuthenticationFailed,
+            Level = LogLevel.Warning,
+            Message = "Auto-authentication failed during initialization: {Error}")]
+        internal static partial void LogAutoAuthenticationFailed(this ILogger logger, string? error);
+
+        #endregion
+
+        #region Authentication Provider Logging
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.FoundCredentials,
+            Level = LogLevel.Debug,
+            Message = "Found {Scheme} credentials in field: {Field}")]
+        internal static partial void LogFoundCredentials(this ILogger logger, AuthenticationScheme scheme, string field);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.ObtainingAccessToken,
+            Level = LogLevel.Debug,
+            Message = "Obtaining access token using client credentials flow")]
+        internal static partial void LogObtainingAccessToken(this ILogger logger);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.TokenRequestSent,
+            Level = LogLevel.Debug,
+            Message = "Requesting access token from {TokenEndpoint}")]
+        internal static partial void LogTokenRequestSent(this ILogger logger, string tokenEndpoint);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.TokenRequestFailed,
+            Level = LogLevel.Error,
+            Message = "Token request failed with status {StatusCode}: {ErrorContent}")]
+        internal static partial void LogTokenRequestFailed(this ILogger logger, string statusCode, string errorContent);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.MissingAccessToken,
+            Level = LogLevel.Error,
+            Message = "Token response does not contain access_token")]
+        internal static partial void LogMissingAccessToken(this ILogger logger);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.TokenObtained,
+            Level = LogLevel.Information,
+            Message = "Successfully obtained access token (expires at: {ExpiresAt})")]
+        internal static partial void LogTokenObtained(this ILogger logger, string? expiresAt);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.NetworkErrorDuringTokenRequest,
+            Level = LogLevel.Error,
+            Message = "Network error during token request")]
+        internal static partial void LogNetworkErrorDuringTokenRequest(this ILogger logger, Exception exception);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.TokenRequestTimedOut,
+            Level = LogLevel.Error,
+            Message = "Token request timed out")]
+        internal static partial void LogTokenRequestTimedOut(this ILogger logger, Exception exception);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.TokenParseFailed,
+            Level = LogLevel.Error,
+            Message = "Failed to parse token response")]
+        internal static partial void LogTokenParseFailed(this ILogger logger, Exception exception);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.UnexpectedTokenError,
+            Level = LogLevel.Error,
+            Message = "Unexpected error during token request")]
+        internal static partial void LogUnexpectedTokenError(this ILogger logger, Exception exception);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.RefreshingWithRefreshToken,
+            Level = LogLevel.Debug,
+            Message = "Refreshing access token using refresh token")]
+        internal static partial void LogRefreshingWithRefreshToken(this ILogger logger);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.NoRefreshTokenAvailable,
+            Level = LogLevel.Debug,
+            Message = "No refresh token available, obtaining new token")]
+        internal static partial void LogNoRefreshTokenAvailable(this ILogger logger);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.TokenRefreshError,
+            Level = LogLevel.Error,
+            Message = "Error during token refresh")]
+        internal static partial void LogTokenRefreshError(this ILogger logger, Exception exception);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.TokenRefreshFailedWithStatus,
+            Level = LogLevel.Error,
+            Message = "Token refresh failed with status {StatusCode}: {ErrorContent}")]
+        internal static partial void LogTokenRefreshFailedWithStatus(this ILogger logger, string statusCode, string errorContent);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.RetryingTokenObtainment,
+            Level = LogLevel.Debug,
+            Message = "Refresh token failed, attempting to obtain new token")]
+        internal static partial void LogRetryingTokenObtainment(this ILogger logger);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.TokenRefreshed,
+            Level = LogLevel.Information,
+            Message = "Successfully refreshed access token (expires at: {ExpiresAt})")]
+        internal static partial void LogTokenRefreshed(this ILogger logger, string? expiresAt);
+
         #endregion
 
         #region State Management Logging

@@ -128,8 +128,7 @@ namespace Deveel.Messaging
                     if (!authResult.IsSuccess())
                     {
                         // Non-fatal: connector can still initialize and handle auth later
-                        Logger.LogWarning("Auto-authentication failed during initialization: {Error}",
-                            authResult.Error?.Message);
+                        Logger.LogAutoAuthenticationFailed(authResult.Error?.Message);
                     }
                 }
 
