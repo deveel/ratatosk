@@ -13,7 +13,7 @@ public class MessageBuilderTests
         var message = new Message();
 
         Assert.NotNull(message);
-        Assert.Equal("", message.Id);
+        Assert.Null(message.Id);
         Assert.Null(message.Sender);
         Assert.Null(message.Receiver);
         Assert.Null(message.Content);

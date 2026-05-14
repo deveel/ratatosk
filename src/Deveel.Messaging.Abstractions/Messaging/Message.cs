@@ -30,7 +30,7 @@ namespace Deveel.Messaging {
 		}
 
 		/// <inheritdoc/>
-		public string Id { get; set; } = "";
+		public string? Id { get; set; }
 
 		/// <inheritdoc/>
 		public Endpoint? Sender { get; set; }

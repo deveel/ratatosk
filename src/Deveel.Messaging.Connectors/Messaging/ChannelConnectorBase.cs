@@ -18,17 +18,20 @@ namespace Deveel.Messaging
         private AuthenticationCredential? _authenticationCredential;
         private readonly IAuthenticationManager _authenticationManager;
         private bool _autoAuthenticationAttempted;
+        private readonly IMessageIdGenerator _idGenerator;
 
         protected ChannelConnectorBase(
             IChannelSchema schema,
             ConnectionSettings? connectionSettings = null,
             ILogger? logger = null,
-            IAuthenticationManager? authenticationManager = null)
+            IAuthenticationManager? authenticationManager = null,
+            IMessageIdGenerator? idGenerator = null)
         {
             Schema = schema ?? throw new ArgumentNullException(nameof(schema));
             ConnectionSettings = connectionSettings ?? new ConnectionSettings();
             Logger = logger ?? NullLogger.Instance;
             _authenticationManager = authenticationManager ?? new AuthenticationManager(logger: NullLogger<AuthenticationManager>.Instance);
+            _idGenerator = idGenerator ?? new DefaultMessageIdGenerator();
         }
 
         public IChannelSchema Schema { get; }
@@ -40,6 +43,8 @@ namespace Deveel.Messaging
         protected IAuthenticationManager AuthenticationManager => _authenticationManager;
 
         protected AuthenticationCredential? AuthenticationCredential => _authenticationCredential;
+
+        protected IMessageIdGenerator IdGenerator => _idGenerator;
 
         public ConnectorState State
         {
@@ -98,7 +103,7 @@ namespace Deveel.Messaging
 
         protected virtual IDisposable? BeginMessageLoggerScope(IMessage message)
         {
-            return Logger.BeginScope("[MessageId:{MessageId}]", message.Id);
+            return Logger.BeginScope("[MessageId:{MessageId}]", message.Id ?? "(unknown)");
         }
 
         public async ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
@@ -343,12 +348,14 @@ namespace Deveel.Messaging
             ValidateCapability(ChannelCapability.SendMessages);
             await EnsureInitializedAsync(cancellationToken);
 
+            _idGenerator.EnsureMessageId(message);
+
             using var scope = BeginConnectorLoggerScope();
             using var messageScope = BeginMessageLoggerScope(message);
 
             try
             {
-                Logger.LogValidatingMessage(message.Id);
+                Logger.LogValidatingMessage(message.Id!);
 
                 var validationErrors = new List<ValidationResult>();
                 await foreach (var validationResult in ValidateMessageAsync(message, cancellationToken))
@@ -361,7 +368,7 @@ namespace Deveel.Messaging
 
                 if (validationErrors.Count > 0)
                 {
-                    Logger.LogMessageValidationFailed(message.Id, validationErrors.Count);
+                    Logger.LogMessageValidationFailed(message.Id!, validationErrors.Count);
 
                     return OperationResult<SendResult>.ValidationFailed(
                         ConnectorErrorCodes.MessageValidationFailed,
@@ -369,9 +376,9 @@ namespace Deveel.Messaging
                         validationErrors);
                 }
 
-                Logger.LogMessageValidationPassed(message.Id);
+                Logger.LogMessageValidationPassed(message.Id!);
 
-                Logger.LogSendingMessage(message.Id);
+                Logger.LogSendingMessage(message.Id!);
 
                 var result = await SendMessageCoreAsync(message, cancellationToken);
 
@@ -381,12 +388,12 @@ namespace Deveel.Messaging
             }
             catch (MessagingException ex)
             {
-                Logger.LogMessageSendFailed(message.Id, ex);
+                Logger.LogMessageSendFailed(message.Id!, ex);
                 return OperationResult<SendResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
-                Logger.LogMessageSendFailed(message.Id, ex);
+                Logger.LogMessageSendFailed(message.Id!, ex);
                 return OperationResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
@@ -399,6 +406,8 @@ namespace Deveel.Messaging
             ValidateCapability(ChannelCapability.BulkMessaging);
             await EnsureInitializedAsync(cancellationToken);
 
+            _idGenerator.EnsureBatchId(batch);
+
             using var scope = BeginConnectorLoggerScope();
 
             try
@@ -408,6 +417,8 @@ namespace Deveel.Messaging
 
                 foreach (var message in batch.Messages)
                 {
+                    _idGenerator.EnsureMessageId(message);
+
                     var messageErrors = new List<ValidationResult>();
                     await foreach (var validationResult in ValidateMessageAsync(message, cancellationToken))
                     {
@@ -420,7 +431,7 @@ namespace Deveel.Messaging
 
                     if (messageErrors.Count > 0)
                     {
-                        messageValidationResults[message.Id] = messageErrors;
+                        messageValidationResults[message.Id!] = messageErrors;
                     }
                 }
 
