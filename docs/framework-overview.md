@@ -94,7 +94,7 @@ var smsResult = await twilioConnector.SendMessageAsync(message, ct);
 
 ### Messaging client
 
-**`IMessagingClient`** — a high-level facade that resolves named connectors from DI, handles lazy initialization, and exposes the 4 most common operations (`SendAsync`, `ReceiveAsync`, `GetStatusAsync`, `ReceiveMessageStatusAsync`). Callers do not manage connector state directly. Register it via `.AddClient()` on the `MessagingBuilder`.
+**`IMessagingClient`** — a high-level facade that resolves named connectors from DI, handles lazy initialization, and exposes the 4 most common operations (`SendAsync`, `ReceiveAsync`, `GetStatusAsync`, `ReceiveMessageStatusAsync`). Implements `IDisposable` and `IAsyncDisposable` — when the client is disposed, all cached connectors are shut down gracefully. Callers do not manage connector state directly. Register it via `.AddClient()` on the `MessagingBuilder`.
 
 ### Message builder
 
@@ -126,8 +126,8 @@ var message = new MessageBuilder()
 
 | Package | Role | Dependencies |
 |---|---|---|---|
-| `Deveel.Messaging.Abstractions` | Message model, endpoints, content types. Pure model — no infrastructure. | None |
-| `Deveel.Messaging` | `AddMessaging()` DI entry point, `MessagingBuilder`, `IMessagingClient` facade, `MessageBuilder`, `ChannelConnectorFactory`. | `Connector.Abstractions` |
+| `Deveel.Messaging.Abstractions` | Message model, `MessageBuilder`, endpoints, content types. Pure model — no infrastructure. | None |
+| `Deveel.Messaging` | `AddMessaging()` DI entry point, `MessagingBuilder`, `IMessagingClient` facade (disposable), `ChannelConnectorFactory`. | `Connector.Abstractions` |
 | `Deveel.Messaging.Connector.Abstractions` | Interfaces for connectors, schemas, auth, and result types. Contracts only. | `Abstractions` |
 | `Deveel.Messaging.Connectors` | `ChannelConnectorBase`, `ChannelSchema` builder, `ChannelSchemaRegistry`, authentication manager, `ChannelConnectorBuilder`. | `Connector.Abstractions` |
 | `Deveel.Messaging.Connector.*` | Provider-specific implementations. Each references `Connectors` or `Connector.Abstractions`. | Provider SDK + `Connectors` |

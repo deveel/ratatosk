@@ -24,7 +24,7 @@ namespace Deveel.Messaging
     /// and a failure result is returned.
     /// </para>
     /// </remarks>
-    public class MessagingClient : IMessagingClient
+    public class MessagingClient : IMessagingClient, IDisposable, IAsyncDisposable
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly MessagingClientOptions _options;
@@ -188,6 +188,30 @@ namespace Deveel.Messaging
             {
                 _lock.Release();
             }
+        }
+
+        public void Dispose()
+        {
+            foreach (var connector in _connectors.Values)
+            {
+                if (connector is IDisposable disposable)
+                    disposable.Dispose();
+            }
+
+            _lock.Dispose();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            foreach (var connector in _connectors.Values)
+            {
+                await connector.ShutdownAsync(default).ConfigureAwait(false);
+
+                if (connector is IAsyncDisposable asyncDisposable)
+                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+            }
+
+            _lock.Dispose();
         }
     }
 }

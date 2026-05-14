@@ -16,7 +16,7 @@ namespace Deveel.Messaging
     /// or through runtime overloads that accept connection settings directly.
     /// </para>
     /// </remarks>
-    public interface IMessagingClient
+    public interface IMessagingClient : IDisposable, IAsyncDisposable
     {
         /// <summary>
         /// Sends a message through the specified named channel.

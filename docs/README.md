@@ -31,21 +31,21 @@ The framework is deliberately focused on the messaging contract and connector co
 
 ## Features
 
-- **Unified message model** — `Message` with fluent builder, `MessageBuilder` dedicated builder, typed endpoints, and 8 content types (text, HTML, media, binary, JSON, location, template, multipart)
+- **Unified message model** — `Message` with fluent builder, dedicated `MessageBuilder`, typed endpoints, and 8 content types (text, HTML, media, binary, JSON, location, template, multipart)
 - **Schema-driven validation** — every connector declares its capabilities, parameters, and constraints via `IChannelSchema`; validate messages before they reach the provider
 - **Pluggable authentication** — API key, token, basic auth, OAuth 2.0 client credentials, Firebase service account, or custom providers
 - **DI-first design** — `AddMessaging()` + `AddConnector<T>()` integration with `Microsoft.Extensions.DependencyInjection`
 - **Standardized results** — all operations return `OperationResult<T>` with success/failure semantics
 - **Schema derivation** — derive restricted schemas from a master for tenant isolation or feature tiers
-- **IMessagingClient facade** — high-level client with lazy initialization and named channel routing; simplifies connector lifecycle
+- **IMessagingClient facade** — disposable high-level client with lazy initialization and named channel routing; simplifies connector lifecycle
 - **Extensible** — implement `ChannelConnectorBase` to add any provider; built-in logging scopes, state management, and error wrapping
 
 ## Packages
 
 | Package | Description | NuGet |
 |---|---|---|
-| `Deveel.Messaging.Abstractions` | Message model with fluent builder, typed endpoints, eight content types, properties, and batch support. No external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Abstractions) |
-| `Deveel.Messaging` | DI registration (`AddMessaging`), `IMessagingClient` facade, `MessageBuilder`, connector factory, and service collection extensions. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging)](https://nuget.org/packages/Deveel.Messaging) |
+| `Deveel.Messaging.Abstractions` | Message model with fluent builder, dedicated `MessageBuilder`, typed endpoints, eight content types, properties, and batch support. No external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Abstractions) |
+| `Deveel.Messaging` | DI registration (`AddMessaging`), `IMessagingClient` facade (disposable), connector factory, and service collection extensions. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging)](https://nuget.org/packages/Deveel.Messaging) |
 | `Deveel.Messaging.Connector.Abstractions` | Contracts for connectors, schemas, authentication, validation, and result types. Reference when building custom connector libraries. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Connector.Abstractions) |
 | `Deveel.Messaging.Connectors` | Abstract connector base class (`ChannelConnectorBase`) with state management and error wrapping, fluent schema builder (`ChannelSchema`), schema registry, auth manager, and connector builder API. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors)](https://nuget.org/packages/Deveel.Messaging.Connectors) |
 | `Deveel.Messaging.Connector.Twilio` | Twilio SMS, MMS, and WhatsApp messaging with status callbacks and template support. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio)](https://nuget.org/packages/Deveel.Messaging.Connector.Twilio) |

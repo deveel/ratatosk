@@ -156,7 +156,7 @@ public async Task<IActionResult> TwilioWebhook(
 
 ## 6. IMessagingClient facade
 
-For applications that use DI, the `IMessagingClient` facade simplifies further by managing connector resolution, lazy initialization, and caching. You register named connectors at startup and then call `SendAsync` by channel name.
+For applications that use DI, the `IMessagingClient` facade simplifies further by managing connector resolution, lazy initialization, caching, and disposal. The client implements `IDisposable` and `IAsyncDisposable` — when disposed, it calls `ShutdownAsync` on all cached connectors and releases the synchronization guard. In DI scenarios the container manages disposal automatically. You register named connectors at startup and then call `SendAsync` by channel name.
 
 ```csharp
 // Program.cs
