@@ -65,11 +65,11 @@ namespace Deveel.Messaging
         {
             _apiKey = AuthenticationCredential?.Value;
 
-            _sandboxMode = ConnectionSettings.GetParameter<bool?>(SendGridConnectionParameters.SandboxMode) ?? SendGridConnectionSettingsDefaults.SandboxMode;
-            _webhookUrl = ConnectionSettings.GetParameter<string>(SendGridConnectionParameters.WebhookUrl);
-            _trackingSettings = ConnectionSettings.GetParameter<bool?>(SendGridConnectionParameters.TrackingSettings) ?? SendGridConnectionSettingsDefaults.TrackingSettings;
-            _defaultFromName = ConnectionSettings.GetParameter<string>(SendGridConnectionParameters.DefaultFromName);
-            _defaultReplyTo = ConnectionSettings.GetParameter<string>(SendGridConnectionParameters.DefaultReplyTo);
+            _sandboxMode = ConnectionSettings.GetSandboxMode() ?? SendGridConnectionSettingsDefaults.SandboxMode;
+            _webhookUrl = ConnectionSettings.GetWebhookUrl();
+            _trackingSettings = ConnectionSettings.GetTrackingSettings() ?? SendGridConnectionSettingsDefaults.TrackingSettings;
+            _defaultFromName = ConnectionSettings.GetDefaultFromName();
+            _defaultReplyTo = ConnectionSettings.GetDefaultReplyTo();
 
             Logger.LogSandboxMode(_sandboxMode);
             Logger.LogTrackingSettings(_trackingSettings);

@@ -58,9 +58,9 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            _pageId = ConnectionSettings.GetParameter<string?>(FacebookConnectionParameters.PageId);
-            _webhookUrl = ConnectionSettings.GetParameter<string?>(FacebookConnectionParameters.WebhookUrl);
-            _verifyToken = ConnectionSettings.GetParameter<string?>(FacebookConnectionParameters.VerifyToken);
+            _pageId = ConnectionSettings.GetPageId();
+            _webhookUrl = ConnectionSettings.GetWebhookUrl();
+            _verifyToken = ConnectionSettings.GetVerifyToken();
 
             if (string.IsNullOrWhiteSpace(_pageId))
             {

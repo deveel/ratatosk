@@ -72,8 +72,8 @@ namespace Deveel.Messaging
                     result.Error?.Message ?? "Authentication failed");
 
             // Extract configuration from connection settings with proper handling of missing values
-            _projectId = ConnectionSettings.GetParameter<string>(FirebaseConnectionParameters.ProjectId);
-            _dryRun = ConnectionSettings.GetParameter<bool?>(FirebaseConnectionParameters.DryRun) ?? FirebaseConnectionSettingsDefaults.DryRun;
+            _projectId = ConnectionSettings.GetProjectId();
+            _dryRun = ConnectionSettings.GetDryRun() ?? FirebaseConnectionSettingsDefaults.DryRun;
             
             if (string.IsNullOrWhiteSpace(_projectId))
             {

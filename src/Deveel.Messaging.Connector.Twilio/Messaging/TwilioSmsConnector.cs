@@ -68,14 +68,14 @@ namespace Deveel.Messaging
                 _authToken = AuthenticationCredential.Properties.TryGetValue("Password", out var password) ? password?.ToString() : null;
             }
 
-            _accountSid ??= ConnectionSettings.GetParameter(TwilioConnectionParameters.AccountSid) as string;
-            _authToken ??= ConnectionSettings.GetParameter(TwilioConnectionParameters.AuthToken) as string;
+            _accountSid ??= ConnectionSettings.GetAccountSid();
+            _authToken ??= ConnectionSettings.GetAuthToken();
 
-            _webhookUrl = ConnectionSettings.GetParameter(TwilioConnectionParameters.WebhookUrl) as string;
-            _statusCallback = ConnectionSettings.GetParameter(TwilioConnectionParameters.StatusCallback) as string;
-            _validityPeriod = ConnectionSettings.GetParameter(TwilioConnectionParameters.ValidityPeriod) as int?;
-            _maxPrice = ConnectionSettings.GetParameter(TwilioConnectionParameters.MaxPrice) as decimal?;
-            _messagingServiceSid = ConnectionSettings.GetParameter(TwilioConnectionParameters.MessagingServiceSid) as string;
+            _webhookUrl = ConnectionSettings.GetWebhookUrl();
+            _statusCallback = ConnectionSettings.GetStatusCallback();
+            _validityPeriod = ConnectionSettings.GetValidityPeriod();
+            _maxPrice = ConnectionSettings.GetMaxPrice() is double mp ? (decimal)mp : null;
+            _messagingServiceSid = ConnectionSettings.GetMessagingServiceSid();
 
             if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
             {
