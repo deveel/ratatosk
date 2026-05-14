@@ -96,23 +96,11 @@ namespace Deveel.Messaging
             authenticationConfigurations = new List<AuthenticationConfiguration>();
             foreach (var authConfig in sourceSchema.AuthenticationConfigurations)
             {
-                var newAuthConfig = new AuthenticationConfiguration(authConfig.AuthenticationType, authConfig.DisplayName);
+                var newAuthConfig = new AuthenticationConfiguration(authConfig.Scheme, authConfig.DisplayName);
 
-                foreach (var field in authConfig.RequiredFields)
+                foreach (var field in authConfig.Fields)
                 {
-                    newAuthConfig.WithRequiredField(new AuthenticationField(field.FieldName, field.DataType)
-                    {
-                        IsSensitive = field.IsSensitive,
-                        DisplayName = field.DisplayName,
-                        Description = field.Description,
-                        AuthenticationRole = field.AuthenticationRole,
-                        AllowedValues = field.AllowedValues?.ToList()
-                    });
-                }
-
-                foreach (var field in authConfig.OptionalFields)
-                {
-                    newAuthConfig.WithOptionalField(new AuthenticationField(field.FieldName, field.DataType)
+                    newAuthConfig.WithField(new AuthenticationField(field.FieldName, field.DataType)
                     {
                         IsSensitive = field.IsSensitive,
                         DisplayName = field.DisplayName,
@@ -196,10 +184,10 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         public IReadOnlyList<ChannelEndpointConfiguration> Endpoints => endpoints.AsReadOnly();
 
-        /// <summary>
-        /// Gets the distinct authentication types supported by the schema.
-        /// </summary>
-        public IEnumerable<AuthenticationType> AuthenticationTypes =>
-            AuthenticationConfigurations.Select(c => c.AuthenticationType).Distinct();
+		/// <summary>
+		/// Gets the distinct authentication schemes supported by the schema.
+		/// </summary>
+		public IEnumerable<AuthenticationScheme> AuthenticationSchemes =>
+			AuthenticationConfigurations.Select(c => c.Scheme).Distinct();
     }
 }

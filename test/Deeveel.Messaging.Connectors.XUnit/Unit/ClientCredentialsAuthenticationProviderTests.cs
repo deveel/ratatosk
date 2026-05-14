@@ -50,9 +50,12 @@ namespace Deveel.Messaging
             var handler = CreateHandler(401, @"{""error"":""invalid_client""}");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -67,9 +70,12 @@ namespace Deveel.Messaging
             var handler = CreateHandler(200, @"{""token_type"":""Bearer""}");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -84,9 +90,12 @@ namespace Deveel.Messaging
             var handler = CreateHandler(200, @"{""access_token"":""""}");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -106,9 +115,12 @@ namespace Deveel.Messaging
             }");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings(scope: "read write");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -128,9 +140,12 @@ namespace Deveel.Messaging
             }");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -145,9 +160,12 @@ namespace Deveel.Messaging
             var handler = CreateHandler(200, @"{""access_token"":""token-no-type""}");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -162,9 +180,12 @@ namespace Deveel.Messaging
             var handler = CreateHandler(200, @"{""access_token"":""token-no-expiry"",""token_type"":""Bearer""}");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -179,9 +200,12 @@ namespace Deveel.Messaging
             var handler = new FailingHttpMessageHandler(new HttpRequestException("Connection refused"));
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -196,9 +220,12 @@ namespace Deveel.Messaging
             var handler = CreateHandler(200, "not-valid-json{{{");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(settings, cancellationToken);
+            var result = await provider.ObtainCredentialAsync(settings, config, cancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -217,14 +244,17 @@ namespace Deveel.Messaging
             var handler = CreateHandler(200, @"{""access_token"":""refreshed-token"",""token_type"":""Bearer""}");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
-            var existingCredential = AuthenticationCredential.CreateToken("old-token", null, "Bearer");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
+            var existingCredential = AuthenticationCredential.ForBearerToken("old-token", null, "Bearer");
 
             // Act
-            var result = await provider.RefreshCredentialAsync(existingCredential, settings, cancellationToken);
+            var result = await provider.RefreshCredentialAsync(existingCredential, settings, config, cancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
-            Assert.Equal("refreshed-token", result.Credential!.CredentialValue);
+            Assert.Equal("refreshed-token", result.Credential!.Value);
         }
 
         [Fact]
@@ -239,15 +269,18 @@ namespace Deveel.Messaging
             }");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
-            var existingCredential = AuthenticationCredential.CreateToken("old-token", null, "Bearer");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
+            var existingCredential = AuthenticationCredential.ForBearerToken("old-token", null, "Bearer");
             existingCredential.Properties["RefreshToken"] = "existing-refresh-token";
 
             // Act
-            var result = await provider.RefreshCredentialAsync(existingCredential, settings, cancellationToken);
+            var result = await provider.RefreshCredentialAsync(existingCredential, settings, config, cancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
-            Assert.Equal("refreshed-access", result.Credential!.CredentialValue);
+            Assert.Equal("refreshed-access", result.Credential!.Value);
             // Should preserve old refresh token when not provided in response
             Assert.Equal("existing-refresh-token", result.Credential.Properties["RefreshToken"]);
         }
@@ -264,11 +297,14 @@ namespace Deveel.Messaging
             }");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
-            var existingCredential = AuthenticationCredential.CreateToken("old-token", null, "Bearer");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
+            var existingCredential = AuthenticationCredential.ForBearerToken("old-token", null, "Bearer");
             existingCredential.Properties["RefreshToken"] = "old-refresh-token";
 
             // Act
-            var result = await provider.RefreshCredentialAsync(existingCredential, settings, cancellationToken);
+            var result = await provider.RefreshCredentialAsync(existingCredential, settings, config, cancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
@@ -283,11 +319,14 @@ namespace Deveel.Messaging
             var handler = CreateHandler(200, @"{""token_type"":""Bearer""}");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
-            var existingCredential = AuthenticationCredential.CreateToken("old-token", null, "Bearer");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
+            var existingCredential = AuthenticationCredential.ForBearerToken("old-token", null, "Bearer");
             existingCredential.Properties["RefreshToken"] = "existing-refresh-token";
 
             // Act
-            var result = await provider.RefreshCredentialAsync(existingCredential, settings, cancellationToken);
+            var result = await provider.RefreshCredentialAsync(existingCredential, settings, config, cancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -302,11 +341,14 @@ namespace Deveel.Messaging
             var handler = CreateHandler(200, @"{""access_token"":""""}");
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
-            var existingCredential = AuthenticationCredential.CreateToken("old-token", null, "Bearer");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
+            var existingCredential = AuthenticationCredential.ForBearerToken("old-token", null, "Bearer");
             existingCredential.Properties["RefreshToken"] = "existing-refresh-token";
 
             // Act
-            var result = await provider.RefreshCredentialAsync(existingCredential, settings, cancellationToken);
+            var result = await provider.RefreshCredentialAsync(existingCredential, settings, config, cancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -326,15 +368,18 @@ namespace Deveel.Messaging
             });
             var provider = new ClientCredentialsAuthenticationProvider(new HttpClient(handler));
             var settings = BuildFullSettings();
-            var existingCredential = AuthenticationCredential.CreateToken("old-token", null, "Bearer");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
+            var existingCredential = AuthenticationCredential.ForBearerToken("old-token", null, "Bearer");
             existingCredential.Properties["RefreshToken"] = "bad-refresh-token";
 
             // Act
-            var result = await provider.RefreshCredentialAsync(existingCredential, settings, cancellationToken);
+            var result = await provider.RefreshCredentialAsync(existingCredential, settings, config, cancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
-            Assert.Equal("fallback-token", result.Credential!.CredentialValue);
+            Assert.Equal("fallback-token", result.Credential!.Value);
         }
 
         #endregion

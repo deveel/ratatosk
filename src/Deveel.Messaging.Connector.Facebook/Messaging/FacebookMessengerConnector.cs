@@ -58,21 +58,9 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            // Extract required parameters
-            _pageAccessToken = ConnectionSettings.GetParameter<string?>(FacebookConnectionParameters.PageAccessToken);
             _pageId = ConnectionSettings.GetParameter<string?>(FacebookConnectionParameters.PageId);
-
-            // Extract optional parameters
             _webhookUrl = ConnectionSettings.GetParameter<string?>(FacebookConnectionParameters.WebhookUrl);
             _verifyToken = ConnectionSettings.GetParameter<string?>(FacebookConnectionParameters.VerifyToken);
-
-            // Perform custom validation logic
-            if (string.IsNullOrWhiteSpace(_pageAccessToken))
-            {
-                throw new MessagingException(
-                    FacebookErrorCodes.MissingCredentials, Schema.ChannelType,
-                    "Page Access Token is required");
-            }
 
             if (string.IsNullOrWhiteSpace(_pageId))
             {
@@ -81,9 +69,16 @@ namespace Deveel.Messaging
                     "Page ID is required");
             }
 
+            _pageAccessToken = AuthenticationCredential?.Value;
+            if (string.IsNullOrWhiteSpace(_pageAccessToken))
+            {
+                throw new MessagingException(
+                    FacebookErrorCodes.MissingCredentials, Schema.ChannelType,
+                    "Page Access Token is required");
+            }
+
             try
             {
-                // Initialize Facebook service with authentication validation
                 _facebookService.Initialize(_pageAccessToken);
             }
             catch (ArgumentException ex)

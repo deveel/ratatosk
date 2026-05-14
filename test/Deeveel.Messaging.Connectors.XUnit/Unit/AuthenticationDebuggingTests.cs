@@ -19,11 +19,12 @@ namespace Deveel.Messaging
         public void Should_Step1_When_DebugSimpleApiKeyAuthentication()
         {
             // Step 1: Test if AuthenticationConfigurations works
-            var config = AuthenticationConfigurations.ApiKeyAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             Assert.NotNull(config);
-            Assert.Equal(AuthenticationType.ApiKey, config.AuthenticationType);
-            Assert.Single(config.RequiredFields);
+            Assert.Equal(AuthenticationScheme.ApiKey, config.Scheme);
+            Assert.Single(config.Fields);
         }
 
         [Fact]
@@ -38,12 +39,13 @@ namespace Deveel.Messaging
 					e.CanSend = true;
 					e.CanReceive = false;
 				})
-				.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+					.WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; }))
 				.Build();
 
 			Assert.NotNull(schema);
             Assert.Single(schema.AuthenticationConfigurations);
-            Assert.Equal(AuthenticationType.ApiKey, schema.AuthenticationConfigurations.First().AuthenticationType);
+            Assert.Equal(AuthenticationScheme.ApiKey, schema.AuthenticationConfigurations.First().Scheme);
         }
 
         [Fact]
@@ -65,14 +67,15 @@ namespace Deveel.Messaging
             var authManager = new AuthenticationManager();
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "test-api-key");
-            var config = AuthenticationConfigurations.ApiKeyAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             var result = await authManager.AuthenticateAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccessful, $"Authentication failed: {result.ErrorCode} - {result.ErrorMessage}");
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.ApiKey, result.Credential.AuthenticationType);
-            Assert.Equal("test-api-key", result.Credential.CredentialValue);
+            Assert.Equal(AuthenticationScheme.ApiKey, result.Credential.Scheme);
+            Assert.Equal("test-api-key", result.Credential.Value);
         }
 
         [Fact]
@@ -80,7 +83,8 @@ namespace Deveel.Messaging
         {
             // Step 5: Test basic connector authentication without sending messages
 			var schema = new ChannelSchemaBuilder("TestEmail", "Email", "1.0.0")
-				.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+					.WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; }))
 				.Build();
 
 			var connectionSettings = new ConnectionSettings()
@@ -94,7 +98,7 @@ namespace Deveel.Messaging
             Assert.True(initResult.IsSuccess(), $"Initialization failed: {initResult.Error?.Code} - {initResult.Error?.Message}");
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
-            Assert.Equal(AuthenticationType.ApiKey, connector.TestAuthenticationCredential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.ApiKey, connector.TestAuthenticationCredential.Scheme);
         }
 
         [Fact]
@@ -105,13 +109,15 @@ namespace Deveel.Messaging
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("AccountSid", "AC123456789")
                 .SetParameter("AuthToken", "test-token");
-            var config = AuthenticationConfigurations.TwilioBasicAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Twilio Basic Authentication")
+                .WithField("AccountSid", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("AuthToken", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             var result = await authManager.AuthenticateAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccessful, $"Authentication failed: {result.ErrorCode} - {result.ErrorMessage}");
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.Basic, result.Credential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, result.Credential.Scheme);
         }
 
 

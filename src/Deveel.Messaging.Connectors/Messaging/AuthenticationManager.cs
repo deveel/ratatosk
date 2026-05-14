@@ -10,7 +10,10 @@ using System.Text;
 namespace Deveel.Messaging
 {
     /// <summary>
-    /// Manages authentication providers and handles the authentication process for connectors.
+    /// Default implementation of <see cref="IAuthenticationManager"/> that registers the
+    /// built-in providers (<see cref="ApiKeyAuthenticationProvider"/>, <see cref="BearerTokenAuthenticationProvider"/>,
+    /// <see cref="BasicAuthenticationProvider"/>, <see cref="ClientCredentialsAuthenticationProvider"/>)
+    /// and provides in-memory credential caching.
     /// </summary>
     public class AuthenticationManager : IAuthenticationManager
     {
@@ -20,43 +23,34 @@ namespace Deveel.Messaging
         private readonly object _cacheLock = new object();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AuthenticationManager"/> class.
+        /// Initializes a new instance. If no <paramref name="providers"/> are supplied,
+        /// the four built-in providers are registered automatically.
         /// </summary>
-        /// <param name="providers">The authentication providers to register.</param>
-        /// <param name="logger">Optional logger for diagnostic purposes.</param>
+        /// <param name="providers">Optional initial set of providers.</param>
+        /// <param name="logger">An optional logger.</param>
         public AuthenticationManager(IEnumerable<IAuthenticationProvider>? providers = null, ILogger<AuthenticationManager>? logger = null)
         {
             _providers = new List<IAuthenticationProvider>(providers ?? Enumerable.Empty<IAuthenticationProvider>());
             _logger = logger ?? NullLogger<AuthenticationManager>.Instance;
             _credentialCache = new Dictionary<string, AuthenticationCredential>();
 
-            // Register default providers if none are provided
             if (_providers.Count == 0)
             {
                 RegisterDefaultProviders();
             }
         }
 
-        /// <summary>
-        /// Registers an authentication provider.
-        /// </summary>
-        /// <param name="provider">The authentication provider to register.</param>
+        /// <inheritdoc/>
         public void RegisterProvider(IAuthenticationProvider provider)
         {
             ArgumentNullException.ThrowIfNull(provider, nameof(provider));
-            
+
             _providers.Add(provider);
-            _logger.LogDebug("Registered authentication provider: {ProviderName} for {AuthenticationType}", 
-                provider.DisplayName, provider.AuthenticationType);
+            _logger.LogDebug("Registered authentication provider: {ProviderName} for {Scheme}",
+                provider.DisplayName, provider.Scheme);
         }
 
-        /// <summary>
-        /// Authenticates using the provided connection settings and authentication configuration.
-        /// </summary>
-        /// <param name="connectionSettings">The connection settings containing authentication parameters.</param>
-        /// <param name="configuration">The authentication configuration.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        /// <returns>A task representing the asynchronous authentication operation.</returns>
+        /// <inheritdoc/>
         public async Task<AuthenticationResult> AuthenticateAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
@@ -64,49 +58,45 @@ namespace Deveel.Messaging
 
             try
             {
-                _logger.LogDebug("Authenticating using {AuthenticationType} authentication", configuration.AuthenticationType);
+                _logger.LogDebug("Authenticating using {Scheme} authentication", configuration.Scheme);
 
-                // Find a provider that can handle this configuration
                 var provider = FindProvider(configuration);
                 if (provider == null)
                 {
-                    _logger.LogWarning("No authentication provider found for {AuthenticationType}", configuration.AuthenticationType);
-                    return AuthenticationResult.Failure($"No authentication provider available for {configuration.AuthenticationType}", "NO_PROVIDER");
+                    _logger.LogWarning("No authentication provider found for {Scheme}", configuration.Scheme);
+                    return AuthenticationResult.Failure($"No authentication provider available for scheme '{configuration.Scheme}'", "NO_PROVIDER");
                 }
 
-                // Check cache first
                 var cacheKey = CreateCacheKey(connectionSettings, configuration);
                 var cachedCredential = GetCachedCredential(cacheKey);
-                
+
                 if (cachedCredential != null && !ShouldRefreshCredential(cachedCredential))
                 {
-                    _logger.LogDebug("Using cached credential for {AuthenticationType}", configuration.AuthenticationType);
+                    _logger.LogDebug("Using cached credential for {Scheme}", configuration.Scheme);
                     return AuthenticationResult.Success(cachedCredential);
                 }
 
-                // Obtain new credential or refresh existing one
                 AuthenticationResult result;
                 if (cachedCredential != null && ShouldRefreshCredential(cachedCredential))
                 {
-                    _logger.LogDebug("Refreshing credential for {AuthenticationType}", configuration.AuthenticationType);
-                    result = await provider.RefreshCredentialAsync(cachedCredential, connectionSettings, cancellationToken);
+                    _logger.LogDebug("Refreshing credential for {Scheme}", configuration.Scheme);
+                    result = await provider.RefreshCredentialAsync(cachedCredential, connectionSettings, configuration, cancellationToken);
                 }
                 else
                 {
-                    _logger.LogDebug("Obtaining new credential for {AuthenticationType}", configuration.AuthenticationType);
-                    result = await provider.ObtainCredentialAsync(connectionSettings, cancellationToken);
+                    _logger.LogDebug("Obtaining new credential for {Scheme}", configuration.Scheme);
+                    result = await provider.ObtainCredentialAsync(connectionSettings, configuration, cancellationToken);
                 }
 
-                // Cache successful results
                 if (result.IsSuccessful && result.Credential != null)
                 {
                     CacheCredential(cacheKey, result.Credential);
-                    _logger.LogInformation("Successfully authenticated using {AuthenticationType}", configuration.AuthenticationType);
+                    _logger.LogInformation("Successfully authenticated using {Scheme}", configuration.Scheme);
                 }
                 else
                 {
-                    _logger.LogWarning("Authentication failed for {AuthenticationType}: {ErrorMessage}", 
-                        configuration.AuthenticationType, result.ErrorMessage);
+                    _logger.LogWarning("Authentication failed for {Scheme}: {ErrorMessage}",
+                        configuration.Scheme, result.ErrorMessage);
                 }
 
                 return result;
@@ -118,9 +108,7 @@ namespace Deveel.Messaging
             }
         }
 
-        /// <summary>
-        /// Clears the credential cache.
-        /// </summary>
+        /// <inheritdoc/>
         public void ClearCache()
         {
             lock (_cacheLock)
@@ -130,33 +118,28 @@ namespace Deveel.Messaging
             }
         }
 
-        /// <summary>
-        /// Removes a specific credential from the cache.
-        /// </summary>
-        /// <param name="connectionSettings">The connection settings.</param>
-        /// <param name="configuration">The authentication configuration.</param>
+        /// <inheritdoc/>
         public void InvalidateCredential(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration)
         {
             ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
             ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
 
             var cacheKey = CreateCacheKey(connectionSettings, configuration);
-            
+
             lock (_cacheLock)
             {
                 if (_credentialCache.Remove(cacheKey))
                 {
-                    _logger.LogDebug("Invalidated cached credential for {AuthenticationType}", configuration.AuthenticationType);
+                    _logger.LogDebug("Invalidated cached credential for {Scheme}", configuration.Scheme);
                 }
             }
         }
 
         private void RegisterDefaultProviders()
         {
-            // Register built-in providers
-            RegisterProvider(DirectCredentialAuthenticationProvider.CreateApiKeyProvider());
-            RegisterProvider(DirectCredentialAuthenticationProvider.CreateTokenProvider());
-            RegisterProvider(DirectCredentialAuthenticationProvider.CreateBasicProvider());
+            RegisterProvider(new ApiKeyAuthenticationProvider());
+            RegisterProvider(new BearerTokenAuthenticationProvider());
+            RegisterProvider(new BasicAuthenticationProvider());
             RegisterProvider(new ClientCredentialsAuthenticationProvider());
 
             _logger.LogDebug("Registered default authentication providers");
@@ -169,11 +152,9 @@ namespace Deveel.Messaging
 
         private string CreateCacheKey(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration)
         {
-            // Create a cache key based on authentication type and relevant parameters
             var keyBuilder = new StringBuilder();
-            keyBuilder.Append(configuration.AuthenticationType.ToString());
+            keyBuilder.Append(configuration.Scheme.Name);
 
-            // Add relevant field values to the key
             var relevantFields = configuration.GetAllFieldNames();
             foreach (var field in relevantFields.OrderBy(f => f))
             {
@@ -193,13 +174,11 @@ namespace Deveel.Messaging
             {
                 if (_credentialCache.TryGetValue(cacheKey, out var credential))
                 {
-                    // Check if credential is still valid
                     if (!credential.IsExpired)
                     {
                         return credential;
                     }
 
-                    // Remove expired credential
                     _credentialCache.Remove(cacheKey);
                 }
             }
@@ -217,41 +196,7 @@ namespace Deveel.Messaging
 
         private bool ShouldRefreshCredential(AuthenticationCredential credential)
         {
-            // Refresh if expired or will expire within 5 minutes
             return credential.IsExpired || credential.WillExpireSoon(TimeSpan.FromMinutes(5));
         }
-    }
-
-    /// <summary>
-    /// Defines the contract for authentication management services.
-    /// </summary>
-    public interface IAuthenticationManager
-    {
-        /// <summary>
-        /// Registers an authentication provider.
-        /// </summary>
-        /// <param name="provider">The authentication provider to register.</param>
-        void RegisterProvider(IAuthenticationProvider provider);
-
-        /// <summary>
-        /// Authenticates using the provided connection settings and authentication configuration.
-        /// </summary>
-        /// <param name="connectionSettings">The connection settings containing authentication parameters.</param>
-        /// <param name="configuration">The authentication configuration.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        /// <returns>A task representing the asynchronous authentication operation.</returns>
-        Task<AuthenticationResult> AuthenticateAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Clears the credential cache.
-        /// </summary>
-        void ClearCache();
-
-        /// <summary>
-        /// Removes a specific credential from the cache.
-        /// </summary>
-        /// <param name="connectionSettings">The connection settings.</param>
-        /// <param name="configuration">The authentication configuration.</param>
-        void InvalidateCredential(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration);
     }
 }

@@ -146,7 +146,7 @@ namespace Deveel.Messaging.XUnit
 
 			// Act
 			// Assert
-			Assert.False(descriptor.SupportsAuthenticationType(AuthenticationType.Basic));
+			Assert.False(descriptor.SupportsAuthenticationScheme(AuthenticationScheme.Basic));
 		}
 
 		[Fact]
@@ -276,7 +276,7 @@ namespace Deveel.Messaging.XUnit
 				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText)
-				.AddAuthenticationType(AuthenticationType.Basic).Build();
+				.AddAuthenticationScheme(AuthenticationScheme.Basic).Build();
 		}
 
 		// Test connector classes that implement IChannelConnector

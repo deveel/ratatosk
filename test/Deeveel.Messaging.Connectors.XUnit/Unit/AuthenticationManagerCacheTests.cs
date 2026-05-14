@@ -9,7 +9,8 @@ public class AuthenticationManagerCacheTests
     {
         var manager = new AuthenticationManager();
         var settings = new ConnectionSettings().SetParameter("ApiKey", "key-1");
-        var config = AuthenticationConfigurations.ApiKeyAuthentication();
+        var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+            .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
         var first = await manager.AuthenticateAsync(settings, config, TestContext.Current.CancellationToken);
         var second = await manager.AuthenticateAsync(settings, config, TestContext.Current.CancellationToken);
@@ -24,7 +25,8 @@ public class AuthenticationManagerCacheTests
     {
         var manager = new AuthenticationManager();
         var settings = new ConnectionSettings().SetParameter("ApiKey", "key-1");
-        var config = AuthenticationConfigurations.ApiKeyAuthentication();
+        var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+            .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
         manager.InvalidateCredential(settings, config);
 
@@ -36,7 +38,8 @@ public class AuthenticationManagerCacheTests
     {
         var manager = new AuthenticationManager();
         var settings = new ConnectionSettings().SetParameter("ApiKey", "key-1");
-        var config = AuthenticationConfigurations.ApiKeyAuthentication();
+        var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+            .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
         var first = await manager.AuthenticateAsync(settings, config, TestContext.Current.CancellationToken);
         manager.InvalidateCredential(settings, config);

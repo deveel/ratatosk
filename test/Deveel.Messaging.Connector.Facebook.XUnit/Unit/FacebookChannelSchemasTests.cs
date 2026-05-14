@@ -275,8 +275,8 @@ public class FacebookChannelSchemasTests
         var schema = FacebookChannelSchemas.FacebookMessenger;
 
         // Assert
-        var authTypes = schema.AuthenticationTypes.ToList();
-        Assert.Contains(AuthenticationType.Token, authTypes);
+        var authTypes = schema.AuthenticationSchemes.ToList();
+        Assert.Contains(AuthenticationScheme.Bearer, authTypes);
         Assert.Single(authTypes);
     }
 

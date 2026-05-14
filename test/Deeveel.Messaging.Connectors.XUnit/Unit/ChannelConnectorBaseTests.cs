@@ -704,8 +704,8 @@ public class ChannelConnectorBaseTests
 	public void Should_ReturnNotAnonymous_When_HasAuthConfigurations()
 	{
 		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
-			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Token, "Token Auth")
-				.WithRequiredField("token", DataType.String))
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Token Auth")
+				.WithField("token", DataType.String))
 			.Build();
 		var connector = new TestConnector(schema);
 
@@ -729,12 +729,12 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnNullApiKey_When_NotApiKeyAuth()
 	{
 		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
-			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Token, "Token Auth")
-				.WithRequiredField("token", DataType.String))
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Token Auth")
+				.WithField("token", DataType.String))
 			.Build();
 
 		var settings = new ConnectionSettings().SetParameter("token", "test-token");
-		var credential = AuthenticationCredential.CreateToken("test-token");
+		var credential = AuthenticationCredential.ForBearerToken("test-token");
 		var authManager = new StubAuthenticationManager(AuthenticationResult.Success(credential));
 
 		var connector = new TestConnector(schema, settings, authenticationManager: authManager)
@@ -760,15 +760,15 @@ public class ChannelConnectorBaseTests
 	}
 
 	[Fact]
-	public async Task Should_ReturnTokenAuthHeader_When_TokenAuthentication()
+	public async Task Should_ReturnTokenAuthHeader_When_BearerTokenAuthentication()
 	{
 		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
-			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Token, "Token Auth")
-				.WithRequiredField("token", DataType.String))
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Token Auth")
+				.WithField("token", DataType.String))
 			.Build();
 
 		var settings = new ConnectionSettings().SetParameter("token", "test-token");
-		var credential = AuthenticationCredential.CreateToken("test-token");
+		var credential = AuthenticationCredential.ForBearerToken("test-token");
 		var authManager = new StubAuthenticationManager(AuthenticationResult.Success(credential));
 
 		var connector = new TestConnector(schema, settings, authenticationManager: authManager)
@@ -779,22 +779,22 @@ public class ChannelConnectorBaseTests
 
 		var header = connector.GetAuthenticationHeaderPublic();
 
-		Assert.Equal($"Bearer {credential.CredentialValue}", header);
+		Assert.Equal($"Bearer {credential.Value}", header);
 	}
 
 	[Fact]
 	public async Task Should_ReturnBasicAuthHeader_When_BasicAuthentication()
 	{
 		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
-			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Basic, "Basic Auth")
-				.WithRequiredField("username", DataType.String)
-				.WithRequiredField("password", DataType.String))
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Basic, "Basic Auth")
+				.WithField("username", DataType.String)
+				.WithField("password", DataType.String))
 			.Build();
 
 		var settings = new ConnectionSettings()
 			.SetParameter("username", "testuser")
 			.SetParameter("password", "testpass");
-		var credential = AuthenticationCredential.CreateBasic("testuser", "testpass");
+		var credential = AuthenticationCredential.ForBasic("testuser", "testpass");
 		var authManager = new StubAuthenticationManager(AuthenticationResult.Success(credential));
 
 		var connector = new TestConnector(schema, settings, authenticationManager: authManager)
@@ -805,7 +805,7 @@ public class ChannelConnectorBaseTests
 
 		var header = connector.GetAuthenticationHeaderPublic();
 
-		Assert.Equal($"Basic {credential.CredentialValue}", header);
+		Assert.Equal($"Basic {credential.Value}", header);
 	}
 
 	#endregion

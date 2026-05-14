@@ -157,7 +157,20 @@ namespace Deveel.Messaging
                     e.CanSend = false;
                     e.CanReceive = true;
                 })
-                .AddAuthenticationType(AuthenticationType.Basic)
+                .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Basic, "Twilio Basic Authentication")
+                    .WithField(TwilioConnectionParameters.AccountSid, DataType.String, f =>
+                    {
+                        f.DisplayName = "Account SID";
+                        f.Description = "Twilio Account SID (acts as username)";
+                        f.AuthenticationRole = "principal";
+                    })
+                    .WithField(TwilioConnectionParameters.AuthToken, DataType.String, f =>
+                    {
+                        f.DisplayName = "Auth Token";
+                        f.Description = "Twilio Auth Token (acts as password)";
+                        f.AuthenticationRole = "credential";
+                        f.IsSensitive = true;
+                    }))
                 .AddMessageProperty("ValidityPeriod", DataType.Integer, p =>
                 {
                     p.IsRequired = false;
@@ -273,7 +286,20 @@ namespace Deveel.Messaging
                     e.CanSend = false;
                     e.CanReceive = true;
                 })
-                .AddAuthenticationType(AuthenticationType.Basic)
+                .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Basic, "Twilio Basic Authentication")
+                    .WithField(TwilioConnectionParameters.AccountSid, DataType.String, f =>
+                    {
+                        f.DisplayName = "Account SID";
+                        f.Description = "Twilio Account SID (acts as username)";
+                        f.AuthenticationRole = "principal";
+                    })
+                    .WithField(TwilioConnectionParameters.AuthToken, DataType.String, f =>
+                    {
+                        f.DisplayName = "Auth Token";
+                        f.Description = "Twilio Auth Token (acts as password)";
+                        f.AuthenticationRole = "credential";
+                        f.IsSensitive = true;
+                    }))
                 .AddMessageProperty("ProvideCallback", DataType.Boolean, p =>
                 {
                     p.IsRequired = false;

@@ -62,18 +62,21 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            // Extract required parameters first - use nullable versions to avoid exceptions
-            _accountSid = ConnectionSettings.GetParameter(TwilioConnectionParameters.AccountSid) as string;
-            _authToken = ConnectionSettings.GetParameter(TwilioConnectionParameters.AuthToken) as string;
+            if (AuthenticationCredential?.Scheme == AuthenticationScheme.Basic)
+            {
+                _accountSid = AuthenticationCredential.Properties.TryGetValue("Username", out var username) ? username?.ToString() : null;
+                _authToken = AuthenticationCredential.Properties.TryGetValue("Password", out var password) ? password?.ToString() : null;
+            }
 
-            // Extract optional parameters
+            _accountSid ??= ConnectionSettings.GetParameter(TwilioConnectionParameters.AccountSid) as string;
+            _authToken ??= ConnectionSettings.GetParameter(TwilioConnectionParameters.AuthToken) as string;
+
             _webhookUrl = ConnectionSettings.GetParameter(TwilioConnectionParameters.WebhookUrl) as string;
             _statusCallback = ConnectionSettings.GetParameter(TwilioConnectionParameters.StatusCallback) as string;
             _validityPeriod = ConnectionSettings.GetParameter(TwilioConnectionParameters.ValidityPeriod) as int?;
             _maxPrice = ConnectionSettings.GetParameter(TwilioConnectionParameters.MaxPrice) as decimal?;
             _messagingServiceSid = ConnectionSettings.GetParameter(TwilioConnectionParameters.MessagingServiceSid) as string;
 
-            // Perform custom validation logic
             if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
             {
                 throw new MessagingException(
@@ -81,7 +84,6 @@ namespace Deveel.Messaging
                     "Account SID and Auth Token are required for Twilio SMS connector");
             }
 
-            // Initialize Twilio client
             _twilioService.Initialize(_accountSid, _authToken);
 
             return ValueTask.CompletedTask;

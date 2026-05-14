@@ -247,8 +247,8 @@ public class TwilioChannelSchemasTests
         var schema = TwilioChannelSchemas.TwilioSms;
 
         // Assert
-        Assert.Single(schema.AuthenticationTypes);
-        Assert.Contains(AuthenticationType.Basic, schema.AuthenticationTypes);
+        Assert.Single(schema.AuthenticationSchemes);
+        Assert.Contains(AuthenticationScheme.Basic, schema.AuthenticationSchemes);
     }
 
     [Fact]
@@ -259,8 +259,8 @@ public class TwilioChannelSchemasTests
         var schema = TwilioChannelSchemas.TwilioWhatsApp;
 
         // Assert
-        Assert.Single(schema.AuthenticationTypes);
-        Assert.Contains(AuthenticationType.Basic, schema.AuthenticationTypes);
+        Assert.Single(schema.AuthenticationSchemes);
+        Assert.Contains(AuthenticationScheme.Basic, schema.AuthenticationSchemes);
     }
 
     [Fact]

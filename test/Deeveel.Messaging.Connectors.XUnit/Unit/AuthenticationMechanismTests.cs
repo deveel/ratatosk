@@ -25,11 +25,11 @@ namespace Deveel.Messaging
             var expiresAt = DateTime.UtcNow.AddHours(1);
 
             // Act
-            var credential = AuthenticationCredential.CreateToken(token, expiresAt, "Bearer");
+            var credential = AuthenticationCredential.ForBearerToken(token, expiresAt, "Bearer");
 
             // Assert
-            Assert.Equal(AuthenticationType.Token, credential.AuthenticationType);
-            Assert.Equal(token, credential.CredentialValue);
+            Assert.Equal(AuthenticationScheme.Bearer, credential.Scheme);
+            Assert.Equal(token, credential.Value);
             Assert.Equal(expiresAt, credential.ExpiresAt);
             Assert.Equal("Bearer", credential.Properties["TokenType"]);
             Assert.False(credential.IsExpired);
@@ -42,11 +42,11 @@ namespace Deveel.Messaging
             var apiKey = "test-api-key-12345";
 
             // Act
-            var credential = AuthenticationCredential.CreateApiKey(apiKey);
+            var credential = AuthenticationCredential.ForApiKey(apiKey);
 
             // Assert
-            Assert.Equal(AuthenticationType.ApiKey, credential.AuthenticationType);
-            Assert.Equal(apiKey, credential.CredentialValue);
+            Assert.Equal(AuthenticationScheme.ApiKey, credential.Scheme);
+            Assert.Equal(apiKey, credential.Value);
             Assert.Null(credential.ExpiresAt);
             Assert.False(credential.IsExpired);
         }
@@ -59,10 +59,10 @@ namespace Deveel.Messaging
             var password = "testpass";
 
             // Act
-            var credential = AuthenticationCredential.CreateBasic(username, password);
+            var credential = AuthenticationCredential.ForBasic(username, password);
 
             // Assert
-            Assert.Equal(AuthenticationType.Basic, credential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, credential.Scheme);
             Assert.Equal(username, credential.Properties["Username"]);
             Assert.Equal(password, credential.Properties["Password"]);
         }
@@ -73,7 +73,7 @@ namespace Deveel.Messaging
             // Arrange
             var token = "expired-token";
             var expiredTime = DateTime.UtcNow.AddMinutes(-1);
-            var credential = AuthenticationCredential.CreateToken(token, expiredTime);
+            var credential = AuthenticationCredential.ForBearerToken(token, expiredTime);
 
             // Act
             // Assert
@@ -86,7 +86,7 @@ namespace Deveel.Messaging
             // Arrange
             var token = "soon-to-expire-token";
             var soonToExpire = DateTime.UtcNow.AddMinutes(2);
-            var credential = AuthenticationCredential.CreateToken(token, soonToExpire);
+            var credential = AuthenticationCredential.ForBearerToken(token, soonToExpire);
 
             // Act
             // Assert
@@ -98,29 +98,33 @@ namespace Deveel.Messaging
         public async Task Should_ReturnCredential_When_DirectCredentialAuthenticationProviderApiKey()
         {
             // Arrange
-            var provider = DirectCredentialAuthenticationProvider.CreateApiKeyProvider();
+            var provider = new ApiKeyAuthenticationProvider();
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "test-api-key-12345");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.ApiKey, result.Credential.AuthenticationType);
-            Assert.Equal("test-api-key-12345", result.Credential.CredentialValue);
+            Assert.Equal(AuthenticationScheme.ApiKey, result.Credential.Scheme);
+            Assert.Equal("test-api-key-12345", result.Credential.Value);
         }
 
         [Fact]
         public async Task Should_ReturnFailure_When_DirectCredentialAuthenticationProviderApiKeyMissingKey()
         {
             // Arrange
-            var provider = DirectCredentialAuthenticationProvider.CreateApiKeyProvider();
+            var provider = new ApiKeyAuthenticationProvider();
             var connectionSettings = new ConnectionSettings();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -131,18 +135,21 @@ namespace Deveel.Messaging
         public async Task Should_ReturnCredential_When_DirectCredentialAuthenticationProviderBasic()
         {
             // Arrange
-            var provider = DirectCredentialAuthenticationProvider.CreateBasicProvider();
+            var provider = new BasicAuthenticationProvider();
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("Username", "testuser")
                 .SetParameter("Password", "testpass");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Basic Authentication")
+                .WithField("Username", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.Basic, result.Credential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, result.Credential.Scheme);
             Assert.Equal("testuser", result.Credential.Properties["Username"]);
         }
 
@@ -150,18 +157,27 @@ namespace Deveel.Messaging
         public async Task Should_ReturnCredential_When_DirectCredentialAuthenticationProviderBasicAlternativeFields()
         {
             // Arrange
-            var provider = DirectCredentialAuthenticationProvider.CreateBasicProvider();
+            var provider = new BasicAuthenticationProvider();
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("AccountSid", "AC123456")
                 .SetParameter("AuthToken", "auth-token-123");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Flexible Basic Authentication")
+                .WithField("Username", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+                .WithField("AccountSid", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("AuthToken", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+                .WithField("User", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("Pass", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.Basic, result.Credential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, result.Credential.Scheme);
             Assert.Equal("AccountSid", result.Credential.Properties["UserField"]);
             Assert.Equal("AuthToken", result.Credential.Properties["PassField"]);
         }
@@ -183,15 +199,18 @@ namespace Deveel.Messaging
                 .SetParameter("ClientId", "test-client-id")
                 .SetParameter("ClientSecret", "test-client-secret")
                 .SetParameter("TokenEndpoint", "https://oauth.example.com/token");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful, $"Expected success but got: {result.ErrorCode} - {result.ErrorMessage}");
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.Token, result.Credential.AuthenticationType);
-            Assert.Equal("test-access-token", result.Credential.CredentialValue);
+            Assert.Equal(AuthenticationScheme.Bearer, result.Credential.Scheme);
+            Assert.Equal("test-access-token", result.Credential.Value);
             Assert.Equal("Bearer", result.Credential.Properties["TokenType"]);
         }
 
@@ -203,14 +222,17 @@ namespace Deveel.Messaging
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("ClientId", "test-client-id");
                 // Missing ClientSecret and TokenEndpoint
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
             Assert.Equal("MISSING_PARAMETERS", result.ErrorCode);
-            Assert.Contains("ClientSecret", result.ErrorMessage!);
+            Assert.Contains("Client ID and Client Secret are required", result.ErrorMessage!);
         }
 
         [Fact]
@@ -220,7 +242,8 @@ namespace Deveel.Messaging
             var manager = new AuthenticationManager();
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "test-api-key");
-            var configuration = AuthenticationConfigurations.ApiKeyAuthentication();
+            var configuration = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             // Act
             var result = await manager.AuthenticateAsync(connectionSettings, configuration, TestContext.Current.CancellationToken);
@@ -228,7 +251,7 @@ namespace Deveel.Messaging
             // Assert
             Assert.True(result.IsSuccessful);
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.ApiKey, result.Credential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.ApiKey, result.Credential.Scheme);
         }
 
         [Fact]
@@ -239,7 +262,9 @@ namespace Deveel.Messaging
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("Username", "testuser")
                 .SetParameter("Password", "testpass");
-            var configuration = AuthenticationConfigurations.BasicAuthentication();
+            var configuration = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Basic Authentication")
+                .WithField("Username", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
             // Act
             var result = await manager.AuthenticateAsync(connectionSettings, configuration, TestContext.Current.CancellationToken);
@@ -247,7 +272,7 @@ namespace Deveel.Messaging
             // Assert
             Assert.True(result.IsSuccessful);
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.Basic, result.Credential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, result.Credential.Scheme);
         }
 
         [Fact]
@@ -257,7 +282,8 @@ namespace Deveel.Messaging
             var manager = new AuthenticationManager();
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "test-api-key");
-            var configuration = AuthenticationConfigurations.ApiKeyAuthentication();
+            var configuration = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             // Act
             var result1 = await manager.AuthenticateAsync(connectionSettings, configuration, TestContext.Current.CancellationToken);
@@ -277,7 +303,8 @@ namespace Deveel.Messaging
             var manager = new AuthenticationManager();
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "test-api-key");
-            var configuration = AuthenticationConfigurations.ApiKeyAuthentication();
+            var configuration = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             // Act
             manager.InvalidateCredential(connectionSettings, configuration);
@@ -303,29 +330,33 @@ namespace Deveel.Messaging
         public async Task Should_ReturnCredential_When_CertificateAuthenticationProviderValidCertificate()
         {
             // Arrange
-            var provider = DirectCredentialAuthenticationProvider.CreateApiKeyProvider(); // Use API key provider as a substitute for this test
+            var provider = new ApiKeyAuthenticationProvider(); // Use API key provider as a substitute for this test
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "cert-12345");
+            var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccessful);
             Assert.NotNull(result.Credential);
-            Assert.Equal(AuthenticationType.ApiKey, result.Credential.AuthenticationType);
-            Assert.Equal("cert-12345", result.Credential.CredentialValue);
+            Assert.Equal(AuthenticationScheme.ApiKey, result.Credential.Scheme);
+            Assert.Equal("cert-12345", result.Credential.Value);
         }
 
         [Fact]
         public async Task Should_ReturnFailure_When_CertificateAuthenticationProviderMissingCertificate()
         {
             // Arrange
-            var provider = DirectCredentialAuthenticationProvider.CreateApiKeyProvider();
+            var provider = new ApiKeyAuthenticationProvider();
             var connectionSettings = new ConnectionSettings(); // No certificate provided
+            var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
             // Act
-            var result = await provider.ObtainCredentialAsync(connectionSettings, TestContext.Current.CancellationToken);
+            var result = await provider.ObtainCredentialAsync(connectionSettings, config, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.IsSuccessful);
@@ -337,7 +368,8 @@ namespace Deveel.Messaging
         {
             // Arrange
 			var schema = new ChannelSchemaBuilder("Test", "Test", "1.0.0")
-				.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+					.WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; }))
 				.Build();
 
 			var connectionSettings = new ConnectionSettings()
@@ -352,7 +384,7 @@ namespace Deveel.Messaging
             Assert.True(result.IsSuccess());
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
-            Assert.Equal(AuthenticationType.ApiKey, connector.TestAuthenticationCredential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.ApiKey, connector.TestAuthenticationCredential.Scheme);
         }
 
         [Fact]

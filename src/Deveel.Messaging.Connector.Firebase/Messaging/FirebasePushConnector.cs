@@ -86,9 +86,9 @@ namespace Deveel.Messaging
             using var loggerScope = Logger.BeginScope("ProjectId={ProjectId}", _projectId);
 
             // Get the service account key from the authenticated credential
-            if (AuthenticationCredential?.AuthenticationType == AuthenticationType.Certificate)
+            if (AuthenticationCredential?.Scheme == AuthenticationScheme.Certificate)
             {
-                _serviceAccountKey = AuthenticationCredential.CredentialValue;
+                _serviceAccountKey = AuthenticationCredential.Value;
             }
             else
             {

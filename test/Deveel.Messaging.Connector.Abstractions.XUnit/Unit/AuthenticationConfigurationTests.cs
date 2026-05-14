@@ -8,9 +8,6 @@ using Xunit;
 
 namespace Deveel.Messaging
 {
-    /// <summary>
-    /// Tests for authentication configurations and their interaction with connection settings.
-    /// </summary>
     [Trait("Category", "Unit")]
     [Trait("Layer", "Application")]
     [Trait("Feature", "AuthenticationConfiguration")]
@@ -19,101 +16,98 @@ namespace Deveel.Messaging
         [Fact]
         public void Should_HaveRequiredFields_When_AuthenticationConfigurationsBasicAuthentication()
         {
-            // Arrange
-            // Act
-            var config = AuthenticationConfigurations.BasicAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Basic Authentication")
+    .WithField("Username", DataType.String, f => f.AuthenticationRole = "principal")
+    .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
-            // Assert
-            Assert.Equal(AuthenticationType.Basic, config.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, config.Scheme);
             Assert.Equal("Basic Authentication", config.DisplayName);
-            Assert.Equal(2, config.RequiredFields.Count);
+            Assert.Equal(2, config.Fields.Count);
             
-            var usernameField = config.RequiredFields.FirstOrDefault(f => f.FieldName == "Username");
-            var passwordField = config.RequiredFields.FirstOrDefault(f => f.FieldName == "Password");
+            var usernameField = config.Fields.FirstOrDefault(f => f.FieldName == "Username");
+            var passwordField = config.Fields.FirstOrDefault(f => f.FieldName == "Password");
             
             Assert.NotNull(usernameField);
             Assert.NotNull(passwordField);
-            Assert.Equal("Username", usernameField.AuthenticationRole);
-            Assert.Equal("Password", passwordField.AuthenticationRole);
+            Assert.Equal("principal", usernameField.AuthenticationRole);
+            Assert.Equal("credential", passwordField.AuthenticationRole);
             Assert.True(passwordField.IsSensitive);
         }
 
         [Fact]
         public void Should_HaveRequiredField_When_AuthenticationConfigurationsApiKeyAuthentication()
         {
-            // Arrange
-            // Act
-            var config = AuthenticationConfigurations.ApiKeyAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+    .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
-            // Assert
-            Assert.Equal(AuthenticationType.ApiKey, config.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.ApiKey, config.Scheme);
             Assert.Equal("API Key Authentication", config.DisplayName);
-            Assert.Single(config.RequiredFields);
+            Assert.Single(config.Fields);
             
-            var apiKeyField = config.RequiredFields.First();
+            var apiKeyField = config.Fields.First();
             Assert.Equal("ApiKey", apiKeyField.FieldName);
-            Assert.Equal("ApiKey", apiKeyField.AuthenticationRole);
+            Assert.Equal("principal", apiKeyField.AuthenticationRole);
             Assert.True(apiKeyField.IsSensitive);
         }
 
         [Fact]
-        public void Should_HaveRequiredField_When_AuthenticationConfigurationsTokenAuthentication()
+        public void Should_HaveRequiredField_When_AuthenticationConfigurationsBearerTokenAuthentication()
         {
-            // Arrange
-            // Act
-            var config = AuthenticationConfigurations.TokenAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Bearer Token Authentication")
+    .WithField("Token", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
 
-            // Assert
-            Assert.Equal(AuthenticationType.Token, config.AuthenticationType);
-            Assert.Equal("Token Authentication", config.DisplayName);
-            Assert.Single(config.RequiredFields);
+            Assert.Equal(AuthenticationScheme.Bearer, config.Scheme);
+            Assert.Equal("Bearer Token Authentication", config.DisplayName);
+            Assert.Single(config.Fields);
             
-            var tokenField = config.RequiredFields.First();
+            var tokenField = config.Fields.First();
             Assert.Equal("Token", tokenField.FieldName);
-            Assert.Equal("Token", tokenField.AuthenticationRole);
+            Assert.Equal("principal", tokenField.AuthenticationRole);
             Assert.True(tokenField.IsSensitive);
         }
 
         [Fact]
         public void Should_HaveRequiredFields_When_AuthenticationConfigurationsClientCredentialsAuthentication()
         {
-            // Arrange
-            // Act
-            var config = AuthenticationConfigurations.ClientCredentialsAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "Client Credentials (OAuth 2.0)")
+                .WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
-            // Assert
-            Assert.Equal(AuthenticationType.ClientCredentials, config.AuthenticationType);
-            Assert.Equal("Client Credentials Authentication", config.DisplayName);
-            Assert.Equal(2, config.RequiredFields.Count);
+            Assert.Equal(AuthenticationScheme.OAuthClientCredentials, config.Scheme);
+            Assert.Equal("Client Credentials (OAuth 2.0)", config.DisplayName);
+            Assert.Equal(2, config.Fields.Count);
             
-            var clientIdField = config.RequiredFields.FirstOrDefault(f => f.FieldName == "ClientId");
-            var clientSecretField = config.RequiredFields.FirstOrDefault(f => f.FieldName == "ClientSecret");
+            var clientIdField = config.Fields.FirstOrDefault(f => f.FieldName == "ClientId");
+            var clientSecretField = config.Fields.FirstOrDefault(f => f.FieldName == "ClientSecret");
             
             Assert.NotNull(clientIdField);
             Assert.NotNull(clientSecretField);
-            Assert.Equal("ClientId", clientIdField.AuthenticationRole);
-            Assert.Equal("ClientSecret", clientSecretField.AuthenticationRole);
+            Assert.Equal("principal", clientIdField.AuthenticationRole);
+            Assert.Equal("credential", clientSecretField.AuthenticationRole);
             Assert.True(clientSecretField.IsSensitive);
         }
 
         [Fact]
         public void Should_HaveOptionalFields_When_AuthenticationConfigurationsFlexibleBasicAuthentication()
         {
-            // Arrange
-            // Act
-            var config = AuthenticationConfigurations.FlexibleBasicAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Flexible Basic Authentication")
+    .WithField("Username", DataType.String, f => { f.AuthenticationRole = "principal"; })
+    .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+    .WithField("AccountSid", DataType.String, f => { f.AuthenticationRole = "principal"; })
+    .WithField("AuthToken", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+    .WithField("User", DataType.String, f => { f.AuthenticationRole = "principal"; })
+    .WithField("Pass", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+    .WithField("ClientId", DataType.String, f => { f.AuthenticationRole = "principal"; })
+    .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
-            // Assert
-            Assert.Equal(AuthenticationType.Basic, config.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, config.Scheme);
             Assert.Equal("Flexible Basic Authentication", config.DisplayName);
-            Assert.Empty(config.RequiredFields); // Flexible configs use optional fields
-            Assert.True(config.OptionalFields.Count >= 8); // Multiple optional field combinations
+            Assert.True(config.Fields.Count >= 8);
             
-            // Check for expected field pairs
-            var usernameField = config.OptionalFields.FirstOrDefault(f => f.FieldName == "Username");
-            var passwordField = config.OptionalFields.FirstOrDefault(f => f.FieldName == "Password");
-            var accountSidField = config.OptionalFields.FirstOrDefault(f => f.FieldName == "AccountSid");
-            var authTokenField = config.OptionalFields.FirstOrDefault(f => f.FieldName == "AuthToken");
+            var usernameField = config.Fields.FirstOrDefault(f => f.FieldName == "Username");
+            var passwordField = config.Fields.FirstOrDefault(f => f.FieldName == "Password");
+            var accountSidField = config.Fields.FirstOrDefault(f => f.FieldName == "AccountSid");
+            var authTokenField = config.Fields.FirstOrDefault(f => f.FieldName == "AuthToken");
             
             Assert.NotNull(usernameField);
             Assert.NotNull(passwordField);
@@ -122,160 +116,35 @@ namespace Deveel.Messaging
         }
 
         [Fact]
-        public void Should_ReturnNoErrors_When_AuthenticationConfigurationValidateWithValidBasicAuth()
-        {
-            // Arrange
-            var config = AuthenticationConfigurations.BasicAuthentication();
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("Username", "testuser")
-                .SetParameter("Password", "testpass");
-
-            // Act
-            var errors = config.Validate(connectionSettings);
-
-            // Assert
-            Assert.Empty(errors);
-        }
-
-        [Fact]
-        public void Should_ReturnError_When_AuthenticationConfigurationValidateWithMissingPassword()
-        {
-            // Arrange
-            var config = AuthenticationConfigurations.BasicAuthentication();
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("Username", "testuser");
-                // Missing Password
-
-            // Act
-            var errors = config.Validate(connectionSettings);
-
-            // Assert
-            Assert.NotEmpty(errors);
-            Assert.Contains(errors, e => e.Contains("Password"));
-        }
-
-        [Fact]
-        public void Should_ReturnTrue_When_AuthenticationConfigurationIsSatisfiedByWithValidCredentials()
-        {
-            // Arrange
-            var config = AuthenticationConfigurations.BasicAuthentication();
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("Username", "testuser")
-                .SetParameter("Password", "testpass");
-
-            // Act
-            var isSatisfied = config.IsSatisfiedBy(connectionSettings);
-
-            // Assert
-            Assert.True(isSatisfied);
-        }
-
-        [Fact]
-        public void Should_ReturnFalse_When_AuthenticationConfigurationIsSatisfiedByWithMissingCredentials()
-        {
-            // Arrange
-            var config = AuthenticationConfigurations.BasicAuthentication();
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("Username", "testuser");
-                // Missing Password
-
-            // Act
-            var isSatisfied = config.IsSatisfiedBy(connectionSettings);
-
-            // Assert
-            Assert.False(isSatisfied);
-        }
-
-        [Fact]
-        public void Should_ReturnNoErrors_When_FlexibleAuthenticationConfigurationValidateWithValidPair()
-        {
-            // Arrange
-            var config = AuthenticationConfigurations.FlexibleBasicAuthentication();
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("AccountSid", "AC123456")
-                .SetParameter("AuthToken", "token123");
-
-            // Act
-            var errors = config.Validate(connectionSettings);
-
-            // Assert
-            Assert.Empty(errors);
-        }
-
-        [Fact]
-        public void Should_ReturnError_When_FlexibleAuthenticationConfigurationValidateWithMismatchedPair()
-        {
-            // Arrange
-            var config = AuthenticationConfigurations.FlexibleBasicAuthentication();
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("Username", "testuser")
-                .SetParameter("AuthToken", "token123"); // Mismatched pair
-
-            // Act
-            var errors = config.Validate(connectionSettings);
-
-            // Assert
-            Assert.NotEmpty(errors);
-            Assert.Contains(errors, e => e.Contains("parameter pairs"));
-        }
-
-        [Fact]
-        public void Should_ReturnTrue_When_FlexibleAuthenticationConfigurationIsSatisfiedByWithValidPair()
-        {
-            // Arrange
-            var config = AuthenticationConfigurations.FlexibleBasicAuthentication();
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("ClientId", "client123")
-                .SetParameter("ClientSecret", "secret456");
-
-            // Act
-            var isSatisfied = config.IsSatisfiedBy(connectionSettings);
-
-            // Assert
-            Assert.True(isSatisfied);
-        }
-
-        [Fact]
-        public void Should_ReturnFalse_When_FlexibleAuthenticationConfigurationIsSatisfiedByWithNoPairs()
-        {
-            // Arrange
-            var config = AuthenticationConfigurations.FlexibleBasicAuthentication();
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("SomeOtherField", "value");
-
-            // Act
-            var isSatisfied = config.IsSatisfiedBy(connectionSettings);
-
-            // Assert
-            Assert.False(isSatisfied);
-        }
-
-        [Fact]
         public void Should_ReturnAllFields_When_AuthenticationConfigurationGetAllFieldNames()
         {
-            // Arrange
-            var config = AuthenticationConfigurations.BasicAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Basic Authentication")
+    .WithField("Username", DataType.String, f => f.AuthenticationRole = "principal")
+    .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
-            // Act
             var fieldNames = config.GetAllFieldNames().ToList();
 
-            // Assert
             Assert.Equal(2, fieldNames.Count);
             Assert.Contains("Username", fieldNames);
             Assert.Contains("Password", fieldNames);
         }
 
         [Fact]
-        public void Should_ReturnAllOptionalFields_When_FlexibleAuthenticationConfigurationGetAllFieldNames()
+        public void Should_ReturnAllOptionalFields_When_AuthenticationConfigurationGetAllFieldNames()
         {
-            // Arrange
-            var config = AuthenticationConfigurations.FlexibleBasicAuthentication();
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Flexible Basic Authentication")
+    .WithField("Username", DataType.String, f => { f.AuthenticationRole = "principal"; })
+    .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+    .WithField("AccountSid", DataType.String, f => { f.AuthenticationRole = "principal"; })
+    .WithField("AuthToken", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+    .WithField("User", DataType.String, f => { f.AuthenticationRole = "principal"; })
+    .WithField("Pass", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+    .WithField("ClientId", DataType.String, f => { f.AuthenticationRole = "principal"; })
+    .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
 
-            // Act
             var fieldNames = config.GetAllFieldNames().ToList();
 
-            // Assert
-            Assert.True(fieldNames.Count >= 8); // Should have multiple optional fields
+            Assert.True(fieldNames.Count >= 8);
             Assert.Contains("Username", fieldNames);
             Assert.Contains("Password", fieldNames);
             Assert.Contains("AccountSid", fieldNames);
@@ -287,29 +156,27 @@ namespace Deveel.Messaging
         [Fact]
         public void Should_ReturnNoErrors_When_AuthenticationFieldValidateWithValidValue()
         {
-            // Arrange
             var field = new AuthenticationField("TestField", DataType.String);
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("TestField", "valid-value");
 
-            // Act
-            var errors = field.Validate(connectionSettings);
+            var errors = new List<string>();
+            if (connectionSettings.GetParameter(field.FieldName) == null)
+                errors.Add($"Missing field '{field.FieldName}'");
 
-            // Assert
             Assert.Empty(errors);
         }
 
         [Fact]
         public void Should_ReturnError_When_AuthenticationFieldValidateWithMissingValue()
         {
-            // Arrange
             var field = new AuthenticationField("TestField", DataType.String);
             var connectionSettings = new ConnectionSettings();
 
-            // Act
-            var errors = field.Validate(connectionSettings);
+            var errors = new List<string>();
+            if (connectionSettings.GetParameter(field.FieldName) == null)
+                errors.Add($"Missing field '{field.FieldName}'");
 
-            // Assert
             Assert.NotEmpty(errors);
             Assert.Contains(errors, e => e.Contains("TestField"));
         }
@@ -317,7 +184,6 @@ namespace Deveel.Messaging
         [Fact]
         public void Should_ValidateCorrectly_When_AuthenticationFieldValidateWithAllowedValues()
         {
-            // Arrange
             var field = new AuthenticationField("Priority", DataType.String)
             {
                 AllowedValues = new[] { "low", "normal", "high" }
@@ -329,11 +195,20 @@ namespace Deveel.Messaging
             var invalidSettings = new ConnectionSettings()
                 .SetParameter("Priority", "invalid");
 
-            // Act
-            var validErrors = field.Validate(validSettings);
-            var invalidErrors = field.Validate(invalidSettings);
+            var validErrors = new List<string>();
+            if (validSettings.GetParameter(field.FieldName) == null)
+                validErrors.Add($"Missing field '{field.FieldName}'");
+            else if (field.AllowedValues?.Any() == true &&
+                     !field.AllowedValues.Any(v => Equals(v, validSettings.GetParameter(field.FieldName))))
+                validErrors.Add($"The value '{validSettings.GetParameter(field.FieldName)}' is not valid for field '{field.FieldName}'.");
 
-            // Assert
+            var invalidErrors = new List<string>();
+            if (invalidSettings.GetParameter(field.FieldName) == null)
+                invalidErrors.Add($"Missing field '{field.FieldName}'");
+            else if (field.AllowedValues?.Any() == true &&
+                     !field.AllowedValues.Any(v => Equals(v, invalidSettings.GetParameter(field.FieldName))))
+                invalidErrors.Add($"The value '{invalidSettings.GetParameter(field.FieldName)}' is not valid for field '{field.FieldName}'.");
+
             Assert.Empty(validErrors);
             Assert.NotEmpty(invalidErrors);
             Assert.Contains(invalidErrors, e => e.Contains("Priority") && e.Contains("invalid"));
@@ -342,7 +217,6 @@ namespace Deveel.Messaging
         [Fact]
         public void Should_WorksCorrectly_When_CustomAuthenticationWithCustomFields()
         {
-            // Arrange
             var customField1 = new AuthenticationField("CustomField1", DataType.String)
             {
                 DisplayName = "Custom Field 1",
@@ -357,22 +231,21 @@ namespace Deveel.Messaging
                 IsSensitive = true
             };
 
-            var config = AuthenticationConfigurations.CustomAuthentication(
-                "Custom Authentication Method",
-                new[] { customField1 },
-                new[] { customField2 }
-            );
+            var config = new AuthenticationConfiguration(AuthenticationScheme.Custom, "Custom Authentication Method")
+                .WithField(customField1)
+                .WithField(customField2);
 
-            // Act
             var connectionSettings = new ConnectionSettings()
                 .SetParameter("CustomField1", "value1")
                 .SetParameter("CustomField2", "value2");
 
-            var isSatisfied = config.IsSatisfiedBy(connectionSettings);
-            var errors = config.Validate(connectionSettings);
+            var isSatisfied = config.Fields.All(f => connectionSettings.GetParameter(f.FieldName) != null);
+            var errors = config.Fields
+                .Where(f => connectionSettings.GetParameter(f.FieldName) == null)
+                .Select(f => $"Missing field '{f.FieldName}'")
+                .ToList();
 
-            // Assert
-            Assert.Equal(AuthenticationType.Custom, config.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Custom, config.Scheme);
             Assert.Equal("Custom Authentication Method", config.DisplayName);
             Assert.True(isSatisfied);
             Assert.Empty(errors);

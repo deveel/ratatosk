@@ -29,7 +29,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.None).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.None).Build();
 		var connectionSettings = new ConnectionSettings();
 
 		// Act
@@ -44,7 +44,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
 			.AddRequiredParameter("AccountSid", DataType.String)
 			.AddRequiredParameter("AuthToken", DataType.String).Build();
 
@@ -64,7 +64,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("SMTP", "Email", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
 			.AddRequiredParameter("Username", DataType.String)
 			.AddRequiredParameter("Password", DataType.String, true).Build();
 
@@ -84,7 +84,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Basic).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Basic).Build();
 
 		var connectionSettings = new ConnectionSettings();
 		// Don't add any parameters to avoid unknown parameter validation issues
@@ -103,7 +103,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Provider", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.ApiKey)
+			.AddAuthenticationScheme(AuthenticationScheme.ApiKey)
 			.AddRequiredParameter("ApiKey", DataType.String, true).Build();
 
 		var connectionSettings = new ConnectionSettings()
@@ -121,7 +121,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Provider", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.ApiKey).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.ApiKey).Build();
 
 		// Test different key parameter names
 		var testCases = new[]
@@ -148,7 +148,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Provider", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.ApiKey).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.ApiKey).Build();
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -165,7 +165,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("OAuth", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Token)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer)
 			.AddRequiredParameter("AccessToken", DataType.String, true).Build();
 
 		var connectionSettings = new ConnectionSettings()
@@ -183,7 +183,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("OAuth", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Token).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer).Build();
 
 		var testCases = new[]
 		{
@@ -210,7 +210,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("OAuth2", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.ClientCredentials)
+			.AddAuthenticationScheme(AuthenticationScheme.OAuthClientCredentials)
 			.AddRequiredParameter("ClientId", DataType.String)
 			.AddRequiredParameter("ClientSecret", DataType.String, true).Build();
 
@@ -230,7 +230,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("OAuth2", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.ClientCredentials).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.OAuthClientCredentials).Build();
 
 		// Test missing ClientId
 		var connectionSettingsMissingId = new ConnectionSettings()
@@ -244,13 +244,13 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Assert
 		var resultsMissingId = schema.ValidateConnectionSettings(connectionSettingsMissingId).ToList();
 		Assert.Single(resultsMissingId);
-		Assert.Contains("Client Credentials Authentication", resultsMissingId[0].ErrorMessage);
+		Assert.Contains("Client Credentials (OAuth 2.0)", resultsMissingId[0].ErrorMessage);
 
 		// Act
 		// Assert
 		var resultsMissingSecret = schema.ValidateConnectionSettings(connectionSettingsMissingSecret).ToList();
 		Assert.Single(resultsMissingSecret);
-		Assert.Contains("Client Credentials Authentication", resultsMissingSecret[0].ErrorMessage);
+		Assert.Contains("Client Credentials (OAuth 2.0)", resultsMissingSecret[0].ErrorMessage);
 	}
 
 	[Fact]
@@ -258,8 +258,9 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Secure", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Certificate).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Certificate).Build();
 
+		var certificatePassword = "password123";
 		var testCases = new[]
 		{
 			new { ParamName = "Certificate", Value = "cert_data_here" },
@@ -271,7 +272,8 @@ public class ChannelSchemaAuthenticationValidationTests
 		foreach (var testCase in testCases)
 		{
 			var connectionSettings = new ConnectionSettings()
-				.SetParameter(testCase.ParamName, testCase.Value);
+				.SetParameter(testCase.ParamName, testCase.Value)
+				.SetParameter("CertificatePassword", certificatePassword);
 
 			// Act
 			var results = schema.ValidateConnectionSettings(connectionSettings);
@@ -286,7 +288,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Secure", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Certificate).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Certificate).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("PfxFile", "/path/to/cert.pfx")
@@ -304,7 +306,11 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Custom", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Custom).Build();
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Custom, "Custom Authentication")
+				.WithField("CustomAuth", DataType.String, f => f.AuthenticationRole = "principal")
+				.WithField("AuthenticationData", DataType.String, f => f.AuthenticationRole = "principal")
+				.WithField("Credentials", DataType.String, f => f.AuthenticationRole = "principal")
+				.WithField("SecretKey", DataType.String, f => f.AuthenticationRole = "principal")).Build();
 
 		var testCases = new[]
 		{
@@ -332,9 +338,9 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Flexible", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddAuthenticationType(AuthenticationType.ApiKey)
-			.AddAuthenticationType(AuthenticationType.Token).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.ApiKey)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer).Build();
 
 		// Provide only API Key authentication
 		var connectionSettings = new ConnectionSettings()
@@ -352,9 +358,9 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Flexible", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddAuthenticationType(AuthenticationType.ApiKey)
-			.AddAuthenticationType(AuthenticationType.Token).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.ApiKey)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer).Build();
 
 		// Provide no authentication parameters to avoid unknown parameter validation
 		var connectionSettings = new ConnectionSettings();
@@ -365,7 +371,7 @@ public class ChannelSchemaAuthenticationValidationTests
 		// Assert
 		Assert.Single(results);
 		Assert.Contains("Connection settings do not satisfy any of the supported authentication methods", results[0].ErrorMessage);
-		Assert.Contains("Flexible Basic Authentication, Flexible API Key Authentication, Flexible Token Authentication", results[0].ErrorMessage);
+		Assert.Contains("Flexible Basic Authentication, Flexible API Key Authentication, Flexible Bearer Token Authentication", results[0].ErrorMessage);
 	}
 
 	[Fact]
@@ -373,9 +379,9 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Optional", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.None)
-			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddAuthenticationType(AuthenticationType.ApiKey)
+			.AddAuthenticationScheme(AuthenticationScheme.None)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.ApiKey)
 			.AddParameter("SomeOtherParam", DataType.String).Build(); // Define the parameter to avoid unknown parameter error
 
 		// Provide no authentication parameters
@@ -394,7 +400,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
 			.AddParameter("AccountSid", DataType.String, param =>
 			{
 				param.IsRequired = true;
@@ -432,7 +438,7 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("SMTP", "Email", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
 			.AddRequiredParameter("Host", DataType.String)
 			.AddParameter("Port", DataType.Integer, param => param.DefaultValue = 587 )
 			.AddRequiredParameter("Username", DataType.String)
@@ -468,8 +474,8 @@ public class ChannelSchemaAuthenticationValidationTests
 	{
 		// Arrange
 		var schema = new ChannelSchemaBuilder("Google", "API", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.ClientCredentials)
-			.AddAuthenticationType(AuthenticationType.Token)
+			.AddAuthenticationScheme(AuthenticationScheme.OAuthClientCredentials)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer)
 			.AddParameter("ClientId", DataType.String)
 			.AddParameter("ClientSecret", DataType.String, param => param.IsSensitive = true)
 			.AddParameter("AccessToken", DataType.String, param => param.IsSensitive = true)

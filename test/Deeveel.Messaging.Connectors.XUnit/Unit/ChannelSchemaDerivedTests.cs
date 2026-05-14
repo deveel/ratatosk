@@ -19,7 +19,7 @@ public class ChannelSchemaDerivedTests
 			.AddRequiredParameter("AuthToken", DataType.String, true)
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Media)
-			.AddAuthenticationType(AuthenticationType.Token)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer)
 			.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
 			{
 				e.CanSend = true;
@@ -63,7 +63,7 @@ public class ChannelSchemaDerivedTests
 		Assert.Contains(MessageContentType.Media, copiedSchema.ContentTypes);
 
 		// Verify authentication types are copied
-		Assert.Contains(AuthenticationType.Token, copiedSchema.AuthenticationTypes);
+		Assert.Contains(AuthenticationScheme.Bearer, copiedSchema.AuthenticationSchemes);
 
 		// Verify endpoints are copied
 		Assert.Contains(copiedSchema.Endpoints, e => e.Type == EndpointType.PhoneNumber && e.CanSend && e.CanReceive);

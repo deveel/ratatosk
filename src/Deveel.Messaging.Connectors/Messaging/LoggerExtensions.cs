@@ -29,20 +29,20 @@ namespace Deveel.Messaging
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.UsingAuthenticationConfiguration,
             Level = LogLevel.Debug,
-            Message = "Using authentication configuration: {AuthenticationType}")]
-        internal static partial void LogUsingAuthenticationConfiguration(this ILogger logger, AuthenticationType authenticationType);
+            Message = "Using authentication configuration: {Scheme}")]
+        internal static partial void LogUsingAuthenticationConfiguration(this ILogger logger, AuthenticationScheme scheme);
 
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.AuthenticationSuccessful,
             Level = LogLevel.Information,
-            Message = "Authentication successful using {AuthenticationType}")]
-        internal static partial void LogAuthenticationSuccessful(this ILogger logger, AuthenticationType authenticationType);
+            Message = "Authentication successful using {Scheme}")]
+        internal static partial void LogAuthenticationSuccessful(this ILogger logger, AuthenticationScheme scheme);
 
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.AuthenticationFailed,
             Level = LogLevel.Error,
-            Message = "Authentication failed using {AuthenticationType}")]
-        internal static partial void LogAuthenticationFailed(this ILogger logger, AuthenticationType authenticationType);
+            Message = "Authentication failed using {Scheme}")]
+        internal static partial void LogAuthenticationFailed(this ILogger logger, AuthenticationScheme scheme);
 
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.AuthenticationException,
@@ -65,8 +65,8 @@ namespace Deveel.Messaging
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.NoAuthenticationConfigurationFoundForType,
             Level = LogLevel.Warning,
-            Message = "Authentication configuration not found for credential type {AuthenticationType}")]
-        internal static partial void LogAuthenticationConfigurationNotFoundForType(this ILogger logger, AuthenticationType authenticationType);
+            Message = "Authentication configuration not found for credential scheme {Scheme}")]
+        internal static partial void LogAuthenticationConfigurationNotFoundForType(this ILogger logger, AuthenticationScheme scheme);
 
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.AuthenticationCredentialRefreshed,

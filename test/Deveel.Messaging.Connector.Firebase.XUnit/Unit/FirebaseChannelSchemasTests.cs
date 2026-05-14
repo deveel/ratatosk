@@ -115,7 +115,7 @@ namespace Deveel.Messaging
             // Assert
             Assert.Single(schema.AuthenticationConfigurations);
             // Firebase uses Certificate authentication for service account keys
-            Assert.Equal(AuthenticationType.Certificate, schema.AuthenticationConfigurations.First().AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Certificate, schema.AuthenticationConfigurations.First().Scheme);
         }
 
         [Fact]

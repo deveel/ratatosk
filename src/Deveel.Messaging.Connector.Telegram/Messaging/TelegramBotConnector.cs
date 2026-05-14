@@ -60,7 +60,7 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            _botToken = ConnectionSettings.GetParameter(TelegramConnectionParameters.BotToken) as string;
+            _botToken = AuthenticationCredential?.Value ?? ConnectionSettings.GetParameter(TelegramConnectionParameters.BotToken) as string;
             _webhookUrl = ConnectionSettings.GetParameter<string>(TelegramConnectionParameters.WebhookUrl);
             _secretToken = ConnectionSettings.GetParameter<string>(TelegramConnectionParameters.SecretToken);
             _disableWebPagePreview = ConnectionSettings.GetParameter<bool?>(TelegramConnectionParameters.DisableWebPagePreview) ?? TelegramConnectionSettingsDefaults.DisableWebPagePreview;

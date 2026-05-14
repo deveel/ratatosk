@@ -11,149 +11,84 @@ using System.Runtime.CompilerServices;
 
 namespace Deveel.Messaging
 {
-	/// <summary>
-	/// Provides a base implementation of the <see cref="IChannelConnector"/> interface
-	/// with common functionality for state management, capability validation, and authentication.
-	/// </summary>
-	/// <remarks>
-	/// This abstract class handles the common concerns of connector implementations such as
-	/// state transitions, capability checking, authentication management, and providing sensible
-	/// default implementations for operations that may not be supported by all connectors.
-	///
-	/// Derived classes need to implement the abstract methods to provide connector-specific
-	/// functionality while benefiting from the state management, validation logic, and
-	/// authentication support provided by this base class.
-	/// </remarks>
-	public abstract class ChannelConnectorBase : IChannelConnector
-	{
-		private ConnectorState _state = ConnectorState.Uninitialized;
-		private readonly object _stateLock = new object();
-		private AuthenticationCredential? _authenticationCredential;
-		private readonly IAuthenticationManager _authenticationManager;
+    public abstract class ChannelConnectorBase : IChannelConnector
+    {
+        private ConnectorState _state = ConnectorState.Uninitialized;
+        private readonly object _stateLock = new object();
+        private AuthenticationCredential? _authenticationCredential;
+        private readonly IAuthenticationManager _authenticationManager;
+        private bool _autoAuthenticationAttempted;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="ChannelConnectorBase"/> class
-		/// with the specified schema.
-		/// </summary>
-		/// <param name="schema">The schema describing the connector's capabilities and configuration.</param>
-		/// <param name="connectionSettings">The connector configuration values used to initialize and authenticate the connector.</param>
-		/// <param name="logger">A service used to log messages</param>
-		/// <param name="authenticationManager">Optional authentication manager for handling authentication flows</param>
-		/// <exception cref="ArgumentNullException">Thrown when <paramref name="schema"/> is null.</exception>
-		protected ChannelConnectorBase(
+        protected ChannelConnectorBase(
             IChannelSchema schema,
             ConnectionSettings? connectionSettings = null,
             ILogger? logger = null,
             IAuthenticationManager? authenticationManager = null)
-		{
-			Schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        {
+            Schema = schema ?? throw new ArgumentNullException(nameof(schema));
             ConnectionSettings = connectionSettings ?? new ConnectionSettings();
-			Logger = logger ?? NullLogger.Instance; // Use a null logger if none is provided
-			_authenticationManager = authenticationManager ?? new AuthenticationManager(logger: NullLogger<AuthenticationManager>.Instance);
-		}
+            Logger = logger ?? NullLogger.Instance;
+            _authenticationManager = authenticationManager ?? new AuthenticationManager(logger: NullLogger<AuthenticationManager>.Instance);
+        }
 
-		/// <inheritdoc/>
-		public IChannelSchema Schema { get; }
+        public IChannelSchema Schema { get; }
 
-		/// <summary>
-		/// Gets the connection settings used by this connector instance.
-		/// </summary>
-		public ConnectionSettings ConnectionSettings { get; }
+        public ConnectionSettings ConnectionSettings { get; }
 
-		/// <summary>
-		/// Provides a service for the connector to log messages.
-		/// </summary>
-		protected ILogger Logger { get; }
+        protected ILogger Logger { get; }
 
-		/// <summary>
-		/// Gets the authentication manager used by this connector.
-		/// </summary>
-		protected IAuthenticationManager AuthenticationManager => _authenticationManager;
+        protected IAuthenticationManager AuthenticationManager => _authenticationManager;
 
-		/// <summary>
-		/// Gets the current authentication credential, if available.
-		/// </summary>
-		protected AuthenticationCredential? AuthenticationCredential => _authenticationCredential;
+        protected AuthenticationCredential? AuthenticationCredential => _authenticationCredential;
 
-		/// <inheritdoc/>
-		public ConnectorState State
-		{
-			get
-			{
-				lock (_stateLock)
-				{
-					return _state;
-				}
-			}
-		}
+        public ConnectorState State
+        {
+            get
+            {
+                lock (_stateLock)
+                {
+                    return _state;
+                }
+            }
+        }
 
-		/// <summary>
-		/// Sets the current state of the connector.
-		/// </summary>
-		/// <param name="newState">The new state to transition to.</param>
-		protected void SetState(ConnectorState newState)
-		{
-			lock (_stateLock)
-			{
-				_state = newState;
-			}
-		}
+        protected void SetState(ConnectorState newState)
+        {
+            lock (_stateLock)
+            {
+                _state = newState;
+            }
+        }
 
-		/// <summary>
-		/// Validates that the connector supports the specified capability.
-		/// </summary>
-		/// <param name="capability">The capability to validate.</param>
-		/// <exception cref="NotSupportedException">
-		/// Thrown when the connector does not support the specified capability.
-		/// </exception>
-		protected void ValidateCapability(ChannelCapability capability)
-		{
-			if (!Schema.Capabilities.HasFlag(capability))
-			{
-				throw new NotSupportedException($"The connector does not support the '{capability}' capability.");
-			}
-		}
+        protected void ValidateCapability(ChannelCapability capability)
+        {
+            if (!Schema.Capabilities.HasFlag(capability))
+            {
+                throw new NotSupportedException($"The connector does not support the '{capability}' capability.");
+            }
+        }
 
-		/// <summary>
-		/// Ensures that the connector is initialized before performing an operation.
-		/// If the connector is in <see cref="ConnectorState.Uninitialized"/> state,
-		/// it will automatically call <see cref="InitializeAsync"/> to initialize it.
-		/// </summary>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <exception cref="InvalidOperationException">
-		/// Thrown when the connector is not in an operational state after initialization.
-		/// </exception>
-		protected async Task EnsureInitializedAsync(CancellationToken cancellationToken)
-		{
-			if (State == ConnectorState.Uninitialized)
-				await InitializeAsync(cancellationToken);
+        protected async Task EnsureInitializedAsync(CancellationToken cancellationToken)
+        {
+            if (State == ConnectorState.Uninitialized)
+                await InitializeAsync(cancellationToken);
 
-			ValidateOperationalState();
-		}
+            ValidateOperationalState();
+        }
 
-		/// <summary>
-		/// Validates that the connector is in an operational state (Ready or Error).
-		/// </summary>
-		/// <exception cref="InvalidOperationException">
-		/// Thrown when the connector is not in an operational state.
-		/// </exception>
-		protected void ValidateOperationalState()
-		{
-			var currentState = State;
-			if (currentState == ConnectorState.Uninitialized ||
-			    currentState == ConnectorState.Initializing ||
-			    currentState == ConnectorState.ShuttingDown ||
-			    currentState == ConnectorState.Shutdown)
-			{
-				throw new InvalidOperationException($"The connector is not in an operational state. Current state: {currentState}");
-			}
-		}
+        protected void ValidateOperationalState()
+        {
+            var currentState = State;
+            if (currentState == ConnectorState.Uninitialized ||
+                currentState == ConnectorState.Initializing ||
+                currentState == ConnectorState.ShuttingDown ||
+                currentState == ConnectorState.Shutdown)
+            {
+                throw new InvalidOperationException($"The connector is not in an operational state. Current state: {currentState}");
+            }
+        }
 
-		/// <summary>
-		/// Begins a logging scope that enriches log entries with connector channel information.
-		/// </summary>
-		/// <returns>An <see cref="IDisposable"/> used to end the scope, or <see langword="null"/> when scoping is unavailable.</returns>
-		protected virtual IDisposable? BeginConnectorLoggerScope()
+        protected virtual IDisposable? BeginConnectorLoggerScope()
         {
             return Logger.BeginScope(
                 "[{ChannelType} v{ChannelVersion}]",
@@ -161,33 +96,42 @@ namespace Deveel.Messaging
                     Schema.Version);
         }
 
-		/// <summary>
-		/// Begins a logging scope that enriches log entries with the message identifier.
-		/// </summary>
-		/// <param name="message">The message being processed.</param>
-		/// <returns>An <see cref="IDisposable"/> used to end the scope, or <see langword="null"/> when scoping is unavailable.</returns>
-		protected virtual IDisposable? BeginMessageLoggerScope(IMessage message)
+        protected virtual IDisposable? BeginMessageLoggerScope(IMessage message)
         {
             return Logger.BeginScope("[MessageId:{MessageId}]", message.Id);
         }
 
-		/// <inheritdoc/>
-		public async ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
+        public async ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
         {
             using var scope = BeginConnectorLoggerScope();
 
-			if (State != ConnectorState.Uninitialized)
-			{
-				return OperationResult<bool>.Fail(ConnectorErrorCodes.AlreadyInitialized,
-					Schema.ChannelType,
-					"The connector has already been initialized.");
-			}
+            if (State != ConnectorState.Uninitialized)
+            {
+                return OperationResult<bool>.Fail(ConnectorErrorCodes.AlreadyInitialized,
+                    Schema.ChannelType,
+                    "The connector has already been initialized.");
+            }
 
-			SetState(ConnectorState.Initializing);
+            SetState(ConnectorState.Initializing);
 
             try
             {
                 Logger.LogInitializingConnector();
+
+                // Auto-authenticate if the schema has authentication configurations
+                // and authentication hasn't been explicitly handled by the connector
+                if (Schema.AuthenticationConfigurations.Any(c => c.Scheme != AuthenticationScheme.None) &&
+                    !_autoAuthenticationAttempted)
+                {
+                    _autoAuthenticationAttempted = true;
+                    var authResult = await AuthenticateAsync(cancellationToken);
+                    if (!authResult.IsSuccess())
+                    {
+                        // Non-fatal: connector can still initialize and handle auth later
+                        Logger.LogWarning("Auto-authentication failed during initialization: {Error}",
+                            authResult.Error?.Message);
+                    }
+                }
 
                 await InitializeConnectorAsync(cancellationToken);
 
@@ -203,40 +147,27 @@ namespace Deveel.Messaging
                 SetState(ConnectorState.Error);
                 return OperationResult<bool>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Logger.LogConnectorInitializationFailed(ex);
 
-				SetState(ConnectorState.Error);
-				return OperationResult<bool>.Fail(
-					ConnectorErrorCodes.InitializationError, 
-					Schema.ChannelType, ex.Message);
-			}
-		}
+                SetState(ConnectorState.Error);
+                return OperationResult<bool>.Fail(
+                    ConnectorErrorCodes.InitializationError,
+                    Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, performs the actual connector initialization logic.
-		/// This method can call <see cref="AuthenticateAsync(CancellationToken)"/>
-		/// to handle authentication during initialization.
-		/// </summary>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous initialization operation.</returns>
-		protected abstract ValueTask InitializeConnectorAsync(CancellationToken cancellationToken);
+        protected abstract ValueTask InitializeConnectorAsync(CancellationToken cancellationToken);
 
-		/// <summary>
-		/// Performs authentication using the connection settings and the first supported authentication configuration.
-		/// </summary>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task representing the asynchronous authentication operation.</returns>
-		protected async Task<OperationResult<bool>> AuthenticateAsync(CancellationToken cancellationToken = default)
-		{
+        protected async Task<OperationResult<bool>> AuthenticateAsync(CancellationToken cancellationToken = default)
+        {
             using var scope = BeginConnectorLoggerScope();
 
             try
             {
                 Logger.LogStartingAuthentication();
 
-                // Find the first authentication configuration that is satisfied by the connection settings
                 var authConfig =
                     Schema.AuthenticationConfigurations.FirstOrDefault(config =>
                         config.IsSatisfiedBy(ConnectionSettings));
@@ -245,29 +176,28 @@ namespace Deveel.Messaging
                 {
                     Logger.LogNoAuthenticationConfigurationFound();
                     return OperationResult<bool>.Fail(
-	                    ConnectorErrorCodes.AuthenticationFailed,
-	                    Schema.ChannelType,
+                        ConnectorErrorCodes.AuthenticationFailed,
+                        Schema.ChannelType,
                         "No suitable authentication configuration found for the provided connection settings");
                 }
 
-                Logger.LogUsingAuthenticationConfiguration(authConfig.AuthenticationType);
+                Logger.LogUsingAuthenticationConfiguration(authConfig.Scheme);
 
-                // Perform authentication
                 var authResult =
                     await _authenticationManager.AuthenticateAsync(ConnectionSettings, authConfig, cancellationToken);
 
                 if (authResult.IsSuccessful && authResult.Credential != null)
                 {
                     _authenticationCredential = authResult.Credential;
-                    Logger.LogAuthenticationSuccessful(authConfig.AuthenticationType);
+                    Logger.LogAuthenticationSuccessful(authConfig.Scheme);
                     return true;
                 }
                 else
                 {
-                    Logger.LogAuthenticationFailed(authConfig.AuthenticationType);
+                    Logger.LogAuthenticationFailed(authConfig.Scheme);
                     return OperationResult<bool>.Fail(
-	                    ConnectorErrorCodes.AuthenticationFailed,
-	                    Schema.ChannelType,
+                        ConnectorErrorCodes.AuthenticationFailed,
+                        Schema.ChannelType,
                         authResult.ErrorMessage ?? "Authentication failed");
                 }
             }
@@ -276,132 +206,102 @@ namespace Deveel.Messaging
                 Logger.LogAuthenticationException(ex);
                 return OperationResult<bool>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
-			catch (Exception ex)
-			{
-				Logger.LogAuthenticationException(ex);
-				return OperationResult<bool>.Fail(
-					ConnectorErrorCodes.AuthenticationFailed,
-					Schema.ChannelType,
-					$"Authentication error: {ex.Message}");
-			}
-		}
+            catch (Exception ex)
+            {
+                Logger.LogAuthenticationException(ex);
+                return OperationResult<bool>.Fail(
+                    ConnectorErrorCodes.AuthenticationFailed,
+                    Schema.ChannelType,
+                    $"Authentication error: {ex.Message}");
+            }
+        }
 
-		/// <summary>
-		/// Refreshes the current authentication credential if it's about to expire or has expired.
-		/// </summary>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task representing the asynchronous refresh operation.</returns>
-		protected async Task<OperationResult<bool>> RefreshAuthenticationAsync(CancellationToken cancellationToken = default)
-		{
+        protected async Task<OperationResult<bool>> RefreshAuthenticationAsync(CancellationToken cancellationToken = default)
+        {
             using var scope = BeginConnectorLoggerScope();
 
-			if (_authenticationCredential == null)
-			{
-				Logger.LogNoCredentialToRefresh();
-				return await AuthenticateAsync(cancellationToken);
-			}
+            if (_authenticationCredential == null)
+            {
+                Logger.LogNoCredentialToRefresh();
+                return await AuthenticateAsync(cancellationToken);
+            }
 
-			try
-			{
-				Logger.LogRefreshingAuthenticationCredential();
+            try
+            {
+                Logger.LogRefreshingAuthenticationCredential();
 
-				// Find the authentication configuration
-				var authConfig = Schema.AuthenticationConfigurations.FirstOrDefault(config =>
-					config.AuthenticationType == _authenticationCredential.AuthenticationType);
+                var authConfig = Schema.AuthenticationConfigurations.FirstOrDefault(config =>
+                    config.Scheme == _authenticationCredential.Scheme);
 
-				if (authConfig == null)
-				{
-					Logger.LogAuthenticationConfigurationNotFoundForType(_authenticationCredential.AuthenticationType);
-					return await AuthenticateAsync(cancellationToken);
-				}
+                if (authConfig == null)
+                {
+                    Logger.LogAuthenticationConfigurationNotFoundForType(_authenticationCredential.Scheme);
+                    return await AuthenticateAsync(cancellationToken);
+                }
 
-				// Refresh the credential
-				var authResult = await _authenticationManager.AuthenticateAsync(ConnectionSettings, authConfig, cancellationToken);
+                var authResult = await _authenticationManager.AuthenticateAsync(ConnectionSettings, authConfig, cancellationToken);
 
-				if (authResult.IsSuccessful && authResult.Credential != null)
-				{
-					_authenticationCredential = authResult.Credential;
-					Logger.LogAuthenticationCredentialRefreshed();
-					return true;
-				}
-				else
-				{
-					Logger.LogAuthenticationRefreshFailed();
-					return OperationResult<bool>.Fail(
-						ConnectorErrorCodes.AuthenticationFailed,
-						Schema.ChannelType,
-						authResult.ErrorMessage ?? "Authentication refresh failed");
-				}
-			}
-			catch (Exception ex)
-			{
-				Logger.LogAuthenticationRefreshException(ex);
-				return OperationResult<bool>.Fail(
-					ConnectorErrorCodes.AuthenticationFailed,
-					Schema.ChannelType,
-					$"Authentication refresh error: {ex.Message}");
-			}
-		}
+                if (authResult.IsSuccessful && authResult.Credential != null)
+                {
+                    _authenticationCredential = authResult.Credential;
+                    Logger.LogAuthenticationCredentialRefreshed();
+                    return true;
+                }
+                else
+                {
+                    Logger.LogAuthenticationRefreshFailed();
+                    return OperationResult<bool>.Fail(
+                        ConnectorErrorCodes.AuthenticationFailed,
+                        Schema.ChannelType,
+                        authResult.ErrorMessage ?? "Authentication refresh failed");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogAuthenticationRefreshException(ex);
+                return OperationResult<bool>.Fail(
+                    ConnectorErrorCodes.AuthenticationFailed,
+                    Schema.ChannelType,
+                    $"Authentication refresh error: {ex.Message}");
+            }
+        }
 
-		/// <summary>
-		/// Gets the authentication header value for HTTP requests, if applicable.
-		/// </summary>
-		/// <returns>The authentication header value, or null if not applicable.</returns>
-		protected virtual string? GetAuthenticationHeader()
-		{
-			if (_authenticationCredential == null)
-				return null;
+        protected virtual string? GetAuthenticationHeader()
+        {
+            if (_authenticationCredential == null)
+                return null;
 
-			return _authenticationCredential.AuthenticationType switch
-			{
-				AuthenticationType.Token => GetTokenAuthHeader(),
-				AuthenticationType.Basic => GetBasicAuthHeader(),
-				AuthenticationType.ApiKey => null, // API keys are usually added as custom headers or query parameters
-				_ => null
-			};
-		}
+            if (_authenticationCredential.Scheme == AuthenticationScheme.Bearer ||
+                _authenticationCredential.Scheme == AuthenticationScheme.OAuthClientCredentials)
+            {
+                var tokenType = _authenticationCredential.Properties.TryGetValue("TokenType", out var type) ? type?.ToString() : "Bearer";
+                return $"{tokenType} {_authenticationCredential.Value}";
+            }
 
-		private string? GetTokenAuthHeader()
-		{
-			if (_authenticationCredential == null)
-				return null;
+            if (_authenticationCredential.Scheme == AuthenticationScheme.Basic)
+            {
+                return $"Basic {_authenticationCredential.Value}";
+            }
 
-			var tokenType = _authenticationCredential.Properties.TryGetValue("TokenType", out var type) ? type?.ToString() : "Bearer";
-			return $"{tokenType} {_authenticationCredential.CredentialValue}";
-		}
+            return null;
+        }
 
-		private string? GetBasicAuthHeader()
-		{
-			if (_authenticationCredential == null)
-				return null;
+        protected virtual string? GetApiKey()
+        {
+            return _authenticationCredential?.Scheme == AuthenticationScheme.ApiKey
+                ? _authenticationCredential.Value
+                : null;
+        }
 
-			return $"Basic {_authenticationCredential.CredentialValue}";
-		}
+        protected virtual bool IsAnonymousConnector()
+        {
+            return Schema.AuthenticationConfigurations.Count == 0 ||
+                   Schema.AuthenticationConfigurations.All(c => c.Scheme == AuthenticationScheme.None);
+        }
 
-		/// <summary>
-		/// Gets the API key for requests, if applicable.
-		/// </summary>
-		/// <returns>The API key value, or null if not applicable.</returns>
-		protected virtual string? GetApiKey()
-		{
-			return _authenticationCredential?.AuthenticationType == AuthenticationType.ApiKey
-				? _authenticationCredential.CredentialValue
-				: null;
-		}
-
-		/// <summary>
-		/// Checks if the connector is configured for anonymous access (no authentication required).
-		/// </summary>
-		/// <returns>True if the connector is anonymous, false otherwise.</returns>
-		protected virtual bool IsAnonymousConnector()
-		{
-			return Schema.AuthenticationConfigurations.Count == 0;
-		}
-
-		/// <inheritdoc/>
-		public async ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
-		{
-			await EnsureInitializedAsync(cancellationToken);
+        public async ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
+        {
+            await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
@@ -421,29 +321,23 @@ namespace Deveel.Messaging
 
                 return OperationResult<bool>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Logger.LogConnectionTestFailed(ex);
 
-				return OperationResult<bool>.Fail(
-					ConnectorErrorCodes.ConnectionTestError, 
-					Schema.ChannelType, ex.Message);
-			}
-		}
+                return OperationResult<bool>.Fail(
+                    ConnectorErrorCodes.ConnectionTestError,
+                    Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, performs the actual connection testing logic.
-		/// </summary>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous connection test operation.</returns>
-		protected abstract ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken);
+        protected abstract ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken);
 
-		/// <inheritdoc/>
-		public async ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
-		{
-			ArgumentNullException.ThrowIfNull(message);
-			ValidateCapability(ChannelCapability.SendMessages);
-			await EnsureInitializedAsync(cancellationToken);
+        public async ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(message);
+            ValidateCapability(ChannelCapability.SendMessages);
+            await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
             using var messageScope = BeginMessageLoggerScope(message);
@@ -452,7 +346,6 @@ namespace Deveel.Messaging
             {
                 Logger.LogValidatingMessage(message.Id);
 
-                // Validate the message before sending
                 var validationErrors = new List<ValidationResult>();
                 await foreach (var validationResult in ValidateMessageAsync(message, cancellationToken))
                 {
@@ -462,15 +355,14 @@ namespace Deveel.Messaging
                     }
                 }
 
-                // If there are validation errors, return a failure result
                 if (validationErrors.Count > 0)
                 {
                     Logger.LogMessageValidationFailed(message.Id, validationErrors.Count);
 
                     return OperationResult<SendResult>.ValidationFailed(
-	                    ConnectorErrorCodes.MessageValidationFailed,
-	                    Schema.ChannelType,
-	                    validationErrors);
+                        ConnectorErrorCodes.MessageValidationFailed,
+                        Schema.ChannelType,
+                        validationErrors);
                 }
 
                 Logger.LogMessageValidationPassed(message.Id);
@@ -488,33 +380,25 @@ namespace Deveel.Messaging
                 Logger.LogMessageSendFailed(message.Id, ex);
                 return OperationResult<SendResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Logger.LogMessageSendFailed(message.Id, ex);
-				return OperationResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, Schema.ChannelType, ex.Message);
-			}
-		}
+                return OperationResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, performs the actual message sending logic.
-		/// </summary>
-		/// <param name="message">The message to send.</param>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous send operation.</returns>
-		protected abstract Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken);
+        protected abstract Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken);
 
-		/// <inheritdoc/>
-		public virtual async ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
-		{
-			ArgumentNullException.ThrowIfNull(batch);
-			ValidateCapability(ChannelCapability.BulkMessaging);
-			await EnsureInitializedAsync(cancellationToken);
+        public virtual async ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(batch);
+            ValidateCapability(ChannelCapability.BulkMessaging);
+            await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
             try
             {
-                // Validate all messages in the batch before sending
                 var allValidationErrors = new List<ValidationResult>();
                 var messageValidationResults = new Dictionary<string, List<ValidationResult>>();
 
@@ -536,19 +420,13 @@ namespace Deveel.Messaging
                     }
                 }
 
-                // If there are validation errors, return a failure result with details
                 if (allValidationErrors.Count > 0)
                 {
                     Logger.LogBatchValidationFailed(batch.Messages.Count());
 
-                    var errorData = new Dictionary<string, object>
-                    {
-                        ["MessageValidationResults"] = messageValidationResults
-                    };
-
                     return OperationResult<BatchSendResult>.ValidationFailed(
-	                    ConnectorErrorCodes.BatchValidationFailed,
-	                    Schema.ChannelType,
+                        ConnectorErrorCodes.BatchValidationFailed,
+                        Schema.ChannelType,
                         allValidationErrors);
                 }
 
@@ -565,177 +443,130 @@ namespace Deveel.Messaging
                 Logger.LogBatchSendFailed(batch.Messages.Count(), ex);
                 return OperationResult<BatchSendResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Logger.LogBatchSendFailed(batch.Messages.Count(), ex);
-				return OperationResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, Schema.ChannelType, ex.Message);
-			}
-		}
+                return OperationResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, performs the actual batch sending logic.
-		/// The default implementation throws <see cref="NotSupportedException"/>.
-		/// </summary>
-		/// <param name="batch">The batch of messages to send.</param>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous batch send operation.</returns>
-		protected virtual Task<BatchSendResult> SendBatchCoreAsync(IMessageBatch batch, CancellationToken cancellationToken)
-		{
-			throw new NotSupportedException("Batch sending is not supported by this connector.");
-		}
+        protected virtual Task<BatchSendResult> SendBatchCoreAsync(IMessageBatch batch, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Batch sending is not supported by this connector.");
+        }
 
-		/// <inheritdoc/>
-		public async ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
-		{
+        public async ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
+        {
             using var scope = BeginConnectorLoggerScope();
 
-			try
+            try
             {
                 Logger.LogReadingStatus();
 
-				var result = await GetConnectorStatusAsync(cancellationToken);
+                var result = await GetConnectorStatusAsync(cancellationToken);
 
                 Logger.LogStatusRead();
 
                 return result;
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Logger.LogStatusReadFailed(ex);
-				return OperationResult<StatusInfo>.Fail(ConnectorErrorCodes.GetStatusError, Schema.ChannelType, ex.Message);
-			}
-		}
+                return OperationResult<StatusInfo>.Fail(ConnectorErrorCodes.GetStatusError, Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, retrieves the current status of the connector.
-		/// </summary>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous status retrieval operation.</returns>
-		protected abstract Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken);
+        protected abstract Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken);
 
-		/// <inheritdoc/>
-		public async ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
-		{
-			ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
-			ValidateCapability(ChannelCapability.MessageStatusQuery);
-			await EnsureInitializedAsync(cancellationToken);
+        public async ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
+            ValidateCapability(ChannelCapability.MessageStatusQuery);
+            await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
-			try
-			{
+            try
+            {
                 Logger.LogReadingMessageStatus(messageId);
 
-				var result = await GetMessageStatusCoreAsync(messageId, cancellationToken);
+                var result = await GetMessageStatusCoreAsync(messageId, cancellationToken);
 
                 Logger.LogMessageStatusRead(messageId);
 
                 return result;
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Logger.LogMessageStatusReadFailed(messageId, ex);
-				return OperationResult<StatusUpdatesResult>.Fail(ConnectorErrorCodes.GetMessageStatusError, Schema.ChannelType, ex.Message);
-			}
-		}
+                return OperationResult<StatusUpdatesResult>.Fail(ConnectorErrorCodes.GetMessageStatusError, Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, retrieves the status updates for a specific message.
-		/// The default implementation throws <see cref="NotSupportedException"/>.
-		/// </summary>
-		/// <param name="messageId">The unique identifier of the message.</param>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous message status retrieval operation.</returns>
-		protected virtual Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
-		{
-			throw new NotSupportedException("Message status querying is not supported by this connector.");
-		}
+        protected virtual Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Message status querying is not supported by this connector.");
+        }
 
-		/// <inheritdoc/>
-		public virtual async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
-		{
-			ArgumentNullException.ThrowIfNull(message);
+        public virtual async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(message);
 
-			await foreach (var result in ValidateMessageCoreAsync(message, cancellationToken))
-			{
-				yield return result;
-			}
-		}
+            await foreach (var result in ValidateMessageCoreAsync(message, cancellationToken))
+            {
+                yield return result;
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, validates a message for sending through the connector.
-		/// The default implementation performs basic validation and delegates to schema validation.
-		/// </summary>
-		/// <param name="message">The message to validate.</param>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>An async enumerable of validation results.</returns>
-		protected virtual async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
-		{
-			// Use schema validation as the primary validation mechanism
-			// This includes validation of: message ID, endpoints, content type, and message properties
-			var validationResults = Schema.ValidateMessage(message);
-			var hasValidationErrors = false;
+        protected virtual async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var validationResults = Schema.ValidateMessage(message);
+            var hasValidationErrors = false;
 
-			foreach (var validationResult in validationResults)
-			{
-				hasValidationErrors = true;
-				yield return validationResult;
-			}
+            foreach (var validationResult in validationResults)
+            {
+                hasValidationErrors = true;
+                yield return validationResult;
+            }
 
-			// If no validation errors were found, yield success
-			if (!hasValidationErrors)
-			{
-				yield return ValidationResult.Success!;
-			}
+            if (!hasValidationErrors)
+            {
+                yield return ValidationResult.Success!;
+            }
 
-			await Task.CompletedTask; // Suppress compiler warning about not being async
-		}
+            await Task.CompletedTask;
+        }
 
-		/// <summary>
-		/// Gets the endpoint type from an endpoint. Override this method to provide custom endpoint type extraction logic.
-		/// </summary>
-		/// <param name="endpoint">The endpoint to extract the type from.</param>
-		/// <returns>The endpoint type string, or null if it cannot be determined.</returns>
-		protected virtual string? GetEndpointType(IEndpoint endpoint)
-		{
-			// Convert EndpointType enum to its string representation for compatibility
-			return endpoint.Type switch
-			{
-				EndpointType.EmailAddress => "email",
-				EndpointType.PhoneNumber => "phone",
-				EndpointType.Url => "url",
-				EndpointType.UserId => "user-id",
-				EndpointType.ApplicationId => "app-id",
-				EndpointType.Id => "endpoint-id",
-				EndpointType.DeviceId => "device-id",
-				EndpointType.Label => "label",
-				EndpointType.Topic => "topic",
-				EndpointType.Any => "*",
-				_ => null
-			};
-		}
+        protected virtual string? GetEndpointType(IEndpoint endpoint)
+        {
+            return endpoint.Type switch
+            {
+                EndpointType.EmailAddress => "email",
+                EndpointType.PhoneNumber => "phone",
+                EndpointType.Url => "url",
+                EndpointType.UserId => "user-id",
+                EndpointType.ApplicationId => "app-id",
+                EndpointType.Id => "endpoint-id",
+                EndpointType.DeviceId => "device-id",
+                EndpointType.Label => "label",
+                EndpointType.Topic => "topic",
+                EndpointType.Any => "*",
+                _ => null
+            };
+        }
 
-		/// <summary>
-		/// Checks if an endpoint type is supported by this connector.
-		/// </summary>
-		/// <param name="endpointType">The endpoint type to check.</param>
-		/// <param name="asSender">Whether to check as a sender.</param>
-		/// <param name="asReceiver">Whether to check as a receiver.</param>
-		/// <returns>True if the endpoint type is supported in the specified role.</returns>
-		protected virtual bool IsEndpointTypeSupported(EndpointType endpointType, bool asSender = false, bool asReceiver = false)
-		{
-			// Check if any endpoint configuration matches
-			return Schema.Endpoints.Any(e =>
-				(e.Type == EndpointType.Any || e.Type == endpointType) &&
-				(!asSender || e.CanSend) &&
-				(!asReceiver || e.CanReceive));
-		}
+        protected virtual bool IsEndpointTypeSupported(EndpointType endpointType, bool asSender = false, bool asReceiver = false)
+        {
+            return Schema.Endpoints.Any(e =>
+                (e.Type == EndpointType.Any || e.Type == endpointType) &&
+                (!asSender || e.CanSend) &&
+                (!asReceiver || e.CanReceive));
+        }
 
-		/// <inheritdoc/>
-		public async ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
-		{
-			ValidateCapability(ChannelCapability.HandleMessageState);
-			await EnsureInitializedAsync(cancellationToken);
+        public async ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
+        {
+            ValidateCapability(ChannelCapability.HandleMessageState);
+            await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
@@ -754,38 +585,30 @@ namespace Deveel.Messaging
                 Logger.LogMessageStatusReceiveFailed(ex);
                 return OperationResult<StatusUpdateResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Logger.LogMessageStatusReceiveFailed(ex);
-				return OperationResult<StatusUpdateResult>.Fail(ConnectorErrorCodes.ReceiveStatusError, Schema.ChannelType, ex.Message);
-			}
-		}
+                return OperationResult<StatusUpdateResult>.Fail(ConnectorErrorCodes.ReceiveStatusError, Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, receives status updates from the specified source.
-		/// The default implementation throws <see cref="NotSupportedException"/>.
-		/// </summary>
-		/// <param name="source">The source from which to receive status updates.</param>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous status receiving operation.</returns>
-		protected virtual Task<StatusUpdateResult> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
-		{
-			throw new NotSupportedException("Status receiving is not supported by this connector.");
-		}
+        protected virtual Task<StatusUpdateResult> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Status receiving is not supported by this connector.");
+        }
 
-		/// <inheritdoc/>
-		public async ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
-		{
-			ValidateCapability(ChannelCapability.ReceiveMessages);
-			await EnsureInitializedAsync(cancellationToken);
+        public async ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
+        {
+            ValidateCapability(ChannelCapability.ReceiveMessages);
+            await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
 
-			try
-			{
+            try
+            {
                 Logger.LogReceivingMessage();
 
-				var result = await ReceiveMessagesCoreAsync(source, cancellationToken);
+                var result = await ReceiveMessagesCoreAsync(source, cancellationToken);
 
                 Logger.LogMessageReceived();
 
@@ -796,106 +619,85 @@ namespace Deveel.Messaging
                 Logger.LogMessageReceiveFailed(ex);
                 return OperationResult<ReceiveResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Logger.LogMessageReceiveFailed(ex);
-				return OperationResult<ReceiveResult>.Fail(
-					ConnectorErrorCodes.ReceiveMessagesError, 
-					Schema.ChannelType, ex.Message);
-			}
-		}
+                return OperationResult<ReceiveResult>.Fail(
+                    ConnectorErrorCodes.ReceiveMessagesError,
+                    Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, receives messages from the specified source.
-		/// The default implementation throws <see cref="NotSupportedException"/>.
-		/// </summary>
-		/// <param name="source">The source from which to receive messages.</param>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous message receiving operation.</returns>
-		protected virtual Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
-		{
-			throw new NotSupportedException("Message receiving is not supported by this connector.");
-		}
+        protected virtual Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException("Message receiving is not supported by this connector.");
+        }
 
-		/// <inheritdoc/>
-		public virtual async ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
-		{
-			ValidateCapability(ChannelCapability.HealthCheck);
+        public virtual async ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
+        {
+            ValidateCapability(ChannelCapability.HealthCheck);
 
             using var scope = BeginConnectorLoggerScope();
 
-			try
-			{
+            try
+            {
                 Logger.LogCheckingHealth();
 
-				var result = await GetConnectorHealthAsync(cancellationToken);
+                var result = await GetConnectorHealthAsync(cancellationToken);
 
                 Logger.LogHealthCheckSuccessful();
 
                 return result;
-			}
-			catch (Exception ex)
-			{
+            }
+            catch (Exception ex)
+            {
                 Logger.LogHealthCheckFailed(ex);
-				return OperationResult<ConnectorHealth>.Fail(ConnectorErrorCodes.GetHealthError, Schema.ChannelType, ex.Message);
-			}
-		}
+                return OperationResult<ConnectorHealth>.Fail(ConnectorErrorCodes.GetHealthError, Schema.ChannelType, ex.Message);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, retrieves the health information of the connector.
-		/// The default implementation returns basic health information based on the current state.
-		/// </summary>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous health check operation.</returns>
-		protected virtual Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
-		{
-			var health = new ConnectorHealth
-			{
-				State = State,
-				IsHealthy = State == ConnectorState.Ready,
-				LastHealthCheck = DateTime.UtcNow,
-				Uptime = TimeSpan.Zero // Derived classes should track actual uptime
-			};
+        protected virtual Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
+        {
+            var health = new ConnectorHealth
+            {
+                State = State,
+                IsHealthy = State == ConnectorState.Ready,
+                LastHealthCheck = DateTime.UtcNow,
+                Uptime = TimeSpan.Zero
+            };
 
-			if (!health.IsHealthy)
-			{
-				health.Issues.Add($"Connector is in {State} state");
-			}
+            if (!health.IsHealthy)
+            {
+                health.Issues.Add($"Connector is in {State} state");
+            }
 
-			return Task.FromResult(health);
-		}
+            return Task.FromResult(health);
+        }
 
-		/// <inheritdoc/>
-		public async ValueTask ShutdownAsync(CancellationToken cancellationToken)
-		{
+        public async ValueTask ShutdownAsync(CancellationToken cancellationToken)
+        {
             using var scope = BeginConnectorLoggerScope();
 
-			if (State == ConnectorState.Shutdown || State == ConnectorState.ShuttingDown)
-			{
-				return;
-			}
+            if (State == ConnectorState.Shutdown || State == ConnectorState.ShuttingDown)
+            {
+                return;
+            }
 
-			SetState(ConnectorState.ShuttingDown);
+            SetState(ConnectorState.ShuttingDown);
 
-			try
-			{
-				await ShutdownConnectorAsync(cancellationToken);
-			}
-			finally
-			{
-				SetState(ConnectorState.Shutdown);
-			}
-		}
+            try
+            {
+                await ShutdownConnectorAsync(cancellationToken);
+            }
+            finally
+            {
+                SetState(ConnectorState.Shutdown);
+            }
+        }
 
-		/// <summary>
-		/// When overridden in a derived class, performs the actual connector shutdown logic.
-		/// The default implementation does nothing.
-		/// </summary>
-		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-		/// <returns>A task that represents the asynchronous shutdown operation.</returns>
-		protected virtual Task ShutdownConnectorAsync(CancellationToken cancellationToken)
-		{
-			return Task.CompletedTask;
-		}
-	}
+        protected virtual Task ShutdownConnectorAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+    }
 }

@@ -122,6 +122,14 @@ namespace Deveel.Messaging
 					e.IsRequired = true;
 					e.Description = "Telegram Chat ID (can be user ID, group ID, or channel username)";
 				})
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Bot Token")
+					.WithField(TelegramConnectionParameters.BotToken, DataType.String, f =>
+					{
+						f.DisplayName = "Bot Token";
+						f.Description = "Telegram Bot Token obtained from @BotFather";
+						f.AuthenticationRole = "principal";
+						f.IsSensitive = true;
+					}))
 				.AddMessageProperty(new MessagePropertyConfiguration("ParseMode", DataType.String)
 				{
 					IsRequired = false,
@@ -224,6 +232,14 @@ namespace Deveel.Messaging
                 Description = "Message parsing mode (Markdown, MarkdownV2, HTML, or None)"
             })
             .AddContentType(MessageContentType.PlainText)
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Bot Token")
+                .WithField(TelegramConnectionParameters.BotToken, DataType.String, f =>
+                {
+                    f.DisplayName = "Bot Token";
+                    f.Description = "Telegram Bot Token obtained from @BotFather";
+                    f.AuthenticationRole = "principal";
+                    f.IsSensitive = true;
+                }))
             .HandlesMessageEndpoint(EndpointType.Id, e =>
             {
                 e.CanSend = true;
@@ -268,26 +284,24 @@ namespace Deveel.Messaging
                 DefaultValue = "HTML",
                 Description = "Message parsing mode for notifications"
             })
-				.AddContentType(MessageContentType.PlainText)
-				.AddContentType(MessageContentType.Media)
-				.HandlesMessageEndpoint(EndpointType.Id, e =>
+			.AddContentType(MessageContentType.PlainText)
+			.AddContentType(MessageContentType.Media)
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Bot Token")
+				.WithField(TelegramConnectionParameters.BotToken, DataType.String, f =>
 				{
-					e.CanSend = true;
-					e.CanReceive = false;
-					e.IsRequired = true;
-					e.Description = "Telegram Chat ID (user, group, or channel)";
-				})
-				.AddMessageProperty(new MessagePropertyConfiguration("Priority", DataType.String)
-				{
-					IsRequired = false,
-					Description = "Notification priority (Low, Normal, High, Critical)"
-				})
-				.AddMessageProperty(new MessagePropertyConfiguration("Silent", DataType.Boolean)
-				{
-					IsRequired = false,
-					Description = "Send this notification silently"
-				})
-				.Build();
+					f.DisplayName = "Bot Token";
+					f.Description = "Telegram Bot Token obtained from @BotFather";
+					f.AuthenticationRole = "principal";
+					f.IsSensitive = true;
+				}))
+			.HandlesMessageEndpoint(EndpointType.Id, e =>
+			{
+				e.CanSend = true;
+				e.CanReceive = true;
+				e.IsRequired = true;
+				e.Description = "Telegram Chat ID";
+			})
+			.Build();
 		}
 
 		/// <summary>
@@ -336,6 +350,14 @@ namespace Deveel.Messaging
 				.AddContentType(MessageContentType.Media)
 				.AddContentType(MessageContentType.Location)
 				.AddContentType(MessageContentType.Json) // For custom data
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Bot Token")
+					.WithField(TelegramConnectionParameters.BotToken, DataType.String, f =>
+					{
+						f.DisplayName = "Bot Token";
+						f.Description = "Telegram Bot Token obtained from @BotFather";
+						f.AuthenticationRole = "principal";
+						f.IsSensitive = true;
+					}))
 				.HandlesMessageEndpoint(EndpointType.Id, e =>
 				{
 					e.CanSend = true;

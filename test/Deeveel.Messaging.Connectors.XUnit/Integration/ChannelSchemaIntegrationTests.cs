@@ -61,7 +61,7 @@ public class ChannelSchemaIntegrationTests
 				e.CanSend = true;
 				e.CanReceive = false;
 			})
-			.AddAuthenticationType(AuthenticationType.Basic).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Basic).Build();
 
 		// Assert
 		Assert.Equal("SMTP", emailSchema.ChannelProvider);
@@ -96,8 +96,8 @@ public class ChannelSchemaIntegrationTests
 		Assert.Contains(emailSchema.Endpoints, e => e.Type == EndpointType.PhoneNumber && e.CanSend && !e.CanReceive);
 
 		// Verify authentication types
-		Assert.Single(emailSchema.GetAuthenticationTypes());
-		Assert.Contains(AuthenticationType.Basic, emailSchema.GetAuthenticationTypes());
+		Assert.Single(emailSchema.GetAuthenticationSchemes());
+		Assert.Contains(AuthenticationScheme.Basic, emailSchema.GetAuthenticationSchemes());
 	}
 
 	[Fact]
@@ -134,7 +134,7 @@ public class ChannelSchemaIntegrationTests
 				e.CanSend = false;
 				e.CanReceive = true;
 			})
-			.AddAuthenticationType(AuthenticationType.Token).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer).Build();
 
 		// Assert
 		Assert.Equal("Twilio", smsSchema.ChannelProvider);
@@ -151,7 +151,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.Equal(2, smsSchema.Parameters.Count);
 		Assert.Single(smsSchema.ContentTypes);
 		Assert.Equal(2, smsSchema.Endpoints.Count);
-		Assert.Single(smsSchema.GetAuthenticationTypes());
+		Assert.Single(smsSchema.GetAuthenticationSchemes());
 
 		// Verify endpoints
 		var smsEndpoint = smsSchema.Endpoints.FirstOrDefault(e => e.Type == EndpointType.PhoneNumber);
@@ -172,21 +172,21 @@ public class ChannelSchemaIntegrationTests
 		// Act
 		var schema = new ChannelSchemaBuilder("Generic", "API", "1.0.0")
 			.AllowsAnyMessageEndpoint()
-			.AddAuthenticationType(AuthenticationType.None)
-			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddAuthenticationType(AuthenticationType.Token)
-			.AddAuthenticationType(AuthenticationType.ClientCredentials)
-			.AddAuthenticationType(AuthenticationType.Certificate)
-			.AddAuthenticationType(AuthenticationType.Custom).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.None)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer)
+			.AddAuthenticationScheme(AuthenticationScheme.OAuthClientCredentials)
+			.AddAuthenticationScheme(AuthenticationScheme.Certificate)
+			.AddAuthenticationScheme(AuthenticationScheme.Custom).Build();
 
 		// Assert
-		Assert.Equal(6, schema.GetAuthenticationTypes().Count());
-		Assert.Contains(AuthenticationType.None, schema.GetAuthenticationTypes());
-		Assert.Contains(AuthenticationType.Basic, schema.GetAuthenticationTypes());
-		Assert.Contains(AuthenticationType.Token, schema.GetAuthenticationTypes());
-		Assert.Contains(AuthenticationType.ClientCredentials, schema.GetAuthenticationTypes());
-		Assert.Contains(AuthenticationType.Certificate, schema.GetAuthenticationTypes());
-		Assert.Contains(AuthenticationType.Custom, schema.GetAuthenticationTypes());
+		Assert.Equal(6, schema.GetAuthenticationSchemes().Count());
+		Assert.Contains(AuthenticationScheme.None, schema.GetAuthenticationSchemes());
+		Assert.Contains(AuthenticationScheme.Basic, schema.GetAuthenticationSchemes());
+		Assert.Contains(AuthenticationScheme.Bearer, schema.GetAuthenticationSchemes());
+		Assert.Contains(AuthenticationScheme.OAuthClientCredentials, schema.GetAuthenticationSchemes());
+		Assert.Contains(AuthenticationScheme.Certificate, schema.GetAuthenticationSchemes());
+		Assert.Contains(AuthenticationScheme.Custom, schema.GetAuthenticationSchemes());
 
 		// Verify wildcard endpoint
 		Assert.Single(schema.Endpoints);
@@ -378,8 +378,8 @@ public class ChannelSchemaIntegrationTests
 				e.CanReceive = true;
 				e.IsRequired = true;
 			})
-			.AddAuthenticationType(AuthenticationType.Token)
-			.AddAuthenticationType(AuthenticationType.Basic).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic).Build();
 
 		// Assert
 		Assert.Equal("RestAPI", webApiSchema.ChannelProvider);
@@ -399,7 +399,7 @@ public class ChannelSchemaIntegrationTests
 		// Verify other properties
 		Assert.Equal(2, webApiSchema.Parameters.Count);
 		Assert.Equal(2, webApiSchema.ContentTypes.Count);
-		Assert.Equal(2, webApiSchema.GetAuthenticationTypes().Count());
+		Assert.Equal(2, webApiSchema.GetAuthenticationSchemes().Count());
 	}
 
 	[Fact]
@@ -431,7 +431,7 @@ public class ChannelSchemaIntegrationTests
 				e.CanSend = true;
 				e.CanReceive = true;
 			})
-			.AddAuthenticationType(AuthenticationType.Basic).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Basic).Build();
 
 		// Assert
 		Assert.Equal("RabbitMQ", queueSchema.ChannelProvider);
@@ -475,8 +475,8 @@ public class ChannelSchemaIntegrationTests
 			.AddContentType(MessageContentType.Json)
 			.AddContentType(MessageContentType.Binary)
 			.AllowsAnyMessageEndpoint()
-			.AddAuthenticationType(AuthenticationType.None)
-			.AddAuthenticationType(AuthenticationType.Token).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.None)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer).Build();
 
 		// Assert
 		Assert.Equal("Universal", flexibleSchema.ChannelProvider);
@@ -490,7 +490,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.False(anyEndpoint.IsRequired); // Default should be false
 
 		Assert.Equal(4, flexibleSchema.ContentTypes.Count);
-		Assert.Equal(2, flexibleSchema.GetAuthenticationTypes().Count());
+		Assert.Equal(2, flexibleSchema.GetAuthenticationSchemes().Count());
 	}
 
 	[Fact]
@@ -541,7 +541,7 @@ public class ChannelSchemaIntegrationTests
 				p.IsSensitive = true;
 				p.Description = "Email sensitivity level for compliance";
 			})
-			.AddAuthenticationType(AuthenticationType.Basic).Build();
+			.AddAuthenticationScheme(AuthenticationScheme.Basic).Build();
 
 		// Assert
 		Assert.Equal("SMTP", emailSchema.ChannelProvider);
@@ -578,7 +578,7 @@ public class ChannelSchemaIntegrationTests
 		Assert.Equal(2, emailSchema.Parameters.Count);
 		Assert.Equal(3, emailSchema.ContentTypes.Count);
 		Assert.Single(emailSchema.Endpoints);
-		Assert.Single(emailSchema.GetAuthenticationTypes());
+		Assert.Single(emailSchema.GetAuthenticationSchemes());
 	}
 
 	[Fact]

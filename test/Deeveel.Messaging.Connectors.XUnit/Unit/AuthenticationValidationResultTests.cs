@@ -5,38 +5,48 @@ namespace Deveel.Messaging;
 public class AuthenticationValidationResultTests
 {
     [Fact]
-    public void Should_CreateValid()
+    public void Should_ValidateConnectionSettings_When_ValidSettings()
     {
-        var result = new AuthenticationValidationResult(true, new List<string>());
-        Assert.True(result.IsValid);
-        Assert.Empty(result.MissingParameters);
-        Assert.Null(result.ErrorMessage);
+        var schema = new ChannelSchemaBuilder("Test", "Test", "1.0.0")
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; }))
+            .Build();
+        var settings = new ConnectionSettings().SetParameter("ApiKey", "valid-key");
+
+        var results = schema.ValidateConnectionSettings(settings);
+
+        Assert.Empty(results);
     }
 
     [Fact]
-    public void Should_CreateInvalid_WithOneMissing()
+    public void Should_ValidateConnectionSettings_When_MissingRequiredField()
     {
-        var result = new AuthenticationValidationResult(false, new List<string> { "ApiKey" });
-        Assert.False(result.IsValid);
-        Assert.Single(result.MissingParameters);
-        Assert.Contains("ApiKey", result.ErrorMessage);
+        var schema = new ChannelSchemaBuilder("Test", "Test", "1.0.0")
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Basic, "Basic Authentication")
+                .WithField("Username", DataType.String, f => f.AuthenticationRole = "principal")
+                .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; }))
+            .Build();
+        var settings = new ConnectionSettings()
+            .SetParameter("Username", "user");
+
+        var results = schema.ValidateConnectionSettings(settings).ToList();
+
+        Assert.NotEmpty(results);
+        Assert.Contains("Connection settings do not satisfy any of the supported authentication methods. Supported methods: Basic Authentication.", results[0].ErrorMessage);
     }
 
     [Fact]
-    public void Should_CreateInvalid_WithMultipleMissing()
+    public void Should_ValidateConnectionSettings_When_MultipleMissing()
     {
-        var result = new AuthenticationValidationResult(false, new List<string> { "Key1", "Key2" });
-        Assert.False(result.IsValid);
-        Assert.Equal(2, result.MissingParameters.Count);
-        Assert.Contains("Key1", result.ErrorMessage);
-        Assert.Contains("Key2", result.ErrorMessage);
-    }
+        var schema = new ChannelSchemaBuilder("Test", "Test", "1.0.0")
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Custom, "Custom")
+                .WithField(new AuthenticationField("Key1", DataType.String))
+                .WithField(new AuthenticationField("Key2", DataType.String)))
+            .Build();
+        var settings = new ConnectionSettings();
 
-    [Fact]
-    public void Should_CreateInvalid_WithEmptyList()
-    {
-        var result = new AuthenticationValidationResult(false, new List<string>());
-        Assert.False(result.IsValid);
-        Assert.Equal("Unknown validation error", result.ErrorMessage);
+        var results = schema.ValidateConnectionSettings(settings).ToList();
+
+        Assert.NotEmpty(results);
     }
 }

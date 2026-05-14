@@ -5,9 +5,6 @@
 
 namespace Deveel.Messaging
 {
-    /// <summary>
-    /// A fluent builder for constructing <see cref="ChannelSchema"/> instances.
-    /// </summary>
     public class ChannelSchemaBuilder
     {
         private string _channelProvider;
@@ -22,10 +19,6 @@ namespace Deveel.Messaging
         private readonly List<AuthenticationConfiguration> _authenticationConfigurations = new();
         private readonly List<ChannelEndpointConfiguration> _endpoints = new();
 
-        /// <summary>
-        /// Initializes a new instance of the builder with the specified
-        /// channel provider, type, and version.
-        /// </summary>
         public ChannelSchemaBuilder(string channelProvider, string channelType, string version)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(channelProvider, nameof(channelProvider));
@@ -74,23 +67,11 @@ namespace Deveel.Messaging
 
             foreach (var authConfig in source.AuthenticationConfigurations)
             {
-                var newAuthConfig = new AuthenticationConfiguration(authConfig.AuthenticationType, authConfig.DisplayName);
+                var newAuthConfig = new AuthenticationConfiguration(authConfig.Scheme, authConfig.DisplayName);
 
-                foreach (var field in authConfig.RequiredFields)
+                foreach (var field in authConfig.Fields)
                 {
-                    newAuthConfig.WithRequiredField(new AuthenticationField(field.FieldName, field.DataType)
-                    {
-                        IsSensitive = field.IsSensitive,
-                        DisplayName = field.DisplayName,
-                        Description = field.Description,
-                        AuthenticationRole = field.AuthenticationRole,
-                        AllowedValues = field.AllowedValues?.ToList()
-                    });
-                }
-
-                foreach (var field in authConfig.OptionalFields)
-                {
-                    newAuthConfig.WithOptionalField(new AuthenticationField(field.FieldName, field.DataType)
+                    newAuthConfig.WithField(new AuthenticationField(field.FieldName, field.DataType)
                     {
                         IsSensitive = field.IsSensitive,
                         DisplayName = field.DisplayName,
@@ -114,14 +95,6 @@ namespace Deveel.Messaging
             }
         }
 
-        /// <summary>
-        /// Creates a new builder pre-populated with the data from the given source schema.
-        /// </summary>
-        /// <param name="source">The source schema to copy from.</param>
-        /// <param name="derivedDisplayName">
-        /// An optional display name for the new schema to distinguish it from the source.
-        /// </param>
-        /// <returns>A new builder instance with the source schema's data.</returns>
         public static ChannelSchemaBuilder From(IChannelSchema source, string? derivedDisplayName = null)
         {
             var builder = new ChannelSchemaBuilder(source);
@@ -129,80 +102,42 @@ namespace Deveel.Messaging
             return builder;
         }
 
-        /// <summary>
-        /// Sets the unique identifier of the schema (no-op, retained for compatibility).
-        /// </summary>
-        /// <param name="id">The identifier to set.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder WithId(string id) => this;
 
-        /// <summary>
-        /// Sets the display name of the schema.
-        /// </summary>
-        /// <param name="displayName">The display name to set.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder WithDisplayName(string? displayName)
         {
             _displayName = displayName;
             return this;
         }
 
-        /// <summary>
-        /// Sets the capabilities of the channel schema.
-        /// </summary>
-        /// <param name="capabilities">The capabilities to set.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder WithCapabilities(ChannelCapability capabilities)
         {
             _capabilities = capabilities;
             return this;
         }
 
-        /// <summary>
-        /// Adds a capability to the channel schema.
-        /// </summary>
-        /// <param name="capability">The capability to add.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder WithCapability(ChannelCapability capability)
         {
             _capabilities |= capability;
             return this;
         }
 
-        /// <summary>
-        /// Sets whether the schema operates in strict mode.
-        /// </summary>
-        /// <param name="isStrict"><c>true</c> to enable strict mode; otherwise <c>false</c>.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder WithStrictMode(bool isStrict)
         {
             _isStrict = isStrict;
             return this;
         }
 
-        /// <summary>
-        /// Enables strict mode for the schema.
-        /// </summary>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder WithStrictMode()
         {
             return WithStrictMode(true);
         }
 
-        /// <summary>
-        /// Enables flexible mode for the schema (disables strict validation).
-        /// </summary>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder WithFlexibleMode()
         {
             return WithStrictMode(false);
         }
 
-        /// <summary>
-        /// Adds a parameter to the channel schema.
-        /// </summary>
-        /// <param name="parameter">The parameter to add.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder AddParameter(ChannelParameter parameter)
         {
             ArgumentNullException.ThrowIfNull(parameter, nameof(parameter));
@@ -210,13 +145,6 @@ namespace Deveel.Messaging
             return this;
         }
 
-        /// <summary>
-        /// Creates and adds a parameter to the channel schema.
-        /// </summary>
-        /// <param name="parameterName">The name of the parameter.</param>
-        /// <param name="parameterType">The data type of the parameter.</param>
-        /// <param name="configure">An optional action to configure the parameter.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder AddParameter(string parameterName, DataType parameterType, Action<ChannelParameter>? configure = null)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameterName, nameof(parameterName));
@@ -225,24 +153,9 @@ namespace Deveel.Messaging
             return AddParameter(parameter);
         }
 
-        /// <summary>
-        /// Adds a required parameter to the channel schema.
-        /// </summary>
-        /// <param name="parameterName">The name of the parameter.</param>
-        /// <param name="parameterType">The data type of the parameter.</param>
-        /// <param name="sensitive">Whether the parameter value is sensitive (e.g., a secret).</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder AddRequiredParameter(string parameterName, DataType parameterType, bool sensitive = false)
             => AddParameter(parameterName, parameterType, param => { param.IsRequired = true; param.IsSensitive = sensitive; });
 
-        /// <summary>
-        /// Adds a message property configuration to the schema.
-        /// </summary>
-        /// <param name="property">The property configuration to add.</param>
-        /// <returns>The builder instance for chaining.</returns>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if a property configuration with the same name already exists.
-        /// </exception>
         public ChannelSchemaBuilder AddMessageProperty(MessagePropertyConfiguration property)
         {
             ArgumentNullException.ThrowIfNull(property, nameof(property));
@@ -254,13 +167,6 @@ namespace Deveel.Messaging
             return this;
         }
 
-        /// <summary>
-        /// Creates and adds a message property configuration to the schema.
-        /// </summary>
-        /// <param name="propertyName">The name of the property.</param>
-        /// <param name="propertyType">The data type of the property.</param>
-        /// <param name="configure">An optional action to configure the property.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder AddMessageProperty(string propertyName, DataType propertyType, Action<MessagePropertyConfiguration>? configure = null)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
@@ -269,11 +175,6 @@ namespace Deveel.Messaging
             return AddMessageProperty(property);
         }
 
-        /// <summary>
-        /// Adds a supported content type to the channel schema.
-        /// </summary>
-        /// <param name="contentType">The content type to add.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder AddContentType(MessageContentType contentType)
         {
             _contentTypes.Add(contentType);
@@ -281,40 +182,61 @@ namespace Deveel.Messaging
         }
 
         /// <summary>
-        /// Adds an authentication type to the channel schema.
+        /// Adds a pre-built authentication configuration for the given <paramref name="scheme"/>,
+        /// using sensible default field mappings for well-known schemes.
+        /// Scheme fields are <b>not</b> automatically added as schema parameters;
+        /// use <see cref="AddAuthenticationConfiguration(AuthenticationConfiguration)"/>
+        /// with explicit fields if you need them in the parameter list.
         /// </summary>
-        /// <param name="authenticationType">The authentication type to add.</param>
-        /// <returns>The builder instance for chaining.</returns>
-        public ChannelSchemaBuilder AddAuthenticationType(AuthenticationType authenticationType)
+        /// <param name="scheme">The scheme to add.</param>
+        /// <returns>This builder for chaining.</returns>
+        public ChannelSchemaBuilder AddAuthenticationScheme(AuthenticationScheme scheme)
         {
-            var config = CreateBasicAuthenticationConfiguration(authenticationType);
-            return AddAuthenticationConfiguration(config);
+            var config = BuildDefaultConfiguration(scheme);
+            _authenticationConfigurations.Add(config);
+            return this;
         }
 
         /// <summary>
-        /// Adds an authentication configuration to the channel schema.
+        /// Adds a pre-built authentication configuration for the given <paramref name="authenticationType"/>.
         /// </summary>
-        /// <param name="authenticationConfiguration">The authentication configuration to add.</param>
-        /// <returns>The builder instance for chaining.</returns>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if a configuration for the same authentication type already exists.
-        /// </exception>
+        /// <param name="authenticationType">The authentication type to add.</param>
+        /// <returns>This builder for chaining.</returns>
+        [Obsolete("Use AddAuthenticationScheme instead")]
+        public ChannelSchemaBuilder AddAuthenticationType(AuthenticationScheme authenticationType)
+        {
+            return AddAuthenticationScheme(authenticationType);
+        }
+
         public ChannelSchemaBuilder AddAuthenticationConfiguration(AuthenticationConfiguration authenticationConfiguration)
         {
             ArgumentNullException.ThrowIfNull(authenticationConfiguration, nameof(authenticationConfiguration));
 
-            if (_authenticationConfigurations.Any(c => c.AuthenticationType == authenticationConfiguration.AuthenticationType))
-                throw new InvalidOperationException($"An authentication configuration for '{authenticationConfiguration.AuthenticationType}' authentication type already exists in the schema.");
+            if (_authenticationConfigurations.Any(c => c.Scheme == authenticationConfiguration.Scheme))
+                throw new InvalidOperationException($"An authentication configuration for scheme '{authenticationConfiguration.Scheme}' already exists in the schema.");
+
+            foreach (var field in authenticationConfiguration.Fields)
+            {
+                if (!string.Equals(field.AuthenticationRole, "principal", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var existing = _parameters.FirstOrDefault(p => string.Equals(p.Name, field.FieldName, StringComparison.OrdinalIgnoreCase));
+                if (existing == null)
+                {
+                    _parameters.Add(new ChannelParameter(field.FieldName, field.DataType)
+                    {
+                        IsRequired = false,
+                        IsSensitive = field.IsSensitive,
+                        Description = field.Description ?? $"The '{field.FieldName}' parameter for authentication",
+                        AllowedValues = field.AllowedValues?.ToArray()
+                    });
+                }
+            }
 
             _authenticationConfigurations.Add(authenticationConfiguration);
             return this;
         }
 
-        /// <summary>
-        /// Creates and adds an authentication configuration using a factory function.
-        /// </summary>
-        /// <param name="configurationFactory">A function that creates the authentication configuration.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder AddAuthenticationConfiguration(Func<AuthenticationConfiguration> configurationFactory)
         {
             ArgumentNullException.ThrowIfNull(configurationFactory, nameof(configurationFactory));
@@ -322,14 +244,6 @@ namespace Deveel.Messaging
             return AddAuthenticationConfiguration(config);
         }
 
-        /// <summary>
-        /// Adds an endpoint configuration handled by the channel.
-        /// </summary>
-        /// <param name="endpoint">The endpoint configuration to add.</param>
-        /// <returns>The builder instance for chaining.</returns>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if an endpoint configuration with the same type already exists.
-        /// </exception>
         public ChannelSchemaBuilder HandlesMessageEndpoint(ChannelEndpointConfiguration endpoint)
         {
             ArgumentNullException.ThrowIfNull(endpoint, nameof(endpoint));
@@ -341,12 +255,6 @@ namespace Deveel.Messaging
             return this;
         }
 
-        /// <summary>
-        /// Creates and adds an endpoint configuration handled by the channel.
-        /// </summary>
-        /// <param name="endpointType">The type of endpoint.</param>
-        /// <param name="configure">An optional action to configure the endpoint.</param>
-        /// <returns>The builder instance for chaining.</returns>
         public ChannelSchemaBuilder HandlesMessageEndpoint(EndpointType endpointType, Action<ChannelEndpointConfiguration>? configure = null)
         {
             var endpoint = new ChannelEndpointConfiguration(endpointType);
@@ -391,20 +299,70 @@ namespace Deveel.Messaging
             return this;
         }
 
-        public ChannelSchemaBuilder RemoveAuthenticationType(AuthenticationType authenticationType)
+        private static AuthenticationConfiguration BuildDefaultConfiguration(AuthenticationScheme scheme)
         {
-            var configToRemove = _authenticationConfigurations.FirstOrDefault(c => c.AuthenticationType == authenticationType);
-            if (configToRemove != null)
-                _authenticationConfigurations.Remove(configToRemove);
-            return this;
+            if (scheme == AuthenticationScheme.None)
+                return new AuthenticationConfiguration(scheme, "No Authentication");
+            if (scheme == AuthenticationScheme.Basic)
+                return BuildFlexibleBasic();
+            if (scheme == AuthenticationScheme.ApiKey)
+                return BuildFlexibleApiKey();
+            if (scheme == AuthenticationScheme.Bearer)
+                return BuildFlexibleBearerToken();
+            if (scheme == AuthenticationScheme.OAuthClientCredentials)
+                return new AuthenticationConfiguration(scheme, "Client Credentials (OAuth 2.0)")
+                    .WithField("ClientId", DataType.String, f => { f.DisplayName = "Client ID"; f.AuthenticationRole = "principal"; })
+                    .WithField("ClientSecret", DataType.String, f => { f.DisplayName = "Client Secret"; f.AuthenticationRole = "credential"; f.IsSensitive = true; });
+            if (scheme == AuthenticationScheme.Certificate)
+                return BuildFlexibleCertificate();
+            if (scheme == AuthenticationScheme.Digest)
+                return new AuthenticationConfiguration(scheme, "Digest Authentication")
+                    .WithField("Username", DataType.String, f => f.AuthenticationRole = "principal")
+                    .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+                    .WithField("Realm", DataType.String, f => f.AuthenticationRole = "realm");
+
+            return new AuthenticationConfiguration(scheme, scheme.Name);
         }
 
-        public ChannelSchemaBuilder RemoveAuthenticationConfiguration(AuthenticationType authenticationType)
+        private static AuthenticationConfiguration BuildFlexibleBasic()
         {
-            var configToRemove = _authenticationConfigurations.FirstOrDefault(c => c.AuthenticationType == authenticationType);
-            if (configToRemove != null)
-                _authenticationConfigurations.Remove(configToRemove);
-            return this;
+            return new AuthenticationConfiguration(AuthenticationScheme.Basic, "Flexible Basic Authentication")
+                .WithField("Username", DataType.String, f => { f.AuthenticationRole = "principal"; })
+                .WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+                .WithField("AccountSid", DataType.String, f => { f.AuthenticationRole = "principal"; })
+                .WithField("AuthToken", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+                .WithField("User", DataType.String, f => { f.AuthenticationRole = "principal"; })
+                .WithField("Pass", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+                .WithField("ClientId", DataType.String, f => { f.AuthenticationRole = "principal"; })
+                .WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
+        }
+
+        private static AuthenticationConfiguration BuildFlexibleApiKey()
+        {
+            return new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "Flexible API Key Authentication")
+                .WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; })
+                .WithField("Key", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; })
+                .WithField("AccessKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
+        }
+
+        private static AuthenticationConfiguration BuildFlexibleBearerToken()
+        {
+            return new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Flexible Bearer Token Authentication")
+                .WithField("Token", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; })
+                .WithField("AccessToken", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; })
+                .WithField("BearerToken", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; })
+                .WithField("AuthToken", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; });
+        }
+
+        private static AuthenticationConfiguration BuildFlexibleCertificate()
+        {
+            return new AuthenticationConfiguration(AuthenticationScheme.Certificate, "Flexible Certificate Authentication")
+                .WithField("Certificate", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; })
+                .WithField("CertificatePath", DataType.String, f => { f.AuthenticationRole = "principal"; })
+                .WithField("CertificateThumbprint", DataType.String, f => { f.AuthenticationRole = "principal"; })
+                .WithField("PfxFile", DataType.String, f => { f.AuthenticationRole = "principal"; })
+                .WithField("PfxPassword", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+                .WithField("CertificatePassword", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
         }
 
         public ChannelSchemaBuilder RemoveCapability(ChannelCapability capability)
@@ -429,18 +387,16 @@ namespace Deveel.Messaging
 
         public ChannelSchemaBuilder RestrictContentTypes(params MessageContentType[] allowedContentTypes)
         {
-            ArgumentNullException.ThrowIfNull(allowedContentTypes, nameof(allowedContentTypes));
             _contentTypes.Clear();
             foreach (var contentType in allowedContentTypes)
                 _contentTypes.Add(contentType);
             return this;
         }
 
-        public ChannelSchemaBuilder RestrictAuthenticationTypes(params AuthenticationType[] allowedAuthenticationTypes)
+        public ChannelSchemaBuilder RestrictAuthenticationSchemes(params AuthenticationScheme[] allowedSchemes)
         {
-            ArgumentNullException.ThrowIfNull(allowedAuthenticationTypes, nameof(allowedAuthenticationTypes));
             var configurationsToRemove = _authenticationConfigurations
-                .Where(c => !allowedAuthenticationTypes.Contains(c.AuthenticationType))
+                .Where(c => !allowedSchemes.Contains(c.Scheme))
                 .ToList();
             foreach (var config in configurationsToRemove)
                 _authenticationConfigurations.Remove(config);
@@ -449,7 +405,6 @@ namespace Deveel.Messaging
 
         public ChannelSchemaBuilder RestrictAuthenticationConfigurations(params AuthenticationConfiguration[] allowedConfigurations)
         {
-            ArgumentNullException.ThrowIfNull(allowedConfigurations, nameof(allowedConfigurations));
             _authenticationConfigurations.Clear();
             foreach (var config in allowedConfigurations)
                 _authenticationConfigurations.Add(config);
@@ -458,113 +413,29 @@ namespace Deveel.Messaging
 
         public ChannelSchemaBuilder UpdateParameter(string parameterName, Action<ChannelParameter> updateAction)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(parameterName, nameof(parameterName));
-            ArgumentNullException.ThrowIfNull(updateAction, nameof(updateAction));
-
             var parameter = _parameters.FirstOrDefault(p => string.Equals(p.Name, parameterName, StringComparison.OrdinalIgnoreCase));
             if (parameter == null)
                 throw new InvalidOperationException($"Parameter with name '{parameterName}' not found in the schema.");
-
             updateAction(parameter);
             return this;
         }
 
         public ChannelSchemaBuilder UpdateMessageProperty(string propertyName, Action<MessagePropertyConfiguration> updateAction)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
-            ArgumentNullException.ThrowIfNull(updateAction, nameof(updateAction));
-
             var property = _messageProperties.FirstOrDefault(p => string.Equals(p.Name, propertyName, StringComparison.OrdinalIgnoreCase));
             if (property == null)
                 throw new InvalidOperationException($"Message property with name '{propertyName}' not found in the schema.");
-
             updateAction(property);
             return this;
         }
 
         public ChannelSchemaBuilder UpdateEndpoint(EndpointType endpointType, Action<ChannelEndpointConfiguration> updateAction)
         {
-            ArgumentNullException.ThrowIfNull(updateAction, nameof(updateAction));
-
             var endpoint = _endpoints.FirstOrDefault(e => e.Type == endpointType);
             if (endpoint == null)
                 throw new InvalidOperationException($"Endpoint with type '{endpointType}' not found in the schema.");
-
             updateAction(endpoint);
             return this;
-        }
-
-        private static AuthenticationConfiguration CreateBasicAuthenticationConfiguration(AuthenticationType authenticationType)
-        {
-            return authenticationType switch
-            {
-                AuthenticationType.None => new AuthenticationConfiguration(AuthenticationType.None, "No Authentication"),
-                AuthenticationType.Basic => Messaging.AuthenticationConfigurations.FlexibleBasicAuthentication(),
-                AuthenticationType.ApiKey => Messaging.AuthenticationConfigurations.FlexibleApiKeyAuthentication(),
-                AuthenticationType.Token => Messaging.AuthenticationConfigurations.FlexibleTokenAuthentication(),
-                AuthenticationType.ClientCredentials => Messaging.AuthenticationConfigurations.ClientCredentialsAuthentication(),
-                AuthenticationType.Certificate => Messaging.AuthenticationConfigurations.FlexibleCertificateAuthentication(),
-                AuthenticationType.Custom => CreateFlexibleCustomAuthentication(),
-                _ => throw new ArgumentException($"Unsupported authentication type: {authenticationType}", nameof(authenticationType))
-            };
-        }
-
-        private static AuthenticationConfiguration CreateFlexibleCustomAuthentication()
-        {
-            var config = new FlexibleAuthenticationConfiguration(AuthenticationType.Custom, "Custom Authentication");
-
-            config.WithOptionalField("CustomAuth", DataType.String, field =>
-                {
-                    field.DisplayName = "Custom Auth";
-                    field.Description = "Custom authentication data";
-                    field.AuthenticationRole = "CustomAuth";
-                })
-                .WithOptionalField("AuthenticationData", DataType.String, field =>
-                {
-                    field.DisplayName = "Authentication Data";
-                    field.Description = "Custom authentication data";
-                    field.AuthenticationRole = "AuthenticationData";
-                })
-                .WithOptionalField("Credentials", DataType.String, field =>
-                {
-                    field.DisplayName = "Credentials";
-                    field.Description = "Custom credentials";
-                    field.AuthenticationRole = "Credentials";
-                })
-                .WithOptionalField("AuthConfig", DataType.String, field =>
-                {
-                    field.DisplayName = "Auth Config";
-                    field.Description = "Authentication configuration";
-                    field.AuthenticationRole = "AuthConfig";
-                })
-                .WithOptionalField("SecretKey", DataType.String, field =>
-                {
-                    field.DisplayName = "Secret Key";
-                    field.Description = "Secret key for authentication";
-                    field.AuthenticationRole = "SecretKey";
-                    field.IsSensitive = true;
-                })
-                .WithOptionalField("PrivateKey", DataType.String, field =>
-                {
-                    field.DisplayName = "Private Key";
-                    field.Description = "Private key for authentication";
-                    field.AuthenticationRole = "PrivateKey";
-                    field.IsSensitive = true;
-                })
-                .WithOptionalField("Signature", DataType.String, field =>
-                {
-                    field.DisplayName = "Signature";
-                    field.Description = "Authentication signature";
-                    field.AuthenticationRole = "Signature";
-                })
-                .WithOptionalField("Hash", DataType.String, field =>
-                {
-                    field.DisplayName = "Hash";
-                    field.Description = "Authentication hash";
-                    field.AuthenticationRole = "Hash";
-                });
-
-            return config;
         }
 
         /// <summary>

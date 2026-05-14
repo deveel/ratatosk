@@ -19,7 +19,7 @@ public class ChannelConnectorUsageExamples
 			.AddParameter("Port", DataType.Integer, param => param.DefaultValue = 587)
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
-			.AddAuthenticationType(AuthenticationType.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
 			.Build();
 
 		var connector = new ExampleEmailConnector(schema);
@@ -54,7 +54,7 @@ public class ChannelConnectorUsageExamples
 			.AddRequiredParameter("AccountSid", DataType.String)
 			.AddRequiredParameter("AuthToken", DataType.String, true)
 			.AddContentType(MessageContentType.PlainText)
-			.AddAuthenticationType(AuthenticationType.Token)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer)
 			.Build();
 
 		var connector = new ExampleSmsConnector(schema);

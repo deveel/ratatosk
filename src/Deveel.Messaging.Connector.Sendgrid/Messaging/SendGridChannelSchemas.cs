@@ -80,7 +80,14 @@ namespace Deveel.Messaging
                 e.CanSend = false;
                 e.CanReceive = true; // For webhooks
             })
-            .AddAuthenticationType(AuthenticationType.ApiKey)
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "SendGrid API Key")
+                .WithField(SendGridConnectionParameters.ApiKey, DataType.String, f =>
+                {
+                    f.DisplayName = "API Key";
+                    f.Description = "SendGrid API Key from your SendGrid Dashboard";
+                    f.AuthenticationRole = "principal";
+                    f.IsSensitive = true;
+                }))
             .AddMessageProperty("Subject", DataType.String, p =>
             {
                 p.IsRequired = true;

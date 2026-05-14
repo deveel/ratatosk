@@ -257,28 +257,67 @@ The base class prevents operations when not in `Ready` state. Calling `SendMessa
 
 ## Authentication integration
 
+The base class handles authentication automatically. During `InitializeAsync()`, before `InitializeConnectorAsync()` is called, the base class iterates through the schema's `AuthenticationConfigurations`, selects the first one that satisfies the provided `ConnectionSettings` (via `IsSatisfiedBy`), and calls `IAuthenticationManager.AuthenticateAsync()` to obtain a credential. The credential is then available in `InitializeConnectorAsync()` through the `AuthenticationCredential` property:
+
 ```csharp
 protected override async ValueTask InitializeConnectorAsync(CancellationToken ct)
 {
-    // AuthenticateAsync calls the IAuthenticationManager
-    var auth = await AuthenticateAsync(ct);
-    if (auth.IsFailure)
-    {
-        throw new InvalidOperationException(
-            auth.Error?.ErrorMessage ?? "Authentication failed");
-    }
+    // AuthenticationCredential is already populated by the base class.
+    // Access the value directly:
+    var token = AuthenticationCredential?.Value;
 
-    // Use the credential for API calls
-    var header = GetAuthenticationHeader();
+    // Use helpers for common auth patterns:
+    var authHeader = GetAuthenticationHeader();
     // Returns "Bearer <token>" or "Basic <base64>" depending on credential type
 
     var apiKey = GetApiKey();
     // Returns raw API key if credential is an ApiKey type
 
     // Store for later use
-    _httpClient.DefaultRequestHeaders.Add("Authorization", header);
+    _httpClient.DefaultRequestHeaders.Add("Authorization", authHeader);
 }
 ```
+
+### When auto-authentication fails
+
+If no auth configuration matches the connection settings, the base class logs a warning but does not prevent initialization. Your connector can handle this case:
+
+```csharp
+protected override async ValueTask InitializeConnectorAsync(CancellationToken ct)
+{
+    if (AuthenticationCredential == null)
+    {
+        // Try manual authentication
+        var result = await AuthenticateAsync(ct);
+        if (!result.IsSuccess())
+            throw new InvalidOperationException(
+                "Unable to authenticate with the provided settings");
+    }
+
+    var token = AuthenticationCredential!.Value;
+    // ...
+}
+```
+
+### Schema auth configuration
+
+Your connector's schema must declare what authentication it supports:
+
+```csharp
+// Via convenience method alias
+.AddAuthenticationScheme(AuthenticationScheme.Bearer)
+
+// Via explicit configuration (recommended)
+.AddAuthenticationConfiguration(
+    new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key")
+        .WithField("ApiKey", DataType.String, f =>
+        {
+            f.AuthenticationRole = "principal";
+            f.IsSensitive = true;
+        }))
+```
+
+When using `AddAuthenticationConfiguration()`, fields with `AuthenticationRole = "principal"` are automatically registered as optional schema parameters.
 
 See [Authentication](authentication.md) for the full authentication model.
 

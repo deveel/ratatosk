@@ -99,13 +99,13 @@ namespace Deveel.Messaging
 				}
 			}
 
-			// Validate authentication types are a subset
-			foreach (var authType in schema.GetAuthenticationTypes())
+			// Validate authentication schemes are a subset
+			foreach (var scheme in schema.GetAuthenticationSchemes())
 			{
-				if (!targetSchema.SupportsAuthenticationType(authType))
+				if (!targetSchema.SupportsAuthenticationScheme(scheme))
 				{
 					validationResults.Add(new ValidationResult(
-						$"Authentication type '{authType}' is not supported by target schema"));
+						$"Authentication scheme '{scheme}' is not supported by target schema"));
 				}
 			}
 
@@ -312,48 +312,23 @@ namespace Deveel.Messaging
 
 		private static void ValidateAuthenticationConfigurationRequirements(IChannelSchema schema, ConnectionSettings connectionSettings, List<ValidationResult> validationResults)
 		{
-			// Skip authentication validation if no authentication configurations are defined
 			if (!schema.AuthenticationConfigurations.Any())
-			{
 				return;
-			}
 
-			// If None is the only authentication type, no authentication parameters are required
-			if (schema.AuthenticationConfigurations.Count == 1 && 
-				schema.AuthenticationConfigurations.Single().AuthenticationType == AuthenticationType.None)
-			{
+			if (schema.AuthenticationConfigurations.Count == 1 &&
+				schema.AuthenticationConfigurations.Single().Scheme == AuthenticationScheme.None)
 				return;
-			}
 
-			// Check if at least one authentication configuration's requirements are satisfied
-			bool hasValidAuthentication = false;
-			var authenticationErrors = new List<string>();
+			bool hasValidAuthentication = schema.AuthenticationConfigurations
+				.Where(c => c.Scheme != AuthenticationScheme.None)
+				.Any(c => c.IsSatisfiedBy(connectionSettings));
 
-			foreach (var authConfig in schema.AuthenticationConfigurations.Where(c => c.AuthenticationType != AuthenticationType.None))
-			{
-				if (authConfig.IsSatisfiedBy(connectionSettings))
-				{
-					hasValidAuthentication = true;
-					break; // Found valid authentication, no need to check others
-				}
-				else
-				{
-					var configErrors = authConfig.Validate(connectionSettings);
-					if (configErrors.Any())
-					{
-						authenticationErrors.Add($"{authConfig.DisplayName}: {string.Join(", ", configErrors)}");
-					}
-				}
-			}
-
-			// If no valid authentication was found and None is not supported, add validation error
-			if (!hasValidAuthentication && !schema.AuthenticationConfigurations.Any(c => c.AuthenticationType == AuthenticationType.None))
+			if (!hasValidAuthentication && !schema.AuthenticationConfigurations.Any(c => c.Scheme == AuthenticationScheme.None))
 			{
 				var supportedTypes = string.Join(", ", schema.AuthenticationConfigurations.Select(c => c.DisplayName));
 				validationResults.Add(new ValidationResult(
 					$"Connection settings do not satisfy any of the supported authentication methods. " +
-					$"Supported methods: {supportedTypes}. " +
-					$"Validation errors: {string.Join("; ", authenticationErrors)}",
+					$"Supported methods: {supportedTypes}.",
 					new[] { "Authentication" }));
 			}
 		}
@@ -510,30 +485,28 @@ namespace Deveel.Messaging
 		#endregion
 
 		/// <summary>
-		/// Gets the collection of authentication types supported by the channel.
+		/// Returns the distinct <see cref="AuthenticationScheme"/> values declared
+		/// by the schema's authentication configurations.
 		/// </summary>
 		/// <param name="schema">The channel schema.</param>
-		/// <returns>An enumerable of authentication types extracted from authentication configurations.</returns>
-		/// <remarks>
-		/// This extension method provides backward compatibility for code that uses AuthenticationTypes.
-		/// For new implementations, use AuthenticationConfigurations directly.
-		/// </remarks>
-		public static IEnumerable<AuthenticationType> GetAuthenticationTypes(this IChannelSchema schema)
+		/// <returns>The distinct schemes.</returns>
+		public static IEnumerable<AuthenticationScheme> GetAuthenticationSchemes(this IChannelSchema schema)
 		{
 			ArgumentNullException.ThrowIfNull(schema, nameof(schema));
-			return schema.AuthenticationConfigurations.Select(c => c.AuthenticationType).Distinct();
+			return schema.AuthenticationConfigurations.Select(c => c.Scheme).Distinct();
 		}
 
 		/// <summary>
-		/// Checks if the schema supports a specific authentication type.
+		/// Checks whether the schema has an authentication configuration for the given scheme.
 		/// </summary>
 		/// <param name="schema">The channel schema.</param>
-		/// <param name="authenticationType">The authentication type to check.</param>
-		/// <returns>True if the authentication type is supported; otherwise, false.</returns>
-		public static bool SupportsAuthenticationType(this IChannelSchema schema, AuthenticationType authenticationType)
+		/// <param name="scheme">The scheme to look for.</param>
+		/// <returns><c>true</c> if the scheme is supported.</returns>
+		public static bool SupportsAuthenticationScheme(this IChannelSchema schema, AuthenticationScheme scheme)
 		{
 			ArgumentNullException.ThrowIfNull(schema, nameof(schema));
-			return schema.AuthenticationConfigurations.Any(c => c.AuthenticationType == authenticationType);
+			ArgumentNullException.ThrowIfNull(scheme, nameof(scheme));
+			return schema.AuthenticationConfigurations.Any(c => c.Scheme == scheme);
 		}
 	}
 }

@@ -27,7 +27,7 @@ namespace Deveel.Messaging
         /// </summary>
         /// <param name="logger">Optional logger for diagnostic purposes.</param>
         public FirebaseServiceAccountAuthenticationProvider(ILogger<FirebaseServiceAccountAuthenticationProvider>? logger = null)
-            : base(AuthenticationType.Certificate, "Firebase Service Account Authentication")
+            : base(AuthenticationScheme.Certificate, "Firebase Service Account Authentication")
         {
             _logger = logger ?? NullLogger<FirebaseServiceAccountAuthenticationProvider>.Instance;
         }
@@ -35,43 +35,39 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         public override bool CanHandle(AuthenticationConfiguration configuration)
         {
-            // Handle certificate authentication or any configuration that has service account related fields
-            return configuration.AuthenticationType == AuthenticationType.Certificate ||
-                   (configuration.AuthenticationType == AuthenticationType.Custom && 
+            return configuration.Scheme == AuthenticationScheme.Certificate ||
+                   (configuration.Scheme == AuthenticationScheme.Custom &&
                     configuration.GetAllFieldNames().Any(f => f.Contains("ServiceAccount", StringComparison.OrdinalIgnoreCase)));
         }
 
         /// <inheritdoc/>
-        public override Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, CancellationToken cancellationToken = default)
+        public override Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogObtainingServiceAccountCredential();
 
-                // Get service account key - can be JSON string or file path
                 var serviceAccountKey = GetStringParameter(connectionSettings, "ServiceAccountKey") ??
                                       GetStringParameter(connectionSettings, "ServiceAccountJson") ??
                                       GetStringParameter(connectionSettings, "Certificate");
 
                 if (string.IsNullOrWhiteSpace(serviceAccountKey))
                 {
-                    return Task.FromResult(CreateFailureResult("Service account key is required. Provide ServiceAccountKey, ServiceAccountJson, or Certificate parameter.", "MISSING_SERVICE_ACCOUNT_KEY"));
+                    return Task.FromResult(Failure("Service account key is required. Provide ServiceAccountKey, ServiceAccountJson, or Certificate parameter.", "MISSING_SERVICE_ACCOUNT_KEY"));
                 }
 
-                // If it looks like a file path, validate the file exists
                 if (serviceAccountKey.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && 
                     !serviceAccountKey.Contains("{"))
                 {
                     if (!File.Exists(serviceAccountKey))
                     {
-                        return Task.FromResult(CreateFailureResult($"Service account key file not found: {serviceAccountKey}", "SERVICE_ACCOUNT_FILE_NOT_FOUND"));
+                        return Task.FromResult(Failure($"Service account key file not found: {serviceAccountKey}", "SERVICE_ACCOUNT_FILE_NOT_FOUND"));
                     }
                     
                     _logger.LogUsingServiceAccountKeyFile();
                 }
                 else
                 {
-                    // Validate JSON format
                     try
                     {
                         System.Text.Json.JsonDocument.Parse(serviceAccountKey);
@@ -79,17 +75,14 @@ namespace Deveel.Messaging
                     }
                     catch (System.Text.Json.JsonException)
                     {
-                        return Task.FromResult(CreateFailureResult("Service account key is not valid JSON", "INVALID_SERVICE_ACCOUNT_JSON"));
+                        return Task.FromResult(Failure("Service account key is not valid JSON", "INVALID_SERVICE_ACCOUNT_JSON"));
                     }
                 }
 
-                // Create credential that contains the service account information
-                // The Firebase SDK will handle the actual token exchange
-                var credential = new AuthenticationCredential(AuthenticationType.Certificate, serviceAccountKey);
+                var credential = new AuthenticationCredential(AuthenticationScheme.Certificate, serviceAccountKey);
                 credential.Properties["CredentialType"] = "ServiceAccount";
                 credential.Properties["Provider"] = "Firebase";
 
-                // Store project ID if available
                 var projectId = GetStringParameter(connectionSettings, "ProjectId");
                 if (!string.IsNullOrWhiteSpace(projectId))
                 {
@@ -97,30 +90,27 @@ namespace Deveel.Messaging
                 }
 
                 _logger.LogFirebaseServiceAccountCredentialPrepared();
-                return Task.FromResult(CreateSuccessResult(credential));
+                return Task.FromResult(Success(credential));
             }
             catch (Exception ex)
             {
                 _logger.LogFirebaseServiceAccountCredentialError(ex);
-                return Task.FromResult(CreateFailureResult($"Error preparing credential: {ex.Message}", "CREDENTIAL_ERROR"));
+                return Task.FromResult(Failure($"Error preparing credential: {ex.Message}", "CREDENTIAL_ERROR"));
             }
         }
 
         /// <inheritdoc/>
-        public override Task<AuthenticationResult> RefreshCredentialAsync(AuthenticationCredential existingCredential, ConnectionSettings connectionSettings, CancellationToken cancellationToken = default)
+        public override Task<AuthenticationResult> RefreshCredentialAsync(AuthenticationCredential existingCredential, ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
         {
-            // Service account credentials don't need refresh - the Firebase SDK handles token lifecycle
-            // Just validate that the existing credential is still valid
-            if (existingCredential.AuthenticationType == AuthenticationType.Certificate &&
-                !string.IsNullOrWhiteSpace(existingCredential.CredentialValue))
+            if (existingCredential.Scheme == AuthenticationScheme.Certificate &&
+                !string.IsNullOrWhiteSpace(existingCredential.Value))
             {
                 _logger.LogServiceAccountCredentialValid();
-                return Task.FromResult(CreateSuccessResult(existingCredential));
+                return Task.FromResult(Success(existingCredential));
             }
 
-            // If credential is invalid, obtain a new one
             _logger.LogServiceAccountCredentialInvalid();
-            return ObtainCredentialAsync(connectionSettings, cancellationToken);
+            return ObtainCredentialAsync(connectionSettings, configuration, cancellationToken);
         }
     }
 }

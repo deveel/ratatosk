@@ -32,8 +32,8 @@ public class ChannelSchemaTests
 		Assert.Empty(schema.MessageProperties);
 		Assert.NotNull(schema.ContentTypes);
 		Assert.Empty(schema.ContentTypes);
-		Assert.NotNull(schema.AuthenticationTypes);
-		Assert.Empty(schema.AuthenticationTypes);
+		Assert.NotNull(schema.AuthenticationSchemes);
+		Assert.Empty(schema.AuthenticationSchemes);
 		Assert.NotNull(schema.Endpoints);
 		Assert.Empty(schema.Endpoints);
 	}
@@ -130,16 +130,16 @@ public class ChannelSchemaTests
 	{
 		// Arrange
 		var builder = new ChannelSchemaBuilder("Provider", "Type", "1.0.0");
-		const AuthenticationType authType = AuthenticationType.Basic;
+		var authType = AuthenticationScheme.Basic;
 
 		// Act
-		var result = builder.AddAuthenticationType(authType);
+		var result = builder.AddAuthenticationScheme(authType);
 		var schema = builder.Build();
 
 		// Assert
 		Assert.Same(builder, result);
-		Assert.Contains(authType, schema.AuthenticationTypes);
-		Assert.Single(schema.AuthenticationTypes);
+		Assert.Contains(authType, schema.AuthenticationSchemes);
+		Assert.Single(schema.AuthenticationSchemes);
 	}
 
 	#region Endpoint Configuration Tests
@@ -924,7 +924,7 @@ public class ChannelSchemaTests
 			.AddParameter(new ChannelParameter("ApiKey", DataType.String) { IsRequired = true, IsSensitive = true })
 			.AddMessageProperty(new MessagePropertyConfiguration("Subject", DataType.String) { IsRequired = true })
 			.AddContentType(MessageContentType.Json)
-			.AddAuthenticationType(AuthenticationType.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
 			.HandlesMessageEndpoint(EndpointType.EmailAddress, e => { e.CanSend = true; e.CanReceive = false; })
 			.Build();
 
@@ -941,7 +941,7 @@ public class ChannelSchemaTests
 		Assert.Equal(original.ContentTypes.Count, copy.ContentTypes.Count);
 		Assert.Equal(original.AuthenticationConfigurations.Count, copy.AuthenticationConfigurations.Count);
 		Assert.Equal(original.Endpoints.Count, copy.Endpoints.Count);
-		Assert.Equal(original.AuthenticationTypes.Count(), copy.AuthenticationTypes.Count());
+		Assert.Equal(original.AuthenticationSchemes.Count(), copy.AuthenticationSchemes.Count());
 	}
 
 	[Fact]
@@ -1001,13 +1001,13 @@ public class ChannelSchemaTests
 	[Fact]
 	public void Should_CopyAuthenticationConfigurationsDeeply_When_CopyConstructorFromIChannelSchema()
 	{
-		var authConfig = new AuthenticationConfiguration(AuthenticationType.Basic, "Basic Auth")
-			.WithRequiredField("Username", DataType.String, f =>
+		var authConfig = new AuthenticationConfiguration(AuthenticationScheme.Basic, "Basic Auth")
+			.WithField("Username", DataType.String, f =>
 			{
 				f.IsSensitive = true;
 				f.Description = "User name";
 			})
-			.WithOptionalField("Domain", DataType.String, f =>
+			.WithField("Domain", DataType.String, f =>
 			{
 				f.Description = "Domain";
 			});
@@ -1021,13 +1021,13 @@ public class ChannelSchemaTests
 		var originalConfig = original.AuthenticationConfigurations[0];
 		var copyConfig = copy.AuthenticationConfigurations[0];
 
-		Assert.Equal(originalConfig.AuthenticationType, copyConfig.AuthenticationType);
+		Assert.Equal(originalConfig.Scheme, copyConfig.Scheme);
 		Assert.Equal(originalConfig.DisplayName, copyConfig.DisplayName);
-		Assert.Equal(originalConfig.RequiredFields.Count, copyConfig.RequiredFields.Count);
-		Assert.Equal(originalConfig.OptionalFields.Count, copyConfig.OptionalFields.Count);
-		Assert.Equal(originalConfig.RequiredFields[0].FieldName, copyConfig.RequiredFields[0].FieldName);
+		Assert.Equal(originalConfig.Fields.Count, copyConfig.Fields.Count);
+		Assert.Equal(originalConfig.Fields.Count, copyConfig.Fields.Count);
+		Assert.Equal(originalConfig.Fields[0].FieldName, copyConfig.Fields[0].FieldName);
 		Assert.NotSame(originalConfig, copyConfig);
-		Assert.NotSame(originalConfig.RequiredFields, copyConfig.RequiredFields);
+		Assert.NotSame(originalConfig.Fields, copyConfig.Fields);
 	}
 
 	[Fact]
@@ -1114,15 +1114,15 @@ public class ChannelSchemaTests
 	public void Should_ReturnDistinctTypes_When_AuthenticationTypesIsInvoked()
 	{
 		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
-			.AddAuthenticationType(AuthenticationType.Basic)
-			.AddAuthenticationType(AuthenticationType.Token)
+			.AddAuthenticationScheme(AuthenticationScheme.Basic)
+			.AddAuthenticationScheme(AuthenticationScheme.Bearer)
 			.Build();
 
-		var authTypes = schema.AuthenticationTypes.ToList();
+		var authTypes = schema.AuthenticationSchemes.ToList();
 
 		Assert.Equal(2, authTypes.Count);
-		Assert.Contains(AuthenticationType.Basic, authTypes);
-		Assert.Contains(AuthenticationType.Token, authTypes);
+		Assert.Contains(AuthenticationScheme.Basic, authTypes);
+		Assert.Contains(AuthenticationScheme.Bearer, authTypes);
 	}
 
 	[Fact]
@@ -1130,7 +1130,7 @@ public class ChannelSchemaTests
 	{
 		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
 
-		Assert.Empty(schema.AuthenticationTypes);
+		Assert.Empty(schema.AuthenticationSchemes);
 	}
 
 	#endregion

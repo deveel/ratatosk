@@ -29,7 +29,8 @@ namespace Deveel.Messaging
 					e.CanSend = true;
 					e.CanReceive = false;
 				})
-				.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "API Key Authentication")
+					.WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; }))
 				.Build();
 
 			var connectionSettings = new ConnectionSettings()
@@ -44,8 +45,8 @@ namespace Deveel.Messaging
             Assert.True(initResult.IsSuccess(), $"Expected successful initialization but got: {initResult.Error?.Code} - {initResult.Error?.Message}");
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
-            Assert.Equal(AuthenticationType.ApiKey, connector.TestAuthenticationCredential.AuthenticationType);
-            Assert.Equal("sk-test-email-api-key-12345", connector.TestAuthenticationCredential.CredentialValue);
+            Assert.Equal(AuthenticationScheme.ApiKey, connector.TestAuthenticationCredential.Scheme);
+            Assert.Equal("sk-test-email-api-key-12345", connector.TestAuthenticationCredential.Value);
 
             // Verify the authentication helper methods work
             var apiKey = connector.GetApiKey();
@@ -64,7 +65,9 @@ namespace Deveel.Messaging
 					e.CanSend = true;
 					e.CanReceive = false;
 				})
-				.AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication())
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Basic, "Twilio Basic Authentication")
+					.WithField("AccountSid", DataType.String, f => f.AuthenticationRole = "principal")
+					.WithField("AuthToken", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; }))
 				.Build();
 
 			var connectionSettings = new ConnectionSettings()
@@ -80,7 +83,7 @@ namespace Deveel.Messaging
             Assert.True(initResult.IsSuccess(), $"Expected successful initialization but got: {initResult.Error?.Code} - {initResult.Error?.Message}");
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.NotNull(connector.TestAuthenticationCredential);
-            Assert.Equal(AuthenticationType.Basic, connector.TestAuthenticationCredential.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, connector.TestAuthenticationCredential.Scheme);
 
             // Verify the authentication helper methods work
             var authHeader = connector.GetAuthenticationHeader();
@@ -101,8 +104,19 @@ namespace Deveel.Messaging
 					e.CanSend = true;
 					e.CanReceive = false;
 				})
-				.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleBasicAuthentication())
-				.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleApiKeyAuthentication())
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Basic, "Flexible Basic Authentication")
+					.WithField("Username", DataType.String, f => f.AuthenticationRole = "principal")
+					.WithField("Password", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+					.WithField("AccountSid", DataType.String, f => f.AuthenticationRole = "principal")
+					.WithField("AuthToken", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+					.WithField("User", DataType.String, f => f.AuthenticationRole = "principal")
+					.WithField("Pass", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; })
+					.WithField("ClientId", DataType.String, f => f.AuthenticationRole = "principal")
+					.WithField("ClientSecret", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; }))
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "Flexible API Key Authentication")
+					.WithField("ApiKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; })
+					.WithField("Key", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; })
+					.WithField("AccessKey", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; }))
 				.Build();
 
 			// Test with API key (should pick API key auth)
@@ -113,7 +127,7 @@ namespace Deveel.Messaging
             var apiKeyInitResult = await apiKeyConnector.InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.True(apiKeyInitResult.IsSuccess());
-            Assert.Equal(AuthenticationType.ApiKey, apiKeyConnector.TestAuthenticationCredential!.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.ApiKey, apiKeyConnector.TestAuthenticationCredential!.Scheme);
 
             // Test with basic auth (should pick basic auth)
             var basicSettings = new ConnectionSettings()
@@ -124,7 +138,7 @@ namespace Deveel.Messaging
             var basicInitResult = await basicConnector.InitializeAsync(TestContext.Current.CancellationToken);
 
             Assert.True(basicInitResult.IsSuccess());
-            Assert.Equal(AuthenticationType.Basic, basicConnector.TestAuthenticationCredential!.AuthenticationType);
+            Assert.Equal(AuthenticationScheme.Basic, basicConnector.TestAuthenticationCredential!.Scheme);
         }
 
         [Fact]
@@ -133,7 +147,8 @@ namespace Deveel.Messaging
             // Arrange
 			var schema = new ChannelSchemaBuilder("TestRefresh", "Test", "1.0.0")
 				.WithCapability(ChannelCapability.SendMessages)
-				.AddAuthenticationConfiguration(AuthenticationConfigurations.TokenAuthentication())
+				.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Bearer Token Authentication")
+					.WithField("Token", DataType.String, f => { f.AuthenticationRole = "principal"; f.IsSensitive = true; }))
 				.Build();
 
 			var connectionSettings = new ConnectionSettings()
@@ -147,7 +162,7 @@ namespace Deveel.Messaging
 
             var initialCredential = connector.TestAuthenticationCredential;
             Assert.NotNull(initialCredential);
-            Assert.Equal("initial-token", initialCredential.CredentialValue);
+            Assert.Equal("initial-token", initialCredential.Value);
 
             // Simulate token expiration and refresh
             await connector.SimulateTokenRefresh();
@@ -156,7 +171,7 @@ namespace Deveel.Messaging
             var refreshedCredential = connector.TestAuthenticationCredential;
             Assert.NotNull(refreshedCredential);
             // In a real scenario, this would be a new token, but our test just returns the same for simplicity
-            Assert.Equal("initial-token", refreshedCredential.CredentialValue);
+            Assert.Equal("initial-token", refreshedCredential.Value);
         }
 
 
@@ -324,7 +339,7 @@ namespace Deveel.Messaging
             await Task.Delay(10, cancellationToken); // Simulate sending
 
             var result = new SendResult(message.Id, $"flexible-{Guid.NewGuid()}");
-            result.AdditionalData["AuthType"] = AuthenticationCredential?.AuthenticationType.ToString() ?? string.Empty;
+            result.AdditionalData["AuthType"] = AuthenticationCredential?.Scheme.ToString() ?? string.Empty;
 
             return result;
         }

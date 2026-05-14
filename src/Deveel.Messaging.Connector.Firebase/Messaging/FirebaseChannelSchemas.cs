@@ -58,19 +58,13 @@ namespace Deveel.Messaging
 				e.CanReceive = true;
                 e.IsRequired = false; // Alternative to device tokens
             })
-            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Certificate, "Firebase Service Account Authentication")
-                .WithRequiredField(FirebaseConnectionParameters.ServiceAccountKey, DataType.String, authField =>
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Certificate, "Firebase Service Account Authentication")
+                .WithField(FirebaseConnectionParameters.ServiceAccountKey, DataType.String, authField =>
                 {
                     authField.DisplayName = "Service Account Key";
                     authField.Description = "Firebase service account key JSON or file path";
-                    authField.AuthenticationRole = "Certificate";
+                    authField.AuthenticationRole = "principal";
                     authField.IsSensitive = true;
-                })
-                .WithOptionalField(FirebaseConnectionParameters.ProjectId, DataType.String, authField =>
-                {
-                    authField.DisplayName = "Project ID";
-                    authField.Description = "Firebase project ID (can be extracted from service account key)";
-                    authField.AuthenticationRole = "ProjectId";
                 }))
             .AddMessageProperty("Title", DataType.String, p =>
             {

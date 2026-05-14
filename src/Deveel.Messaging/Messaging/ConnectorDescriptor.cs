@@ -110,13 +110,13 @@ namespace Deveel.Messaging
 		}
 
 		/// <summary>
-		/// Determines whether the connector supports the specified authentication type.
+		/// Determines whether the connector supports the specified authentication scheme.
 		/// </summary>
-		/// <param name="authenticationType">The authentication type to check.</param>
-		/// <returns>True if the connector supports the authentication type; otherwise, false.</returns>
-		public bool SupportsAuthenticationType(AuthenticationType authenticationType)
+		/// <param name="scheme">The authentication scheme to check.</param>
+		/// <returns><c>true</c> if the connector supports the scheme.</returns>
+		public bool SupportsAuthenticationScheme(AuthenticationScheme scheme)
 		{
-			return Schema.SupportsAuthenticationType(authenticationType);
+			return Schema.SupportsAuthenticationScheme(scheme);
 		}
 
 		/// <summary>

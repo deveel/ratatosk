@@ -63,17 +63,14 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            // Extract required parameters first
-            _apiKey = ConnectionSettings.GetParameter<string>(SendGridConnectionParameters.ApiKey);
+            _apiKey = AuthenticationCredential?.Value;
 
-            // Extract optional parameters
             _sandboxMode = ConnectionSettings.GetParameter<bool?>(SendGridConnectionParameters.SandboxMode) ?? SendGridConnectionSettingsDefaults.SandboxMode;
             _webhookUrl = ConnectionSettings.GetParameter<string>(SendGridConnectionParameters.WebhookUrl);
             _trackingSettings = ConnectionSettings.GetParameter<bool?>(SendGridConnectionParameters.TrackingSettings) ?? SendGridConnectionSettingsDefaults.TrackingSettings;
             _defaultFromName = ConnectionSettings.GetParameter<string>(SendGridConnectionParameters.DefaultFromName);
             _defaultReplyTo = ConnectionSettings.GetParameter<string>(SendGridConnectionParameters.DefaultReplyTo);
 
-            // Log configuration details
             Logger.LogSandboxMode(_sandboxMode);
             Logger.LogTrackingSettings(_trackingSettings);
 
@@ -86,16 +83,13 @@ namespace Deveel.Messaging
             if (!string.IsNullOrEmpty(_defaultReplyTo))
                 Logger.LogDefaultReplyTo(_defaultReplyTo);
 
-            // Perform custom validation logic
             if (string.IsNullOrWhiteSpace(_apiKey))
             {
                 throw new ConnectorException(SendGridErrorCodes.MissingApiKey, Schema.ChannelType, "SendGrid API Key is required");
             }
 
-            // Initialize SendGrid client
             _sendGridService.Initialize(_apiKey);
 
-            // Create the message builder with connector-level settings
             _messageBuilder = new SendGridMessageBuilder(_sandboxMode, _trackingSettings, _defaultReplyTo, Logger);
 
             return ValueTask.CompletedTask;

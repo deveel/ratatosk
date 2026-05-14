@@ -61,7 +61,7 @@ namespace Deveel.Messaging.XUnit
 				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText)
-				.AddAuthenticationType(AuthenticationType.Basic)
+				.AddAuthenticationScheme(AuthenticationScheme.Basic)
 				.Build();
 			var descriptor = new ConnectorDescriptor(connectorType, schema);
 
@@ -224,7 +224,7 @@ namespace Deveel.Messaging.XUnit
 			var descriptor = CreateTestDescriptor();
 
 			// Act
-			var supports = descriptor.SupportsAuthenticationType(AuthenticationType.Basic);
+			var supports = descriptor.SupportsAuthenticationScheme(AuthenticationScheme.Basic);
 
 			// Assert
 			Assert.True(supports);
@@ -237,7 +237,7 @@ namespace Deveel.Messaging.XUnit
 			var descriptor = CreateTestDescriptor();
 
 			// Act
-			var supports = descriptor.SupportsAuthenticationType(AuthenticationType.ApiKey);
+			var supports = descriptor.SupportsAuthenticationScheme(AuthenticationScheme.ApiKey);
 
 			// Assert
 			Assert.False(supports);
@@ -305,7 +305,7 @@ namespace Deveel.Messaging.XUnit
 				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText)
-				.AddAuthenticationType(AuthenticationType.Basic)
+				.AddAuthenticationScheme(AuthenticationScheme.Basic)
 				.Build();
 		}
 

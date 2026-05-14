@@ -11,46 +11,48 @@ using System.Text.Json;
 
 namespace Deveel.Messaging
 {
-    /// <summary>
-    /// An authentication provider that implements OAuth 2.0 Client Credentials flow to obtain access tokens.
-    /// </summary>
     public class ClientCredentialsAuthenticationProvider : AuthenticationProviderBase
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<ClientCredentialsAuthenticationProvider> _logger;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ClientCredentialsAuthenticationProvider"/> class.
-        /// </summary>
-        /// <param name="httpClient">The HTTP client to use for token requests.</param>
-        /// <param name="logger">Optional logger for diagnostic purposes.</param>
         public ClientCredentialsAuthenticationProvider(HttpClient? httpClient = null, ILogger<ClientCredentialsAuthenticationProvider>? logger = null)
-            : base(AuthenticationType.ClientCredentials, "OAuth 2.0 Client Credentials")
+            : base(AuthenticationScheme.OAuthClientCredentials, "OAuth 2.0 Client Credentials")
         {
             _httpClient = httpClient ?? new HttpClient();
             _logger = logger ?? NullLogger<ClientCredentialsAuthenticationProvider>.Instance;
         }
 
-        /// <inheritdoc/>
-        public override async Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, CancellationToken cancellationToken = default)
+        public override async Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogDebug("Obtaining access token using client credentials flow");
 
-                // Validate required parameters
-                var validation = ValidateRequiredParameters(connectionSettings, "ClientId", "ClientSecret", "TokenEndpoint");
-                if (!validation.IsValid)
+                var principalFields = configuration.GetFieldsByRole("principal").ToList();
+                var credentialFields = configuration.GetFieldsByRole("credential").ToList();
+
+                var clientId = principalFields
+                    .Select(f => GetStringParameter(connectionSettings, f.FieldName))
+                    .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+                var clientSecret = credentialFields
+                    .Select(f => GetStringParameter(connectionSettings, f.FieldName))
+                    .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+                if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
                 {
-                    return CreateFailureResult(validation.ErrorMessage!, "MISSING_PARAMETERS");
+                    return Failure("Client ID and Client Secret are required for OAuth Client Credentials flow", "MISSING_PARAMETERS");
                 }
 
-                var clientId = GetStringParameter(connectionSettings, "ClientId")!;
-                var clientSecret = GetStringParameter(connectionSettings, "ClientSecret")!;
-                var tokenEndpoint = GetStringParameter(connectionSettings, "TokenEndpoint")!;
-                var scope = GetStringParameter(connectionSettings, "Scope"); // Optional
+                var tokenEndpoint = GetStringParameter(connectionSettings, "TokenEndpoint");
+                if (string.IsNullOrWhiteSpace(tokenEndpoint))
+                {
+                    return Failure("Token endpoint URL is required for OAuth Client Credentials flow", "MISSING_TOKEN_ENDPOINT");
+                }
 
-                // Prepare token request
+                var scope = GetStringParameter(connectionSettings, "Scope");
+
                 var tokenRequest = new Dictionary<string, string>
                 {
                     ["grant_type"] = "client_credentials",
@@ -65,7 +67,6 @@ namespace Deveel.Messaging
 
                 var requestContent = new FormUrlEncodedContent(tokenRequest);
 
-                // Make token request
                 _logger.LogDebug("Requesting access token from {TokenEndpoint}", tokenEndpoint);
                 var response = await _httpClient.PostAsync(tokenEndpoint, requestContent, cancellationToken);
 
@@ -73,43 +74,38 @@ namespace Deveel.Messaging
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
                     _logger.LogError("Token request failed with status {StatusCode}: {ErrorContent}", response.StatusCode, errorContent);
-                    return CreateFailureResult($"Token request failed: {response.StatusCode} - {errorContent}", "TOKEN_REQUEST_FAILED");
+                    return Failure($"Token request failed: {response.StatusCode} - {errorContent}", "TOKEN_REQUEST_FAILED");
                 }
 
-                // Parse token response
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 var tokenResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
                 if (!tokenResponse.TryGetProperty("access_token", out var accessTokenElement))
                 {
                     _logger.LogError("Token response does not contain access_token");
-                    return CreateFailureResult("Invalid token response: missing access_token", "INVALID_TOKEN_RESPONSE");
+                    return Failure("Invalid token response: missing access_token", "INVALID_TOKEN_RESPONSE");
                 }
 
                 var accessToken = accessTokenElement.GetString();
                 if (string.IsNullOrWhiteSpace(accessToken))
                 {
-                    return CreateFailureResult("Empty access token received", "EMPTY_ACCESS_TOKEN");
+                    return Failure("Empty access token received", "EMPTY_ACCESS_TOKEN");
                 }
 
-                // Extract expiration time if available
                 DateTime? expiresAt = null;
                 if (tokenResponse.TryGetProperty("expires_in", out var expiresInElement) && expiresInElement.TryGetInt32(out var expiresIn))
                 {
                     expiresAt = DateTime.UtcNow.AddSeconds(expiresIn);
                 }
 
-                // Extract token type
-                var tokenType = "Bearer"; // Default
+                var tokenType = "Bearer";
                 if (tokenResponse.TryGetProperty("token_type", out var tokenTypeElement))
                 {
                     tokenType = tokenTypeElement.GetString() ?? "Bearer";
                 }
 
-                // Create credential
-                var credential = AuthenticationCredential.CreateToken(accessToken, expiresAt, tokenType);
+                var credential = AuthenticationCredential.ForClientCredentials(accessToken, expiresAt, tokenType);
 
-                // Add additional properties from token response
                 if (tokenResponse.TryGetProperty("scope", out var scopeElement))
                 {
                     credential.Properties["Scope"] = scopeElement.GetString();
@@ -121,36 +117,34 @@ namespace Deveel.Messaging
                 }
 
                 _logger.LogInformation("Successfully obtained access token (expires at: {ExpiresAt})", expiresAt);
-                return CreateSuccessResult(credential);
+                return Success(credential);
             }
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Network error during token request");
-                return CreateFailureResult($"Network error: {ex.Message}", "NETWORK_ERROR");
+                return Failure($"Network error: {ex.Message}", "NETWORK_ERROR");
             }
             catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
             {
                 _logger.LogError(ex, "Token request timed out");
-                return CreateFailureResult("Token request timed out", "TIMEOUT");
+                return Failure("Token request timed out", "TIMEOUT");
             }
             catch (JsonException ex)
             {
                 _logger.LogError(ex, "Failed to parse token response");
-                return CreateFailureResult($"Invalid JSON response: {ex.Message}", "INVALID_JSON");
+                return Failure($"Invalid JSON response: {ex.Message}", "INVALID_JSON");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error during token request");
-                return CreateFailureResult($"Unexpected error: {ex.Message}", "UNEXPECTED_ERROR");
+                return Failure($"Unexpected error: {ex.Message}", "UNEXPECTED_ERROR");
             }
         }
 
-        /// <inheritdoc/>
-        public override async Task<AuthenticationResult> RefreshCredentialAsync(AuthenticationCredential existingCredential, ConnectionSettings connectionSettings, CancellationToken cancellationToken = default)
+        public override async Task<AuthenticationResult> RefreshCredentialAsync(AuthenticationCredential existingCredential, ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
         {
             try
             {
-                // Check if we have a refresh token
                 if (existingCredential.Properties.TryGetValue("RefreshToken", out var refreshTokenObj) &&
                     refreshTokenObj is string refreshToken && !string.IsNullOrWhiteSpace(refreshToken))
                 {
@@ -159,26 +153,25 @@ namespace Deveel.Messaging
                 }
 
                 _logger.LogDebug("No refresh token available, obtaining new token");
-                return await ObtainCredentialAsync(connectionSettings, cancellationToken);
+                return await ObtainCredentialAsync(connectionSettings, configuration, cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during token refresh");
-                return CreateFailureResult($"Token refresh failed: {ex.Message}", "REFRESH_FAILED");
+                return Failure($"Token refresh failed: {ex.Message}", "REFRESH_FAILED");
             }
         }
 
         private async Task<AuthenticationResult> RefreshUsingRefreshToken(string refreshToken, ConnectionSettings connectionSettings, CancellationToken cancellationToken)
         {
-            var validation = ValidateRequiredParameters(connectionSettings, "ClientId", "ClientSecret", "TokenEndpoint");
-            if (!validation.IsValid)
-            {
-                return CreateFailureResult(validation.ErrorMessage!, "MISSING_PARAMETERS");
-            }
+            var clientId = GetStringParameter(connectionSettings, "ClientId");
+            var clientSecret = GetStringParameter(connectionSettings, "ClientSecret");
+            var tokenEndpoint = GetStringParameter(connectionSettings, "TokenEndpoint");
 
-            var clientId = GetStringParameter(connectionSettings, "ClientId")!;
-            var clientSecret = GetStringParameter(connectionSettings, "ClientSecret")!;
-            var tokenEndpoint = GetStringParameter(connectionSettings, "TokenEndpoint")!;
+            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret) || string.IsNullOrWhiteSpace(tokenEndpoint))
+            {
+                return Failure("Missing OAuth parameters for token refresh", "MISSING_PARAMETERS");
+            }
 
             var refreshRequest = new Dictionary<string, string>
             {
@@ -195,25 +188,30 @@ namespace Deveel.Messaging
             {
                 var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 _logger.LogError("Token refresh failed with status {StatusCode}: {ErrorContent}", response.StatusCode, errorContent);
-                
-                // If refresh fails, try to get a new token
+
                 _logger.LogDebug("Refresh token failed, attempting to obtain new token");
-                return await ObtainCredentialAsync(connectionSettings, cancellationToken);
+                var principalFields = new[] { "ClientId", "ClientSecret" };
+                var config = new AuthenticationConfiguration(AuthenticationScheme.OAuthClientCredentials, "OAuth Client Credentials");
+                foreach (var f in principalFields)
+                    config.WithField(f, DataType.String, field => field.AuthenticationRole = "principal");
+                config.WithField("ClientSecret", DataType.String, field => field.AuthenticationRole = "credential");
+                config.WithField("TokenEndpoint", DataType.String, _ => { });
+
+                return await ObtainCredentialAsync(connectionSettings, config, cancellationToken);
             }
 
-            // Parse refresh response (same format as initial token response)
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             var tokenResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
             if (!tokenResponse.TryGetProperty("access_token", out var accessTokenElement))
             {
-                return CreateFailureResult("Invalid refresh response: missing access_token", "INVALID_REFRESH_RESPONSE");
+                return Failure("Invalid refresh response: missing access_token", "INVALID_REFRESH_RESPONSE");
             }
 
             var accessToken = accessTokenElement.GetString();
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                return CreateFailureResult("Empty access token received from refresh", "EMPTY_REFRESH_TOKEN");
+                return Failure("Empty access token received from refresh", "EMPTY_REFRESH_TOKEN");
             }
 
             DateTime? expiresAt = null;
@@ -228,26 +226,21 @@ namespace Deveel.Messaging
                 tokenType = tokenTypeElement.GetString() ?? "Bearer";
             }
 
-            var credential = AuthenticationCredential.CreateToken(accessToken, expiresAt, tokenType);
+            var credential = AuthenticationCredential.ForClientCredentials(accessToken, expiresAt, tokenType);
 
-            // Preserve or update refresh token
             if (tokenResponse.TryGetProperty("refresh_token", out var newRefreshTokenElement))
             {
                 credential.Properties["RefreshToken"] = newRefreshTokenElement.GetString();
             }
             else
             {
-                // Keep the existing refresh token if a new one wasn't provided
                 credential.Properties["RefreshToken"] = refreshToken;
             }
 
             _logger.LogInformation("Successfully refreshed access token (expires at: {ExpiresAt})", expiresAt);
-            return CreateSuccessResult(credential);
+            return Success(credential);
         }
 
-        /// <summary>
-        /// Releases the resources used by this authentication provider.
-        /// </summary>
         public void Dispose()
         {
             _httpClient?.Dispose();

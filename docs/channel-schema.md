@@ -269,26 +269,77 @@ new MessagePropertyConfiguration("CustomData", DataType.String)
 
 ## Authentication configurations
 
-Every provider has its own authentication model: API keys, bearer tokens, basic auth, OAuth 2.0 client credentials, or custom schemes. Authentication configurations declare which methods the connector supports and which connection parameters each method requires. This enables the authentication manager to automatically select the right provider and credential flow at initialization time.
+Every provider has its own authentication model: API keys, bearer tokens, basic auth, OAuth 2.0 client credentials, or custom schemes. Authentication configurations declare which methods the connector supports and which `ConnectionSettings` parameters each method requires. The authentication manager uses these declarations to automatically select the right provider and credential flow at initialization time.
 
-Declare what authentication methods the connector supports:
+### Adding a scheme with default field aliases
+
+```csharp
+schema.AddAuthenticationScheme(AuthenticationScheme.Basic);
+```
+
+This uses sensible defaults for the scheme (for Basic: Username, Password, AccountSid, AuthToken, User, Pass, ClientId, ClientSecret). The parameters are **not** automatically added as schema parameters — use `AddAuthenticationConfiguration()` with explicit fields to get auto-registration.
+
+### Adding an explicit configuration (recommended)
 
 ```csharp
 schema.AddAuthenticationConfiguration(
-    AuthenticationConfigurations.CustomBasicAuthentication(
-        usernameField: "AccountSid",
-        passwordField: "AuthToken",
-        name: "Twilio Basic"));
-
-// Multiple options — the authentication manager tries them in order
-schema
-    .AddAuthenticationConfiguration(
-        AuthenticationConfigurations.ApiKeyAuthentication("PrimaryKey"))
-    .AddAuthenticationConfiguration(
-        AuthenticationConfigurations.ApiKeyAuthentication("SecondaryKey"));
+    new AuthenticationConfiguration(AuthenticationScheme.Basic, "Twilio Basic")
+        .WithField("AccountSid", DataType.String, f =>
+        {
+            f.DisplayName = "Account SID";
+            f.AuthenticationRole = "principal";
+        })
+        .WithField("AuthToken", DataType.String, f =>
+        {
+            f.DisplayName = "Auth Token";
+            f.AuthenticationRole = "credential";
+            f.IsSensitive = true;
+        }));
 ```
 
-See [Authentication](authentication.md) for available configuration helpers.
+Fields with `AuthenticationRole = "principal"` are automatically registered as optional `ChannelParameter` entries in the schema, making them recognized by strict-mode validation.
+
+### Multiple fallback options
+
+The authentication manager iterates through the schema's configurations and selects the first one where `IsSatisfiedBy(ConnectionSettings)` returns true:
+
+```csharp
+schema
+    .AddAuthenticationConfiguration(
+        new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Primary Token")
+            .WithField("PrimaryToken", DataType.String, f =>
+            {
+                f.AuthenticationRole = "principal";
+                f.IsSensitive = true;
+            }))
+    .AddAuthenticationConfiguration(
+        new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Secondary Token")
+            .WithField("SecondaryToken", DataType.String, f =>
+            {
+                f.AuthenticationRole = "principal";
+                f.IsSensitive = true;
+            }));
+```
+
+### Role-based field matching
+
+The `IsSatisfiedBy` method uses the field's `AuthenticationRole` to determine whether a configuration is fulfilled:
+
+- **Configs with principal + credential roles**: at least one of each must be present
+- **Configs with only principal roles**: at least one must be present
+- **Auxiliary roles**: all must be present
+
+This allows flexible configurations (e.g., Username+Password OR AccountSid+AuthToken for Basic) without requiring all possible field names to be populated.
+
+### Authentication configuration properties
+
+| Property | Description |
+|---|---|
+| `Scheme` | The `AuthenticationScheme` identifier |
+| `DisplayName` | Human-readable name for the method |
+| `Fields` | List of `AuthenticationField` definitions with roles |
+
+See [Authentication](authentication.md) for the full authentication model.
 
 ## Strict vs flexible mode
 

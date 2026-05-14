@@ -194,7 +194,14 @@ namespace Deveel.Messaging
                 e.CanSend = false;
                 e.CanReceive = true;
             })
-            .AddAuthenticationType(AuthenticationType.Token)
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Bearer, "Page Access Token")
+                .WithField(FacebookConnectionParameters.PageAccessToken, DataType.String, f =>
+                {
+                    f.DisplayName = "Page Access Token";
+                    f.Description = "Facebook Page Access Token obtained from Facebook App settings";
+                    f.AuthenticationRole = "principal";
+                    f.IsSensitive = true;
+                }))
             .AddMessageProperty("QuickReplies", DataType.String, p =>
             {
                 p.IsRequired = false;
