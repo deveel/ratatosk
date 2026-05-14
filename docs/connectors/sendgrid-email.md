@@ -45,12 +45,13 @@ var settings = new ConnectionSettings()
 var connector = new SendGridEmailConnector(SendGridChannelSchemas.SendGridEmail, settings);
 await connector.InitializeAsync(ct);
 
-var email = new Message()
+var email = new MessageBuilder()
     .WithId("email-1")
-    .WithEmailSender("noreply@yourdomain.com")
-    .WithEmailReceiver("user@example.com")
-    .WithTextContent("Welcome to the app!")
-    .With("Subject", "Welcome!");
+    .FromEmail("noreply@yourdomain.com")
+    .ToEmail("user@example.com")
+    .WithText("Welcome to the app!")
+    .WithSubject("Welcome!")
+    .Build();
 
 var result = await connector.SendMessageAsync(email, ct);
 ```
@@ -58,12 +59,12 @@ var result = await connector.SendMessageAsync(email, ct);
 ### HTML email
 
 ```csharp
-new Message()
-    .WithEmailSender("noreply@yourdomain.com")
-    .WithEmailReceiver("user@example.com")
-    .WithHtmlContent(
-        "<h1>Welcome!</h1><p>Thanks for signing up, <b>{{name}}</b>.</p>")
-    .With("Subject", "Welcome!");
+new MessageBuilder()
+    .FromEmail("noreply@yourdomain.com")
+    .ToEmail("user@example.com")
+    .WithHtml("<h1>Welcome!</h1><p>Thanks for signing up, <b>{{name}}</b>.</p>")
+    .WithSubject("Welcome!")
+    .Build();
 ```
 
 ### Multipart email (text + HTML)
@@ -74,39 +75,42 @@ multipart.Parts.Add(new TextContent("Welcome to the app! Please verify your emai
 multipart.Parts.Add(new HtmlContent(
     "<h1>Welcome!</h1><p>Please <a href='{{link}}'>verify your email</a>.</p>"));
 
-new Message()
-    .WithEmailSender("noreply@yourdomain.com")
-    .WithEmailReceiver("user@example.com")
+new MessageBuilder()
+    .FromEmail("noreply@yourdomain.com")
+    .ToEmail("user@example.com")
     .WithContent(multipart)
-    .With("Subject", "Verify your email");
+    .WithSubject("Verify your email")
+    .Build();
 ```
 
 ### Email with attachment
 
 ```csharp
-new Message()
-    .WithEmailSender("noreply@yourdomain.com")
-    .WithEmailReceiver("user@example.com")
-    .WithHtmlContent("<p>Please find the attached report.</p>", html =>
+new MessageBuilder()
+    .FromEmail("noreply@yourdomain.com")
+    .ToEmail("user@example.com")
+    .WithHtml("<p>Please find the attached report.</p>", html =>
     {
         html.Attachments.Add(new MessageAttachment(
             "report", "report.pdf", "application/pdf", base64PdfContent));
     })
-    .With("Subject", "Monthly Report");
+    .WithSubject("Monthly Report")
+    .Build();
 ```
 
 ### Template email (SendGrid dynamic templates)
 
 ```csharp
-new Message()
-    .WithEmailSender("noreply@yourdomain.com")
-    .WithEmailReceiver("user@example.com")
+new MessageBuilder()
+    .FromEmail("noreply@yourdomain.com")
+    .ToEmail("user@example.com")
     .WithContent(new TemplateContent("d-abc123def456", new Dictionary<string, object?>
     {
         ["name"] = "Alice",
         ["verification_link"] = "https://example.com/verify?token=xyz"
     }))
-    .With("Subject", "Welcome!");  // Subject can be overridden from template defaults
+    .WithSubject("Welcome!")
+    .Build();
 ```
 
 ### Batch send

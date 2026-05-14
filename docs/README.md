@@ -5,11 +5,12 @@ A .NET framework for multi-channel messaging. It provides a single, provider-agn
 The same `Message` object, the same `IChannelConnector` interface, and the same `OperationResult<T>` handling pattern work for Twilio, SendGrid, Firebase, Facebook Messenger, Telegram, and any custom provider you implement.
 
 ```csharp
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("order-confirm-123")
-    .WithPhoneSender("+15550001111")
-    .WithPhoneReceiver("+15550002222")
-    .WithTextContent("Your order has been confirmed!");
+    .FromPhone("+15550001111")
+    .ToPhone("+15550002222")
+    .WithText("Your order has been confirmed!")
+    .Build();
 
 var result = await connector.SendMessageAsync(message, ct);
 ```
@@ -36,7 +37,7 @@ The framework is deliberately focused on the messaging contract and connector co
 - **Pluggable authentication** — API key, token, basic auth, OAuth 2.0 client credentials, Firebase service account, or custom providers
 - **DI-first design** — `AddMessaging()` + `AddConnector<T>()` integration with `Microsoft.Extensions.DependencyInjection`
 - **Standardized results** — all operations return `OperationResult<T>` with success/failure semantics
-- **Schema derivation** — derive restricted schemas from a master for tenant isolation or feature tiers
+- **Schema derivation** — derive restricted schemas from a master for feature tiers or environment-specific restrictions
 - **IMessagingClient facade** — disposable high-level client with lazy initialization and named channel routing; simplifies connector lifecycle
 - **Extensible** — implement `ChannelConnectorBase` to add any provider; built-in logging scopes, state management, and error wrapping
 
@@ -75,7 +76,7 @@ The framework is deliberately focused on the messaging contract and connector co
 - [Connector implementation](connector-implementation.md) — writing custom connectors with `ChannelConnectorBase`
 - [Authentication](authentication.md) — auth providers, credential management, OAuth flows
 - [Result types](result-types.md) — `OperationResult<T>`, send results, health data
-- [Advanced configuration](advanced.md) — security, multi-tenancy, health checks, testing
+- [Advanced configuration](advanced.md) — security, named connector isolation, health checks, testing
 
 **Connector guides:**
 

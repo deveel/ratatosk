@@ -51,11 +51,12 @@ var settings = new ConnectionSettings()
 var connector = new TwilioSmsConnector(TwilioChannelSchemas.SimpleSms, settings);
 await connector.InitializeAsync(ct);
 
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("sms-1")
-    .WithPhoneSender("+15550001111")
-    .WithPhoneReceiver("+15550002222")
-    .WithTextContent("Hello from Twilio SMS");
+    .FromPhone("+15550001111")
+    .ToPhone("+15550002222")
+    .WithText("Hello from Twilio SMS")
+    .Build();
 
 var result = await connector.SendMessageAsync(message, ct);
 
@@ -69,23 +70,25 @@ if (result.IsSuccess)
 ### SMS with media (MMS)
 
 ```csharp
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("mms-1")
-    .WithPhoneSender("+15550001111")
-    .WithPhoneReceiver("+15550002222")
+    .FromPhone("+15550001111")
+    .ToPhone("+15550002222")
     .WithContent(new MediaContent(MediaType.Image, "photo.jpg",
-        "https://example.com/photo.jpg"));
+        "https://example.com/photo.jpg"))
+    .Build();
 ```
 
 ### SMS with custom validity
 
 ```csharp
-new Message()
-    .WithPhoneSender("+15550001111")
-    .WithPhoneReceiver("+15550002222")
-    .WithTextContent("Time-sensitive message")
-    .With("ValidityPeriod", 300)     // 5 minutes
-    .With("MaxPrice", 0.01);         // $0.01 max
+new MessageBuilder()
+    .FromPhone("+15550001111")
+    .ToPhone("+15550002222")
+    .WithText("Time-sensitive message")
+    .WithValidityPeriod(300)     // 5 minutes
+    .WithMaxPrice(0.01)          // $0.01 max
+    .Build();
 ```
 
 ## Message properties

@@ -48,10 +48,12 @@ var settings = new ConnectionSettings()
 var connector = new FacebookMessengerConnector(settings);
 await connector.InitializeAsync(ct);
 
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("fb-1")
-    .WithReceiver(Endpoint.User("facebook-user-psid"))
-    .WithTextContent("Hello from Facebook Messenger");
+    .To(Endpoint.User("facebook-user-psid"))
+    .WithText("Hello from Facebook Messenger")
+    .WithMessagingType("RESPONSE")
+    .Build();
 
 var result = await connector.SendMessageAsync(message, ct);
 ```
@@ -59,25 +61,21 @@ var result = await connector.SendMessageAsync(message, ct);
 ### Message with media (image)
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.User("psid-123"))
+new MessageBuilder()
+    .To(Endpoint.User("psid-123"))
     .WithContent(new MediaContent(MediaType.Image, "photo.jpg",
-        "https://example.com/photo.jpg"));
+        "https://example.com/photo.jpg"))
+    .Build();
 ```
 
-### Message with quick replies (via JSON)
+### Message with quick replies
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.User("psid-123"))
-    .WithContent(new JsonContent(@"
-    {
-        ""text"": ""Choose an option:"",
-        ""quick_replies"": [
-            { ""content_type"": ""text"", ""title"": ""Yes"", ""payload"": ""YES"" },
-            { ""content_type"": ""text"", ""title"": ""No"", ""payload"": ""NO"" }
-        ]
-    }"));
+new MessageBuilder()
+    .To(Endpoint.User("psid-123"))
+    .WithText("Choose an option:")
+    .WithQuickReplies("[{\"content_type\":\"text\",\"title\":\"Yes\",\"payload\":\"YES\"},{\"content_type\":\"text\",\"title\":\"No\",\"payload\":\"NO\"}]")
+    .Build();
 ```
 
 ## Webhook setup

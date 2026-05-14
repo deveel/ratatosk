@@ -27,11 +27,13 @@ dotnet add package Deveel.Messaging.Connector.Twilio
 Phone numbers must use the `whatsapp:` prefix with E.164 format:
 
 ```csharp
-// Sender — must be a Twilio WhatsApp-enabled number
-.WithPhoneSender("whatsapp:+14155238886")   // Twilio's default WhatsApp number
-
-// Recipient — must have opted in to receive messages from your business
-.WithPhoneReceiver("whatsapp:+15550002222")
+new MessageBuilder()
+    // Sender — must be a Twilio WhatsApp-enabled number
+    .FromPhone("whatsapp:+14155238886")   // Twilio's default WhatsApp number
+    // Recipient — must have opted in to receive messages from your business
+    .ToPhone("whatsapp:+15550002222")
+    .WithText("Hello")
+    .Build();
 ```
 
 ## Schema
@@ -58,11 +60,12 @@ var settings = new ConnectionSettings()
 var connector = new TwilioWhatsAppConnector(TwilioChannelSchemas.TwilioWhatsApp, settings);
 await connector.InitializeAsync(ct);
 
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("wa-1")
-    .WithPhoneSender("whatsapp:+14155238886")
-    .WithPhoneReceiver("whatsapp:+15550002222")
-    .WithTextContent("Hello from WhatsApp!");
+    .FromPhone("whatsapp:+14155238886")
+    .ToPhone("whatsapp:+15550002222")
+    .WithText("Hello from WhatsApp!")
+    .Build();
 
 var result = await connector.SendMessageAsync(message, ct);
 ```
@@ -72,25 +75,27 @@ var result = await connector.SendMessageAsync(message, ct);
 WhatsApp requires approved templates for the first message to a user:
 
 ```csharp
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("wa-template-1")
-    .WithPhoneReceiver("whatsapp:+15550002222")
+    .ToPhone("whatsapp:+15550002222")
     .WithContent(new TemplateContent("order_confirmed", new Dictionary<string, object?>
     {
         ["order_id"] = "ORD-123",
         ["delivery_date"] = "2026-05-15"
-    }));
+    }))
+    .Build();
 ```
 
 ### Media message with caption
 
 ```csharp
-new Message()
-    .WithPhoneSender("whatsapp:+14155238886")
-    .WithPhoneReceiver("whatsapp:+15550002222")
+new MessageBuilder()
+    .FromPhone("whatsapp:+14155238886")
+    .ToPhone("whatsapp:+15550002222")
     .WithContent(new MediaContent(MediaType.Image, "product.jpg",
         "https://example.com/product.jpg"))
-    .With("caption", "Check out our new product!");
+    .WithProperty("caption", "Check out our new product!")
+    .Build();
 ```
 
 ## Message properties

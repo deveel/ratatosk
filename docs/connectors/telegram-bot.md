@@ -47,10 +47,11 @@ var settings = new ConnectionSettings()
 var connector = new TelegramBotConnector(TelegramChannelSchemas.SimpleTelegramBot, settings);
 await connector.InitializeAsync(ct);
 
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("tg-1")
-    .WithReceiver(Endpoint.Id("123456789"))
-    .WithTextContent("Hello from Telegram Bot!");
+    .To(Endpoint.Id("123456789"))
+    .WithText("Hello from Telegram Bot!")
+    .Build();
 
 var result = await connector.SendMessageAsync(message, ct);
 ```
@@ -58,56 +59,62 @@ var result = await connector.SendMessageAsync(message, ct);
 ### Rich text with MarkdownV2
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.Id("123456789"))
-    .WithTextContent("*bold* _italic_ `code` [link](https://example.com)")
-    .With("ParseMode", "MarkdownV2");
+new MessageBuilder()
+    .To(Endpoint.Id("123456789"))
+    .WithText("*bold* _italic_ `code` [link](https://example.com)")
+    .WithParseMode("MarkdownV2")
+    .Build();
 ```
 
 ### Rich text with HTML
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.Id("123456789"))
-    .WithTextContent("<b>bold</b> <i>italic</i> <code>code</code>")
-    .With("ParseMode", "HTML");
+new MessageBuilder()
+    .To(Endpoint.Id("123456789"))
+    .WithText("<b>bold</b> <i>italic</i> <code>code</code>")
+    .WithParseMode("HTML")
+    .Build();
 ```
 
 ### Image
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.Id("123456789"))
+new MessageBuilder()
+    .To(Endpoint.Id("123456789"))
     .WithContent(new MediaContent(MediaType.Image, "photo.jpg",
-        "https://example.com/photo.jpg"));
+        "https://example.com/photo.jpg"))
+    .Build();
 ```
 
 ### Document
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.Id("123456789"))
+new MessageBuilder()
+    .To(Endpoint.Id("123456789"))
     .WithContent(new MediaContent(MediaType.Document, "report.pdf",
-        null, pdfFileBytes));
+        null, pdfFileBytes))
+    .Build();
 ```
 
 ### Image with caption
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.Id("123456789"))
+new MessageBuilder()
+    .To(Endpoint.Id("123456789"))
     .WithContent(new MediaContent(MediaType.Image, "photo.jpg",
         "https://example.com/photo.jpg"))
-    .With("caption", "Check out this photo!");
+    .WithCaption("Check out this photo!")
+    .Build();
 ```
 
 ### Location
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.Id("123456789"))
+new MessageBuilder()
+    .To(Endpoint.Id("123456789"))
     .WithContent(new LocationContent(41.9028, 12.4964)
-        .WithHorizontalAccuracy(10));
+        .WithHorizontalAccuracy(10))
+    .Build();
 ```
 
 ## Message properties
@@ -161,10 +168,11 @@ public async Task<IActionResult> TelegramWebhook(CancellationToken ct)
             Console.WriteLine($"Received from {message.Sender?.Address}: {text}");
 
             // Auto-reply
-            var reply = new Message()
+            var reply = new MessageBuilder()
                 .WithId(Guid.NewGuid().ToString("n"))
-                .WithReceiver(message.Sender!)
-                .WithTextContent($"Echo: {text}");
+                .To(message.Sender!)
+                .WithText($"Echo: {text}")
+                .Build();
 
             await _connector.SendMessageAsync(reply, ct);
         }

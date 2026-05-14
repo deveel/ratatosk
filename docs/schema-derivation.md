@@ -1,10 +1,10 @@
 # Schema Derivation
 
-A single connector type — say, Twilio SMS — can serve many different use cases. A development environment should not send real messages. A basic-tier tenant should not have access to media messaging. An outbound-only integration does not need webhook parameters. These are all variations of the same connector, differing only in which capabilities, parameters, and constraints apply.
+A single connector type — say, Twilio SMS — can serve many different use cases. A development environment should not send real messages. A basic-tier environment should not have access to media messaging. An outbound-only integration does not need webhook parameters. These are all variations of the same connector, differing only in which capabilities, parameters, and constraints apply.
 
 Schema derivation lets you model this without duplication. You define a master schema that represents the full capability of the connector, then derive restricted schemas that inherit the base structure while removing or tightening specific aspects. The derived schema keeps the same logical identity as the base, so the registry and compatibility checks continue to work — but the connector created from a derived schema behaves according to the restrictions applied.
 
-This is the primary mechanism for multi-tenant configuration, environment-specific settings, and feature-tier management.
+This is the primary mechanism for environment-specific settings and feature-tier management.
 
 ## Copy constructor
 
@@ -104,16 +104,16 @@ Keep chains shallow (1-3 levels). Each level adds complexity; document what each
 
 ## Practical examples
 
-### Tenant-specific schemas
+### Environment-specific schemas with runtime settings
 
 ```csharp
 var master = LoadMasterSchema("twilio-sms");
 
-var tenantSchema = new ChannelSchema(master, $"Tenant {tenantId}")
+var instanceSchema = new ChannelSchema(master, $"Instance {instanceId}")
     .UpdateParameter("WebhookUrl", p =>
-        p.DefaultValue = $"https://{tenantId}.example.com/webhook")
+        p.DefaultValue = $"https://{instanceId}.example.com/webhook")
     .UpdateParameter("AccountSid", p =>
-        p.DefaultValue = tenantSettings.AccountSid);
+        p.DefaultValue = settings.AccountSid);
 ```
 
 ### Environment-specific schemas
@@ -143,9 +143,9 @@ var premium = new ChannelSchema(baseSchema, "Premium")
 var registry = serviceProvider.GetRequiredService<IChannelSchemaRegistry>();
 var master = registry.FindSchema("Twilio", "SMS");
 
-var tenantSchema = new ChannelSchema(master, tenantName)
+var instanceSchema = new ChannelSchema(master, instanceName)
     .UpdateParameter("WebhookUrl", p =>
-        p.DefaultValue = tenant.WebhookUrl);
+        p.DefaultValue = webhookUrl);
 ```
 
 ## Good practices
@@ -154,4 +154,4 @@ var tenantSchema = new ChannelSchema(master, tenantName)
 - **Validate every derived schema** before creating connectors from it. Use `ValidateAsRestrictionOf`.
 - **Use descriptive display names** — the `derivedDisplayName` parameter appears in logs and registry queries.
 - **Keep derivation chains shallow** — 1-3 levels is usually enough.
-- **Document what each level changes** — especially in multi-tenant systems where different tenants have different restrictions.
+- **Document what each level changes** — especially when schemas are used across different deployment environments.

@@ -47,11 +47,12 @@ var settings = new ConnectionSettings()
 var connector = new FirebasePushConnector(FirebaseChannelSchemas.FirebasePush, settings);
 await connector.InitializeAsync(ct);
 
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("push-1")
-    .WithReceiver(Endpoint.Device("fcm-device-token-here"))
-    .WithTextContent("You have a new notification")
-    .With("Title", "New message");
+    .To(Endpoint.Device("fcm-device-token-here"))
+    .WithText("You have a new notification")
+    .WithTitle("New message")
+    .Build();
 
 var result = await connector.SendMessageAsync(message, ct);
 ```
@@ -59,22 +60,24 @@ var result = await connector.SendMessageAsync(message, ct);
 ### Notification to a topic
 
 ```csharp
-new Message()
+new MessageBuilder()
     .WithId("push-topic-1")
-    .WithReceiver(Endpoint.Id("/topics/news"))
-    .WithTextContent("Breaking news: ...")
-    .With("Title", "News alert");
+    .To(Endpoint.Id("/topics/news"))
+    .WithText("Breaking news: ...")
+    .WithTitle("News alert")
+    .Build();
 ```
 
 ### Push with custom data payload
 
 ```csharp
-new Message()
-    .WithReceiver(Endpoint.Device("fcm-token"))
+new MessageBuilder()
+    .To(Endpoint.Device("fcm-token"))
     .WithContent(new JsonContent("{\"order_id\": \"ORD-123\", \"status\": \"shipped\"}"))
-    .With("Title", "Order shipped")
-    .With("sound", "default")
-    .With("badge", 1);
+    .WithTitle("Order shipped")
+    .WithSound("default")
+    .WithBadge(1)
+    .Build();
 ```
 
 ### Batch push to multiple devices
@@ -83,11 +86,12 @@ new Message()
 var batch = new MessageBatch();
 foreach (var token in deviceTokens)
 {
-    batch.Messages.Add(new Message()
+    batch.Messages.Add(new MessageBuilder()
         .WithId(Guid.NewGuid().ToString("n"))
-        .WithReceiver(Endpoint.Device(token))
-        .WithTextContent("You have a new message")
-        .With("Title", "New message"));
+        .To(Endpoint.Device(token))
+        .WithText("You have a new message")
+        .WithTitle("New message")
+        .Build());
 }
 
 var result = await connector.SendBatchAsync(batch, ct);

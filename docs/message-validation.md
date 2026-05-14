@@ -64,12 +64,13 @@ var schema = new ChannelSchema("SMTP", "Email", "1.0")
         IsRequired = true
     });
 
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("msg-1")
-    .WithEmailSender("alice@example.com")
-    .WithEmailReceiver("bob@example.com")
-    .WithTextContent("Hello")
-    .With("Subject", "Welcome");
+    .FromEmail("alice@example.com")
+    .ToEmail("bob@example.com")
+    .WithText("Hello")
+    .WithSubject("Welcome")
+    .Build();
 
 var issues = schema.ValidateMessage(message);
 if (issues.Any())
@@ -221,11 +222,12 @@ public void ValidMessage_PassesValidation()
         .AddContentType(MessageContentType.PlainText)
         .HandlesMessageEndpoint(EndpointType.EmailAddress);
 
-    var message = new Message()
+    var message = new MessageBuilder()
         .WithId("test-1")
-        .WithEmailSender("a@b.com")
-        .WithEmailReceiver("c@d.com")
-        .WithTextContent("Hello");
+        .FromEmail("a@b.com")
+        .ToEmail("c@d.com")
+        .WithText("Hello")
+        .Build();
 
     var issues = schema.ValidateMessage(message);
     Assert.Empty(issues);
@@ -242,11 +244,12 @@ public void MissingRequiredProperty_FailsValidation()
             IsRequired = true
         });
 
-    var message = new Message()
+    var message = new MessageBuilder()
         .WithId("test-2")
-        .WithEmailSender("a@b.com")
-        .WithEmailReceiver("c@d.com")
-        .WithTextContent("Hello");
+        .FromEmail("a@b.com")
+        .ToEmail("c@d.com")
+        .WithText("Hello")
+        .Build();
 
     var issues = schema.ValidateMessage(message).ToList();
     Assert.Contains(issues, x =>

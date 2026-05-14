@@ -1,6 +1,6 @@
 # Advanced Configuration
 
-The basic patterns — register a connector, build a message, send it — cover the common cases. Production deployments introduce additional concerns: keeping credentials secure, isolating tenants from each other, monitoring connector health, understanding performance characteristics, and testing thoroughly without sending real messages.
+The basic patterns — register a connector, build a message, send it — cover the common cases. Production deployments introduce additional concerns: keeping credentials secure, monitoring connector health, understanding performance characteristics, and testing thoroughly without sending real messages.
 
 This section covers these production patterns. Each pattern is independent — apply the ones that match your deployment context.
 
@@ -47,46 +47,16 @@ Inbound webhooks from providers include cryptographic signatures. Always validat
 - **Facebook**: validate `X-Hub-Signature-256` using your app secret
 - **SendGrid**: validate `X-Twilio-Email-Event-Webhook-Signature`
 
-### Multi-tenant isolation
+### Named connector isolation
 
-Use named connectors with per-tenant settings:
+Use named connectors to isolate different connector instances:
 
 ```csharp
 services.AddMessaging()
-    .AddConnector<TwilioSmsConnector>($"tenant-{tenant.Id}", cfg => cfg
-        .WithSettings($"Tenants:{tenant.Id}:Twilio"));
-```
-
-Each tenant gets its own connector instance with isolated credentials and settings.
-
-## Multi-tenancy
-
-### Schema derivation per tenant
-
-```csharp
-public class TenantConnectorFactory
-{
-    private readonly IChannelSchemaRegistry _registry;
-    private readonly ITenantStore _tenants;
-
-    public async Task<IChannelConnector> CreateForTenantAsync(string tenantId)
-    {
-        var tenant = await _tenants.GetAsync(tenantId);
-        var master = _registry.FindSchema("Twilio", "SMS");
-
-        var tenantSchema = new ChannelSchema(master, $"Tenant {tenantId}")
-            .UpdateParameter("WebhookUrl", p =>
-                p.DefaultValue = tenant.WebhookUrl);
-
-        var settings = new ConnectionSettings()
-            .SetParameter("AccountSid", tenant.AccountSid)
-            .SetParameter("AuthToken", tenant.AuthToken);
-
-        var connector = new TwilioSmsConnector(tenantSchema, settings);
-        await connector.InitializeAsync(CancellationToken.None);
-        return connector;
-    }
-}
+    .AddConnector<TwilioSmsConnector>("primary", cfg => cfg
+        .WithSettings("Twilio:Primary"))
+    .AddConnector<TwilioSmsConnector>("secondary", cfg => cfg
+        .WithSettings("Twilio:Secondary"));
 ```
 
 ### Runtime schema selection
@@ -249,17 +219,17 @@ var results = await Task.WhenAll(tasks);
 
 ### Schema caching
 
-If you build schemas dynamically (e.g., per tenant), cache them:
+If you build schemas dynamically, cache them:
 
 ```csharp
 private readonly ConcurrentDictionary<string, IChannelSchema> _schemaCache = new();
 
-public IChannelSchema GetOrBuildSchema(string tenantId)
+public IChannelSchema GetOrBuildSchema(string instanceId)
 {
-    return _schemaCache.GetOrAdd(tenantId, id =>
+    return _schemaCache.GetOrAdd(instanceId, id =>
     {
         var master = _registry.FindSchema("Twilio", "SMS");
-        return new ChannelSchema(master, $"Tenant {id}")
+        return new ChannelSchema(master, $"Instance {id}")
             .UpdateParameter("WebhookUrl", p => p.DefaultValue = GetUrl(id));
     });
 }
@@ -315,10 +285,11 @@ public void ValidateMessage_RejectsUnsupportedContentType()
         .AddContentType(MessageContentType.PlainText)
         .HandlesMessageEndpoint(EndpointType.Id);
 
-    var message = new Message()
+    var message = new MessageBuilder()
         .WithId("test")
-        .WithReceiver(Endpoint.Id("123"))
-        .WithContent(new HtmlContent("<p>test</p>"));
+        .To(Endpoint.Id("123"))
+        .WithContent(new HtmlContent("<p>test</p>"))
+        .Build();
 
     var issues = schema.ValidateMessage(message);
     Assert.Contains(issues, x =>
@@ -395,8 +366,9 @@ public class TestableConnector : MyConnector
 public async Task SendMessageCoreAsync_ReturnsSendResult()
 {
     var connector = new TestableConnector(CreateSchema());
-    var message = new Message().WithId("test").WithReceiver(Endpoint.Id("123"))
-        .WithTextContent("Hello");
+    var message = new MessageBuilder().WithId("test").To(Endpoint.Id("123"))
+        .WithText("Hello")
+        .Build();
 
     var result = await connector.CallSendMessageCoreAsync(message, CancellationToken.None);
     Assert.NotNull(result);

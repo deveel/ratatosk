@@ -2,9 +2,9 @@
 
 At the core of the framework is the `IMessage` interface and its concrete implementation `Message`. Every piece of data that flows through the system — whether it is an SMS text, an email with attachments, a push notification, or a chat message — is represented as an `IMessage`. This unified representation is what makes multi-channel messaging possible: the same message object can be sent through different connectors without transformation.
 
-`Message` is both the data class and the fluent builder. Construct with `new Message()` and chain `With*()` calls — each returns the same instance, so there is no `.Build()` or finalizer step. The design avoids allocating intermediate builder objects and keeps construction straightforward.
-
-For applications that prefer a builder separate from the model, use `MessageBuilder` — a dedicated builder class with `From()`/`To()` methods and a final `.Build()` call. See the [framework overview](framework-overview.md) for an example.
+Messages can be constructed in two ways:
+- **`MessageBuilder`** — a fluent builder class with `From()`/`To()` methods, `WithText()`/`WithHtml()` for content, and a final `.Build()` call
+- **Explicit constructors** — use `new Message { ... }` object initializers or the copy constructor `new Message(original)`
 
 The message carries five pieces of information:
 - **Identity** — a unique `Id` string you assign
@@ -25,17 +25,32 @@ public interface IMessage
 }
 ```
 
-The concrete `Message` class implements this interface and adds mutable setters and fluent builder methods.
+The concrete `Message` class implements this interface with mutable settable properties, a parameterless constructor, and a copy constructor (`new Message(IMessage)`).
 
 ## Basic construction
 
 ```csharp
-var message = new Message()
+// Using MessageBuilder (fluent)
+var message = new MessageBuilder()
     .WithId("msg-1")
-    .WithEmailSender("alice@example.com")
-    .WithEmailReceiver("bob@example.com")
-    .WithTextContent("Hello, Bob!")
-    .With("Subject", "Greetings");
+    .FromEmail("alice@example.com")
+    .ToEmail("bob@example.com")
+    .WithText("Hello, Bob!")
+    .WithSubject("Greetings")
+    .Build();
+
+// Using explicit constructor
+var message = new Message
+{
+    Id = "msg-1",
+    Sender = Endpoint.EmailAddress("alice@example.com"),
+    Receiver = Endpoint.EmailAddress("bob@example.com"),
+    Content = new TextContent("Hello, Bob!"),
+    Properties = new Dictionary<string, MessageProperty>
+    {
+        ["Subject"] = new MessageProperty("Subject", "Greetings")
+    }
+};
 ```
 
 ### Copy constructor
@@ -79,17 +94,34 @@ Endpoint.AlphaNumeric("AD12345")           // alphanumeric sender ID
 ### Setting sender and receiver
 
 ```csharp
-// Generic endpoint methods
-new Message()
-    .WithSender(Endpoint.PhoneNumber("+15550001111"))
-    .WithReceiver(Endpoint.EmailAddress("user@example.com"));
+// Using MessageBuilder with endpoint objects
+new MessageBuilder()
+    .WithId("msg-2")
+    .From(Endpoint.PhoneNumber("+15550001111"))
+    .To(Endpoint.EmailAddress("user@example.com"))
+    .WithText("Hello")
+    .Build();
 
-// Convenience shortcuts for common types
-new Message()
-    .WithPhoneSender("+15550001111")
-    .WithPhoneReceiver("+15550002222")
-    .WithEmailSender("noreply@example.com")
-    .WithEmailReceiver("user@example.com");
+// Using convenience shortcut methods
+new MessageBuilder()
+    .FromPhone("+15550001111")
+    .ToPhone("+15550002222")
+    .WithText("Hello")
+    .Build();
+
+new MessageBuilder()
+    .FromEmail("noreply@example.com")
+    .ToEmail("user@example.com")
+    .WithText("Hello")
+    .Build();
+
+// Using explicit constructor
+new Message
+{
+    Sender = Endpoint.PhoneNumber("+15550001111"),
+    Receiver = Endpoint.EmailAddress("user@example.com"),
+    Content = new TextContent("Hello")
+};
 ```
 
 ## Content types
@@ -103,8 +135,13 @@ Eight content classes implement `IMessageContent`. The base class `MessageConten
 For plain text messages — the most common content type (SMS, chat, plain-text email):
 
 ```csharp
-new Message().WithTextContent("Plain text message");
-new Message().WithTextContent("Encoded text", "utf-16");
+// Using MessageBuilder
+new MessageBuilder().WithText("Plain text message").Build();
+new MessageBuilder().WithText("Encoded text", "utf-16").Build();
+
+// Using explicit constructor
+new Message { Content = new TextContent("Plain text message") };
+new Message { Content = new TextContent("Encoded text", "utf-16") };
 ```
 
 Properties: `Text`, `Encoding` (optional, defaults to UTF-8).
@@ -114,14 +151,16 @@ Properties: `Text`, `Encoding` (optional, defaults to UTF-8).
 For rich HTML content, typically used in email:
 
 ```csharp
-new Message().WithHtmlContent("<h1>Hello</h1><p>World</p>");
+new MessageBuilder().WithHtml("<h1>Hello</h1><p>World</p>").Build();
 
 // With inline attachments (e.g., embedded images)
-new Message().WithHtmlContent("<h1>Hello</h1><img src='cid:logo'/>", html =>
-{
-    html.Attachments.Add(new MessageAttachment(
-        "logo", "logo.png", "image/png", base64ImageData));
-});
+new MessageBuilder()
+    .WithHtml("<h1>Hello</h1><img src='cid:logo'/>", html =>
+    {
+        html.Attachments.Add(new MessageAttachment(
+            "logo", "logo.png", "image/png", base64ImageData));
+    })
+    .Build();
 ```
 
 Properties: `Html`, `Attachments` (list of `MessageAttachment`).
@@ -134,12 +173,12 @@ For images, audio, video, and documents:
 // URL-based media (provider fetches the file)
 var image = new MediaContent(MediaType.Image, "photo.jpg",
     "https://example.com/photo.jpg");
-new Message().WithContent(image);
+new MessageBuilder().WithContent(image).Build();
 
 // Binary data upload
 var pdf = new MediaContent(MediaType.Document, "report.pdf",
     fileUrl: null, fileData: pdfBytes);
-new Message().WithContent(pdf);
+new Message { Content = pdf };
 ```
 
 `MediaType` enum: `Image`, `Audio`, `Video`, `Document`, `File`.
@@ -152,7 +191,7 @@ For raw binary payloads with a MIME type:
 
 ```csharp
 var binary = new BinaryContent(rawBytes, "application/octet-stream");
-new Message().WithContent(binary);
+new MessageBuilder().WithContent(binary).Build();
 ```
 
 Properties: `RawData`, `MimeType`.
@@ -163,7 +202,7 @@ For structured JSON payloads:
 
 ```csharp
 var json = new JsonContent("{\"key\": \"value\", \"count\": 42}");
-new Message().WithContent(json);
+new MessageBuilder().WithContent(json).Build();
 ```
 
 Properties: `Json` (string).
@@ -179,7 +218,7 @@ var location = new LocationContent(41.9028, 12.4964)   // Rome, Italy
     .WithHeading(180)         // heading in degrees
     .WithProximityAlertRadius(50);  // alert within 50m
 
-new Message().WithContent(location);
+new MessageBuilder().WithContent(location).Build();
 ```
 
 Properties: `Latitude`, `Longitude`, `HorizontalAccuracy`, `LivePeriod`, `Heading`, `ProximityAlertRadius`.
@@ -195,7 +234,7 @@ var template = new TemplateContent("welcome-template",
         ["name"] = "Alice",
         ["link"] = "https://example.com/verify"
     });
-new Message().WithContent(template);
+new MessageBuilder().WithContent(template).Build();
 ```
 
 Typical use: SendGrid dynamic templates, Twilio WhatsApp templates, Facebook message templates.
@@ -213,7 +252,7 @@ multipart.Parts.Add(new MediaContent(MediaType.Image, "photo.jpg",
     "https://example.com/photo.jpg"));
 multipart.Parts.Add(new HtmlContent("<p>Check out <b>this</b> photo</p>"));
 
-new Message().WithContent(multipart);
+new Message { Content = multipart };
 ```
 
 Each part can be any `IMessageContentPart` implementation: `TextContentPart`, `HtmlContentPart`.
@@ -227,30 +266,35 @@ Properties are arbitrary key-value metadata attached to a message. They carry pe
 ### Single property
 
 ```csharp
-new Message()
-    .With("priority", "high")
-    .With("ttl", 3600);
+new MessageBuilder()
+    .WithProperty("priority", "high")
+    .WithProperty("ttl", 3600)
+    .Build();
 ```
 
 ### Bulk properties
 
 ```csharp
-new Message().With(new Dictionary<string, object>
-{
-    ["ValidityPeriod"] = 3600,
-    ["MaxPrice"] = 0.05,
-    ["SmartEncoded"] = true
-});
+new MessageBuilder()
+    .WithProperties(new Dictionary<string, object>
+    {
+        ["ValidityPeriod"] = 3600,
+        ["MaxPrice"] = 0.05,
+        ["SmartEncoded"] = true
+    })
+    .Build();
 ```
 
 ### With MessageProperty objects
 
 ```csharp
-new Message().With(new Dictionary<string, MessageProperty>
-{
-    ["ApiKeyOverride"] = new MessageProperty("ApiKeyOverride", "custom-key"),
-    ["IsTest"] = MessageProperty.Sensitive("IsTest", true)
-});
+new MessageBuilder()
+    .WithProperties(new Dictionary<string, MessageProperty>
+    {
+        ["ApiKeyOverride"] = new MessageProperty("ApiKeyOverride", "custom-key"),
+        ["IsTest"] = MessageProperty.Sensitive("IsTest", true)
+    })
+    .Build();
 ```
 
 Use `MessageProperty.Sensitive(name, value)` to mark a property that should be redacted in logs.
@@ -267,10 +311,11 @@ Predefined property keys for common scenarios:
 | `KnownMessageProperties.CorrelationId` | `"correlationId"` | Cross-channel correlation |
 
 ```csharp
-new Message()
+new MessageBuilder()
     .WithSubject("Your order confirmation")
     .WithRemoteId("ext-msg-456")
-    .WithReplyTo("msg-123");
+    .WithReplyTo("msg-123")
+    .Build();
 ```
 
 These are convenience wrappers around `With(key, value)` — they produce the same result.

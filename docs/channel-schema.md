@@ -8,7 +8,7 @@ A connector without a schema is a black box: you have no way to know what parame
 - **What it accepts** — endpoint types, content types, message property constraints
 - **How it authenticates** — supported authentication methods
 
-This contract serves multiple purposes: it drives pre-flight validation so errors are caught before provider API calls, it enables the schema registry for runtime discovery, it provides the blueprint for schema derivation (tenant-specific restrictions), and it serves as living documentation that evolves with the connector.
+This contract serves multiple purposes: it drives pre-flight validation so errors are caught before provider API calls, it enables the schema registry for runtime discovery, it provides the blueprint for schema derivation (environment-specific restrictions), and it serves as living documentation that evolves with the connector.
 
 `ChannelSchema` is the built-in fluent implementation. You construct it inline, via a schema factory, or derive it from a base schema (see [Schema derivation](schema-derivation.md)).
 
@@ -365,7 +365,7 @@ builder.Services.AddMessaging()
         .WithSchema(myCustomSchema));     // replaces auto-discovered schema
 ```
 
-This is useful for testing, multi-tenant customization, or environment-specific restrictions.
+This is useful for testing, environment-specific customization, or feature-tier restrictions.
 
 ## Full schema example
 

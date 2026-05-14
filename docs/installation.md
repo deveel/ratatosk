@@ -3,20 +3,18 @@
 The framework is split into layers so you depend only on what you use. The model layer has zero external dependencies; the connector infrastructure depends only on Microsoft.Extensions abstractions; provider connectors bring in their respective SDKs.
 
 Choosing packages by layer:
-- **Model only** (library projects that define messages but never send them): `Abstractions`
-- **Host application** (sends or receives messages): `Abstractions` + `Connectors` + the connector packages for your providers
-- **Custom connector authoring** (building a new provider integration): `Connector.Abstractions` + `Connectors`
+- **Model only** (library projects that define messages but never send them): `Deveel.Messaging.Abstractions`
+- **Host application** (sends or receives messages): `Deveel.Messaging` + the connector packages for your providers
+- **Custom connector authoring** (building a new provider integration): `Deveel.Messaging.Connector.Abstractions` + `Deveel.Messaging.Connectors`
 
 ## Package selection
 
 Install only what your application needs:
 
 ```bash
-# Core message model — needed by every project that sends/receives messages
-dotnet add package Deveel.Messaging.Abstractions
-
-# DI integration + base connector infrastructure — needed by every host application
-dotnet add package Deveel.Messaging.Connectors
+# Core messaging platform — DI registration, IMessagingClient facade, MessageBuilder, connector factory
+#  (pulls in Abstractions + Connectors transitively)
+dotnet add package Deveel.Messaging
 
 # Provider-specific connectors — install what you actually use
 dotnet add package Deveel.Messaging.Connector.Twilio
@@ -25,11 +23,15 @@ dotnet add package Deveel.Messaging.Connector.Firebase
 dotnet add package Deveel.Messaging.Connector.Facebook
 dotnet add package Deveel.Messaging.Connector.Telegram
 
+# Model only (no DI, no connectors) — needed only if you define messages in a library
+dotnet add package Deveel.Messaging.Abstractions
+
 # Custom connector authoring — needed only if you build your own connector
 dotnet add package Deveel.Messaging.Connector.Abstractions
+dotnet add package Deveel.Messaging.Connectors
 ```
 
-The `Abstractions` and `Connector.Abstractions` packages have no external dependencies beyond the .NET BCL. `Connectors` depends on `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging.Abstractions`.
+`Deveel.Messaging` depends on `Deveel.Messaging.Abstractions` and `Deveel.Messaging.Connectors` (which bring in `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging.Abstractions`). The `Abstractions` and `Connector.Abstractions` packages have no external dependencies beyond the .NET BCL.
 
 ## Framework targets
 
@@ -37,7 +39,7 @@ All packages target .NET 8, .NET 9, and .NET 10.
 
 ## Basic DI registration
 
-Once packages are installed, the next step is wiring them into the application's dependency injection container. The entry point is `AddMessaging()`, which registers the infrastructure services (schema registry, authentication manager) and returns a builder for registering connectors.
+Once packages are installed, the next step is wiring them into the application's dependency injection container. The entry point is `AddMessaging()` (from the `Deveel.Messaging` package), which registers the infrastructure services (schema registry, authentication manager, `MessageBuilder` support) and returns a builder for registering connectors.
 
 Register messaging services and one or more connectors in your startup code:
 
@@ -70,7 +72,7 @@ The framework supports two registration strategies that can be mixed in the same
 
 ### Named connectors (keyed services)
 
-Use named connectors when you need multiple instances of the same connector type with different settings — for example, a primary and fallback Twilio account, or per-tenant connector instances.
+Use named connectors when you need multiple instances of the same connector type with different settings — for example, a primary and fallback Twilio account.
 
 Register multiple instances of the same connector type with different names and configurations:
 
@@ -118,12 +120,12 @@ await client.SendAsync<TwilioSmsConnector>(message, ct);
 
 ### Connector type registration (for runtime creation)
 
-For multi-tenant scenarios where connection settings are loaded at runtime (not from configuration), register the connector type without providing settings:
+For scenarios where connection settings are loaded at runtime (not from configuration), register the connector type without providing settings:
 
 ```csharp
 builder.Services
     .AddMessaging()
-    .AddConnectorType<TwilioSmsConnector>("tenant-sms")
+    .AddConnectorType<TwilioSmsConnector>("runtime-sms")
     .AddConnectorType<FacebookMessengerConnector>()
     .AddClient();
 ```
@@ -135,11 +137,11 @@ builder.Services
 Runtime connectors are created on-demand using the `ConnectionSettings` provided at the call site:
 
 ```csharp
-var tenantSettings = new ConnectionSettings()
-    .SetParameter("AccountSid", tenant.AccountSid)
-    .SetParameter("AuthToken", tenant.AuthToken);
+var runtimeSettings = new ConnectionSettings()
+    .SetParameter("AccountSid", accountSid)
+    .SetParameter("AuthToken", authToken);
 
-await client.SendAsync("tenant-sms", tenantSettings, message);
+await client.SendAsync("runtime-sms", runtimeSettings, message);
 ```
 
 You can mix all three strategies in the same application:
@@ -151,7 +153,7 @@ builder.Services
         .WithSettings("Twilio:Corporate"))
     .AddConnector<SendGridEmailConnector>(cfg => cfg
         .WithSettings("SendGrid"))
-    .AddConnectorType<FacebookMessengerConnector>("tenant-fb")
+    .AddConnectorType<FacebookMessengerConnector>("runtime-fb")
     .AddClient();
 ```
 

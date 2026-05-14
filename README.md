@@ -45,11 +45,12 @@ Those are application-level concerns, so you can choose your own architecture.
 ## Quick example
 
 ```csharp
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("order-confirm-123")
-    .WithPhoneSender("+15550001111")
-    .WithPhoneReceiver("+15550002222")
-    .WithTextContent("Hello from Deveel Messaging");
+    .FromPhone("+15550001111")
+    .ToPhone("+15550002222")
+    .WithText("Hello from Deveel Messaging")
+    .Build();
 
 var result = await connector.SendMessageAsync(message, ct);
 

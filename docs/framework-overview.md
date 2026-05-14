@@ -22,22 +22,24 @@ These three steps are identical regardless of which provider connector you use. 
 
 ```csharp
 // Build the message once
-var message = new Message()
+var message = new MessageBuilder()
     .WithId("welcome-1")
-    .WithEmailSender("team@example.com")
-    .WithEmailReceiver("newuser@example.com")
-    .WithTextContent("Welcome to the platform!")
-    .With("Subject", "Welcome!");
+    .FromEmail("team@example.com")
+    .ToEmail("newuser@example.com")
+    .WithText("Welcome to the platform!")
+    .WithSubject("Welcome!")
+    .Build();
 
 // Send via SendGrid
 var emailResult = await sendGridConnector.SendMessageAsync(message, ct);
 
 // Or send the same content via Twilio SMS (just change endpoint type)
-var smsMessage = new Message()
+var smsMessage = new MessageBuilder()
     .WithId("welcome-1")
-    .WithPhoneSender("+15550001111")
-    .WithPhoneReceiver("+15550002222")
-    .WithTextContent("Welcome to the platform!");
+    .FromPhone("+15550001111")
+    .ToPhone("+15550002222")
+    .WithText("Welcome to the platform!")
+    .Build();
 
 var smsResult = await twilioConnector.SendMessageAsync(message, ct);
 ```
@@ -46,7 +48,7 @@ var smsResult = await twilioConnector.SendMessageAsync(message, ct);
 
 ### Message and endpoints
 
-**`Message` / `IMessage`** — the central unit of work. Carries an ID, sender endpoint, receiver endpoint, content, and optional properties. The `Message` class is itself a fluent builder: every `With*()` method returns the same instance for chaining.
+**`Message` / `IMessage`** — the central unit of work. Carries an ID, sender endpoint, receiver endpoint, content, and optional properties. Construct messages using `MessageBuilder` for a fluent API, or use `new Message { ... }` object initializers for explicit construction.
 
 **`Endpoint` / `IEndpoint`** — a typed address. Instead of passing raw strings, every address is tagged with its type: `PhoneNumber`, `EmailAddress`, `UserId`, `DeviceId`, `Url`, `Topic`, `ApplicationId`, `Id`, `Label`, or `Any`. This enables schema validation to reject an email address where a phone number is expected before any provider API call.
 
@@ -159,6 +161,6 @@ The framework focuses on the messaging contract and connector consistency. It in
 
 ## Design decisions
 
-- **Fluent Message builder** — `new Message().WithX().WithY()` with no final `.Build()` call. Each `With*()` mutates and returns the same instance. This avoids allocating intermediate builder objects and keeps the pattern simple.
+- **MessageBuilder** — the fluent `MessageBuilder` class (`new MessageBuilder().WithX().WithY().Build()`) separates construction from the model, and supports connector-specific extension methods (e.g., `WithTitle()`, `WithParseMode()`). Each `With*()` returns the builder for chaining. Explicit `new Message { ... }` syntax is also supported for direct construction.
 - **Raw values from overrides** — when extending `ChannelConnectorBase`, your core methods return raw values (like `SendResult`), not `OperationResult<T>`. The base class wraps them, catches exceptions, and handles validation errors. This keeps connector code focused on API translation.
 - **Schema-first** — every connector has an `IChannelSchema` that drives validation, capability checks, and documentation. This makes connector behavior predictable and testable without calling provider APIs.

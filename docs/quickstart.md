@@ -2,186 +2,47 @@
 
 Every interaction with the framework follows the same lifecycle regardless of which channel provider you use:
 
-1. **Configure** — build a `ConnectionSettings` with the provider credentials
-2. **Initialize** — create the connector and call `InitializeAsync()` to authenticate and transition to ready state
-3. **Build** — construct an `IMessage` using the fluent `Message` builder or `MessageBuilder`
-4. **Send** — call `SendMessageAsync()` and handle the `OperationResult<T>`
-5. **Handle** — check `.IsSuccess()`, read the result value, or inspect `.Error`
+1. **Register** — add the `Deveel.Messaging` package and configure connectors in the DI container
+2. **Build** — construct an `IMessage` using `MessageBuilder`
+3. **Send/Receive** — call `IMessagingClient.SendAsync()` or `IMessagingClient.ReceiveAsync()`
+4. **Handle** — check `.IsSuccess()`, read the result value, or inspect `.Error`
 
-This guide walks through the pattern with direct instantiation (clear, explicit, good for understanding), DI registration (the pattern you would use in a real application), and the `IMessagingClient` facade (the simplest path for most apps).
+This guide walks through the `IMessagingClient` approach — the recommended pattern for all applications. Connectors are infrastructure: you register them in DI and never instantiate them directly.
 
 ## 1. Create a project
 
 ```bash
 dotnet new console -o MessagingDemo
 cd MessagingDemo
+dotnet add package Deveel.Messaging
 dotnet add package Deveel.Messaging.Connector.Twilio
 ```
 
-## 2. Send an SMS (direct instantiation)
+## 2. Send an SMS
 
-```csharp
-using Deveel.Messaging;
-
-// Connection settings: what the connector needs to talk to the provider
-var settings = new ConnectionSettings()
-    .SetParameter("AccountSid", "AC...")
-    .SetParameter("AuthToken", "...");
-
-// Create the connector with its schema and settings
-var connector = new TwilioSmsConnector(TwilioChannelSchemas.SimpleSms, settings);
-
-// Initialize opens the connection, authenticates, and transitions to Ready state
-await connector.InitializeAsync(CancellationToken.None);
-
-// Build the message using the fluent builder
-var message = new Message()
-    .WithId("sms-demo-1")
-    .WithPhoneSender("+15550001111")
-    .WithPhoneReceiver("+15550002222")
-    .WithTextContent("Hello from Deveel Messaging");
-
-// Send returns OperationResult<SendResult>
-var result = await connector.SendMessageAsync(message, CancellationToken.None);
-
-if (result.IsSuccess)
-{
-    Console.WriteLine($"Sent! Local ID: {result.Data?.MessageId}");
-    Console.WriteLine($"Remote ID: {result.Data?.RemoteMessageId}");
-    Console.WriteLine($"Status: {result.Data?.Status}");
-}
-else if (result.IsValidationFailure)
-{
-    Console.WriteLine("Validation failed:");
-    foreach (var error in result.ValidationErrors)
-        Console.WriteLine($"  - {error.ErrorMessage}");
-}
-else
-{
-    Console.WriteLine($"Send failed: [{result.Error?.ErrorCode}] {result.Error?.ErrorMessage}");
-}
-```
-
-## 3. Same code, different channel
-
-Swap the connector and endpoint types — the `IMessage` construction and send pattern stay the same:
-
-```csharp
-// Email via SendGrid
-var email = new Message()
-    .WithId("email-demo-1")
-    .WithEmailSender("noreply@example.com")
-    .WithEmailReceiver("user@example.com")
-    .WithTextContent("Hello from Deveel Messaging")
-    .With("Subject", "Welcome");
-
-var sendGridConnector = new SendGridEmailConnector(
-    SendGridChannelSchemas.SendGridEmail,
-    new ConnectionSettings().SetParameter("ApiKey", "SG..."));
-
-await sendGridConnector.InitializeAsync(ct);
-var result = await sendGridConnector.SendMessageAsync(email, ct);
-```
-
-The `Message` class, the `SendMessageAsync` call, and the `OperationResult<T>` handling are identical. Only the connector type, settings, and endpoint types change.
-
-## 4. DI registration path
-
-For real applications, register connectors in the DI container:
+Register the connector in DI, inject `IMessagingClient`, build a message, and send it:
 
 ```csharp
 // Program.cs
 using Deveel.Messaging;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services
-    .AddMessaging()
-    .AddConnector<TwilioSmsConnector>(cfg => cfg
-        .WithSettings("Twilio"));
-
-builder.Services.AddSingleton<NotificationService>();
-
-var app = builder.Build();
-app.Run();
-
-// NotificationService.cs
-public class NotificationService(IChannelConnector smsConnector)
-{
-    public async Task SendSmsAsync(string to, string text)
-    {
-        var message = new Message()
-            .WithId(Guid.NewGuid().ToString("n"))
-            .WithPhoneSender("+15550001111")
-            .WithPhoneReceiver(to)
-            .WithTextContent(text);
-
-        var result = await smsConnector.SendMessageAsync(message, default);
-
-        if (result.IsFailure)
-            throw new InvalidOperationException(
-                $"SMS failed: {result.Error?.ErrorMessage}");
-    }
-}
-```
-
-## 5. Receive inbound messages (webhook)
-
-Channels like Twilio, Telegram, and Facebook can push inbound messages and status updates to your application via webhooks. The connector normalizes these into the same `IMessage` model you use for outbound sends, so receiving follows the same patterns as sending.
-
-For channels that support receiving messages, use `ReceiveMessagesAsync`:
-
-```csharp
-// ASP.NET Core controller endpoint
-[HttpPost("/webhooks/twilio")]
-public async Task<IActionResult> TwilioWebhook(
-    [FromBody] MessageSource source,
-    CancellationToken ct)
-{
-    var result = await connector.ReceiveMessagesAsync(source, ct);
-
-    if (result.IsSuccess)
-    {
-        foreach (var message in result.Data?.Messages ?? [])
-        {
-            Console.WriteLine($"Received: {message.Id} from {message.Sender}");
-            // Process inbound message...
-        }
-        return Ok();
-    }
-
-    return BadRequest(result.Error?.ErrorMessage);
-}
-```
-
-## 6. IMessagingClient facade
-
-For applications that use DI, the `IMessagingClient` facade simplifies further by managing connector resolution, lazy initialization, caching, and disposal. The client implements `IDisposable` and `IAsyncDisposable` — when disposed, it calls `ShutdownAsync` on all cached connectors and releases the synchronization guard. In DI scenarios the container manages disposal automatically.
-
-You register `.AddClient()` on the builder and then send messages through whichever resolution strategy fits your architecture.
-
-### Resolution by name (named connectors)
-
-```csharp
-// Program.cs
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddMessaging()
     .AddConnector<TwilioSmsConnector>("sms", cfg => cfg
         .WithSettings("Twilio"))
-    .AddConnector<SendGridEmailConnector>("email", cfg => cfg
-        .WithSettings("SendGrid"))
     .AddClient();
 
 builder.Services.AddSingleton<NotificationService>();
+
 var app = builder.Build();
 app.Run();
 
 // NotificationService.cs
 public class NotificationService(IMessagingClient messagingClient)
 {
-    public async Task SendSmsAsync(string to, string text)
+    public async Task<string?> SendSmsAsync(string to, string text)
     {
         var message = new MessageBuilder()
             .WithId(Guid.NewGuid().ToString("n"))
@@ -190,18 +51,94 @@ public class NotificationService(IMessagingClient messagingClient)
             .WithText(text)
             .Build();
 
-        var result = await messagingClient.SendAsync("sms", message, default);
+        var result = await messagingClient.SendAsync("sms", message);
 
-        if (result.IsFailure())
-            throw new InvalidOperationException(
-                $"SMS failed: {result.Error?.Message}");
+        if (result.IsSuccess)
+            return result.Value?.RemoteMessageId;
+
+        throw new InvalidOperationException(
+            $"SMS failed: {result.Error?.Message}");
     }
 }
 ```
 
+The client handles connector resolution, lazy initialization, caching, and disposal. You never interact with `IChannelConnector` directly.
+
+## 3. Same code, different channel
+
+Add another connector and send through it using the same client — only the channel name and endpoint types change:
+
+```csharp
+builder.Services
+    .AddMessaging()
+    .AddConnector<TwilioSmsConnector>("sms", cfg => cfg
+        .WithSettings("Twilio"))
+    .AddConnector<SendGridEmailConnector>("email", cfg => cfg
+        .WithSettings("SendGrid"))
+    .AddClient();
+
+// In your service:
+var smsResult = await client.SendAsync("sms", smsMessage);
+var emailResult = await client.SendAsync("email", emailMessage);
+```
+
+The `MessageBuilder`, the `IMessagingClient` methods, and the `OperationResult<T>` pattern are identical across channels.
+
+## 4. Receive inbound messages (webhook)
+
+Channels like Twilio, Telegram, and Facebook push inbound messages via webhooks. The client's `ReceiveAsync` normalises the payload into `IMessage` objects:
+
+```csharp
+[HttpPost("/webhooks/twilio")]
+public async Task<IActionResult> TwilioWebhook(CancellationToken ct)
+{
+    using var reader = new StreamReader(Request.Body);
+    var body = await reader.ReadToEndAsync(ct);
+    var source = MessageSource.UrlPost(body);
+
+    var result = await _client.ReceiveAsync("sms", source, ct);
+
+    if (result.IsSuccess)
+    {
+        foreach (var message in result.Value?.Messages ?? [])
+            Console.WriteLine($"Received: {message.Id} from {message.Sender}");
+        return Ok();
+    }
+
+    return BadRequest(result.Error?.ErrorMessage);
+}
+```
+
+Status callbacks (delivery receipts, read receipts) are handled through `ReceiveMessageStatusAsync` on the client, with the same `MessageSource` pattern.
+
+## 5. Advanced resolution strategies
+
+The `IMessagingClient` supports three resolution strategies that can be mixed in the same application.
+
+### Resolution by name (named connectors)
+
+Register multiple channels with distinct names and send through each by name:
+
+```csharp
+builder.Services
+    .AddMessaging()
+    .AddConnector<TwilioSmsConnector>("sms-primary", cfg => cfg
+        .WithSettings("Twilio:Primary"))
+    .AddConnector<TwilioSmsConnector>("sms-fallback", cfg => cfg
+        .WithSettings("Twilio:Fallback"))
+    .AddConnector<SendGridEmailConnector>("email", cfg => cfg
+        .WithSettings("SendGrid"))
+    .AddClient();
+
+// Usage
+var result = await client.SendAsync("sms-primary", message);
+if (result.IsFailure)
+    result = await client.SendAsync("sms-fallback", message);
+```
+
 ### Resolution by type (anonymous connectors)
 
-When you register a single instance of a connector type without a name, resolve it through the generic overload:
+When you register a single unnamed connector, resolve it through the generic overload:
 
 ```csharp
 builder.Services
@@ -209,13 +146,12 @@ builder.Services
     .AddConnector<TwilioSmsConnector>(cfg => cfg.WithSettings("Twilio"))
     .AddClient();
 
-// Usage
-var result = await client.SendAsync<TwilioSmsConnector>(message, ct);
+var result = await client.SendAsync<TwilioSmsConnector>(message);
 ```
 
-### Runtime resolution (multi-tenant)
+### Runtime resolution
 
-For multi-tenant applications where connection settings are loaded at runtime (from a database, API, or per-request context), register the connector type at startup without providing settings, and supply the settings at the call site:
+For applications where connection settings are loaded at runtime (from a database, API, or external configuration), register the connector type at startup without providing settings, and supply the settings at the call site:
 
 ```csharp
 // Program.cs — register the type, no settings
@@ -224,15 +160,12 @@ builder.Services
     .AddConnectorType<FacebookMessengerConnector>("facebook")
     .AddClient();
 
-// In a request handler — load settings per tenant
-var tenantSettings = await db.TenantConnections
-    .Where(t => t.TenantId == tenantId)
-    .Select(t => new ConnectionSettings()
-        .SetParameter("PageAccessToken", t.AccessToken)
-        .SetParameter("PageId", t.PageId))
-    .FirstAsync();
+// In a request handler — load settings at runtime
+var runtimeSettings = new ConnectionSettings()
+    .SetParameter("PageAccessToken", accessToken)
+    .SetParameter("PageId", pageId);
 
-var result = await client.SendAsync("facebook", tenantSettings, message);
+var result = await client.SendAsync("facebook", runtimeSettings, message);
 ```
 
 The same pattern works with type parameters for anonymous runtime resolution:
@@ -243,8 +176,7 @@ builder.Services
     .AddConnectorType<FacebookMessengerConnector>()
     .AddClient();
 
-// Usage
-await client.SendAsync<FacebookMessengerConnector>(tenantSettings, message);
+await client.SendAsync<FacebookMessengerConnector>(runtimeSettings, message);
 ```
 
 ### Auto-initialization
