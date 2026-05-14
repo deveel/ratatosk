@@ -143,6 +143,33 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Configures the connector using typed options.
+        /// </summary>
+        /// <typeparam name="TOptions">
+        /// The type of the options class that implements <see cref="IConnectorOptions"/>.
+        /// </typeparam>
+        /// <param name="options">
+        /// The typed options instance to convert into connection settings.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="options"/> is <c>null</c>.
+        /// </exception>
+        public ChannelConnectorBuilder<TConnector> WithOptions<TOptions>(TOptions options)
+            where TOptions : IConnectorOptions
+        {
+            ArgumentNullException.ThrowIfNull(options, nameof(options));
+
+            var settings = options.ToConnectionSettings();
+            foreach (var (key, value) in settings.Parameters)
+                _fluentSettings[key] = value;
+
+            return this;
+        }
+
         // ── Factory override ───────────────────────────────────────────────────
 
         /// <summary>

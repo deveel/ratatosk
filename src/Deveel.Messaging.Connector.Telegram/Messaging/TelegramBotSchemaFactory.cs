@@ -28,17 +28,53 @@ namespace Deveel.Messaging
 					ChannelCapability.MessageStatusQuery |
 					ChannelCapability.HandleMessageState |
 					ChannelCapability.HealthCheck)
-				.AddParameter(new ChannelParameter("BotToken", DataType.String)
-				{
-					IsRequired = true,
-					IsSensitive = true,
-					Description = "Telegram Bot Token obtained from @BotFather"
-				})
-				.AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
-				{
-					IsRequired = false,
-					Description = "Webhook URL for receiving messages (optional, uses long polling if not provided)"
-				})
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.BotToken, DataType.String)
+            {
+                IsRequired = true,
+                IsSensitive = true,
+                Description = "Telegram Bot Token obtained from @BotFather"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.WebhookUrl, DataType.String)
+            {
+                IsRequired = false,
+                Description = "URL to receive webhook notifications for incoming messages"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.SecretToken, DataType.String)
+            {
+                IsRequired = false,
+                IsSensitive = true,
+                Description = "Secret token for webhook validation (optional but recommended)"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.DisableWebPagePreview, DataType.Boolean)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.DisableWebPagePreview,
+                Description = "Disable web page previews in messages"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.DisableNotification, DataType.Boolean)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.DisableNotification,
+                Description = "Send messages silently (users will receive notification with no sound)"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.ParseMode, DataType.String)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.ParseMode,
+                Description = "Message parsing mode (Markdown, MarkdownV2, HTML, or None)"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.MaxRetries, DataType.Integer)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.MaxRetries,
+                Description = "Maximum number of retry attempts for failed operations"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.TimeoutSeconds, DataType.Integer)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.TimeoutSeconds,
+                Description = "Request timeout in seconds"
+            })
 				.AddParameter(new ChannelParameter("SecretToken", DataType.String)
 				{
 					IsRequired = false,
@@ -174,26 +210,26 @@ namespace Deveel.Messaging
 				.WithCapabilities(
 					ChannelCapability.SendMessages |
 					ChannelCapability.HealthCheck)
-				.AddParameter(new ChannelParameter("BotToken", DataType.String)
-				{
-					IsRequired = true,
-					IsSensitive = true,
-					Description = "Telegram Bot Token obtained from @BotFather"
-				})
-				.AddParameter(new ChannelParameter("ParseMode", DataType.String)
-				{
-					IsRequired = false,
-					DefaultValue = "Markdown",
-					Description = "Message parsing mode (Markdown, MarkdownV2, HTML, or None)"
-				})
-				.AddContentType(MessageContentType.PlainText)
-				.HandlesMessageEndpoint(EndpointType.Id, e =>
-				{
-					e.CanSend = true;
-					e.CanReceive = false;
-					e.IsRequired = true;
-					e.Description = "Telegram Chat ID";
-				});
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.BotToken, DataType.String)
+            {
+                IsRequired = true,
+                IsSensitive = true,
+                Description = "Telegram Bot Token obtained from @BotFather"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.ParseMode, DataType.String)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.ParseMode,
+                Description = "Message parsing mode (Markdown, MarkdownV2, HTML, or None)"
+            })
+            .AddContentType(MessageContentType.PlainText)
+            .HandlesMessageEndpoint(EndpointType.Id, e =>
+            {
+                e.CanSend = true;
+                e.CanReceive = false;
+                e.IsRequired = true;
+                e.Description = "Telegram Chat ID";
+            });
 		}
 
 		/// <summary>
@@ -207,29 +243,29 @@ namespace Deveel.Messaging
 				.WithCapabilities(
 					ChannelCapability.SendMessages |
 					ChannelCapability.HealthCheck)
-				.AddParameter(new ChannelParameter("BotToken", DataType.String)
-				{
-					IsRequired = true,
-					IsSensitive = true,
-					Description = "Telegram Bot Token obtained from @BotFather"
-				})
-				.AddParameter(new ChannelParameter("DefaultChatId", DataType.String)
-				{
-					IsRequired = false,
-					Description = "Default chat ID for notifications (optional)"
-				})
-				.AddParameter(new ChannelParameter("DisableNotification", DataType.Boolean)
-				{
-					IsRequired = false,
-					DefaultValue = false,
-					Description = "Send notifications silently by default"
-				})
-				.AddParameter(new ChannelParameter("ParseMode", DataType.String)
-				{
-					IsRequired = false,
-					DefaultValue = "HTML",
-					Description = "Message parsing mode for notifications"
-				})
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.BotToken, DataType.String)
+            {
+                IsRequired = true,
+                IsSensitive = true,
+                Description = "Telegram Bot Token obtained from @BotFather"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.DefaultChatId, DataType.String)
+            {
+                IsRequired = false,
+                Description = "Default chat ID for notifications (optional)"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.DisableNotification, DataType.Boolean)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.DisableNotification,
+                Description = "Send notifications silently by default"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.ParseMode, DataType.String)
+            {
+                IsRequired = false,
+                DefaultValue = "HTML",
+                Description = "Message parsing mode for notifications"
+            })
 				.AddContentType(MessageContentType.PlainText)
 				.AddContentType(MessageContentType.Media)
 				.HandlesMessageEndpoint(EndpointType.Id, e =>
@@ -264,35 +300,35 @@ namespace Deveel.Messaging
 					ChannelCapability.ReceiveMessages |
 					ChannelCapability.HandleMessageState |
 					ChannelCapability.HealthCheck)
-				.AddParameter(new ChannelParameter("BotToken", DataType.String)
-				{
-					IsRequired = true,
-					IsSensitive = true,
-					Description = "Telegram Bot Token obtained from @BotFather"
-				})
-				.AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
-				{
-					IsRequired = true,
-					Description = "HTTPS webhook URL for receiving bot updates"
-				})
-				.AddParameter(new ChannelParameter("SecretToken", DataType.String)
-				{
-					IsRequired = true,
-					IsSensitive = true,
-					Description = "Secret token for webhook validation"
-				})
-				.AddParameter(new ChannelParameter("MaxConnections", DataType.Integer)
-				{
-					IsRequired = false,
-					DefaultValue = 40,
-					Description = "Maximum allowed number of simultaneous HTTPS connections to the webhook"
-				})
-				.AddParameter(new ChannelParameter("DropPendingUpdates", DataType.Boolean)
-				{
-					IsRequired = false,
-					DefaultValue = false,
-					Description = "Drop all pending updates when setting webhook"
-				})
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.BotToken, DataType.String)
+            {
+                IsRequired = true,
+                IsSensitive = true,
+                Description = "Telegram Bot Token obtained from @BotFather"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.WebhookUrl, DataType.String)
+            {
+                IsRequired = true,
+                Description = "HTTPS webhook URL for receiving bot updates"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.SecretToken, DataType.String)
+            {
+                IsRequired = true,
+                IsSensitive = true,
+                Description = "Secret token for webhook validation"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.MaxConnections, DataType.Integer)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.MaxConnections,
+                Description = "Maximum allowed number of simultaneous HTTPS connections to the webhook"
+            })
+            .AddParameter(new ChannelParameter(TelegramConnectionParameters.DropPendingUpdates, DataType.Boolean)
+            {
+                IsRequired = false,
+                DefaultValue = TelegramConnectionSettingsDefaults.DropPendingUpdates,
+                Description = "Drop all pending updates when setting webhook"
+            })
 				.AddContentType(MessageContentType.PlainText)
 				.AddContentType(MessageContentType.Media)
 				.AddContentType(MessageContentType.Location)

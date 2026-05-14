@@ -27,21 +27,21 @@ namespace Deveel.Messaging
                 ChannelCapability.SendMessages |
                 ChannelCapability.BulkMessaging |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("ProjectId", DataType.String)
+            .AddParameter(new ChannelParameter(FirebaseConnectionParameters.ProjectId, DataType.String)
             {
                 IsRequired = true,
                 Description = "Firebase project ID - found in your Firebase Console project settings"
             })
-            .AddParameter(new ChannelParameter("ServiceAccountKey", DataType.String)
+            .AddParameter(new ChannelParameter(FirebaseConnectionParameters.ServiceAccountKey, DataType.String)
             {
                 IsRequired = true,
                 IsSensitive = true,
                 Description = "Firebase service account key JSON - download from Firebase Console > Project Settings > Service Accounts"
             })
-            .AddParameter(new ChannelParameter("DryRun", DataType.Boolean)
+            .AddParameter(new ChannelParameter(FirebaseConnectionParameters.DryRun, DataType.Boolean)
             {
                 IsRequired = false,
-                DefaultValue = false,
+                DefaultValue = FirebaseConnectionSettingsDefaults.DryRun,
                 Description = "Enable dry run mode for testing without actually sending push notifications"
             })
             .AddContentType(MessageContentType.Json)
@@ -59,14 +59,14 @@ namespace Deveel.Messaging
                 e.IsRequired = false; // Alternative to device tokens
             })
             .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Certificate, "Firebase Service Account Authentication")
-                .WithRequiredField("ServiceAccountKey", DataType.String, authField =>
+                .WithRequiredField(FirebaseConnectionParameters.ServiceAccountKey, DataType.String, authField =>
                 {
                     authField.DisplayName = "Service Account Key";
                     authField.Description = "Firebase service account key JSON or file path";
                     authField.AuthenticationRole = "Certificate";
                     authField.IsSensitive = true;
                 })
-                .WithOptionalField("ProjectId", DataType.String, authField =>
+                .WithOptionalField(FirebaseConnectionParameters.ProjectId, DataType.String, authField =>
                 {
                     authField.DisplayName = "Project ID";
                     authField.Description = "Firebase project ID (can be extracted from service account key)";
@@ -163,7 +163,7 @@ namespace Deveel.Messaging
         /// </summary>
         public static ChannelSchema SimplePush => new ChannelSchema(FirebasePush, "Firebase Simple Push")
             .RemoveCapability(ChannelCapability.BulkMessaging)
-            .RemoveParameter("DryRun")
+            .RemoveParameter(FirebaseConnectionParameters.DryRun)
             .RemoveMessageProperty("ImageUrl")
             .RemoveMessageProperty("Sound")
             .RemoveMessageProperty("Badge")

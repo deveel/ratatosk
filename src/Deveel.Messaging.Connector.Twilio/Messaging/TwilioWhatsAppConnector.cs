@@ -60,12 +60,12 @@ namespace Deveel.Messaging
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
             // Extract required parameters
-            _accountSid = ConnectionSettings.GetParameter("AccountSid") as string;
-            _authToken = ConnectionSettings.GetParameter("AuthToken") as string;
+            _accountSid = ConnectionSettings.GetParameter(TwilioConnectionParameters.AccountSid) as string;
+            _authToken = ConnectionSettings.GetParameter(TwilioConnectionParameters.AuthToken) as string;
 
             // Extract optional parameters
-            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
-            _statusCallback = ConnectionSettings.GetParameter("StatusCallback") as string;
+            _webhookUrl = ConnectionSettings.GetParameter(TwilioConnectionParameters.WebhookUrl) as string;
+            _statusCallback = ConnectionSettings.GetParameter(TwilioConnectionParameters.StatusCallback) as string;
             // ContentSid and ContentVariables are now extracted from ITemplateContent, not connection parameters
 
             // Perform custom validation logic

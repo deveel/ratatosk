@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace Deveel.Messaging.XUnit.Fixtures
 {
     [ChannelSchema(typeof(MockSchemaFactory))]
-    public class MockConnector : IChannelConnector
+    public class MockConnector : IChannelConnector, IDisposable
     {
         private ConnectorState _state = ConnectorState.Uninitialized;
         private int _initCount;
@@ -117,6 +117,11 @@ namespace Deveel.Messaging.XUnit.Fixtures
         {
             _state = ConnectorState.Shutdown;
             return default;
+        }
+
+        void IDisposable.Dispose()
+        {
+            _state = ConnectorState.Shutdown;
         }
     }
 

@@ -115,16 +115,16 @@ namespace Deveel.Messaging
 
         internal static ChannelSchema CreateSimpleMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Simple Messenger")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
-            .RemoveParameter("WebhookUrl")
-            .RemoveParameter("VerifyToken")
+            .RemoveParameter(FacebookConnectionParameters.WebhookUrl)
+            .RemoveParameter(FacebookConnectionParameters.VerifyToken)
             .RemoveContentType(MessageContentType.Media)
             .RemoveMessageProperty("QuickReplies")
             .RemoveMessageProperty("Tag");
 
         internal static ChannelSchema CreateNotificationMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Notification Messenger")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
-            .RemoveParameter("WebhookUrl")
-            .RemoveParameter("VerifyToken")
+            .RemoveParameter(FacebookConnectionParameters.WebhookUrl)
+            .RemoveParameter(FacebookConnectionParameters.VerifyToken)
             .RemoveMessageProperty("QuickReplies");
 
         internal static ChannelSchema CreateMediaMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Media Messenger")
@@ -150,23 +150,23 @@ namespace Deveel.Messaging
                 ChannelCapability.ReceiveMessages |
                 ChannelCapability.MediaAttachments |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("PageAccessToken", DataType.String)
+            .AddParameter(new ChannelParameter(FacebookConnectionParameters.PageAccessToken, DataType.String)
             {
                 IsRequired = true,
                 IsSensitive = true,
                 Description = "Facebook Page Access Token - obtained from Facebook App settings"
             })
-            .AddParameter(new ChannelParameter("PageId", DataType.String)
+            .AddParameter(new ChannelParameter(FacebookConnectionParameters.PageId, DataType.String)
             {
                 IsRequired = true,
                 Description = "Facebook Page ID - the ID of the Facebook Page to send messages from"
             })
-            .AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
+            .AddParameter(new ChannelParameter(FacebookConnectionParameters.WebhookUrl, DataType.String)
             {
                 IsRequired = false,
                 Description = "URL to receive webhook notifications for incoming messages"
             })
-            .AddParameter(new ChannelParameter("VerifyToken", DataType.String)
+            .AddParameter(new ChannelParameter(FacebookConnectionParameters.VerifyToken, DataType.String)
             {
                 IsRequired = false,
                 IsSensitive = true,

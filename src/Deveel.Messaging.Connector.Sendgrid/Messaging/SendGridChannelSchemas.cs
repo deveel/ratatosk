@@ -32,35 +32,35 @@ namespace Deveel.Messaging
                 ChannelCapability.Templates |
                 ChannelCapability.MediaAttachments |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("ApiKey", DataType.String)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.ApiKey, DataType.String)
             {
                 IsRequired = true,
                 IsSensitive = true,
                 Description = "SendGrid API Key - found in your SendGrid Dashboard under Settings > API Keys"
             })
-            .AddParameter(new ChannelParameter("SandboxMode", DataType.Boolean)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.SandboxMode, DataType.Boolean)
             {
                 IsRequired = false,
-                DefaultValue = false,
+                DefaultValue = SendGridConnectionSettingsDefaults.SandboxMode,
                 Description = "Enable sandbox mode for testing without actually sending emails"
             })
-            .AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.WebhookUrl, DataType.String)
             {
                 IsRequired = false,
                 Description = "URL to receive webhook notifications for email events and status updates"
             })
-            .AddParameter(new ChannelParameter("TrackingSettings", DataType.Boolean)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.TrackingSettings, DataType.Boolean)
             {
                 IsRequired = false,
-                DefaultValue = true,
+                DefaultValue = SendGridConnectionSettingsDefaults.TrackingSettings,
                 Description = "Enable tracking for opens, clicks, and other email engagement metrics"
             })
-            .AddParameter(new ChannelParameter("DefaultFromName", DataType.String)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.DefaultFromName, DataType.String)
             {
                 IsRequired = false,
                 Description = "Default sender name to use when not specified in the message"
             })
-            .AddParameter(new ChannelParameter("DefaultReplyTo", DataType.String)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.DefaultReplyTo, DataType.String)
             {
                 IsRequired = false,
                 Description = "Default reply-to email address"
@@ -151,8 +151,8 @@ namespace Deveel.Messaging
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .RemoveCapability(ChannelCapability.Templates)
             .RemoveCapability(ChannelCapability.MediaAttachments)
-            .RemoveParameter("WebhookUrl")
-            .RemoveParameter("TrackingSettings")
+            .RemoveParameter(SendGridConnectionParameters.WebhookUrl)
+            .RemoveParameter(SendGridConnectionParameters.TrackingSettings)
             .RemoveContentType(MessageContentType.Template)
             .RemoveContentType(MessageContentType.Multipart)
             .RemoveMessageProperty("Categories")
@@ -171,8 +171,8 @@ namespace Deveel.Messaging
             .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .RemoveCapability(ChannelCapability.Templates)
-            .RemoveParameter("WebhookUrl")
-            .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
+            .RemoveParameter(SendGridConnectionParameters.WebhookUrl)
+            .UpdateParameter(SendGridConnectionParameters.TrackingSettings, param => param.DefaultValue = SendGridConnectionSettingsDefaults.TrackingSettings)
             .RemoveContentType(MessageContentType.Template)
             .RemoveMessageProperty("SendAt")
             .RemoveMessageProperty("BatchId")
@@ -183,7 +183,7 @@ namespace Deveel.Messaging
         /// This schema includes all tracking, templates, and bulk messaging capabilities.
         /// </summary>
         public static ChannelSchema MarketingEmail => new ChannelSchema(SendGridEmail, "SendGrid Marketing Email")
-            .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
+            .UpdateParameter(SendGridConnectionParameters.TrackingSettings, param => param.DefaultValue = SendGridConnectionSettingsDefaults.TrackingSettings)
             .AddMessageProperty("ListId", DataType.String, p =>
             {
                 p.Description = "Marketing list ID for campaign tracking";
@@ -222,7 +222,7 @@ namespace Deveel.Messaging
         /// This schema includes batch processing and advanced delivery options.
         /// </summary>
         public static ChannelSchema BulkEmail => new ChannelSchema(SendGridEmail, "SendGrid Bulk Email")
-            .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
+            .UpdateParameter(SendGridConnectionParameters.TrackingSettings, param => param.DefaultValue = SendGridConnectionSettingsDefaults.TrackingSettings)
             .AddMessageProperty("MailBatchId", DataType.String, p =>
             {
                 p.IsRequired = false;

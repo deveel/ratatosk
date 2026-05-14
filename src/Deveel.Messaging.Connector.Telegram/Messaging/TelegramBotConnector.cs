@@ -60,14 +60,14 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            _botToken = ConnectionSettings.GetParameter("BotToken") as string;
-            _webhookUrl = ConnectionSettings.GetParameter<string>("WebhookUrl");
-            _secretToken = ConnectionSettings.GetParameter<string>("SecretToken");
-            _disableWebPagePreview = ConnectionSettings.GetParameter<bool?>("DisableWebPagePreview") ?? false;
-            _disableNotification = ConnectionSettings.GetParameter<bool?>("DisableNotification") ?? false;
-            _parseMode = ConnectionSettings.GetParameter<string?>("ParseMode") ?? "Markdown";
-            _maxRetries = ConnectionSettings.GetParameter<int?>("MaxRetries") ?? 3;
-            _timeoutSeconds = ConnectionSettings.GetParameter<int?>("TimeoutSeconds") ?? 60;
+            _botToken = ConnectionSettings.GetParameter(TelegramConnectionParameters.BotToken) as string;
+            _webhookUrl = ConnectionSettings.GetParameter<string>(TelegramConnectionParameters.WebhookUrl);
+            _secretToken = ConnectionSettings.GetParameter<string>(TelegramConnectionParameters.SecretToken);
+            _disableWebPagePreview = ConnectionSettings.GetParameter<bool?>(TelegramConnectionParameters.DisableWebPagePreview) ?? TelegramConnectionSettingsDefaults.DisableWebPagePreview;
+            _disableNotification = ConnectionSettings.GetParameter<bool?>(TelegramConnectionParameters.DisableNotification) ?? TelegramConnectionSettingsDefaults.DisableNotification;
+            _parseMode = ConnectionSettings.GetParameter<string?>(TelegramConnectionParameters.ParseMode) ?? TelegramConnectionSettingsDefaults.ParseMode;
+            _maxRetries = ConnectionSettings.GetParameter<int?>(TelegramConnectionParameters.MaxRetries) ?? TelegramConnectionSettingsDefaults.MaxRetries;
+            _timeoutSeconds = ConnectionSettings.GetParameter<int?>(TelegramConnectionParameters.TimeoutSeconds) ?? 60;
 
             if (string.IsNullOrWhiteSpace(_botToken))
                 throw new MessagingException(TelegramErrorCodes.MissingBotToken, "Bot token is required for Telegram Bot API");
@@ -317,8 +317,8 @@ namespace Deveel.Messaging
 			{
 				Logger.LogSettingUpWebhook(_webhookUrl ?? string.Empty);
 
-				var maxConnections = ConnectionSettings.GetParameter("MaxConnections") as int?;
-				var dropPendingUpdates = ConnectionSettings.GetParameter("DropPendingUpdates") as bool? ?? false;
+				var maxConnections = ConnectionSettings.GetParameter(TelegramConnectionParameters.MaxConnections) as int?;
+				var dropPendingUpdates = ConnectionSettings.GetParameter(TelegramConnectionParameters.DropPendingUpdates) as bool? ?? TelegramConnectionSettingsDefaults.DropPendingUpdates;
 
 				await _telegramService.SetWebhookAsync(
 					_webhookUrl!,
