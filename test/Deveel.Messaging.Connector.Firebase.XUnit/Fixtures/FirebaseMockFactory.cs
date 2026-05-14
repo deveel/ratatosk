@@ -216,7 +216,7 @@ namespace Deveel.Messaging
             Messages = messages;
         }
 
-        public string Id { get; }
+        public string Id { get; set; } = "";
         public IDictionary<string, object>? Properties { get; set; }
         public IEnumerable<IMessage> Messages { get; }
     }

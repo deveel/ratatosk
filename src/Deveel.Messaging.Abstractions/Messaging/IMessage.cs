@@ -10,10 +10,10 @@ namespace Deveel.Messaging {
 	/// </summary>
 	public interface IMessage {
 		/// <summary>
-		/// Gets the unique identifier of the message
+		/// Gets or sets the unique identifier of the message
 		/// within the network.
 		/// </summary>
-		string Id { get; }
+		string? Id { get; set; }
 
 		/// <summary>
 		/// Gets the endpoint that is the sender of the message.

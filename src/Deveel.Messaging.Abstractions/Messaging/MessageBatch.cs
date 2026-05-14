@@ -19,7 +19,7 @@ namespace Deveel.Messaging
 		}
 
 		/// <inheritdoc/>
-		public string Id { get; set; } = "";
+		public string? Id { get; set; }
 
 		/// <inheritdoc />
 		public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();

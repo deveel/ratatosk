@@ -21,6 +21,7 @@ namespace Deveel.Messaging
             ArgumentNullException.ThrowIfNull(services, nameof(services));
             Services = services;
             services.TryAddSingleton<IChannelSchemaRegistry, ChannelSchemaRegistry>();
+            services.TryAddSingleton<IMessageIdGenerator, DefaultMessageIdGenerator>();
         }
 
         /// <summary>
@@ -291,6 +292,44 @@ namespace Deveel.Messaging
             where TConnector : class, IChannelConnector
         {
             return AddConnectorType<TConnector>(typeof(TConnector).Name);
+        }
+
+        // ── Message ID generator registration ─────────────────────────────────
+
+        /// <summary>
+        /// Registers a custom implementation of <see cref="IMessageIdGenerator"/>
+        /// to override the default ID generation for messages and batches.
+        /// </summary>
+        /// <typeparam name="TGenerator">
+        /// The type of the ID generator to register.
+        /// </typeparam>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        public MessagingBuilder AddMessageIdGenerator<TGenerator>()
+            where TGenerator : class, IMessageIdGenerator
+        {
+            Services.Replace(ServiceDescriptor.Singleton<IMessageIdGenerator, TGenerator>());
+            return this;
+        }
+
+        /// <summary>
+        /// Registers a custom implementation of <see cref="IMessageIdGenerator"/>
+        /// using a factory function to create the instance.
+        /// </summary>
+        /// <param name="factory">
+        /// A function that creates the ID generator instance.
+        /// </param>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        public MessagingBuilder AddMessageIdGenerator(Func<IServiceProvider, IMessageIdGenerator> factory)
+        {
+            ArgumentNullException.ThrowIfNull(factory, nameof(factory));
+            Services.Replace(ServiceDescriptor.Singleton<IMessageIdGenerator>(factory));
+            return this;
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

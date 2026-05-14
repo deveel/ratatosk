@@ -15,7 +15,7 @@ public class MessageTests
         var message = new Message();
 
         // Assert
-        Assert.Equal("", message.Id);
+        Assert.Null(message.Id);
         Assert.Null(message.Sender);
         Assert.Null(message.Receiver);
         Assert.Null(message.Content);
@@ -598,7 +598,7 @@ public class MessageJsonSerializationTests
 
         // Assert
         Assert.NotNull(deserializedMessage);
-        Assert.Equal("", deserializedMessage.Id);
+        Assert.Null(deserializedMessage.Id);
         Assert.Null(deserializedMessage.Sender);
         Assert.Null(deserializedMessage.Receiver);
         Assert.Null(deserializedMessage.Content);
