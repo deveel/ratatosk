@@ -913,5 +913,227 @@ public class ChannelSchemaTests
 		Assert.True(endpoint.CanReceive);
 	}
 
+	#region Copy Constructor Tests
+
+	[Fact]
+	public void Should_CopyAllProperties_When_CopyConstructorFromIChannelSchema()
+	{
+		var original = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.WithDisplayName("Original Schema")
+			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
+			.AddParameter(new ChannelParameter("ApiKey", DataType.String) { IsRequired = true, IsSensitive = true })
+			.AddMessageProperty(new MessagePropertyConfiguration("Subject", DataType.String) { IsRequired = true })
+			.AddContentType(MessageContentType.Json)
+			.AddAuthenticationType(AuthenticationType.Basic)
+			.HandlesMessageEndpoint(EndpointType.EmailAddress, e => { e.CanSend = true; e.CanReceive = false; })
+			.Build();
+
+		var copy = new ChannelSchema(original);
+
+		Assert.Equal(original.ChannelProvider, copy.ChannelProvider);
+		Assert.Equal(original.ChannelType, copy.ChannelType);
+		Assert.Equal(original.Version, copy.Version);
+		Assert.Contains("(Copy)", copy.DisplayName);
+		Assert.Equal(original.IsStrict, copy.IsStrict);
+		Assert.Equal(original.Capabilities, copy.Capabilities);
+		Assert.Equal(original.Parameters.Count, copy.Parameters.Count);
+		Assert.Equal(original.MessageProperties.Count, copy.MessageProperties.Count);
+		Assert.Equal(original.ContentTypes.Count, copy.ContentTypes.Count);
+		Assert.Equal(original.AuthenticationConfigurations.Count, copy.AuthenticationConfigurations.Count);
+		Assert.Equal(original.Endpoints.Count, copy.Endpoints.Count);
+		Assert.Equal(original.AuthenticationTypes.Count(), copy.AuthenticationTypes.Count());
+	}
+
+	[Fact]
+	public void Should_CopyParametersDeeply_When_CopyConstructorFromIChannelSchema()
+	{
+		var original = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter(new ChannelParameter("Param1", DataType.String)
+			{
+				IsRequired = true,
+				IsSensitive = true,
+				DefaultValue = "default",
+				Description = "Test parameter",
+				AllowedValues = new object[] { "val1", "val2" }
+			})
+			.Build();
+
+		var copy = new ChannelSchema(original);
+
+		var originalParam = original.Parameters[0];
+		var copyParam = copy.Parameters[0];
+
+		Assert.Equal(originalParam.Name, copyParam.Name);
+		Assert.Equal(originalParam.DataType, copyParam.DataType);
+		Assert.Equal(originalParam.IsRequired, copyParam.IsRequired);
+		Assert.Equal(originalParam.IsSensitive, copyParam.IsSensitive);
+		Assert.Equal(originalParam.DefaultValue, copyParam.DefaultValue);
+		Assert.Equal(originalParam.Description, copyParam.Description);
+		Assert.Equal(originalParam.AllowedValues, copyParam.AllowedValues);
+		Assert.NotSame(originalParam, copyParam);
+	}
+
+	[Fact]
+	public void Should_CopyMessagePropertiesDeeply_When_CopyConstructorFromIChannelSchema()
+	{
+		var original = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddMessageProperty(new MessagePropertyConfiguration("Prop1", DataType.String)
+			{
+				IsRequired = true,
+				IsSensitive = false,
+				Description = "Test property"
+			})
+			.Build();
+
+		var copy = new ChannelSchema(original);
+
+		var originalProp = original.MessageProperties[0];
+		var copyProp = copy.MessageProperties[0];
+
+		Assert.Equal(originalProp.Name, copyProp.Name);
+		Assert.Equal(originalProp.DataType, copyProp.DataType);
+		Assert.Equal(originalProp.IsRequired, copyProp.IsRequired);
+		Assert.Equal(originalProp.IsSensitive, copyProp.IsSensitive);
+		Assert.Equal(originalProp.Description, copyProp.Description);
+		Assert.NotSame(originalProp, copyProp);
+	}
+
+	[Fact]
+	public void Should_CopyAuthenticationConfigurationsDeeply_When_CopyConstructorFromIChannelSchema()
+	{
+		var authConfig = new AuthenticationConfiguration(AuthenticationType.Basic, "Basic Auth")
+			.WithRequiredField("Username", DataType.String, f =>
+			{
+				f.IsSensitive = true;
+				f.Description = "User name";
+			})
+			.WithOptionalField("Domain", DataType.String, f =>
+			{
+				f.Description = "Domain";
+			});
+
+		var original = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddAuthenticationConfiguration(authConfig)
+			.Build();
+
+		var copy = new ChannelSchema(original);
+
+		var originalConfig = original.AuthenticationConfigurations[0];
+		var copyConfig = copy.AuthenticationConfigurations[0];
+
+		Assert.Equal(originalConfig.AuthenticationType, copyConfig.AuthenticationType);
+		Assert.Equal(originalConfig.DisplayName, copyConfig.DisplayName);
+		Assert.Equal(originalConfig.RequiredFields.Count, copyConfig.RequiredFields.Count);
+		Assert.Equal(originalConfig.OptionalFields.Count, copyConfig.OptionalFields.Count);
+		Assert.Equal(originalConfig.RequiredFields[0].FieldName, copyConfig.RequiredFields[0].FieldName);
+		Assert.NotSame(originalConfig, copyConfig);
+		Assert.NotSame(originalConfig.RequiredFields, copyConfig.RequiredFields);
+	}
+
+	[Fact]
+	public void Should_CopyEndpointsDeeply_When_CopyConstructorFromIChannelSchema()
+	{
+		var original = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
+			{
+				e.CanSend = true;
+				e.CanReceive = true;
+				e.IsRequired = true;
+			})
+			.Build();
+
+		var copy = new ChannelSchema(original);
+
+		var originalEndpoint = original.Endpoints[0];
+		var copyEndpoint = copy.Endpoints[0];
+
+		Assert.Equal(originalEndpoint.Type, copyEndpoint.Type);
+		Assert.Equal(originalEndpoint.CanSend, copyEndpoint.CanSend);
+		Assert.Equal(originalEndpoint.CanReceive, copyEndpoint.CanReceive);
+		Assert.Equal(originalEndpoint.IsRequired, copyEndpoint.IsRequired);
+		Assert.NotSame(originalEndpoint, copyEndpoint);
+	}
+
+	[Fact]
+	public void Should_ThrowArgumentNullException_When_CopyConstructorWithNullSchema()
+	{
+		Assert.Throws<ArgumentNullException>(() => new ChannelSchema(null!, "display"));
+	}
+
+	[Fact]
+	public void Should_UseSpecifiedDisplayName_When_CopyConstructorWithDisplayName()
+	{
+		var original = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.WithDisplayName("Original")
+			.Build();
+
+		var copy = new ChannelSchema(original, "Custom Name");
+
+		Assert.Equal("Custom Name", copy.DisplayName);
+	}
+
+	#endregion
+
+	#region Property Setters Tests
+
+	[Fact]
+	public void Should_SetAndGetDisplayName_When_PropertyIsSet()
+	{
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
+
+		schema.DisplayName = "New Name";
+
+		Assert.Equal("New Name", schema.DisplayName);
+	}
+
+	[Fact]
+	public void Should_SetAndGetIsStrict_When_PropertyIsSet()
+	{
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
+
+		Assert.True(schema.IsStrict);
+
+		schema.IsStrict = false;
+
+		Assert.False(schema.IsStrict);
+	}
+
+	[Fact]
+	public void Should_SetAndGetCapabilities_When_PropertyIsSet()
+	{
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
+
+		Assert.Equal(ChannelCapability.SendMessages, schema.Capabilities);
+
+		schema.Capabilities = ChannelCapability.ReceiveMessages;
+
+		Assert.Equal(ChannelCapability.ReceiveMessages, schema.Capabilities);
+	}
+
+	[Fact]
+	public void Should_ReturnDistinctTypes_When_AuthenticationTypesIsInvoked()
+	{
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddAuthenticationType(AuthenticationType.Basic)
+			.AddAuthenticationType(AuthenticationType.Token)
+			.Build();
+
+		var authTypes = schema.AuthenticationTypes.ToList();
+
+		Assert.Equal(2, authTypes.Count);
+		Assert.Contains(AuthenticationType.Basic, authTypes);
+		Assert.Contains(AuthenticationType.Token, authTypes);
+	}
+
+	[Fact]
+	public void Should_ReturnEmpty_When_AuthenticationTypesWithNoConfigs()
+	{
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
+
+		Assert.Empty(schema.AuthenticationTypes);
+	}
+
+	#endregion
+
 	#endregion
 }

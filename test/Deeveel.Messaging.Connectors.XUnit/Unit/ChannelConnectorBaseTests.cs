@@ -687,13 +687,197 @@ public class ChannelConnectorBaseTests
 		Assert.Contains("not supported", errorResult.ErrorMessage);
 	}
 
+	#region Authentication Tests
+
+	[Fact]
+	public void Should_ReturnAnonymous_When_NoAuthConfigurations()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
+		var connector = new TestConnector(schema);
+
+		var result = connector.IsAnonymousConnectorPublic();
+
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void Should_ReturnNotAnonymous_When_HasAuthConfigurations()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Token, "Token Auth")
+				.WithRequiredField("token", DataType.String))
+			.Build();
+		var connector = new TestConnector(schema);
+
+		var result = connector.IsAnonymousConnectorPublic();
+
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void Should_ReturnNullHeader_When_NoAuthenticationCredential()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
+		var connector = new TestConnector(schema);
+
+		var header = connector.GetAuthenticationHeaderPublic();
+
+		Assert.Null(header);
+	}
+
+	[Fact]
+	public async Task Should_ReturnNullApiKey_When_NotApiKeyAuth()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Token, "Token Auth")
+				.WithRequiredField("token", DataType.String))
+			.Build();
+
+		var settings = new ConnectionSettings().SetParameter("token", "test-token");
+		var credential = AuthenticationCredential.CreateToken("test-token");
+		var authManager = new StubAuthenticationManager(AuthenticationResult.Success(credential));
+
+		var connector = new TestConnector(schema, settings, authenticationManager: authManager)
+		{
+			ShouldAuthenticate = true
+		};
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+
+		var apiKey = connector.GetApiKeyPublic();
+
+		Assert.Null(apiKey);
+	}
+
+	[Fact]
+	public void Should_ReturnNullApiKey_When_NoCredential()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
+		var connector = new TestConnector(schema);
+
+		var apiKey = connector.GetApiKeyPublic();
+
+		Assert.Null(apiKey);
+	}
+
+	[Fact]
+	public async Task Should_ReturnTokenAuthHeader_When_TokenAuthentication()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Token, "Token Auth")
+				.WithRequiredField("token", DataType.String))
+			.Build();
+
+		var settings = new ConnectionSettings().SetParameter("token", "test-token");
+		var credential = AuthenticationCredential.CreateToken("test-token");
+		var authManager = new StubAuthenticationManager(AuthenticationResult.Success(credential));
+
+		var connector = new TestConnector(schema, settings, authenticationManager: authManager)
+		{
+			ShouldAuthenticate = true
+		};
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+
+		var header = connector.GetAuthenticationHeaderPublic();
+
+		Assert.Equal($"Bearer {credential.CredentialValue}", header);
+	}
+
+	[Fact]
+	public async Task Should_ReturnBasicAuthHeader_When_BasicAuthentication()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Basic, "Basic Auth")
+				.WithRequiredField("username", DataType.String)
+				.WithRequiredField("password", DataType.String))
+			.Build();
+
+		var settings = new ConnectionSettings()
+			.SetParameter("username", "testuser")
+			.SetParameter("password", "testpass");
+		var credential = AuthenticationCredential.CreateBasic("testuser", "testpass");
+		var authManager = new StubAuthenticationManager(AuthenticationResult.Success(credential));
+
+		var connector = new TestConnector(schema, settings, authenticationManager: authManager)
+		{
+			ShouldAuthenticate = true
+		};
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+
+		var header = connector.GetAuthenticationHeaderPublic();
+
+		Assert.Equal($"Basic {credential.CredentialValue}", header);
+	}
+
+	#endregion
+
+	#region GetEndpointType Tests
+
+	[Theory]
+	[InlineData(EndpointType.EmailAddress, "email")]
+	[InlineData(EndpointType.PhoneNumber, "phone")]
+	[InlineData(EndpointType.Url, "url")]
+	[InlineData(EndpointType.UserId, "user-id")]
+	[InlineData(EndpointType.ApplicationId, "app-id")]
+	[InlineData(EndpointType.Id, "endpoint-id")]
+	[InlineData(EndpointType.DeviceId, "device-id")]
+	[InlineData(EndpointType.Label, "label")]
+	[InlineData(EndpointType.Topic, "topic")]
+	[InlineData(EndpointType.Any, "*")]
+	[InlineData((EndpointType)999, null)]
+	public void Should_ReturnCorrectEndpointType_When_GetEndpointType(EndpointType endpointType, string? expected)
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
+		var connector = new TestConnector(schema);
+		var endpoint = new Endpoint(endpointType, "test-value");
+
+		var result = connector.GetEndpointTypePublic(endpoint);
+
+		Assert.Equal(expected, result);
+	}
+
+	#endregion
+
+	#region HealthCheck Tests
+
+	[Fact]
+	public async Task Should_ReturnHealthyDefault_When_GetConnectorHealthWithReadyState()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
+		var connector = new TestConnector(schema);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+
+		var health = await connector.GetConnectorHealthAsyncPublic(TestContext.Current.CancellationToken);
+
+		Assert.Equal(ConnectorState.Ready, health.State);
+		Assert.True(health.IsHealthy);
+		Assert.Empty(health.Issues);
+	}
+
+	[Fact]
+	public async Task Should_AddIssue_When_GetConnectorHealthWithErrorState()
+	{
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
+		var connector = new TestConnector(schema) { ShouldFailInitialization = true };
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+
+		var health = await connector.GetConnectorHealthAsyncPublic(TestContext.Current.CancellationToken);
+
+		Assert.Equal(ConnectorState.Error, health.State);
+		Assert.False(health.IsHealthy);
+		Assert.Contains("Connector is in Error state", health.Issues);
+	}
+
+	#endregion
+
 	// Test connector implementation for testing
 	private class TestConnector : ChannelConnectorBase
 	{
 		public bool ShouldFailInitialization { get; set; }
 		public bool ShouldThrowOnInitialization { get; set; }
+		public bool ShouldAuthenticate { get; set; }
 
-		public TestConnector(IChannelSchema schema) : base(schema)
+		public TestConnector(IChannelSchema schema, ConnectionSettings? connectionSettings = null, IAuthenticationManager? authenticationManager = null)
+			: base(schema, connectionSettings, logger: null, authenticationManager)
 		{
 		}
 
@@ -705,6 +889,15 @@ public class ChannelConnectorBaseTests
 		public bool IsEndpointTypeSupportedPublic(EndpointType endpointType, bool asSender = false, bool asReceiver = false) =>
 			IsEndpointTypeSupported(endpointType, asSender, asReceiver);
 
+		public bool IsAnonymousConnectorPublic() => IsAnonymousConnector();
+
+		public string? GetAuthenticationHeaderPublic() => GetAuthenticationHeader();
+
+		public string? GetApiKeyPublic() => GetApiKey();
+
+		public Task<ConnectorHealth> GetConnectorHealthAsyncPublic(CancellationToken cancellationToken) =>
+			GetConnectorHealthAsync(cancellationToken);
+
 		protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
 		{
 			if (ShouldThrowOnInitialization)
@@ -712,6 +905,9 @@ public class ChannelConnectorBaseTests
 
 			if (ShouldFailInitialization)
                 throw new MessagingException("INIT_FAILED", "Initialization failed");
+
+			if (ShouldAuthenticate)
+				return new ValueTask(AuthenticateAsync(cancellationToken));
 
             return ValueTask.CompletedTask;
 		}
@@ -732,5 +928,24 @@ public class ChannelConnectorBaseTests
 			var status = new StatusInfo("Test Status");
 			return Task.FromResult(status);
 		}
+	}
+
+	private class StubAuthenticationManager : IAuthenticationManager
+	{
+		private readonly AuthenticationResult _result;
+
+		public StubAuthenticationManager(AuthenticationResult result)
+		{
+			_result = result;
+		}
+
+		public void RegisterProvider(IAuthenticationProvider provider) { }
+
+		public void ClearCache() { }
+
+		public void InvalidateCredential(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration) { }
+
+		public Task<AuthenticationResult> AuthenticateAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
+			=> Task.FromResult(_result);
 	}
 }

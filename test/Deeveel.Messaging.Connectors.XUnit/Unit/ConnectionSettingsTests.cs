@@ -1134,4 +1134,60 @@ public class ConnectionSettingsTests
 	}
 
 	#endregion
+
+	#region Type Conversion Edge Cases
+
+	[Fact]
+	public void Should_ConvertBoolToInt_When_GetParameterGenericBooltoInt()
+	{
+		var settings = new ConnectionSettings().SetParameter("Flag", true);
+		Assert.Equal(1, settings.GetParameter<int>("Flag"));
+	}
+
+	[Fact]
+	public void Should_ThrowInvalidCastException_When_GetParameterGenericWithSchemaBooleanRequestInt()
+	{
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("Flag", DataType.Boolean)
+			.Build();
+		var settings = new ConnectionSettings(schema).SetParameter("Flag", true);
+		Assert.Throws<InvalidCastException>(() => settings.GetParameter<int>("Flag"));
+	}
+
+	[Fact]
+	public void Should_ReturnNullForString_When_GetParameterNonExisting()
+	{
+		var settings = new ConnectionSettings();
+		Assert.Null(settings.GetParameter<string>("NonExisting"));
+	}
+
+	[Fact]
+	public void Should_ThrowInvalidCastException_When_GetParameterIntNonExisting()
+	{
+		var settings = new ConnectionSettings();
+		Assert.Throws<InvalidCastException>(() => settings.GetParameter<int>("NonExisting"));
+	}
+
+	[Fact]
+	public void Should_ConvertUsingChangeType_When_ConvertToIntFromString()
+	{
+		var settings = new ConnectionSettings().SetParameter("Port", "8080");
+		Assert.Equal(8080, settings.GetParameter<int>("Port"));
+	}
+
+	[Fact]
+	public void Should_ThrowInvalidCastException_When_ConvertToInvalidIntFromString()
+	{
+		var settings = new ConnectionSettings().SetParameter("Port", "not-a-number");
+		Assert.Throws<InvalidCastException>(() => settings.GetParameter<int>("Port"));
+	}
+
+	[Fact]
+	public void Should_ConvertWithInvariantCulture_When_DoubleFromString()
+	{
+		var settings = new ConnectionSettings().SetParameter("Rate", "3.14");
+		Assert.Equal(3.14, settings.GetParameter<double>("Rate"));
+	}
+
+	#endregion
 }

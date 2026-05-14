@@ -135,35 +135,26 @@ namespace Deveel.Messaging
         {
             var batchId = Guid.NewGuid().ToString();
             var messages = new List<FirebaseAdmin.Messaging.Message>();
-
-            // Build Firebase messages
             foreach (var message in batch.Messages)
             {
                 var firebaseMessage = await BuildFirebaseMessageAsync(message, cancellationToken);
                 messages.Add(firebaseMessage);
             }
 
-            // Check if we can use multicast (all messages to device tokens with same notification)
             var deviceTokenMessages = messages.Where(m => !string.IsNullOrEmpty(m.Token)).ToList();
             var topicMessages = messages.Where(m => !string.IsNullOrEmpty(m.Topic)).ToList();
-
             var results = new Dictionary<string, SendResult>();
 
-            // Send multicast messages if possible
-            if (deviceTokenMessages.Count > 1 && CanUseMulticast(deviceTokenMessages))
+            if (deviceTokenMessages.Count > 0)
             {
-                await SendMulticastMessagesAsync(deviceTokenMessages, batch.Messages, results, cancellationToken);
-            }
-            else if (deviceTokenMessages.Count > 0)
-            {
-                await SendIndividualMessagesAsync(deviceTokenMessages, batch.Messages, results, cancellationToken);
+                if (deviceTokenMessages.Count > 1 && CanUseMulticast(deviceTokenMessages))
+                    await SendMulticastMessagesAsync(deviceTokenMessages, batch.Messages, results, cancellationToken);
+                else
+                    await SendIndividualMessagesAsync(deviceTokenMessages, batch.Messages, results, cancellationToken);
             }
 
-            // Send topic messages individually
             if (topicMessages.Count > 0)
-            {
                 await SendIndividualMessagesAsync(topicMessages, batch.Messages, results, cancellationToken);
-            }
 
             return new BatchSendResult(batchId, batchId, results);
         }
@@ -197,27 +188,20 @@ namespace Deveel.Messaging
             if (!health.IsHealthy)
             {
                 if (State != ConnectorState.Ready)
-                {
                     health.Issues.Add($"Connector is in {State} state");
-                }
                 if (!_firebaseService.IsInitialized)
-                {
                     health.Issues.Add("Firebase service is not initialized");
-                }
+                return health;
             }
 
-            // Test connection if healthy
-            if (health.IsHealthy)
+            try
             {
-                try
-                {
-                    await TestConnectorConnectionAsync(cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    health.IsHealthy = false;
-                    health.Issues.Add($"Connection test error: {ex.Message}");
-                }
+                await TestConnectorConnectionAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                health.IsHealthy = false;
+                health.Issues.Add($"Connection test error: {ex.Message}");
             }
 
             return health;
@@ -226,104 +210,64 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            // Call base validation first
             await foreach (var result in base.ValidateMessageCoreAsync(message, cancellationToken))
-            {
                 yield return result;
-            }
 
-            // Firebase-specific validation
             if (message.Receiver == null)
             {
                 yield return new ValidationResult("Message receiver is required for Firebase notifications", new[] { "Receiver" });
                 yield break;
             }
 
-            // Validate endpoint type
             if (message.Receiver.Type != EndpointType.DeviceId && message.Receiver.Type != EndpointType.Topic)
-            {
                 yield return new ValidationResult("Firebase notifications only support DeviceId (device token) or Topic endpoints", new[] { "Receiver.Type" });
-            }
 
-            // Validate device token format if it's a device ID
             if (message.Receiver.Type == EndpointType.DeviceId)
             {
                 var deviceToken = message.Receiver.Address;
                 if (string.IsNullOrWhiteSpace(deviceToken))
-                {
                     yield return new ValidationResult("Device token cannot be empty", new[] { "Receiver.Address" });
-                }
-                else if (deviceToken.Length < 140) // FCM tokens are typically longer
-                {
+                else if (deviceToken.Length < 140)
                     yield return new ValidationResult("Device token appears to be invalid (too short)", new[] { "Receiver.Address" });
-                }
             }
 
-            // Validate topic name format
             if (message.Receiver.Type == EndpointType.Topic)
             {
                 var topicName = message.Receiver.Address;
                 if (string.IsNullOrWhiteSpace(topicName))
-                {
                     yield return new ValidationResult("Topic name cannot be empty", new[] { "Receiver.Address" });
-                }
-                else if (!IsValidTopicName(topicName))
-                {
+                else if (!FirebaseMessageValidator.IsValidTopicName(topicName))
                     yield return new ValidationResult("Topic name contains invalid characters. Use only letters, numbers, hyphens, and underscores", new[] { "Receiver.Address" });
-                }
             }
 
-            // Validate message content
             if (message.Content != null)
             {
-                // Validate notification title length
-                var title = GetMessageProperty(message, "Title");
+                var title = FirebaseMessageValidator.GetMessageProperty(message, "Title");
                 if (!string.IsNullOrEmpty(title) && title.Length > FirebaseConnectorConstants.MaxTitleLength)
-                {
                     yield return new ValidationResult($"Notification title cannot exceed {FirebaseConnectorConstants.MaxTitleLength} characters", new[] { "Title" });
-                }
 
-                // Validate body length for text content
                 if (message.Content is ITextContent textContent)
                 {
                     if (!string.IsNullOrEmpty(textContent.Text) && textContent.Text.Length > FirebaseConnectorConstants.MaxBodyLength)
-                    {
                         yield return new ValidationResult($"Message body cannot exceed {FirebaseConnectorConstants.MaxBodyLength} characters", new[] { "Content" });
-                    }
                 }
 
-                // Validate image URL format
-                var imageUrl = GetMessageProperty(message, "ImageUrl");
-                if (!string.IsNullOrEmpty(imageUrl) && !Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri))
-                {
+                var imageUrl = FirebaseMessageValidator.GetMessageProperty(message, "ImageUrl");
+                if (!string.IsNullOrEmpty(imageUrl) && !Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
                     yield return new ValidationResult("ImageUrl must be a valid URL", new[] { "ImageUrl" });
-                }
 
-                // Validate color format
-                var color = GetMessageProperty(message, "Color");
-                if (!string.IsNullOrEmpty(color) && !IsValidHexColor(color))
-                {
+                var color = FirebaseMessageValidator.GetMessageProperty(message, "Color");
+                if (!string.IsNullOrEmpty(color) && !FirebaseMessageValidator.IsValidHexColor(color))
                     yield return new ValidationResult("Color must be in hexadecimal format (#rrggbb or #aarrggbb)", new[] { "Color" });
-                }
 
-                // Validate custom data JSON
-                var customData = GetMessageProperty(message, "CustomData");
+                var customData = FirebaseMessageValidator.GetMessageProperty(message, "CustomData");
                 if (!string.IsNullOrEmpty(customData))
                 {
-                    bool isValidJson = true;
-                    try
-                    {
-                        JsonDocument.Parse(customData);
-                    }
-                    catch (JsonException)
-                    {
-                        isValidJson = false;
-                    }
-
-                    if (!isValidJson)
-                    {
+                    var isJson = false;
+                    try { JsonDocument.Parse(customData); isJson = true; }
+                    catch (JsonException) { }
+                    if (!isJson)
                         yield return new ValidationResult("CustomData must be valid JSON", new[] { "CustomData" });
-                    }
                 }
             }
         }
@@ -333,35 +277,6 @@ namespace Deveel.Messaging
         /// </summary>
         private Task<FirebaseAdmin.Messaging.Message> BuildFirebaseMessageAsync(IMessage message, CancellationToken cancellationToken)
             => FirebaseMessageBuilder.BuildFirebaseMessageAsync(message);
-
-        private static string? GetMessageProperty(IMessage message, string propertyName)
-            => FirebaseMessageBuilder.GetMessageProperty(message, propertyName);
-
-        /// <summary>
-        /// Validates if a topic name follows Firebase naming conventions.
-        /// </summary>
-        private static bool IsValidTopicName(string topicName)
-        {
-            if (string.IsNullOrEmpty(topicName))
-                return false;
-
-            // Firebase topic names can contain letters, numbers, hyphens, and underscores
-            // They cannot start with "/topics/" (this is added by Firebase automatically)
-            return topicName.All(c => char.IsLetterOrDigit(c) || c == '-' || c == '_');
-        }
-
-        /// <summary>
-        /// Validates if a color string is in valid hexadecimal format.
-        /// </summary>
-        private static bool IsValidHexColor(string color)
-        {
-            if (string.IsNullOrEmpty(color))
-                return false;
-
-            return color.StartsWith('#') &&
-                   (color.Length == 7 || color.Length == 9) &&
-                   color[1..].All(c => char.IsDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'));
-        }
 
         /// <summary>
         /// Checks if messages can use multicast (same notification content).

@@ -228,68 +228,19 @@ namespace Deveel.Messaging
         /// Validates that the image URL is a valid HTTP/HTTPS URL.
         /// </summary>
         private static IEnumerable<ValidationResult> ValidateImageUrl(object? value)
-        {
-            if (value == null) yield break;
-
-            var url = value.ToString();
-            if (string.IsNullOrEmpty(url)) yield break;
-
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != "http" && uri.Scheme != "https"))
-            {
-                yield return new ValidationResult(
-                    "ImageUrl must be a valid HTTP or HTTPS URL",
-                    new[] { "ImageUrl" });
-            }
-        }
+            => FirebaseMessageValidator.ValidateImageUrl(value);
 
         /// <summary>
         /// Validates that the color is in valid hexadecimal format (#rrggbb or #aarrggbb).
         /// </summary>
         private static IEnumerable<ValidationResult> ValidateHexColor(object? value)
-        {
-            if (value == null) yield break;
-
-            var color = value.ToString();
-            if (string.IsNullOrEmpty(color)) yield break;
-
-            if (!color.StartsWith('#') ||
-                (color.Length != 7 && color.Length != 9) ||
-                !color[1..].All(c => char.IsDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')))
-            {
-                yield return new ValidationResult(
-                    "Color must be in hexadecimal format (#rrggbb or #aarrggbb)",
-                    new[] { "Color" });
-            }
-        }
+            => FirebaseMessageValidator.ValidateHexColor(value);
 
         /// <summary>
         /// Validates that the property contains valid JSON content.
         /// </summary>
         private static IEnumerable<ValidationResult> ValidateJsonContent(object? value)
-        {
-            if (value == null)
-                return Enumerable.Empty<ValidationResult>();
-
-            var jsonContent = value.ToString();
-            if (string.IsNullOrEmpty(jsonContent))
-                return Enumerable.Empty<ValidationResult>();
-
-            try
-            {
-                System.Text.Json.JsonDocument.Parse(jsonContent);
-                return Enumerable.Empty<ValidationResult>();
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                return new[]
-                {
-                    new ValidationResult(
-                        "CustomData must be valid JSON",
-                        new[] { "CustomData" })
-                };
-            }
-        }
+            => FirebaseMessageValidator.ValidateJsonContent(value);
 
         /// <summary>
         /// Validates FCM condition expressions for topic-based targeting.
