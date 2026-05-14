@@ -5,12 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace TwilioSample;
 
-public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory)
+public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessagingClient client)
 {
     private const string SectionName = "Twilio";
 
     private readonly SampleConfigurationStore configuration = new();
     private readonly ILoggerFactory loggerFactory = loggerFactory;
+    private readonly IMessagingClient client = client;
 
     private readonly Dictionary<string, IChannelSchema> schemas = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -88,22 +89,12 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory)
 
     public async Task<OperationResult<StatusInfo>> GetSmsStatusAsync()
     {
-        var connector = HasCredentials()
-            ? CreateLiveSmsConnector(HasValue("MessagingServiceSid", "TWILIO_MESSAGING_SERVICE_SID"))
-            : CreateOfflineSmsConnector();
-
-        await connector.InitializeAsync(CancellationToken.None);
-        return await connector.GetStatusAsync(CancellationToken.None);
+        return await client.GetStatusAsync("sms", CancellationToken.None);
     }
 
     public async Task<OperationResult<StatusInfo>> GetWhatsAppStatusAsync()
     {
-        var connector = HasCredentials()
-            ? CreateLiveWhatsAppConnector()
-            : CreateOfflineWhatsAppConnector();
-
-        await connector.InitializeAsync(CancellationToken.None);
-        return await connector.GetStatusAsync(CancellationToken.None);
+        return await client.GetStatusAsync("whatsapp", CancellationToken.None);
     }
 
     public async Task<OperationResult<ReceiveResult>> ReceiveSmsAsync(string? file, string mode)
@@ -159,9 +150,6 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory)
             ["From number", "Messaging service"],
             HasValue("MessagingServiceSid", "TWILIO_MESSAGING_SERVICE_SID") ? "Messaging service" : "From number");
         var useMessagingService = senderMode == "Messaging service";
-        var connector = CreateLiveSmsConnector(useMessagingService);
-        SampleOutputHelper.PrintResult("twilio sms initialize", await connector.InitializeAsync(CancellationToken.None));
-
         var sender = useMessagingService
             ? null
             : SampleConsolePrompts.RequiredText("SMS sender number", GetValue("SmsFrom", "TWILIO_SMS_FROM"));
@@ -170,10 +158,10 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory)
             SampleConsolePrompts.RequiredText("Message ID", "twilio-sms-sample"),
             sender,
             recipient,
-            SampleConsolePrompts.RequiredText("SMS body", "Hello from the Deveel Twilio SMS sample."),
+            SampleConsolePrompts.MultiLineBody("SMS body", "Hello from the Deveel Twilio SMS sample."),
             SampleConsolePrompts.Confirm("Request status callback?", true),
             SampleConsolePrompts.Confirm("Enable smart encoding?", true));
-        var result = await connector.SendMessageAsync(message, CancellationToken.None);
+        var result = await client.SendAsync("sms", message, CancellationToken.None);
         SampleOutputHelper.PrintSendResult("twilio sms send", result);
     }
 
@@ -184,9 +172,6 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory)
             Console.WriteLine("Run 'twilio configure' or set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.");
             return;
         }
-
-        var connector = CreateLiveWhatsAppConnector();
-        SampleOutputHelper.PrintResult("twilio whatsapp initialize", await connector.InitializeAsync(CancellationToken.None));
 
         var from = SampleConsolePrompts.RequiredText("WhatsApp sender number", GetValue("WhatsAppFrom", "TWILIO_WHATSAPP_FROM"));
         var to = SampleConsolePrompts.RequiredText("WhatsApp recipient number", GetValue("WhatsAppTo", "TWILIO_WHATSAPP_TO"));
@@ -200,7 +185,7 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory)
                 SampleConsolePrompts.RequiredText("Message ID", "twilio-whatsapp-sample"),
                 from,
                 to,
-                SampleConsolePrompts.RequiredText("WhatsApp body", "Hello from the Deveel Twilio WhatsApp sample."),
+                SampleConsolePrompts.MultiLineBody("WhatsApp body", "Hello from the Deveel Twilio WhatsApp sample."),
                 SampleConsolePrompts.Confirm("Request status callback?", true))
             : CreateWhatsAppTemplateMessage(
                 SampleConsolePrompts.RequiredText("Message ID", "twilio-whatsapp-template-sample"),
@@ -210,7 +195,7 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory)
                 SampleConsolePrompts.RequiredText("Template parameter 1", "Deveel"),
                 SampleConsolePrompts.RequiredText("Template parameter 2", "Twilio"));
 
-        SampleOutputHelper.PrintSendResult($"twilio whatsapp send {kind.ToLowerInvariant()}", await connector.SendMessageAsync(message, CancellationToken.None));
+        SampleOutputHelper.PrintSendResult($"twilio whatsapp send {kind.ToLowerInvariant()}", await client.SendAsync("whatsapp", message, CancellationToken.None));
     }
 
     private bool HasCredentials()

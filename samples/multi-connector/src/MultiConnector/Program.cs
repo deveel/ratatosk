@@ -16,6 +16,7 @@ builder.Services.AddLogging(logging =>
 });
 
 builder.Services.AddMessaging()
+    .AddClient()
     .AddFacebookMessenger("facebook", c => c.WithSettings("Facebook"))
     .AddFirebasePush("firebase", c => c.WithSettings("Firebase"))
     .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid"))
@@ -63,21 +64,15 @@ app.MapGet("/schemas", (IChannelSchemaRegistry registry) =>
 app.MapPost("/{channel}/message", async (
     string channel,
     MessageDto request,
-    IServiceProvider services,
+    IMessagingClient client,
     ILogger<Program> logger) =>
 {
     if (!supportedChannels.Contains(channel))
         return Results.NotFound(new { Error = $"Unknown channel '{channel}'. Supported: {string.Join(", ", supportedChannels)}" });
 
-    var connector = services.GetRequiredKeyedService<IChannelConnector>(channel);
-
-    var initResult = await connector.InitializeAsync(CancellationToken.None);
-    if (!initResult.IsSuccess())
-        return Results.Problem(initResult.Error?.Message, statusCode: 500);
-
     var message = MessageMapper.MapToMessage(request, channel);
 
-    var sendResult = await connector.SendMessageAsync(message, CancellationToken.None);
+    var sendResult = await client.SendAsync(channel, message, CancellationToken.None);
     if (!sendResult.IsSuccess())
         return Results.Problem(sendResult.Error?.Message, statusCode: 502);
 
@@ -96,20 +91,14 @@ app.MapPost("/{channel}/message", async (
 app.MapPost("/{channel}/message/status", async (
     string channel,
     string payload,
-    IServiceProvider services,
+    IMessagingClient client,
     ILogger<Program> logger) =>
 {
     if (!supportedChannels.Contains(channel))
         return Results.NotFound(new { Error = $"Unknown channel '{channel}'." });
 
-    var connector = services.GetRequiredKeyedService<IChannelConnector>(channel);
-
-    var initResult = await connector.InitializeAsync(CancellationToken.None);
-    if (!initResult.IsSuccess())
-        return Results.Problem(initResult.Error?.Message, statusCode: 500);
-
     var source = MessageSource.Json(payload);
-    var result = await connector.ReceiveMessageStatusAsync(source, CancellationToken.None);
+    var result = await client.ReceiveMessageStatusAsync(channel, source, CancellationToken.None);
 
     if (!result.IsSuccess())
         return Results.Problem(result.Error?.Message, statusCode: 502);
@@ -128,20 +117,14 @@ app.MapPost("/{channel}/message/status", async (
 app.MapPost("/{channel}/receive", async (
     string channel,
     string payload,
-    IServiceProvider services,
+    IMessagingClient client,
     ILogger<Program> logger) =>
 {
     if (!supportedChannels.Contains(channel))
         return Results.NotFound(new { Error = $"Unknown channel '{channel}'." });
 
-    var connector = services.GetRequiredKeyedService<IChannelConnector>(channel);
-
-    var initResult = await connector.InitializeAsync(CancellationToken.None);
-    if (!initResult.IsSuccess())
-        return Results.Problem(initResult.Error?.Message, statusCode: 500);
-
     var source = MessageSource.Json(payload);
-    var result = await connector.ReceiveMessagesAsync(source, CancellationToken.None);
+    var result = await client.ReceiveAsync(channel, source, CancellationToken.None);
 
     if (!result.IsSuccess())
         return Results.Problem(result.Error?.Message, statusCode: 502);
@@ -164,25 +147,18 @@ app.MapPost("/{channel}/receive", async (
 
 app.MapGet("/{channel}/status", async (
     string channel,
-    IServiceProvider services) =>
+    IMessagingClient client) =>
 {
     if (!supportedChannels.Contains(channel))
         return Results.NotFound(new { Error = $"Unknown channel '{channel}'." });
 
-    var connector = services.GetRequiredKeyedService<IChannelConnector>(channel);
-
-    var initResult = await connector.InitializeAsync(CancellationToken.None);
-    if (!initResult.IsSuccess())
-        return Results.Problem(initResult.Error?.Message, statusCode: 500);
-
-    var statusResult = await connector.GetStatusAsync(CancellationToken.None);
+    var statusResult = await client.GetStatusAsync(channel, CancellationToken.None);
     if (!statusResult.IsSuccess())
         return Results.Problem(statusResult.Error?.Message, statusCode: 502);
 
     return Results.Ok(new
     {
         Channel = channel,
-        ConnectorState = connector.State.ToString(),
         Status = statusResult.Value.Status,
         Description = statusResult.Value.Description,
         Timestamp = statusResult.Value.Timestamp

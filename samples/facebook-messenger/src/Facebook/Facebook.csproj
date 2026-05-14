@@ -27,6 +27,7 @@
       <HintPath>..\..\libs\Deveel.Messaging.Connector.Facebook.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <PackageReference Include="Spectre.Console" Version="0.49.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,6 +35,7 @@
     <PackageReference Include="Deveel.Results" Version="1.2.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
     <PackageReference Include="RestSharp" Version="112.1.0" />
   </ItemGroup>
 

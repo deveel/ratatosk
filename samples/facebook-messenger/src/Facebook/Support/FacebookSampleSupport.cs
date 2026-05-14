@@ -5,12 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Facebook;
 
-public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory)
+public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagingClient client)
 {
     private const string SectionName = "Facebook";
 
     private readonly SampleConfigurationStore configuration = new();
     private readonly ILoggerFactory loggerFactory = loggerFactory;
+    private readonly IMessagingClient client = client;
 
     private readonly Dictionary<string, IChannelSchema> schemas = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -75,12 +76,7 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory)
 
     public async Task<OperationResult<StatusInfo>> GetStatusAsync()
     {
-        var connector = HasCredentials()
-            ? CreateLiveConnector()
-            : CreateOfflineConnector();
-
-        await connector.InitializeAsync(CancellationToken.None);
-        return await connector.GetStatusAsync(CancellationToken.None);
+        return await client.GetStatusAsync("facebook", CancellationToken.None);
     }
 
     public async Task<OperationResult<ReceiveResult>> ReceiveAsync(string? file)
@@ -103,9 +99,6 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory)
             return;
         }
 
-        var connector = CreateLiveConnector();
-        SampleOutputHelper.PrintResult("facebook initialize", await connector.InitializeAsync(CancellationToken.None));
-
         var recipient = SampleConsolePrompts.RequiredText(
             "Recipient PSID",
             GetValue("RecipientPsid", "FACEBOOK_RECIPIENT_PSID"));
@@ -118,7 +111,7 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory)
             ? BuildTextMessage(recipient)
             : BuildMediaMessage(recipient);
 
-        SampleOutputHelper.PrintSendResult($"facebook send {kind.ToLowerInvariant()}", await connector.SendMessageAsync(message, CancellationToken.None));
+        SampleOutputHelper.PrintSendResult($"facebook send {kind.ToLowerInvariant()}", await client.SendAsync("facebook", message, CancellationToken.None));
     }
 
     private bool HasCredentials()
@@ -179,7 +172,7 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory)
         return CreateTextMessage(
             recipientId,
             SampleConsolePrompts.RequiredText("Message ID", "facebook-text-sample"),
-            SampleConsolePrompts.RequiredText("Message text", "Hello from the Deveel Facebook Messenger sample."),
+            SampleConsolePrompts.MultiLineBody("Message text", "Hello from the Deveel Facebook Messenger sample."),
             SampleConsolePrompts.Select("Messaging type", ["RESPONSE", "UPDATE", "MESSAGE_TAG"], "RESPONSE"),
             SampleConsolePrompts.Select("Notification type", ["REGULAR", "SILENT_PUSH", "NO_PUSH"], "REGULAR"),
             quickReplies);

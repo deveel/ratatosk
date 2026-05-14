@@ -5,12 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace SendGridSample;
 
-public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory)
+public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory, IMessagingClient client)
 {
     private const string SectionName = "SendGrid";
 
     private readonly SampleConfigurationStore configuration = new();
     private readonly ILoggerFactory loggerFactory = loggerFactory;
+    private readonly IMessagingClient client = client;
 
     private readonly Dictionary<string, IChannelSchema> schemas = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -79,12 +80,7 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory)
 
     public async Task<OperationResult<StatusInfo>> GetStatusAsync()
     {
-        var connector = HasCredentials()
-            ? CreateLiveConnector()
-            : CreateOfflineConnector();
-
-        await connector.InitializeAsync(CancellationToken.None);
-        return await connector.GetStatusAsync(CancellationToken.None);
+        return await client.GetStatusAsync("sendgrid", CancellationToken.None);
     }
 
     public async Task<OperationResult<ReceiveResult>> ReceiveAsync(string? file, string mode)
@@ -115,11 +111,8 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory)
             return;
         }
 
-        var connector = CreateLiveConnector();
-        SampleOutputHelper.PrintResult("sendgrid initialize", await connector.InitializeAsync(CancellationToken.None));
-
         var message = BuildSendGridMessage();
-        SampleOutputHelper.PrintSendResult("sendgrid send", await connector.SendMessageAsync(message, CancellationToken.None));
+        SampleOutputHelper.PrintSendResult("sendgrid send", await client.SendAsync("sendgrid", message, CancellationToken.None));
     }
 
     private bool HasCredentials()
@@ -263,7 +256,7 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory)
                 sender,
                 recipient,
                 SampleConsolePrompts.RequiredText("Subject", "Deveel SendGrid sample"),
-                SampleConsolePrompts.RequiredText("HTML body", "<p>Hello from the <strong>Deveel SendGrid</strong> sample.</p>"),
+                SampleConsolePrompts.MultiLineBody("HTML body", "<p>Hello from the <strong>Deveel SendGrid</strong> sample.</p>"),
                 SampleConsolePrompts.Select("Priority", ["high", "normal", "low"], "high"),
                 SampleConsolePrompts.OptionalText("Categories", "samples,demo"),
                 SampleConsolePrompts.OptionalText("Custom args JSON", """{"source":"sample","connector":"sendgrid"}"""))

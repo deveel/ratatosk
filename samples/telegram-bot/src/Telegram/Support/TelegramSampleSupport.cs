@@ -5,12 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Telegram;
 
-public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory)
+public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory, IMessagingClient client)
 {
     private const string SectionName = "Telegram";
 
     private readonly SampleConfigurationStore configuration = new();
     private readonly ILoggerFactory loggerFactory = loggerFactory;
+    private readonly IMessagingClient client = client;
 
     private readonly Dictionary<string, IChannelSchema> schemas = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -82,10 +83,7 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory)
             return;
         }
 
-        var connector = CreateLiveConnector();
-        SampleOutputHelper.PrintResult("telegram initialize", await connector.InitializeAsync(CancellationToken.None));
-
-        var status = await connector.GetStatusAsync(CancellationToken.None);
+        var status = await client.GetStatusAsync("telegram", CancellationToken.None);
         if (!status.IsSuccess())
         {
             SampleOutputHelper.PrintResult("telegram status", status);
@@ -103,9 +101,6 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory)
             return;
         }
 
-        var connector = CreateLiveConnector();
-        SampleOutputHelper.PrintResult("telegram initialize", await connector.InitializeAsync(CancellationToken.None));
-
         var chatId = SampleConsolePrompts.RequiredText("Chat ID", GetValue("ChatId", "TELEGRAM_CHAT_ID"));
         var kind = SampleConsolePrompts.Select("Select the Telegram message type", ["Text", "Media", "Location"], "Text");
         var message = kind switch
@@ -115,7 +110,7 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory)
             _ => BuildLocationMessage(chatId)
         };
 
-        SampleOutputHelper.PrintSendResult($"telegram send {kind.ToLowerInvariant()}", await connector.SendMessageAsync(message, CancellationToken.None));
+        SampleOutputHelper.PrintSendResult($"telegram send {kind.ToLowerInvariant()}", await client.SendAsync("telegram", message, CancellationToken.None));
     }
 
     private bool HasLiveConfiguration()
@@ -150,7 +145,7 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory)
         => CreateTextMessage(
             SampleConsolePrompts.RequiredText("Message ID", "telegram-text-sample"),
             chatId,
-            SampleConsolePrompts.RequiredText("Message text", "Hello from the <b>Deveel Telegram</b> sample."),
+            SampleConsolePrompts.MultiLineBody("Message text", "Hello from the <b>Deveel Telegram</b> sample."),
             SampleConsolePrompts.Select("Parse mode", ["Html", "Markdown"], "Html"),
             SampleConsolePrompts.Confirm("Disable web page preview?", true));
 

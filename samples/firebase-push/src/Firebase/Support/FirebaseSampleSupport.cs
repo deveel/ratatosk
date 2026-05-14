@@ -5,12 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Firebase;
 
-public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory)
+public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory, IMessagingClient client)
 {
     private const string SectionName = "Firebase";
 
     private readonly SampleConfigurationStore configuration = new();
     private readonly ILoggerFactory loggerFactory = loggerFactory;
+    private readonly IMessagingClient client = client;
 
     private readonly Dictionary<string, IChannelSchema> schemas = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -80,11 +81,8 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory)
             return;
         }
 
-        var connector = CreateLiveConnector();
-        SampleOutputHelper.PrintResult("firebase initialize", await connector.InitializeAsync(CancellationToken.None));
-
         var message = BuildFirebaseMessage();
-        SampleOutputHelper.PrintSendResult("firebase send", await connector.SendMessageAsync(message, CancellationToken.None));
+        SampleOutputHelper.PrintSendResult("firebase send", await client.SendAsync("firebase", message, CancellationToken.None));
     }
 
     public async Task SendBatchAsync()
@@ -95,10 +93,8 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory)
             return;
         }
 
-        var connector = CreateLiveConnector();
-        SampleOutputHelper.PrintResult("firebase initialize", await connector.InitializeAsync(CancellationToken.None));
-
         var batch = BuildBatch();
+        var connector = CreateLiveConnector();
         var result = await connector.SendBatchAsync(batch, CancellationToken.None);
         if (!result.IsSuccess() || result.Value is null)
         {
@@ -117,10 +113,7 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory)
             return;
         }
 
-        var connector = CreateLiveConnector();
-        SampleOutputHelper.PrintResult("firebase initialize", await connector.InitializeAsync(CancellationToken.None));
-
-        var status = await connector.GetStatusAsync(CancellationToken.None);
+        var status = await client.GetStatusAsync("firebase", CancellationToken.None);
         if (!status.IsSuccess())
         {
             SampleOutputHelper.PrintResult("firebase status", status);
@@ -238,7 +231,7 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory)
             ? CreateDeviceMessage(
                 SampleConsolePrompts.RequiredText("Message ID", "firebase-device-sample"),
                 SampleConsolePrompts.RequiredText("Device token", GetValue("DeviceToken", "FIREBASE_DEVICE_TOKEN")),
-                SampleConsolePrompts.RequiredText("Notification body", "Hello from the Deveel Firebase sample."),
+                SampleConsolePrompts.MultiLineBody("Notification body", "Hello from the Deveel Firebase sample."),
                 SampleConsolePrompts.RequiredText("Notification title", "Firebase sample"),
                 SampleConsolePrompts.Select("Priority", ["high", "normal"], "high"),
                 SampleConsolePrompts.OptionalText("Image URL", "https://example.com/fcm.png"),
@@ -247,7 +240,7 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory)
             : CreateTopicMessage(
                 SampleConsolePrompts.RequiredText("Message ID", "firebase-topic-sample"),
                 SampleConsolePrompts.RequiredText("Topic", GetValue("Topic", "FIREBASE_TOPIC")),
-                SampleConsolePrompts.RequiredText("Notification body", "A topic notification prepared by the Firebase sample."),
+                SampleConsolePrompts.MultiLineBody("Notification body", "A topic notification prepared by the Firebase sample."),
                 SampleConsolePrompts.RequiredText("Notification title", "Topic sample"),
                 SampleConsolePrompts.Select("Priority", ["normal", "high"], "normal"));
     }
