@@ -66,24 +66,27 @@ export Firebase__ProjectId="my-project"
 export SendGrid__ApiKey="SG.your-api-key"
 ```
 
-## Building
+## Building & Running
 
-Before building, run the library build script from the sample root:
+The `run.sh` script builds the required libraries (only if missing) and runs the sample in one step:
+
+```bash
+./run.sh                               # quiet, build deps only if needed
+./run.sh -v                            # show logs, build deps only if needed
+./run.sh -b                            # force rebuild deps, quiet run
+./run.sh -b -v                         # force rebuild deps + show logs
+```
+
+| Flag | Description |
+|------|-------------|
+| `-b`, `--build-libs` | Force rebuild library dependencies even if already present |
+| `-v`, `--verbose` | Enable console logging output (hidden by default) |
+
+To build without running:
 
 ```bash
 ./build-libs.sh
-```
-
-Then build the sample:
-
-```bash
 dotnet build
-```
-
-## Running
-
-```bash
-dotnet run
 ```
 
 The API server starts on `http://localhost:5000` (configurable via `launchSettings.json` or `ASPNETCORE_URLS`).

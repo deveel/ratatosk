@@ -61,24 +61,33 @@ export FACEBOOK_WEBHOOK_URL="https://example.com/webhook"
 3. The PSID appears in the webhook callback, or you can view it at your webhook endpoint.
 4. Alternatively, use the [Page Conversations API](https://developers.facebook.com/docs/messenger-platform/reference/conversations).
 
-## Building
+## Building & Running
 
-Before building, run the library build script from the sample root:
+The `run.sh` script builds the required libraries (only if missing) and runs the sample in one step:
+
+```bash
+./run.sh -- facebook <command>
+```
+
+| Flag | Description |
+|------|-------------|
+| `-b`, `--build-libs` | Force rebuild library dependencies even if already present |
+| `-v`, `--verbose` | Enable console logging output (hidden by default) |
+
+Examples:
+
+```bash
+./run.sh -- facebook send           # quiet, build deps only if needed
+./run.sh -v -- facebook status      # show logs, build deps only if needed
+./run.sh -b -- facebook configure   # force rebuild deps, quiet run
+./run.sh -b -v -- facebook send     # force rebuild deps + show logs
+```
+
+To build without running:
 
 ```bash
 ./build-libs.sh
-```
-
-Then build the sample:
-
-```bash
 dotnet build
-```
-
-## Running
-
-```bash
-dotnet run -- facebook <command>
 ```
 
 ### Commands
@@ -95,7 +104,7 @@ dotnet run -- facebook <command>
 ### Send Example
 
 ```bash
-dotnet run -- facebook send
+./run.sh -- facebook send
 ```
 
 You will be prompted to select the message type (Text or Media), enter recipient details, and compose the message content. The text body supports multi-line input — type `!done` on a new line to finish.

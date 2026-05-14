@@ -46,24 +46,33 @@ export SENDGRID_TO_EMAIL="recipient@example.com"
 export SENDGRID_SANDBOX_MODE="true"
 ```
 
-## Building
+## Building & Running
 
-Before building, run the library build script from the sample root:
+The `run.sh` script builds the required libraries (only if missing) and runs the sample in one step:
+
+```bash
+./run.sh -- sendgrid <command>
+```
+
+| Flag | Description |
+|------|-------------|
+| `-b`, `--build-libs` | Force rebuild library dependencies even if already present |
+| `-v`, `--verbose` | Enable console logging output (hidden by default) |
+
+Examples:
+
+```bash
+./run.sh -- sendgrid send           # quiet, build deps only if needed
+./run.sh -v -- sendgrid status      # show logs, build deps only if needed
+./run.sh -b -- sendgrid configure   # force rebuild deps, quiet run
+./run.sh -b -v -- sendgrid send     # force rebuild deps + show logs
+```
+
+To build without running:
 
 ```bash
 ./build-libs.sh
-```
-
-Then build the sample:
-
-```bash
 dotnet build
-```
-
-## Running
-
-```bash
-dotnet run -- sendgrid <command>
 ```
 
 ### Commands
@@ -81,7 +90,7 @@ dotnet run -- sendgrid <command>
 ### Send Example
 
 ```bash
-dotnet run -- sendgrid send
+./run.sh -- sendgrid send
 ```
 
 You will be prompted to select the message type (HTML or Template), enter sender/recipient, subject, and body. The HTML body supports multi-line input — type `!done` on a new line to finish.

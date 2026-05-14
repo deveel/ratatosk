@@ -50,7 +50,7 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory, IMessagi
             SectionName,
             new SampleConfigurationField("ApiKey", "SendGrid API key", IsSecret: true, IsRequired: true),
             new SampleConfigurationField("FromEmail", "Default sender email", IsRequired: true),
-            new SampleConfigurationField("ToEmail", "Default recipient email", IsRequired: true),
+            new SampleConfigurationField("ToEmail", "Default recipient email"),
             new SampleConfigurationField("SandboxMode", "Sandbox mode (true/false)"),
             new SampleConfigurationField("WebhookUrl", "Webhook URL"),
             new SampleConfigurationField("FromName", "Default sender name"),
@@ -112,6 +112,9 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory, IMessagi
         }
 
         var message = BuildSendGridMessage();
+        if (message is null)
+            return;
+
         SampleOutputHelper.PrintSendResult("sendgrid send", await client.SendAsync("sendgrid", message, CancellationToken.None));
     }
 
@@ -241,10 +244,17 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory, IMessagi
         };
     }
 
-    private Message BuildSendGridMessage()
+    private Message? BuildSendGridMessage()
     {
         var sender = SampleConsolePrompts.RequiredText("Sender email", GetValue("FromEmail", "SENDGRID_FROM_EMAIL"));
-        var recipient = SampleConsolePrompts.RequiredText("Recipient email", GetValue("ToEmail", "SENDGRID_TO_EMAIL"));
+        var recipient = SampleConsolePrompts.OptionalText("Recipient email", GetValue("ToEmail", "SENDGRID_TO_EMAIL"));
+
+        if (String.IsNullOrWhiteSpace(recipient))
+        {
+            Console.WriteLine("No recipient email provided. Aborting send.");
+            return null;
+        }
+
         var kind = SampleConsolePrompts.Select(
             "Select the SendGrid message type",
             ["Html", "Template"],

@@ -33,9 +33,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(pageAccessToken))
                 throw new ArgumentNullException(nameof(pageAccessToken), "Page Access Token cannot be null or empty");
 
-            // Validate Facebook Page Access Token format
-            if (!IsValidPageAccessToken(pageAccessToken))
-                throw new ArgumentException("Invalid Page Access Token format", nameof(pageAccessToken));
+            ValidateTokenFormat(pageAccessToken);
 
             _pageAccessToken = pageAccessToken;
         }
@@ -132,17 +130,16 @@ namespace Deveel.Messaging
             }
         }
 
-        /// <summary>
-        /// Validates Facebook Page Access Token format according to Facebook requirements.
-        /// </summary>
-        internal static bool IsValidPageAccessToken(string token)
+        private static void ValidateTokenFormat(string token)
         {
-            // Facebook Page Access Tokens typically start with specific patterns
-            // and have minimum length requirements
-            return !string.IsNullOrWhiteSpace(token) &&
-                   token.Length >= 20 &&
-                   !token.Contains(" ") &&
-                   (token.StartsWith("EAA") || token.StartsWith("EAAG") || token.Contains("|"));
+            if (string.IsNullOrWhiteSpace(token))
+                throw new ArgumentException("Page Access Token cannot be null or empty", nameof(token));
+
+            if (token.Length < 20)
+                throw new ArgumentException($"Page Access Token is too short ({token.Length} characters). Minimum length is 20.", nameof(token));
+
+            if (token.Contains(" "))
+                throw new ArgumentException("Page Access Token contains spaces, which is not allowed", nameof(token));
         }
 
         /// <summary>

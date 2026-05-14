@@ -7,12 +7,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddLogging(logging =>
 {
-    logging.SetMinimumLevel(LogLevel.Warning)
-           .AddSimpleConsole(options =>
-           {
-               options.SingleLine = true;
-               options.TimestampFormat = "HH:mm:ss ";
-           });
+    logging.ClearProviders();
+
+    if (Environment.GetEnvironmentVariable("DEVEEL_VERBOSE") == "true")
+    {
+        logging.SetMinimumLevel(LogLevel.Warning)
+               .AddSimpleConsole(options =>
+               {
+                   options.SingleLine = true;
+                   options.TimestampFormat = "HH:mm:ss ";
+               });
+    }
 });
 
 builder.Services.AddMessaging()

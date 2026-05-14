@@ -82,6 +82,9 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory, IMessagi
         }
 
         var message = BuildFirebaseMessage();
+        if (message is null)
+            return;
+
         SampleOutputHelper.PrintSendResult("firebase send", await client.SendAsync("firebase", message, CancellationToken.None));
     }
 
@@ -220,29 +223,44 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory, IMessagi
         };
     }
 
-    private Message BuildFirebaseMessage()
+    private Message? BuildFirebaseMessage()
     {
         var kind = SampleConsolePrompts.Select(
             "Select the Firebase target type",
             ["Device", "Topic"],
             HasValue("DeviceToken", "FIREBASE_DEVICE_TOKEN") ? "Device" : "Topic");
 
-        return kind == "Device"
-            ? CreateDeviceMessage(
+        if (kind == "Device")
+        {
+            var deviceToken = SampleConsolePrompts.OptionalText("Device token", GetValue("DeviceToken", "FIREBASE_DEVICE_TOKEN"));
+            if (String.IsNullOrWhiteSpace(deviceToken))
+            {
+                Console.WriteLine("No device token provided. Aborting send.");
+                return null;
+            }
+            return CreateDeviceMessage(
                 SampleConsolePrompts.RequiredText("Message ID", "firebase-device-sample"),
-                SampleConsolePrompts.RequiredText("Device token", GetValue("DeviceToken", "FIREBASE_DEVICE_TOKEN")),
+                deviceToken,
                 SampleConsolePrompts.MultiLineBody("Notification body", "Hello from the Deveel Firebase sample."),
                 SampleConsolePrompts.RequiredText("Notification title", "Firebase sample"),
                 SampleConsolePrompts.Select("Priority", ["high", "normal"], "high"),
                 SampleConsolePrompts.OptionalText("Image URL", "https://example.com/fcm.png"),
                 SampleConsolePrompts.OptionalText("Tag", "demo"),
-                SampleConsolePrompts.OptionalText("Custom data JSON", """{"source":"sample","channel":"firebase"}"""))
-            : CreateTopicMessage(
-                SampleConsolePrompts.RequiredText("Message ID", "firebase-topic-sample"),
-                SampleConsolePrompts.RequiredText("Topic", GetValue("Topic", "FIREBASE_TOPIC")),
-                SampleConsolePrompts.MultiLineBody("Notification body", "A topic notification prepared by the Firebase sample."),
-                SampleConsolePrompts.RequiredText("Notification title", "Topic sample"),
-                SampleConsolePrompts.Select("Priority", ["normal", "high"], "normal"));
+                SampleConsolePrompts.OptionalText("Custom data JSON", """{"source":"sample","channel":"firebase"}"""));
+        }
+
+        var topic = SampleConsolePrompts.OptionalText("Topic", GetValue("Topic", "FIREBASE_TOPIC"));
+        if (String.IsNullOrWhiteSpace(topic))
+        {
+            Console.WriteLine("No topic provided. Aborting send.");
+            return null;
+        }
+        return CreateTopicMessage(
+            SampleConsolePrompts.RequiredText("Message ID", "firebase-topic-sample"),
+            topic,
+            SampleConsolePrompts.MultiLineBody("Notification body", "A topic notification prepared by the Firebase sample."),
+            SampleConsolePrompts.RequiredText("Notification title", "Topic sample"),
+            SampleConsolePrompts.Select("Priority", ["normal", "high"], "normal"));
     }
 
     private MessageBatch BuildBatch()
@@ -256,7 +274,9 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory, IMessagi
         for (var i = 0; i < count; i++)
         {
             Console.WriteLine($"Message {i + 1} of {count}");
-            batch.Messages.Add(BuildFirebaseMessage());
+            var message = BuildFirebaseMessage();
+            if (message is not null)
+                batch.Messages.Add(message);
         }
 
         return batch;

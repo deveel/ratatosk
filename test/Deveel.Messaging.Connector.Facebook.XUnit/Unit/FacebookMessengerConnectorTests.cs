@@ -446,7 +446,7 @@ public class FacebookMessengerConnectorTests
         // Assert
         Assert.False(result.IsSuccess());
         Assert.Equal(FacebookErrorCodes.InvalidAccessToken, result.Error?.Code);
-        Assert.Contains("Invalid Page Access Token format", result.Error?.Message);
+        Assert.Contains("Invalid access token format", result.Error?.Message);
         Assert.Equal(ConnectorState.Error, connector.State);
     }
 

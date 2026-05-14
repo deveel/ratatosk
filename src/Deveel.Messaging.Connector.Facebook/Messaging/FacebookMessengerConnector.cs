@@ -90,7 +90,7 @@ namespace Deveel.Messaging
             {
                 throw new ConnectorException(
                     FacebookErrorCodes.InvalidAccessToken, Schema.ChannelType,
-                    "Invalid Page Access Token format", ex);
+                    ex.Message, ex);
             }
 
             return ValueTask.CompletedTask;

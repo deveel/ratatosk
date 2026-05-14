@@ -153,7 +153,14 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessaging
         var sender = useMessagingService
             ? null
             : SampleConsolePrompts.RequiredText("SMS sender number", GetValue("SmsFrom", "TWILIO_SMS_FROM"));
-        var recipient = SampleConsolePrompts.RequiredText("SMS recipient number", GetValue("SmsTo", "TWILIO_SMS_TO"));
+        var recipient = SampleConsolePrompts.OptionalText("SMS recipient number", GetValue("SmsTo", "TWILIO_SMS_TO"));
+
+        if (String.IsNullOrWhiteSpace(recipient))
+        {
+            Console.WriteLine("No SMS recipient number provided. Aborting send.");
+            return;
+        }
+
         var message = CreateSmsMessage(
             SampleConsolePrompts.RequiredText("Message ID", "twilio-sms-sample"),
             sender,
@@ -174,7 +181,14 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessaging
         }
 
         var from = SampleConsolePrompts.RequiredText("WhatsApp sender number", GetValue("WhatsAppFrom", "TWILIO_WHATSAPP_FROM"));
-        var to = SampleConsolePrompts.RequiredText("WhatsApp recipient number", GetValue("WhatsAppTo", "TWILIO_WHATSAPP_TO"));
+        var to = SampleConsolePrompts.OptionalText("WhatsApp recipient number", GetValue("WhatsAppTo", "TWILIO_WHATSAPP_TO"));
+
+        if (String.IsNullOrWhiteSpace(to))
+        {
+            Console.WriteLine("No WhatsApp recipient number provided. Aborting send.");
+            return;
+        }
+
         var kind = SampleConsolePrompts.Select(
             "Select the WhatsApp message type",
             ["Text", "Template"],

@@ -54,24 +54,33 @@ export TWILIO_WHATSAPP_FROM="whatsapp:+14155238886"
 export TWILIO_WHATSAPP_TO="whatsapp:+15557654321"
 ```
 
-## Building
+## Building & Running
 
-Before building, run the library build script from the sample root:
+The `run.sh` script builds the required libraries (only if missing) and runs the sample in one step:
+
+```bash
+./run.sh -- twilio <command>
+```
+
+| Flag | Description |
+|------|-------------|
+| `-b`, `--build-libs` | Force rebuild library dependencies even if already present |
+| `-v`, `--verbose` | Enable console logging output (hidden by default) |
+
+Examples:
+
+```bash
+./run.sh -- twilio sms send            # quiet, build deps only if needed
+./run.sh -v -- twilio status           # show logs, build deps only if needed
+./run.sh -b -- twilio configure        # force rebuild deps, quiet run
+./run.sh -b -v -- twilio whatsapp send # force rebuild deps + show logs
+```
+
+To build without running:
 
 ```bash
 ./build-libs.sh
-```
-
-Then build the sample:
-
-```bash
 dotnet build
-```
-
-## Running
-
-```bash
-dotnet run -- twilio <command>
 ```
 
 ### Root Commands
@@ -84,7 +93,7 @@ dotnet run -- twilio <command>
 ### SMS Commands
 
 ```bash
-dotnet run -- twilio sms <command>
+./run.sh -- twilio sms <command>
 ```
 
 | Command | Description |
@@ -98,7 +107,7 @@ dotnet run -- twilio sms <command>
 ### WhatsApp Commands
 
 ```bash
-dotnet run -- twilio whatsapp <command>
+./run.sh -- twilio whatsapp <command>
 ```
 
 | Command | Description |
@@ -112,7 +121,7 @@ dotnet run -- twilio whatsapp <command>
 ### Send Example
 
 ```bash
-dotnet run -- twilio sms send
+./run.sh -- twilio sms send
 ```
 
 You will be prompted to select the sender mode (From number or Messaging service), enter recipient details, and compose the message body. The message body supports multi-line input — type `!done` on a new line to finish.

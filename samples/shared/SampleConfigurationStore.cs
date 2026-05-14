@@ -216,21 +216,22 @@ internal sealed class SampleConfigurationStore
 
     private static string ResolveConfigPath(string fileName)
     {
+        return Path.Combine(GetProjectRoot(), fileName);
+    }
+
+    internal static string GetProjectRoot()
+    {
         foreach (var startPath in EnumerateStartPaths())
         {
             var directory = new DirectoryInfo(startPath);
             while (directory is not null)
             {
                 if (directory.EnumerateFiles("*.csproj").Any())
-                {
-                    return Path.Combine(directory.FullName, fileName);
-                }
-
+                    return directory.FullName;
                 directory = directory.Parent;
             }
         }
-
-        return Path.Combine(Environment.CurrentDirectory, fileName);
+        return Environment.CurrentDirectory;
     }
 
     private static IEnumerable<string> EnumerateStartPaths()
@@ -239,8 +240,6 @@ internal sealed class SampleConfigurationStore
 
         var currentDirectory = Environment.CurrentDirectory;
         if (!String.Equals(currentDirectory, AppContext.BaseDirectory, StringComparison.OrdinalIgnoreCase))
-        {
             yield return currentDirectory;
-        }
     }
 }

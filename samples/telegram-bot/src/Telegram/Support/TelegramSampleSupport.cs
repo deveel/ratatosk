@@ -47,7 +47,7 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory, IMessagi
         configuration.ConfigureSection(
             SectionName,
             new SampleConfigurationField("BotToken", "Telegram bot token", IsSecret: true, IsRequired: true),
-            new SampleConfigurationField("ChatId", "Default chat ID", IsRequired: true),
+            new SampleConfigurationField("ChatId", "Default chat ID"),
             new SampleConfigurationField("WebhookUrl", "Webhook URL"),
             new SampleConfigurationField("SecretToken", "Webhook secret token", IsSecret: true),
             new SampleConfigurationField("MediaUrl", "Default media URL"),
@@ -101,7 +101,14 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory, IMessagi
             return;
         }
 
-        var chatId = SampleConsolePrompts.RequiredText("Chat ID", GetValue("ChatId", "TELEGRAM_CHAT_ID"));
+        var chatId = SampleConsolePrompts.OptionalText("Chat ID", GetValue("ChatId", "TELEGRAM_CHAT_ID"));
+
+        if (String.IsNullOrWhiteSpace(chatId))
+        {
+            Console.WriteLine("No chat ID provided. Aborting send.");
+            return;
+        }
+
         var kind = SampleConsolePrompts.Select("Select the Telegram message type", ["Text", "Media", "Location"], "Text");
         var message = kind switch
         {

@@ -48,7 +48,7 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagi
             SectionName,
             new SampleConfigurationField("PageAccessToken", "Facebook page access token", IsSecret: true, IsRequired: true),
             new SampleConfigurationField("PageId", "Facebook page ID", IsRequired: true),
-            new SampleConfigurationField("RecipientPsid", "Default recipient PSID", IsRequired: true),
+            new SampleConfigurationField("RecipientPsid", "Default recipient PSID"),
             new SampleConfigurationField("WebhookUrl", "Webhook URL"),
             new SampleConfigurationField("VerifyToken", "Webhook verify token", IsSecret: true),
             new SampleConfigurationField("MediaUrl", "Default media URL"));
@@ -99,9 +99,15 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagi
             return;
         }
 
-        var recipient = SampleConsolePrompts.RequiredText(
+        var recipient = SampleConsolePrompts.OptionalText(
             "Recipient PSID",
             GetValue("RecipientPsid", "FACEBOOK_RECIPIENT_PSID"));
+
+        if (String.IsNullOrWhiteSpace(recipient))
+        {
+            Console.WriteLine("No recipient PSID provided. Aborting send.");
+            return;
+        }
         var kind = SampleConsolePrompts.Select(
             "Select the Facebook message type",
             ["Text", "Media"],
