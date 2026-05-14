@@ -168,6 +168,21 @@ public async Task<IActionResult> SendGridWebhook(CancellationToken ct)
 
 Validate `X-Twilio-Email-Event-Webhook-Signature` header when using signed webhooks.
 
+## Error codes
+
+SendGrid-specific error codes are defined in `SendGridErrorCodes` with domain `"SendGrid"`.
+
+| Code | Description |
+|---|---|
+| `INVALID_EMAIL_ADDRESS` | Email address format is invalid |
+| `MISSING_EMAIL_CONTENT` | Email content (subject, body) is missing |
+
+Standard `MessagingErrorCodes` are also used — see the [error codes reference](../result-types.md#error-code-tables).
+
+### Original provider codes
+
+SendGrid errors are mapped from HTTP status codes in the connector. There is no custom error code mapping from SendGrid API error codes. HTTP `429 Too Many Requests` maps to `RATE_LIMIT_EXCEEDED`; all other non-success status codes map to `SEND_MESSAGE_FAILED`.
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

@@ -126,6 +126,25 @@ public async Task<IActionResult> FacebookWebhook(CancellationToken ct)
 
 Validate `X-Hub-Signature-256` header using your Facebook app secret before processing.
 
+## Error codes
+
+Facebook-specific error codes are defined in `FacebookErrorCodes` with domain `"Facebook"`.
+
+| Code | Description |
+|---|---|
+| `INVALID_ACCESS_TOKEN` | Page Access Token is invalid or expired |
+| `MISSING_PAGE_ID` | Page ID is required but not configured |
+| `INVALID_PAGE_ID` | Page ID does not exist or token lacks permission |
+| `CONNECTION_TEST_FAILED` | Connection test to Graph API failed |
+| `GRAPH_API_ERROR` | Facebook Graph API returned an error |
+| `OPERATION_NOT_SUPPORTED` | Operation not available for the current Page or API version |
+
+Standard `MessagingErrorCodes` are also used — see the [error codes reference](../result-types.md#error-code-tables).
+
+### Original provider codes
+
+Facebook errors are assigned directly via `ConnectorException` without mapping from Graph API error codes. The Graph API returns its own error objects (e.g., `{"error": {"message": "...", "type": "OAuthException", "code": 190}}`) which are surfaced through the `GRAPH_API_ERROR` code.
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

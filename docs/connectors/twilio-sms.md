@@ -125,6 +125,40 @@ public async Task<IActionResult> TwilioWebhook(CancellationToken ct)
 
 **Important**: validate `X-Twilio-Signature` before processing. See [Twilio security docs](https://www.twilio.com/docs/security).
 
+## Error codes
+
+Twilio-specific error codes are defined in `TwilioErrorCodes` with domain `"Twilio"`.
+
+| Code | Description |
+|---|---|
+| `INVALID_CONNECTION_SETTINGS` | Connection settings validation failed |
+| `MISSING_FROM_NUMBER` | Sender phone number is required when MessagingServiceSid is not configured |
+| `INVALID_SENDER` | Sender phone number is not in valid format |
+| `INVALID_MESSAGE` | Message properties failed schema validation |
+| `MISSING_CONTENT_SID` | WhatsApp template Content SID is missing |
+| `INVALID_WHATSAPP_NUMBER` | WhatsApp number does not follow `whatsapp:+E164` format |
+| `SEND_WHATSAPP_MESSAGE_FAILED` | WhatsApp message send failed via Twilio API |
+| `WHATSAPP_STATUS_QUERY_FAILED` | WhatsApp message status query failed |
+| `STATUS_QUERY_FAILED` | Message status query failed |
+| `STATUS_ERROR` | Connector status retrieval failed |
+| `RECEIVE_MESSAGE_FAILED` | Incoming message webhook processing failed |
+| `RECEIVE_STATUS_FAILED` | Status callback webhook processing failed |
+
+Standard `MessagingErrorCodes` are also used — see the [error codes reference](../result-types.md#error-code-tables).
+
+### Original provider codes
+
+Twilio API errors (`ApiException`) are mapped to framework error codes in `TwilioService.MapTwilioErrorCode()`:
+
+| Twilio code | Mapped framework code |
+|---|---|
+| `21211` | `INVALID_RECIPIENT` |
+| `21610` | `INVALID_RECIPIENT` |
+| `21614` | `INVALID_SENDER` |
+| `21408` | `INVALID_SENDER` |
+| `20001` | `INVALID_MESSAGE` |
+| Other | `SEND_MESSAGE_FAILED` |
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

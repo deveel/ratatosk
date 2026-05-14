@@ -310,17 +310,128 @@ public interface IMessagingError
 }
 ```
 
-Standard error code conventions:
+## Error handling
 
-| Code | Meaning |
+The framework uses a three-layer error handling model:
+
+1. **Return values** — `OperationResult<T>` is the standard return type for all connector operations
+2. **Exceptions** — `ConnectorException` and `MessagingException` are thrown for non-recoverable errors during initialization, connection testing, and send operations (caught by the base class and converted to `OperationResult<T>`)
+3. **Error codes** — Every error has a machine-readable string code and a human-readable message
+
+### ConnectorException
+
+Thrown inside connector operations to signal a recoverable or provider-specific error. The base class catches it and wraps it in `OperationResult<T>.Fail()`:
+
+```csharp
+throw new ConnectorException(
+    MessagingErrorCodes.InvalidRecipient,
+    TwilioErrorCodes.ErrorDomain,
+    "Recipient phone number is required");
+```
+
+### Error code hierarchy
+
+Error codes are organized by scope in static classes:
+
+| Class | Domain | Scope |
+|---|---|---|
+| `MessagingErrorCodes` | `"messaging"` | General messaging errors |
+| `ConnectorErrorCodes` | `"messaging"` | Connector lifecycle and operation errors |
+| `FacebookErrorCodes` | `"Facebook"` | Facebook Messenger API errors |
+| `FirebaseErrorCodes` | `"Firebase"` | Firebase Cloud Messaging errors |
+| `TelegramErrorCodes` | `"Telegram"` | Telegram Bot API errors |
+| `TwilioErrorCodes` | `"Twilio"` | Twilio SMS/WhatsApp errors |
+| `SendGridErrorCodes` | `"SendGrid"` | SendGrid email errors |
+
+### ConnectorException
+
+Thrown inside connector lifecycle methods (`InitializeAsync`, `TestConnectionAsync`, `SendMessageCoreAsync`, `ReceiveMessagesCoreAsync`, etc.) to signal a specific error. Contains an error code, a domain string, and a human-readable message.
+
+### Authentication errors
+
+Authentication providers (`AuthenticationProviderBase` subclasses) return `AuthenticationResult` with a string error code when authentication fails. The `AuthenticationManager` wraps these into a `ConnectorException` with code `AUTHENTICATION_FAILED` or reports the provider-specific code directly.
+
+### Error code tables
+
+#### MessagingErrorCodes (general)
+
+These codes are used for messaging-level errors outside the scope of channel connectors, such as routing and configuration.
+
+| Code | Description |
 |---|---|
-| `INVALID_CREDENTIALS` | Authentication failed |
-| `RATE_LIMITED` | Provider rate limit exceeded |
-| `NETWORK_ERROR` | Connection timed out, DNS failure, TLS error |
-| `PROVIDER_VALIDATION_FAILED` | Provider rejected the message format |
-| `MESSAGE_TOO_LARGE` | Content exceeds provider size limits |
-| `INVALID_RECIPIENT` | Recipient address is invalid (e.g., wrong format) |
-| `RECIPIENT_UNREACHABLE` | Recipient device/app not available |
-| `INVALID_STATE` | Operation called when connector is not Ready |
-| `CAPABILITY_NOT_SUPPORTED` | Operation not supported by this connector |
-| `INTERNAL_ERROR` | Unexpected error in connector or provider |
+| `MESSAGING_ERROR` | Unspecified or unexpected messaging error |
+| `MESSAGE_ROUTING_FAILED` | Message could not be routed to the intended recipient or channel |
+| `MESSAGE_SERIALIZATION_FAILED` | Message serialization failed |
+| `MESSAGE_DESERIALIZATION_FAILED` | Message deserialization failed |
+| `INVALID_CONFIGURATION` | Connector configuration is invalid or incomplete |
+| `UNSUPPORTED_CONTENT_TYPE` | Unsupported message content type encountered |
+| `CONNECTOR_NOT_FOUND` | No connector was found for the requested channel type |
+| `INVALID_WEBHOOK_DATA` | Webhook data is invalid or malformed |
+| `INVALID_RECIPIENT` | Recipient endpoint is missing, invalid, or unreachable |
+| `MISSING_CREDENTIALS` | Required credentials are missing |
+| `INVALID_CREDENTIALS` | Provided credentials are invalid or expired |
+| `MISSING_SENDER` | Sender endpoint is missing or not configured |
+| `MESSAGE_TOO_LONG` | Message exceeds the maximum allowed length |
+| `CONNECTION_FAILED` | Connection to the remote service failed |
+| `SEND_MESSAGE_FAILED` | Sending a message failed |
+| `RATE_LIMIT_EXCEEDED` | API rate limit has been exceeded |
+
+#### ConnectorErrorCodes (connector operations)
+
+These codes are defined in `Deveel.Messaging.Connectors` and used by `ChannelConnectorBase`.
+
+| Code | Description |
+|---|---|
+| `ALREADY_INITIALIZED` | Connector has already been initialized |
+| `INITIALIZATION_ERROR` | Error occurred during connector initialization |
+| `AUTHENTICATION_FAILED` | Authentication with the remote service failed |
+| `CONNECTION_TEST_ERROR` | Error testing connection to the external service |
+| `MESSAGE_VALIDATION_FAILED` | Message validation failed before sending |
+| `SEND_MESSAGE_ERROR` | Error sending a single message |
+| `BATCH_VALIDATION_FAILED` | Batch validation failed before sending |
+| `SEND_BATCH_ERROR` | Error sending a batch of messages |
+| `GET_STATUS_ERROR` | Error retrieving connector status |
+| `GET_MESSAGE_STATUS_ERROR` | Error retrieving message status |
+| `GET_HEALTH_ERROR` | Error performing health check |
+| `RECEIVE_STATUS_ERROR` | Error receiving status updates |
+| `RECEIVE_MESSAGES_ERROR` | Error receiving messages |
+
+#### Authentication error codes
+
+These codes are returned by authentication providers when obtaining or refreshing credentials fails.
+
+| Code | Description |
+|---|---|
+| `MISSING_API_KEY` | API key not found in connection settings |
+| `MISSING_TOKEN` | Bearer token not found |
+| `MISSING_BASIC_CREDENTIALS` | Basic authentication credentials (username/password) not found |
+| `MISSING_PARAMETERS` | Required OAuth parameters (client ID, secret) are missing |
+| `MISSING_TOKEN_ENDPOINT` | Token endpoint URL is required but missing |
+| `TOKEN_REQUEST_FAILED` | Token request to the provider failed |
+| `INVALID_TOKEN_RESPONSE` | Token response is missing the access token |
+| `EMPTY_ACCESS_TOKEN` | Empty access token received from provider |
+| `INVALID_REFRESH_RESPONSE` | Refresh response is missing the access token |
+| `EMPTY_REFRESH_TOKEN` | Empty access token received from refresh |
+| `REFRESH_FAILED` | Token refresh operation failed |
+| `NETWORK_ERROR` | Network error during token request |
+| `TIMEOUT` | Token request timed out |
+| `INVALID_JSON` | Invalid JSON in provider response |
+| `UNEXPECTED_ERROR` | Unexpected error during authentication |
+| `MISSING_SERVICE_ACCOUNT_KEY` | Service account key is required but missing |
+| `SERVICE_ACCOUNT_FILE_NOT_FOUND` | Service account key file does not exist |
+| `INVALID_SERVICE_ACCOUNT_JSON` | Service account key is not valid JSON |
+| `CREDENTIAL_ERROR` | Error preparing credential |
+| `NO_PROVIDER` | No authentication provider available for the requested scheme |
+| `AUTHENTICATION_ERROR` | Unspecified authentication error |
+
+### Error code mapping
+
+Channel connectors map provider-specific API errors to the framework's error codes through dedicated mapping methods in their service implementations:
+
+- **Twilio**: `TwilioService.MapTwilioErrorCode()` maps Twilio `ApiException.Code` integers
+- **Telegram**: `TelegramService.MapTelegramErrorCode()` and `MapTelegramSendErrorCode()` map Telegram `ApiRequestException.ErrorCode` integers
+- **Firebase**: `FirebaseService.MapFirebaseErrorCode()` maps Firebase `MessagingErrorCode` enum values
+- **Facebook**: Error codes are assigned directly via `ConnectorException`, without provider error code translation
+- **SendGrid**: HTTP status codes are mapped in the connector; no custom error code mapping
+
+See the channel-specific documentation for detailed mapping tables.

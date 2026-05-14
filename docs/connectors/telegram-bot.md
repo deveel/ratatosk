@@ -182,6 +182,46 @@ public async Task<IActionResult> TelegramWebhook(CancellationToken ct)
 }
 ```
 
+## Error codes
+
+Telegram-specific error codes are defined in `TelegramErrorCodes` with domain `"Telegram"`.
+
+| Code | Description |
+|---|---|
+| `INVALID_CHAT_ID` | Chat ID is missing or invalid |
+| `FILE_TOO_LARGE` | File exceeds Telegram size limits |
+| `INVALID_MEDIA_URL` | Media URL is not valid |
+| `BOT_BLOCKED` | Bot was blocked by the user |
+| `CHAT_NOT_FOUND` | Chat does not exist or bot cannot access it |
+| `UNAUTHORIZED` | Bot token is invalid or unauthorized |
+
+Standard `MessagingErrorCodes` are also used — see the [error codes reference](../result-types.md#error-code-tables).
+
+### Original provider codes
+
+Telegram Bot API errors (`ApiRequestException`) are mapped to framework error codes via two mapping methods in `TelegramService`:
+
+**`MapTelegramErrorCode`** (getMe, initialization):
+
+| Telegram code | Mapped framework code |
+|---|---|
+| `400` | `INVALID_CREDENTIALS` |
+| `401` | `UNAUTHORIZED` |
+| `403` | `BOT_BLOCKED` |
+| `404` | `CHAT_NOT_FOUND` |
+| `429` | `UNSUPPORTED_CONTENT_TYPE` |
+| Other | `UNAUTHORIZED` |
+
+**`MapTelegramSendErrorCode`** (sendMessage, sendPhoto, etc.):
+
+| Telegram code | Mapped framework code |
+|---|---|
+| `400` | `INVALID_CHAT_ID` |
+| `403` | `BOT_BLOCKED` |
+| `404` | `CHAT_NOT_FOUND` |
+| `429` | `UNSUPPORTED_CONTENT_TYPE` |
+| Other | `UNSUPPORTED_CONTENT_TYPE` |
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

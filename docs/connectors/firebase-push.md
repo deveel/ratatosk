@@ -125,6 +125,39 @@ Firebase uses OAuth 2.0 with a JWT signed by the service account's private key. 
 3. Exchanges the JWT for a Firebase OAuth 2.0 access token
 4. Caches the token and refreshes it before expiry
 
+## Error codes
+
+Firebase-specific error codes are defined in `FirebaseErrorCodes` with domain `"Firebase"`.
+
+| Code | Description |
+|---|---|
+| `MISSING_SERVICE_ACCOUNT_KEY` | Service account key is missing or invalid |
+| `MISSING_PROJECT_ID` | Firebase project ID is missing |
+| `INITIALIZATION_FAILED` | Firebase app initialization failed |
+| `UNREGISTERED_TOKEN` | Device registration token is no longer valid |
+| `INVALID_ARGUMENT` | Request contains an invalid argument |
+| `SENDER_ID_MISMATCH` | Sender ID does not match the registered token |
+| `THIRD_PARTY_AUTH_ERROR` | Third-party authentication error occurred |
+| `SERVICE_UNAVAILABLE` | FCM service is temporarily unavailable |
+| `INTERNAL_ERROR` | Internal error in the Firebase service |
+
+Standard `MessagingErrorCodes` are also used — see the [error codes reference](../result-types.md#error-code-tables).
+
+### Original provider codes
+
+Firebase Admin SDK errors (`FirebaseMessagingException`) are mapped to framework error codes in `FirebaseService.MapFirebaseErrorCode()`:
+
+| FCM MessagingErrorCode | Mapped framework code |
+|---|---|
+| `InvalidArgument` | `INVALID_ARGUMENT` |
+| `Unregistered` | `UNREGISTERED_TOKEN` |
+| `SenderIdMismatch` | `SENDER_ID_MISMATCH` |
+| `QuotaExceeded` | `RATE_LIMIT_EXCEEDED` |
+| `ThirdPartyAuthError` | `THIRD_PARTY_AUTH_ERROR` |
+| `Unavailable` | `SERVICE_UNAVAILABLE` |
+| `Internal` | `INTERNAL_ERROR` |
+| Other | `SEND_MESSAGE_FAILED` |
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |
