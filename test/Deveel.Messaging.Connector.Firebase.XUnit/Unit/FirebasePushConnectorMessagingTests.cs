@@ -354,18 +354,12 @@ namespace Deveel.Messaging
         /// </summary>
         private Message CreateValidFirebaseMessage(string id, EndpointType endpointType, string address, string content, string? title = null)
         {
-            var message = new Message
-            {
-                Id = id,
-                Receiver = new Endpoint(endpointType, address),
-                Content = new TextContent(content)
-            };
-            
-            // Firebase requires either Title OR Body for notifications
-            // Adding both for maximum compatibility
-            message.With("Title", title ?? $"Notification {id}");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(id)
+                .To(new Endpoint(endpointType, address))
+                .WithContent(new TextContent(content))
+                .WithProperty("Title", title ?? $"Notification {id}")
+                .Build();
         }
 
         /// <summary>
@@ -380,82 +374,88 @@ namespace Deveel.Messaging
         private Message CreateDetailedDeviceTokenMessage()
         {
             var id = "test-msg-" + Guid.NewGuid().ToString("N")[..8];
-            var message = CreateValidFirebaseMessage(id, EndpointType.DeviceId, CreateValidDeviceToken("detailed"), "Your app has new features!", "Important Update");
-            
-            // Add additional Firebase-specific properties
-            message.With("ImageUrl", "https://example.com/update-image.jpg")
-                   .With("Priority", "high")
-                   .With("CustomData", @"{""action"":""update"",""version"":""2.1.0""}");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(id)
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken("detailed")))
+                .WithContent(new TextContent("Your app has new features!"))
+                .WithProperty("Title", "Important Update")
+                .WithProperty("ImageUrl", "https://example.com/update-image.jpg")
+                .WithProperty("Priority", "high")
+                .WithProperty("CustomData", @"{""action"":""update"",""version"":""2.1.0""}")
+                .Build();
         }
 
         private Message CreateDetailedTopicMessage()
         {
             var id = "topic-msg-" + Guid.NewGuid().ToString("N")[..8];
-            var message = CreateValidFirebaseMessage(id, EndpointType.Topic, "breaking_news", "Breaking news alert!", "Breaking News");
-            
-            // Add additional Firebase-specific properties
-            message.With("Priority", "high");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(id)
+                .To(new Endpoint(EndpointType.Topic, "breaking_news"))
+                .WithContent(new TextContent("Breaking news alert!"))
+                .WithProperty("Title", "Breaking News")
+                .WithProperty("Priority", "high")
+                .Build();
         }
 
         private Message CreateRichNotificationMessage()
         {
             var id = "rich-msg-" + Guid.NewGuid().ToString("N")[..8];
-            var message = CreateValidFirebaseMessage(id, EndpointType.DeviceId, CreateValidDeviceToken("rich"), "This notification has an image and custom data", "Rich Notification");
-            
-            // Add rich notification properties with correct data types
-            message.With("ImageUrl", "https://example.com/notification-image.jpg")
-                   .With("CustomData", @"{""customField"":""customValue"",""userId"":123}")
-                   .With("Color", "#FF5722")  // Android (String - OK)
-                   .With("Badge", 5)          // iOS (Integer - Fixed: was "5")
-                   .With("Sound", "notification_sound");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(id)
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken("rich")))
+                .WithContent(new TextContent("This notification has an image and custom data"))
+                .WithProperty("Title", "Rich Notification")
+                .WithProperty("ImageUrl", "https://example.com/notification-image.jpg")
+                .WithProperty("CustomData", @"{""customField"":""customValue"",""userId"":123}")
+                .WithProperty("Color", "#FF5722")
+                .WithProperty("Badge", 5)
+                .WithProperty("Sound", "notification_sound")
+                .Build();
         }
 
         private Message CreateDataOnlyMessage()
         {
             var id = "data-msg-" + Guid.NewGuid().ToString("N")[..8];
-            var message = CreateValidFirebaseMessage(id, EndpointType.DeviceId, CreateValidDeviceToken("data"), "Data message", "Data Message");
-            
-            // Add custom data for data-only style messages
-            message.With("CustomData", @"{""action"":""sync"",""silent"":true}");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(id)
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken("data")))
+                .WithContent(new TextContent("Data message"))
+                .WithProperty("Title", "Data Message")
+                .WithProperty("CustomData", @"{""action"":""sync"",""silent"":true}")
+                .Build();
         }
 
         private Message CreateAndroidSpecificMessage()
         {
             var id = "android-msg-" + Guid.NewGuid().ToString("N")[..8];
-            var message = CreateValidFirebaseMessage(id, EndpointType.DeviceId, CreateValidDeviceToken("android"), "Android specific notification", "Android Update");
-            
-            // Add Android-specific properties with correct data types
-            message.With("Priority", "high")
-                   .With("TimeToLive", 3600)    // Integer - Fixed: was "3600"
-                   .With("CollapseKey", "update")
-                   .With("Color", "#FF9800")
-                   .With("Sound", "notification_sound")
-                   .With("Tag", "update_tag");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(id)
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken("android")))
+                .WithContent(new TextContent("Android specific notification"))
+                .WithProperty("Title", "Android Update")
+                .WithProperty("Priority", "high")
+                .WithProperty("TimeToLive", 3600)
+                .WithProperty("CollapseKey", "update")
+                .WithProperty("Color", "#FF9800")
+                .WithProperty("Sound", "notification_sound")
+                .WithProperty("Tag", "update_tag")
+                .Build();
         }
 
         private Message CreateiOSSpecificMessage()
         {
             var id = "ios-msg-" + Guid.NewGuid().ToString("N")[..8];
-            var message = CreateValidFirebaseMessage(id, EndpointType.DeviceId, CreateValidDeviceToken("ios"), "iOS specific notification", "iOS Update");
-            
-            // Add iOS-specific properties with correct data types
-            message.With("Badge", 3)            // Integer - Fixed: was "3"
-                   .With("Sound", "ios_notification.wav")
-                   .With("ContentAvailable", true)  // Boolean - Fixed: was "true"
-                   .With("MutableContent", true)    // Boolean - Fixed: was "true"
-                   .With("ThreadId", "chat_thread_123");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(id)
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken("ios")))
+                .WithContent(new TextContent("iOS specific notification"))
+                .WithProperty("Title", "iOS Update")
+                .WithProperty("Badge", 3)
+                .WithProperty("Sound", "ios_notification.wav")
+                .WithProperty("ContentAvailable", true)
+                .WithProperty("MutableContent", true)
+                .WithProperty("ThreadId", "chat_thread_123")
+                .Build();
         }
 
         private Message CreateSimpleDeviceTokenMessage()

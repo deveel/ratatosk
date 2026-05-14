@@ -28,15 +28,12 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "text-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("This is a text notification")
-            };
-            
-            // Add required Firebase properties
-            message.With("Title", "Text Notification");
+            var message = new MessageBuilder()
+                .WithId("text-content-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("This is a text notification"))
+                .WithProperty("Title", "Text Notification")
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -61,15 +58,12 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "json-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new JsonContent(@"{""data"":""value"",""number"":123}")
-            };
-            
-            // Add required properties for Firebase validation
-            message.With("Title", "JSON Data Message");
+            var message = new MessageBuilder()
+                .WithId("json-content-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new JsonContent(@"{""data"":""value"",""number"":123}"))
+                .WithProperty("Title", "JSON Data Message")
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -97,15 +91,13 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "image-url-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Notification with image")
-            };
-            
-            message.With("Title", "Image Notification")
-                   .With("ImageUrl", "https://example.com/image.jpg");
+            var message = new MessageBuilder()
+                .WithId("image-url-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Notification with image"))
+                .WithProperty("Title", "Image Notification")
+                .WithProperty("ImageUrl", "https://example.com/image.jpg")
+                .Build();
 
             // Act
             await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -128,14 +120,12 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "custom-data-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Message with custom data")
-            };
-            
-            message.With("CustomData", @"{""userId"":123,""action"":""update"",""metadata"":{""version"":""2.0""}}");
+            var message = new MessageBuilder()
+                .WithId("custom-data-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Message with custom data"))
+                .WithProperty("CustomData", @"{""userId"":123,""action"":""update"",""metadata"":{""version"":""2.0""}}")
+                .Build();
 
             // Act
             await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -162,14 +152,12 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "invalid-json-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Message with invalid JSON")
-            };
-            
-            message.With("CustomData", "invalid-json-{not-valid}");
+            var message = new MessageBuilder()
+                .WithId("invalid-json-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Message with invalid JSON"))
+                .WithProperty("CustomData", "invalid-json-{not-valid}")
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -193,22 +181,20 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "android-complete-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Complete Android notification")
-            };
-            
-            message.With("Title", "Android Notification")
-                   .With("Priority", "high")
-                   .With("TimeToLive", 7200)     // Fixed: use integer instead of string
-                   .With("CollapseKey", "message_group")
-                   .With("RestrictedPackageName", "com.example.app")
-                   .With("Color", "#4CAF50")
-                   .With("Sound", "android_sound")
-                   .With("Tag", "message_tag")
-                   .With("ClickAction", "OPEN_ACTIVITY");
+            var message = new MessageBuilder()
+                .WithId("android-complete-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Complete Android notification"))
+                .WithProperty("Title", "Android Notification")
+                .WithProperty("Priority", "high")
+                .WithProperty("TimeToLive", 7200)     // Fixed: use integer instead of string
+                .WithProperty("CollapseKey", "message_group")
+                .WithProperty("RestrictedPackageName", "com.example.app")
+                .WithProperty("Color", "#4CAF50")
+                .WithProperty("Sound", "android_sound")
+                .WithProperty("Tag", "message_tag")
+                .WithProperty("ClickAction", "OPEN_ACTIVITY")
+                .Build();
 
             // Act
             await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -239,19 +225,17 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "ios-complete-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Complete iOS notification")
-            };
-            
-            message.With("Title", "iOS Notification")
-                   .With("Badge", 7)            // Fixed: use integer instead of string
-                   .With("Sound", "ios_notification.wav")
-                   .With("ContentAvailable", true)  // Fixed: use boolean instead of string
-                   .With("MutableContent", true)    // Fixed: use boolean instead of string
-                   .With("ThreadId", "conversation_123");
+            var message = new MessageBuilder()
+                .WithId("ios-complete-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Complete iOS notification"))
+                .WithProperty("Title", "iOS Notification")
+                .WithProperty("Badge", 7)            // Fixed: use integer instead of string
+                .WithProperty("Sound", "ios_notification.wav")
+                .WithProperty("ContentAvailable", true)  // Fixed: use boolean instead of string
+                .WithProperty("MutableContent", true)    // Fixed: use boolean instead of string
+                .WithProperty("ThreadId", "conversation_123")
+                .Build();
 
             // Act
             await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -279,14 +263,12 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "normal-priority-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Normal priority notification")
-            };
-            
-            message.With("Priority", "normal");
+            var message = new MessageBuilder()
+                .WithId("normal-priority-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Normal priority notification"))
+                .WithProperty("Priority", "normal")
+                .Build();
 
             // Act
             await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -313,15 +295,12 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "data-only-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("") // Empty text content instead of no content
-            };
-            
-            // Add custom data but no title/body to make it data-only
-            message.With("CustomData", @"{""action"":""background_sync""}");
+            var message = new MessageBuilder()
+                .WithId("data-only-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("")) // Empty text content instead of no content
+                .WithProperty("CustomData", @"{""action"":""background_sync""}")
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -347,15 +326,13 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "invalid-badge-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Test notification")
-            };
-            
-            message.With("Title", "Test Notification")
-                   .With("Badge", "not-a-number"); // Invalid badge should trigger validation error
+            var message = new MessageBuilder()
+                .WithId("invalid-badge-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Test notification"))
+                .WithProperty("Title", "Test Notification")
+                .WithProperty("Badge", "not-a-number") // Invalid badge should trigger validation error
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -379,15 +356,13 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "invalid-ttl-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Test notification")
-            };
-            
-            message.With("Title", "Test Notification")
-                   .With("TimeToLive", "invalid-number"); // Invalid TTL should trigger validation error
+            var message = new MessageBuilder()
+                .WithId("invalid-ttl-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Test notification"))
+                .WithProperty("Title", "Test Notification")
+                .WithProperty("TimeToLive", "invalid-number") // Invalid TTL should trigger validation error
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -411,16 +386,14 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "invalid-boolean-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Test notification")
-            };
-            
-            message.With("Title", "Test Notification")
-                   .With("ContentAvailable", "maybe")   // Invalid boolean should trigger validation error
-                   .With("MutableContent", "perhaps");  // Invalid boolean should trigger validation error
+            var message = new MessageBuilder()
+                .WithId("invalid-boolean-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Test notification"))
+                .WithProperty("Title", "Test Notification")
+                .WithProperty("ContentAvailable", "maybe")   // Invalid boolean should trigger validation error
+                .WithProperty("MutableContent", "perhaps")  // Invalid boolean should trigger validation error
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -447,15 +420,13 @@ namespace Deveel.Messaging
             var longTitle = new string('T', 1000);  // Very long title (exceeds 256 char limit)
             var longBody = new string('B', 5000);   // Very long body (exceeds 4000 char limit)
             
-            var message = new Message
-            {
-                Id = "long-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Short content")
-            };
-            
-            message.With("Title", longTitle)
-                   .With("Body", longBody);
+            var message = new MessageBuilder()
+                .WithId("long-content-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Short content"))
+                .WithProperty("Title", longTitle)
+                .WithProperty("Body", longBody)
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
@@ -561,16 +532,13 @@ namespace Deveel.Messaging
 
         private IMessage CreateSimpleDeviceTokenMessage()
         {
-            var message = new Message
-            {
-                Id = "simple-msg-" + Guid.NewGuid().ToString("N")[..8],
+            var message = new MessageBuilder()
+                .WithId("simple-msg-" + Guid.NewGuid().ToString("N")[..8])
                 // Use a realistic-length device token that meets validation requirements
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Simple notification")
-            };
-            
-            // Add required properties for Firebase validation
-            message.With("Title", "Simple Notification");
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Simple notification"))
+                .WithProperty("Title", "Simple Notification")
+                .Build();
             
             return message;
         }

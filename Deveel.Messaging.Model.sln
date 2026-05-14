@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{02EA681E-C
 		test\Directory.Build.props = test\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deveel.Messaging.Abstrations.XUnit", "test\Deveel.Messaging.Abstrations.XUnit\Deveel.Messaging.Abstrations.XUnit.csproj", "{1AEF73AA-ED79-47EC-849C-C074B96DB429}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deveel.Messaging.Abstractions.XUnit", "test\Deveel.Messaging.Abstractions.XUnit\Deveel.Messaging.Abstractions.XUnit.csproj", "{1AEF73AA-ED79-47EC-849C-C074B96DB429}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0F91077D-AC47-4319-96FF-09CA6EE50CC6}"
 	ProjectSection(SolutionItems) = preProject

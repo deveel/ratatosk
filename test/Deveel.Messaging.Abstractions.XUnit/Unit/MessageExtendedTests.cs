@@ -42,13 +42,14 @@ public class MessageExtendedTests
     }
 
     [Fact]
-    public void Should_BuildWithContent()
+    public void Should_BuildWithBuilder()
     {
-        var msg = new Message()
+        var msg = new MessageBuilder()
             .WithId("b1")
-            .WithTextContent("text")
-            .WithSender(Endpoint.EmailAddress("a@b.com"))
-            .WithReceiver(Endpoint.PhoneNumber("+1"));
+            .WithText("text")
+            .FromEmail("a@b.com")
+            .ToPhone("+1")
+            .Build();
 
         Assert.Equal("b1", msg.Id);
         Assert.NotNull(msg.Content);

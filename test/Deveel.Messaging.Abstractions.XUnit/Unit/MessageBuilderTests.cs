@@ -10,11 +10,8 @@ public class MessageBuilderTests
     [Fact]
     public void Should_CreateEmptyMessage_When_MessageDefaultConstructor()
     {
-        // Arrange
-        // Act
         var message = new Message();
 
-        // Assert
         Assert.NotNull(message);
         Assert.Equal("", message.Id);
         Assert.Null(message.Sender);
@@ -26,7 +23,6 @@ public class MessageBuilderTests
     [Fact]
     public void Should_CopiesMessage_When_MessageWithExistingMessage()
     {
-        // Arrange
         var originalMessage = new Message
         {
             Id = "test-id",
@@ -36,10 +32,8 @@ public class MessageBuilderTests
             Properties = new Dictionary<string, MessageProperty> { { "key", new MessageProperty("key", "value") } }
         };
 
-        // Act
         var copiedMessage = new Message(originalMessage);
 
-        // Assert
         Assert.Equal("test-id", copiedMessage.Id);
         Assert.Equal("sender@test.com", copiedMessage.Sender!.Address);
         Assert.Equal("receiver@test.com", copiedMessage.Receiver!.Address);
@@ -50,194 +44,139 @@ public class MessageBuilderTests
     }
 
     [Fact]
-    public void Should_SetMessageId_When_WithIdIsInvoked()
+    public void Should_BuildMessageWithId()
     {
-        // Arrange
-        var message = new Message();
         var messageId = "unique-message-id";
+        var message = new MessageBuilder()
+            .WithId(messageId)
+            .Build();
 
-        // Act
-        var result = message.WithId(messageId);
-
-        // Assert
-        Assert.Same(message, result); // Should return same instance for chaining
         Assert.Equal(messageId, message.Id);
     }
 
     [Fact]
-    public void Should_ThrowArgumentNullException_When_WithIdNullId()
+    public void Should_ThrowArgumentException_When_BuildWithEmptyId()
     {
-        // Arrange
-        var message = new Message();
-
-        // Act
-        // Assert
-        Assert.Throws<ArgumentNullException>(() => message.WithId(null!));
+        Assert.Throws<ArgumentException>(() => new MessageBuilder().WithId(""));
     }
 
     [Fact]
-    public void Should_SetMessageSender_When_WithSenderIsInvoked()
+    public void Should_BuildMessageWithSender()
     {
-        // Arrange
-        var message = new Message();
         var sender = new Endpoint(EndpointType.EmailAddress, "sender@test.com");
+        var message = new MessageBuilder()
+            .From(sender)
+            .Build();
 
-        // Act
-        var result = message.WithSender(sender);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.Equal(EndpointType.EmailAddress, message.Sender!.Type);
         Assert.Equal("sender@test.com", message.Sender.Address);
     }
 
     [Fact]
-    public void Should_ThrowArgumentNullException_When_WithSenderNullSender()
+    public void Should_ThrowArgumentNullException_When_BuildWithNullSender()
     {
-        // Arrange
-        var message = new Message();
-
-        // Act
-        // Assert
-        Assert.Throws<ArgumentNullException>(() => message.WithSender(null!));
+        Assert.Throws<ArgumentNullException>(() => new MessageBuilder().From(null!));
     }
 
     [Fact]
-    public void Should_SetEmailSender_When_WithEmailSenderIsInvoked()
+    public void Should_BuildMessageWithEmailSender()
     {
-        // Arrange
-        var message = new Message();
         var email = "sender@test.com";
+        var message = new MessageBuilder()
+            .FromEmail(email)
+            .Build();
 
-        // Act
-        var result = message.WithEmailSender(email);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.Equal(EndpointType.EmailAddress, message.Sender!.Type);
         Assert.Equal(email, message.Sender.Address);
     }
 
     [Fact]
-    public void Should_SetPhoneSender_When_WithPhoneSenderIsInvoked()
+    public void Should_BuildMessageWithPhoneSender()
     {
-        // Arrange
-        var message = new Message();
         var phone = "+1234567890";
+        var message = new MessageBuilder()
+            .FromPhone(phone)
+            .Build();
 
-        // Act
-        var result = message.WithPhoneSender(phone);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.Equal(EndpointType.PhoneNumber, message.Sender!.Type);
         Assert.Equal(phone, message.Sender.Address);
     }
 
     [Fact]
-    public void Should_SetMessageReceiver_When_WithReceiverIsInvoked()
+    public void Should_BuildMessageWithReceiver()
     {
-        // Arrange
-        var message = new Message();
         var receiver = new Endpoint(EndpointType.EmailAddress, "receiver@test.com");
+        var message = new MessageBuilder()
+            .To(receiver)
+            .Build();
 
-        // Act
-        var result = message.WithReceiver(receiver);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.Equal(EndpointType.EmailAddress, message.Receiver!.Type);
         Assert.Equal("receiver@test.com", message.Receiver.Address);
     }
 
     [Fact]
-    public void Should_SetEmailReceiver_When_WithEmailReceiverIsInvoked()
+    public void Should_BuildMessageWithEmailReceiver()
     {
-        // Arrange
-        var message = new Message();
         var email = "receiver@test.com";
+        var message = new MessageBuilder()
+            .ToEmail(email)
+            .Build();
 
-        // Act
-        var result = message.WithEmailReceiver(email);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.Equal(EndpointType.EmailAddress, message.Receiver!.Type);
         Assert.Equal(email, message.Receiver.Address);
     }
 
     [Fact]
-    public void Should_SetPhoneReceiver_When_WithPhoneReceiverIsInvoked()
+    public void Should_BuildMessageWithPhoneReceiver()
     {
-        // Arrange
-        var message = new Message();
         var phone = "+1234567890";
+        var message = new MessageBuilder()
+            .ToPhone(phone)
+            .Build();
 
-        // Act
-        var result = message.WithPhoneReceiver(phone);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.Equal(EndpointType.PhoneNumber, message.Receiver!.Type);
         Assert.Equal(phone, message.Receiver.Address);
     }
 
     [Fact]
-    public void Should_SetMessageContent_When_WithContentIsInvoked()
+    public void Should_BuildMessageWithContent()
     {
-        // Arrange
-        var message = new Message();
         var content = new TextContent("Test content");
+        var message = new MessageBuilder()
+            .WithContent(content)
+            .Build();
 
-        // Act
-        var result = message.WithContent(content);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.IsType<TextContent>(message.Content);
         Assert.Equal("Test content", ((TextContent)message.Content).Text);
     }
 
     [Fact]
-    public void Should_ThrowArgumentNullException_When_WithContentNullContent()
+    public void Should_ThrowArgumentNullException_When_BuildWithNullContent()
     {
-        // Arrange
-        var message = new Message();
-
-        // Act
-        // Assert
-        Assert.Throws<ArgumentNullException>(() => message.WithContent(null!));
+        Assert.Throws<ArgumentNullException>(() => new MessageBuilder().WithContent(null!));
     }
 
     [Fact]
-    public void Should_SetTextContent_When_WithTextContentIsInvoked()
+    public void Should_BuildMessageWithTextContent()
     {
-        // Arrange
-        var message = new Message();
         var text = "Hello, World!";
+        var message = new MessageBuilder()
+            .WithText(text)
+            .Build();
 
-        // Act
-        var result = message.WithTextContent(text);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.IsType<TextContent>(message.Content);
         Assert.Equal(text, ((TextContent)message.Content).Text);
     }
 
     [Fact]
-    public void Should_SetTextContentWithEncoding_When_WithTextContentWithEncoding()
+    public void Should_BuildMessageWithTextContentAndEncoding()
     {
-        // Arrange
-        var message = new Message();
         var text = "Hello, World!";
         var encoding = "utf-8";
+        var message = new MessageBuilder()
+            .WithText(text, encoding)
+            .Build();
 
-        // Act
-        var result = message.WithTextContent(text, encoding);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.IsType<TextContent>(message.Content);
         var textContent = (TextContent)message.Content;
         Assert.Equal(text, textContent.Text);
@@ -245,121 +184,96 @@ public class MessageBuilderTests
     }
 
     [Fact]
-    public void Should_SetMessageProperties_When_WithProperties()
+    public void Should_BuildMessageWithProperties()
     {
-        // Arrange
-        var message = new Message();
         var properties = new Dictionary<string, object>
         {
             { "key1", "value1" },
             { "key2", 123 }
         };
 
-        // Act
-        var result = message.With(properties);
+        var message = new MessageBuilder()
+            .WithProperties(properties)
+            .Build();
 
-        // Assert
-        Assert.Same(message, result);
         Assert.NotNull(message.Properties);
         Assert.Equal("value1", message.Properties["key1"].Value);
         Assert.Equal(123, message.Properties["key2"].Value);
     }
 
     [Fact]
-    public void Should_SetMessageProperty_When_WithSingleProperty()
+    public void Should_BuildMessageWithSingleProperty()
     {
-        // Arrange
-        var message = new Message();
+        var message = new MessageBuilder()
+            .WithProperty("testKey", "testValue")
+            .Build();
 
-        // Act
-        var result = message.With("testKey", "testValue");
-
-        // Assert
-        Assert.Same(message, result);
         Assert.NotNull(message.Properties);
         Assert.Equal("testValue", message.Properties["testKey"].Value);
     }
 
     [Fact]
-    public void Should_MergesExistingProperties_When_WithIsInvoked()
+    public void Should_MergeMultipleProperties()
     {
-        // Arrange
-        var message = new Message();
-        message.With("existingKey", "existingValue");
+        var message = new MessageBuilder()
+            .WithProperty("existingKey", "existingValue")
+            .WithProperty("newKey", "newValue")
+            .Build();
 
-        // Act
-        var result = message.With("newKey", "newValue");
-
-        // Assert
-        Assert.Same(message, result);
         Assert.NotNull(message.Properties);
         Assert.Equal("existingValue", message.Properties["existingKey"].Value);
         Assert.Equal("newValue", message.Properties["newKey"].Value);
     }
 
     [Fact]
-    public void Should_SetSubjectProperty_When_WithSubjectIsInvoked()
+    public void Should_BuildMessageWithSubject()
     {
-        // Arrange
-        var message = new Message();
         var subject = "Test Subject";
+        var message = new MessageBuilder()
+            .WithSubject(subject)
+            .Build();
 
-        // Act
-        var result = message.WithSubject(subject);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.NotNull(message.Properties);
         Assert.Equal(subject, message.Properties[KnownMessageProperties.Subject].Value);
     }
 
     [Fact]
-    public void Should_SetRemoteMessageIdProperty_When_WithRemoteIdIsInvoked()
+    public void Should_BuildMessageWithRemoteId()
     {
-        // Arrange
-        var message = new Message();
         var remoteId = "remote-message-id";
+        var message = new MessageBuilder()
+            .WithRemoteId(remoteId)
+            .Build();
 
-        // Act
-        var result = message.WithRemoteId(remoteId);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.NotNull(message.Properties);
         Assert.Equal(remoteId, message.Properties[KnownMessageProperties.RemoteMessageId].Value);
     }
 
     [Fact]
-    public void Should_SetReplyToProperty_When_WithReplyToIsInvoked()
+    public void Should_BuildMessageWithReplyTo()
     {
-        // Arrange
-        var message = new Message();
         var replyToId = "reply-to-message-id";
+        var message = new MessageBuilder()
+            .WithReplyTo(replyToId)
+            .Build();
 
-        // Act
-        var result = message.WithReplyTo(replyToId);
-
-        // Assert
-        Assert.Same(message, result);
         Assert.NotNull(message.Properties);
         Assert.Equal(replyToId, message.Properties[KnownMessageProperties.ReplyTo].Value);
     }
 
     [Fact]
-    public void Should_BuildsCompleteMessage_When_FluentInterfaceMethodChaining()
+    public void Should_BuildCompleteMessage_When_FluentInterfaceMethodChaining()
     {
-        // Arrange
-        // Act
-        var message = new Message()
+        var message = new MessageBuilder()
             .WithId("test-message-id")
-            .WithEmailSender("sender@test.com")
-            .WithEmailReceiver("receiver@test.com")
-            .WithTextContent("Hello, World!")
+            .FromEmail("sender@test.com")
+            .ToEmail("receiver@test.com")
+            .WithText("Hello, World!")
             .WithSubject("Test Subject")
             .WithRemoteId("remote-123")
-            .WithReplyTo("original-message-id");
+            .WithReplyTo("original-message-id")
+            .Build();
 
-        // Assert
         Assert.Equal("test-message-id", message.Id);
         Assert.Equal("sender@test.com", message.Sender!.Address);
         Assert.Equal("receiver@test.com", message.Receiver!.Address);
@@ -370,18 +284,16 @@ public class MessageBuilderTests
     }
 
     [Fact]
-    public void Should_ReturnCorrectValues_When_IMessageImplementation()
+    public void Should_ReturnCorrectValues_When_BuiltMessageAsIMessage()
     {
-        // Arrange
-        var message = new Message()
+        var message = new MessageBuilder()
             .WithId("test-id")
-            .WithEmailSender("sender@test.com")
-            .WithEmailReceiver("receiver@test.com")
-            .WithTextContent("Test content")
-            .With("testProp", "testValue");
+            .FromEmail("sender@test.com")
+            .ToEmail("receiver@test.com")
+            .WithText("Test content")
+            .WithProperty("testProp", "testValue")
+            .Build();
 
-        // Act
-        // Assert
         IMessage iMessage = message;
         Assert.Equal("test-id", iMessage.Id);
         Assert.Equal("sender@test.com", iMessage.Sender!.Address);

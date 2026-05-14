@@ -111,18 +111,13 @@ namespace Deveel.Messaging
             // Use a realistic Firebase device token if none provided
             deviceToken ??= "eGc7_3RqSfGb1AthP4IjL4z:APA91bHjqkK9L3mKFYp8xNvPGwKh7P5Ty9a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V2w3X4y5Z6a7B8c9D0e1F2g3H4i5J6k7L8m9N0o1P2q3R4s5T6u7V8w9X0y1Z2";
             
-            var message = new Message
-            {
-                Id = Guid.NewGuid().ToString(),
-                Receiver = new Endpoint(EndpointType.DeviceId, deviceToken),
-                Content = new TextContent("Hello from Firebase!")
-            };
-            
-            // Add some properties using the fluent API
-            message.With("Title", "Test Notification")
-                   .With("Priority", "high");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(Guid.NewGuid().ToString())
+                .To(new Endpoint(EndpointType.DeviceId, deviceToken))
+                .WithContent(new TextContent("Hello from Firebase!"))
+                .WithProperty("Title", "Test Notification")
+                .WithProperty("Priority", "high")
+                .Build();
         }
 
         /// <summary>
@@ -139,16 +134,12 @@ namespace Deveel.Messaging
         /// </summary>
         public static IMessage CreateTopicMessage(string topic = "test-topic")
         {
-            var message = new Message
-            {
-                Id = Guid.NewGuid().ToString(),
-                Receiver = new Endpoint(EndpointType.Topic, topic),
-                Content = new TextContent("Hello topic subscribers!")
-            };
-            
-            message.With("Title", "Topic Notification");
-            
-            return message;
+            return new MessageBuilder()
+                .WithId(Guid.NewGuid().ToString())
+                .To(new Endpoint(EndpointType.Topic, topic))
+                .WithContent(new TextContent("Hello topic subscribers!"))
+                .WithProperty("Title", "Topic Notification")
+                .Build();
         }
 
         /// <summary>
