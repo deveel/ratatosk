@@ -211,7 +211,7 @@ namespace Deveel.Messaging.XUnit
         }
 
         private static IChannelSchema CreateSchema(string? provider = null)
-            => new ChannelSchema(provider ?? "Test", "TestType", "1.0.0");
+	=> new ChannelSchemaBuilder(provider ?? "Test", "TestType", "1.0.0").Build();
 
         [ChannelSchema(typeof(PoolTestSchemaFactory))]
         private class PoolTestConnector : ChannelConnectorBase
@@ -240,7 +240,7 @@ namespace Deveel.Messaging.XUnit
         private class PoolTestSchemaFactory : IChannelSchemaFactory
         {
             public IChannelSchema CreateSchema()
-                => new ChannelSchema("PoolTest", "TestType", "1.0.0");
+	=> new ChannelSchemaBuilder("PoolTest", "TestType", "1.0.0").Build();
         }
     }
 }

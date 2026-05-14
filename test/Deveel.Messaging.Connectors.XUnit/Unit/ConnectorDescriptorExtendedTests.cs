@@ -57,8 +57,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsCapabilityWithZeroCapability()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithCapabilities((ChannelCapability)0); // Explicitly set zero capabilities
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithCapabilities((ChannelCapability)0).Build(); // Explicitly set zero capabilities
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -70,10 +70,11 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsAnyCapabilityWithZeroCapabilities()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build();
 			// The ChannelSchema constructor sets SendMessages as default capability
 			// To test zero capabilities, we need to explicitly clear them
-			var schemaWithNoCaps = schema.WithCapabilities((ChannelCapability)0);
+			var builder = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0");
+			var schemaWithNoCaps = builder.WithCapabilities((ChannelCapability)0).Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schemaWithNoCaps);
 
 			// Act
@@ -89,8 +90,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsAllCapabilitiesWithZeroCapabilities()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithCapabilities((ChannelCapability)0); // Explicitly set zero capabilities
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithCapabilities((ChannelCapability)0).Build(); // Explicitly set zero capabilities
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -102,8 +103,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnTrue_When_SupportsEndpointTypeWithAnyEndpointType()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.HandlesMessageEndpoint(EndpointType.Any);
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.HandlesMessageEndpoint(EndpointType.Any).Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -116,7 +117,7 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsEndpointTypeWithNoEndpoints()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -128,7 +129,7 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsContentTypeWithEmptyContentTypes()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -140,7 +141,7 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsAuthenticationTypeWithNoAuthenticationConfigurations()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -152,7 +153,7 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnConnectorTypeName_When_DisplayNameWithNullDisplayName()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0"); // DisplayName will be null
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build(); // DisplayName will be null
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -164,8 +165,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnConnectorTypeName_When_DisplayNameWithEmptyDisplayName()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithDisplayName("");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithDisplayName("").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -179,8 +180,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnConnectorTypeName_When_DisplayNameWithWhitespaceDisplayName()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithDisplayName("   ");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithDisplayName("   ").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -255,8 +256,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnTrue_When_SupportsAllCapabilitiesWithSubsetCapabilities()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.Templates);
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.Templates).Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -271,11 +272,11 @@ namespace Deveel.Messaging.XUnit
 
 		private static IChannelSchema CreateTestSchema()
 		{
-			return new ChannelSchema("TestProvider", "TestType", "1.0.0")
+			return new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText)
-				.AddAuthenticationType(AuthenticationType.Basic);
+				.AddAuthenticationType(AuthenticationType.Basic).Build();
 		}
 
 		// Test connector classes that implement IChannelConnector

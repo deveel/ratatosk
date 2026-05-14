@@ -20,7 +20,7 @@ namespace Deveel.Messaging
 		/// <returns>A channel schema configured for complete Telegram Bot functionality.</returns>
 		public static IChannelSchema CreateSchema()
 		{
-			return new ChannelSchema(TelegramConnectorConstants.Provider, TelegramConnectorConstants.BotChannel, "1.0.0")
+			return new ChannelSchemaBuilder(TelegramConnectorConstants.Provider, TelegramConnectorConstants.BotChannel, "1.0.0")
 				.WithDisplayName("Telegram Bot API")
 				.WithCapabilities(
 					ChannelCapability.SendMessages |
@@ -196,7 +196,8 @@ namespace Deveel.Messaging
 				{
 					IsRequired = false,
 					Description = "Maximum distance for proximity alerts about approaching the location, in meters (1-100000)"
-				});
+				})
+				.Build();
 		}
 
 		/// <summary>
@@ -205,7 +206,7 @@ namespace Deveel.Messaging
 		/// <returns>A channel schema configured for basic text messaging only.</returns>
 		public static IChannelSchema CreateSimpleSchema()
 		{
-			return new ChannelSchema(TelegramConnectorConstants.Provider, "simple-bot", "1.0.0")
+			return new ChannelSchemaBuilder(TelegramConnectorConstants.Provider, "simple-bot", "1.0.0")
 				.WithDisplayName("Simple Telegram Bot")
 				.WithCapabilities(
 					ChannelCapability.SendMessages |
@@ -229,7 +230,8 @@ namespace Deveel.Messaging
                 e.CanReceive = false;
                 e.IsRequired = true;
                 e.Description = "Telegram Chat ID";
-            });
+            })
+            .Build();
 		}
 
 		/// <summary>
@@ -238,7 +240,7 @@ namespace Deveel.Messaging
 		/// <returns>A channel schema configured for sending notifications and alerts.</returns>
 		public static IChannelSchema CreateNotificationSchema()
 		{
-			return new ChannelSchema(TelegramConnectorConstants.Provider, "notification-bot", "1.0.0")
+			return new ChannelSchemaBuilder(TelegramConnectorConstants.Provider, "notification-bot", "1.0.0")
 				.WithDisplayName("Telegram Notification Bot")
 				.WithCapabilities(
 					ChannelCapability.SendMessages |
@@ -284,7 +286,8 @@ namespace Deveel.Messaging
 				{
 					IsRequired = false,
 					Description = "Send this notification silently"
-				});
+				})
+				.Build();
 		}
 
 		/// <summary>
@@ -293,7 +296,7 @@ namespace Deveel.Messaging
 		/// <returns>A channel schema configured for webhook-based real-time messaging.</returns>
 		public static IChannelSchema CreateWebhookSchema()
 		{
-			return new ChannelSchema(TelegramConnectorConstants.Provider, "webhook-bot", "1.0.0")
+			return new ChannelSchemaBuilder(TelegramConnectorConstants.Provider, "webhook-bot", "1.0.0")
 				.WithDisplayName("Telegram Webhook Bot")
 				.WithCapabilities(
 					ChannelCapability.SendMessages |
@@ -339,7 +342,8 @@ namespace Deveel.Messaging
 					e.CanReceive = true;
 					e.IsRequired = true;
 					e.Description = "Telegram Chat ID";
-				});
+				})
+				.Build();
 		}
 	}
 }

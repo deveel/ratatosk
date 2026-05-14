@@ -12,7 +12,7 @@ public class ChannelSchemaDerivedTests
 	public void Should_CreateCorrectCopy_When_ConstructorWithSourceSchema()
 	{
 		// Arrange
-		var sourceSchema = new ChannelSchema("Twilio", "SMS", "1.0.0")
+		var sourceSchema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
 			.WithDisplayName("Twilio SMS Base")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.MessageStatusQuery)
 			.AddRequiredParameter("AccountSid", DataType.String)
@@ -30,10 +30,10 @@ public class ChannelSchemaDerivedTests
 				e.CanSend = false;
 				e.CanReceive = true;
 			})
-			.AddMessageProperty("MessageType", DataType.String);
+			.AddMessageProperty("MessageType", DataType.String).Build();
 
 		// Act
-		var copiedSchema = new ChannelSchema(sourceSchema, "Custom Twilio SMS");
+		var copiedSchema = ChannelSchemaBuilder.From(sourceSchema, "Custom Twilio SMS").Build();
 
 		// Assert
 		Assert.Equal("Twilio", copiedSchema.ChannelProvider);
@@ -77,11 +77,11 @@ public class ChannelSchemaDerivedTests
 	public void Should_CreateDefaultDisplayName_When_ConstructorWithSourceSchemaAndNoDisplayName()
 	{
 		// Arrange
-		var sourceSchema = new ChannelSchema("Twilio", "SMS", "1.0.0")
-			.WithDisplayName("Twilio SMS Base");
+		var sourceSchema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
+			.WithDisplayName("Twilio SMS Base").Build();
 
 		// Act
-		var copiedSchema = new ChannelSchema(sourceSchema);
+		var copiedSchema = ChannelSchemaBuilder.From(sourceSchema).Build();
 
 		// Assert
 		Assert.Equal("Twilio SMS Base (Copy)", copiedSchema.DisplayName);
@@ -97,24 +97,25 @@ public class ChannelSchemaDerivedTests
 		// Act
 		// Assert
 		Assert.Throws<ArgumentNullException>(() => 
-			new ChannelSchema(null!, "Custom Display Name"));
+			ChannelSchemaBuilder.From(null!, "Custom Display Name").Build());
 	}
 
 	[Fact]
 	public void Should_FromSourceSchema_When_CopiedSchemaModificationsAreIndependent()
 	{
 		// Arrange
-		var sourceSchema = new ChannelSchema("Base", "Base", "1.0.0")
+		var sourceSchema = new ChannelSchemaBuilder("Base", "Base", "1.0.0")
 			.AddParameter("SharedParam", DataType.String)
 			.AddContentType(MessageContentType.PlainText)
-			.HandlesMessageEndpoint(EndpointType.EmailAddress);
+			.HandlesMessageEndpoint(EndpointType.EmailAddress).Build();
 
-		var copiedSchema = new ChannelSchema(sourceSchema, "Modified Schema");
+		var builder = ChannelSchemaBuilder.From(sourceSchema, "Modified Schema");
 
 		// Act
-		copiedSchema.AddParameter("NewParam", DataType.Integer);
-		copiedSchema.AddContentType(MessageContentType.Html);
-		copiedSchema.HandlesMessageEndpoint(EndpointType.PhoneNumber);
+		builder.AddParameter("NewParam", DataType.Integer);
+		builder.AddContentType(MessageContentType.Html);
+		builder.HandlesMessageEndpoint(EndpointType.PhoneNumber);
+		var copiedSchema = builder.Build();
 
 		// Assert
 		Assert.Single(sourceSchema.Parameters);
@@ -138,7 +139,7 @@ public class ChannelSchemaDerivedTests
 	{
 		// Arrange
 		// Act
-		var baseSchema = new ChannelSchema("Provider", "Type", "1.0.0");
+		var baseSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
 
 		// Assert
 		Assert.Equal("Provider/Type/1.0.0", baseSchema.GetLogicalIdentity());
@@ -151,11 +152,11 @@ public class ChannelSchemaDerivedTests
 	public void Should_CorePropertiesMatchSource_When_CopiedSchemaIsInvoked()
 	{
 		// Arrange
-		var sourceSchema = new ChannelSchema("MyProvider", "MyType", "2.0.0")
-			.WithDisplayName("Source Schema");
+		var sourceSchema = new ChannelSchemaBuilder("MyProvider", "MyType", "2.0.0")
+			.WithDisplayName("Source Schema").Build();
 
 		// Act
-		var copiedSchema = new ChannelSchema(sourceSchema, "Copy Schema");
+		var copiedSchema = ChannelSchemaBuilder.From(sourceSchema, "Copy Schema").Build();
 
 		// Assert
 		Assert.Equal(sourceSchema.ChannelProvider, copiedSchema.ChannelProvider);
@@ -172,12 +173,12 @@ public class ChannelSchemaDerivedTests
 	public void Should_CanRestrictSourceCapabilities_When_CopiedSchemaIsInvoked()
 	{
 		// Arrange
-		var sourceSchema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.Templates);
+		var sourceSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.Templates).Build();
 
 		// Act
-		var copiedSchema = new ChannelSchema(sourceSchema, "Restricted Schema")
-			.RestrictCapabilities(ChannelCapability.SendMessages);
+		var copiedSchema = ChannelSchemaBuilder.From(sourceSchema, "Restricted Schema")
+			.RestrictCapabilities(ChannelCapability.SendMessages).Build();
 
 		// Assert
 		Assert.True(sourceSchema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
@@ -198,10 +199,10 @@ public class ChannelSchemaDerivedTests
 	public void Should_ReturnTrue_When_IsCompatibleWithSameLogicalIdentity()
 	{
 		// Arrange
-		var schema1 = new ChannelSchema("Provider", "Type", "1.0.0")
-			.WithDisplayName("Schema 1");
-		var schema2 = new ChannelSchema("Provider", "Type", "1.0.0")
-			.WithDisplayName("Schema 2");
+		var schema1 = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.WithDisplayName("Schema 1").Build();
+		var schema2 = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.WithDisplayName("Schema 2").Build();
 
 		// Act
 		// Assert
@@ -214,9 +215,9 @@ public class ChannelSchemaDerivedTests
 	public void Should_ReturnFalse_When_IsCompatibleWithDifferentLogicalIdentity()
 	{
 		// Arrange
-		var schema1 = new ChannelSchema("Provider1", "Type", "1.0.0");
-		var schema2 = new ChannelSchema("Provider2", "Type", "1.0.0");
-		var schema3 = new ChannelSchema("Provider1", "Type", "2.0.0");
+		var schema1 = new ChannelSchemaBuilder("Provider1", "Type", "1.0.0").Build();
+		var schema2 = new ChannelSchemaBuilder("Provider2", "Type", "1.0.0").Build();
+		var schema3 = new ChannelSchemaBuilder("Provider1", "Type", "2.0.0").Build();
 
 		// Act
 		// Assert
@@ -230,17 +231,17 @@ public class ChannelSchemaDerivedTests
 	public void Should_ReturnEmpty_When_ValidateAsRestrictionOfValidRestriction()
 	{
 		// Arrange
-		var baseSchema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var baseSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 			.AddParameter("Param1", DataType.String)
 			.AddParameter("Param2", DataType.String)
 			.AddContentType(MessageContentType.PlainText)
-			.AddContentType(MessageContentType.Html);
+			.AddContentType(MessageContentType.Html).Build();
 
-		var restrictedSchema = new ChannelSchema(baseSchema, "Restricted")
+		var restrictedSchema = ChannelSchemaBuilder.From(baseSchema, "Restricted")
 			.RestrictCapabilities(ChannelCapability.SendMessages)
 			.RemoveParameter("Param2")
-			.RestrictContentTypes(MessageContentType.PlainText);
+			.RestrictContentTypes(MessageContentType.PlainText).Build();
 
 		// Act
 		var validationResults = restrictedSchema.ValidateAsRestrictionOf(baseSchema);
@@ -253,8 +254,8 @@ public class ChannelSchemaDerivedTests
 	public void Should_ReturnValidationError_When_ValidateAsRestrictionOfIncompatibleSchema()
 	{
 		// Arrange
-		var schema1 = new ChannelSchema("Provider1", "Type", "1.0.0");
-		var schema2 = new ChannelSchema("Provider2", "Type", "1.0.0");
+		var schema1 = new ChannelSchemaBuilder("Provider1", "Type", "1.0.0").Build();
+		var schema2 = new ChannelSchemaBuilder("Provider2", "Type", "1.0.0").Build();
 
 		// Act
 		var validationResults = schema1.ValidateAsRestrictionOf(schema2).ToList();
@@ -268,17 +269,17 @@ public class ChannelSchemaDerivedTests
 	public void Should_CanRemoveSourceCapabilities_When_DerivedSchemaIsInvoked()
 	{
 		// Arrange
-		var baseSchema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
+		var baseSchema = new ChannelSchemaBuilder("TestProvider", "SMS", "1.0.0")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 			.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 			.HandlesMessageEndpoint(EndpointType.Url)
 			.AddContentType(MessageContentType.PlainText)
-			.AddContentType(MessageContentType.Media);
+			.AddContentType(MessageContentType.Media).Build();
 
 		// Act
-		var derivedSchema = new ChannelSchema(baseSchema, "SMS Send Only")
+		var derivedSchema = ChannelSchemaBuilder.From(baseSchema, "SMS Send Only")
 			.RemoveCapability(ChannelCapability.ReceiveMessages)
-			.RemoveContentType(MessageContentType.Media);
+			.RemoveContentType(MessageContentType.Media).Build();
 
 		// Assert
 		Assert.Equal("TestProvider", derivedSchema.ChannelProvider);
@@ -304,20 +305,20 @@ public class ChannelSchemaDerivedTests
 	public void Should_CanUpdateSourceParameter_When_DerivedSchemaIsInvoked()
 	{
 		// Arrange
-		var baseSchema = new ChannelSchema("TestProvider", "Multi", "1.0.0")
+		var baseSchema = new ChannelSchemaBuilder("TestProvider", "Multi", "1.0.0")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 			.HandlesMessageEndpoint(EndpointType.EmailAddress)
 			.AddContentType(MessageContentType.PlainText)
-			.AddRequiredParameter("TestParam", DataType.String);
+			.AddRequiredParameter("TestParam", DataType.String).Build();
 
 		// Act
-		var derivedSchema = new ChannelSchema(baseSchema, "Modified Schema")
+		var derivedSchema = ChannelSchemaBuilder.From(baseSchema, "Modified Schema")
 			.UpdateParameter("TestParam", param => 
 			{
 				param.IsRequired = false;
 				param.DefaultValue = "default";
 			})
-			.RemoveEndpoint(EndpointType.EmailAddress);
+			.RemoveEndpoint(EndpointType.EmailAddress).Build();
 
 		// Assert
 		Assert.Equal("TestProvider", derivedSchema.ChannelProvider);

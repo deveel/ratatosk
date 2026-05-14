@@ -21,7 +21,7 @@ namespace Deveel.Messaging
         /// status queries, and health monitoring. It can be used as-is or derived to create
         /// more restrictive configurations for specific use cases.
         /// </remarks>
-        public static ChannelSchema FirebasePush => new ChannelSchema(FirebaseConnectorConstants.Provider, FirebaseConnectorConstants.PushChannel, "1.0.0")
+        public static ChannelSchema FirebasePush => new ChannelSchemaBuilder(FirebaseConnectorConstants.Provider, FirebaseConnectorConstants.PushChannel, "1.0.0")
             .WithDisplayName("Firebase Cloud Messaging (FCM) Connector")
             .WithCapabilities(
                 ChannelCapability.SendMessages |
@@ -155,13 +155,14 @@ namespace Deveel.Messaging
                 p.IsRequired = false;
                 p.Description = "Custom data payload as JSON string";
                 p.CustomValidator = ValidateJsonContent;
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Gets a simplified push notification schema for basic messaging use cases.
         /// This schema removes advanced features and focuses on simple text notifications.
         /// </summary>
-        public static ChannelSchema SimplePush => new ChannelSchema(FirebasePush, "Firebase Simple Push")
+        public static ChannelSchema SimplePush => ChannelSchemaBuilder.From(FirebasePush, "Firebase Simple Push")
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .RemoveParameter(FirebaseConnectionParameters.DryRun)
             .RemoveMessageProperty("ImageUrl")
@@ -177,13 +178,14 @@ namespace Deveel.Messaging
             .RemoveMessageProperty("MutableContent")
             .RemoveMessageProperty("ContentAvailable")
             .RemoveMessageProperty("ThreadId")
-            .RemoveMessageProperty("CustomData");
+            .RemoveMessageProperty("CustomData")
+            .Build();
 
         /// <summary>
         /// Gets a bulk push notification schema optimized for high-volume campaigns.
         /// This schema includes all bulk messaging capabilities and advanced targeting options.
         /// </summary>
-        public static ChannelSchema BulkPush => new ChannelSchema(FirebasePush, "Firebase Bulk Push")
+        public static ChannelSchema BulkPush => ChannelSchemaBuilder.From(FirebasePush, "Firebase Bulk Push")
             .AddMessageProperty("ConditionExpression", DataType.String, p =>
             {
                 p.IsRequired = false;
@@ -194,13 +196,14 @@ namespace Deveel.Messaging
             {
                 p.IsRequired = false;
                 p.Description = "Batch identifier for grouping related messages";
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Gets a rich push notification schema optimized for interactive and media-rich notifications.
         /// This schema includes advanced notification features and customization options.
         /// </summary>
-        public static ChannelSchema RichPush => new ChannelSchema(FirebasePush, "Firebase Rich Push")
+        public static ChannelSchema RichPush => ChannelSchemaBuilder.From(FirebasePush, "Firebase Rich Push")
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .AddMessageProperty("Actions", DataType.String, p =>
             {
@@ -218,7 +221,8 @@ namespace Deveel.Messaging
                 p.IsRequired = false;
                 p.Description = "iOS notification subtitle";
                 p.MaxLength = 256;
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Validates that the image URL is a valid HTTP/HTTPS URL.

@@ -118,8 +118,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnSchemaDisplayName_When_DisplayNameWhenSchemaHasDisplayName()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithDisplayName("Custom Display Name");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithDisplayName("Custom Display Name").Build();
 			var descriptor = new ChannelDescriptor("test", typeof(TestConnector), schema);
 
 			// Act
@@ -222,8 +222,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnTrue_When_SupportsEndpointTypeWithAnyEndpointType()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.HandlesMessageEndpoint(EndpointType.Any);
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.HandlesMessageEndpoint(EndpointType.Any).Build();
 			var descriptor = new ChannelDescriptor("test", typeof(TestConnector), schema);
 
 			// Act
@@ -379,11 +379,11 @@ namespace Deveel.Messaging.XUnit
 
 		private static IChannelSchema CreateTestSchema()
 		{
-			return new ChannelSchema("TestProvider", "TestType", "1.0.0")
+			return new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText)
-				.AddAuthenticationType(AuthenticationType.Basic);
+				.AddAuthenticationType(AuthenticationType.Basic).Build();
 		}
 
 		// Test connector classes that implement IChannelConnector

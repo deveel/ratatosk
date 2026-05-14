@@ -63,8 +63,9 @@ public class ConnectionSettingsTests
 	public void Should_StoreSchema_When_ConstructorWithSchema()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("TestParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("TestParam", DataType.String)
+			.Build();
 
 		// Act
 		var settings = new ConnectionSettings(schema);
@@ -78,8 +79,9 @@ public class ConnectionSettingsTests
 	public void Should_StoreBoth_When_ConstructorWithSchemaAndParameters()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("TestParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("TestParam", DataType.String)
+			.Build();
 		var parameters = new Dictionary<string, object?> { { "TestParam", "TestValue" } };
 
 		// Act
@@ -191,8 +193,9 @@ public class ConnectionSettingsTests
 	public void Should_SetParameter_When_SetParameterWithSchemaValidParameter()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("ValidParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("ValidParam", DataType.String)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -206,8 +209,9 @@ public class ConnectionSettingsTests
 	public void Should_ThrowArgumentException_When_SetParameterWithSchemaUnsupportedParameter()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("ValidParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("ValidParam", DataType.String)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -221,8 +225,9 @@ public class ConnectionSettingsTests
 	public void Should_ThrowArgumentException_When_SetParameterWithSchemaRequiredParameterWithNull()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddRequiredParameter("RequiredParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddRequiredParameter("RequiredParam", DataType.String)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -243,8 +248,9 @@ public class ConnectionSettingsTests
 	public void Should_ThrowArgumentException_When_SetParameterWithSchemaIncompatibleType(DataType parameterType, object incompatibleValue)
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("TypedParam", parameterType);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("TypedParam", parameterType)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -267,8 +273,9 @@ public class ConnectionSettingsTests
 	public void Should_SetParameter_When_SetParameterWithSchemaCompatibleTypes(DataType parameterType, object compatibleValue)
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("TypedParam", parameterType);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("TypedParam", parameterType)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -282,11 +289,12 @@ public class ConnectionSettingsTests
 	public void Should_SetParameter_When_SetParameterWithSchemaAllowedValuesValidValue()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("EnumParam", DataType.String, param =>
 			{
 				param.AllowedValues = new[] { "Value1", "Value2", "Value3" };
-			});
+			})
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -300,11 +308,12 @@ public class ConnectionSettingsTests
 	public void Should_ThrowArgumentException_When_SetParameterWithSchemaAllowedValuesInvalidValue()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("EnumParam", DataType.String, param =>
 			{
 				param.AllowedValues = new[] { "Value1", "Value2", "Value3" };
-			});
+			})
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -349,11 +358,12 @@ public class ConnectionSettingsTests
 	public void Should_ReturnDefault_When_GetParameterWithSchemaNonExistingParameterWithDefault()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("ParamWithDefault", DataType.String, param =>
 			{
 				param.DefaultValue = "DefaultValue";
-			});
+			})
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -367,11 +377,12 @@ public class ConnectionSettingsTests
 	public void Should_ReturnSetValue_When_GetParameterWithSchemaExistingParameterIgnoresDefault()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("ParamWithDefault", DataType.String, param =>
 			{
 				param.DefaultValue = "DefaultValue";
-			});
+			})
+			.Build();
 		var settings = new ConnectionSettings(schema)
 			.SetParameter("ParamWithDefault", "SetValue");
 
@@ -386,7 +397,7 @@ public class ConnectionSettingsTests
 	public void Should_ReturnNull_When_GetParameterWithSchemaParameterNotInSchema()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -465,10 +476,11 @@ public class ConnectionSettingsTests
 	public void Should_ReturnTypedDefault_When_GetParameterGenericWithSchemaDefaultValue()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("StringParam", DataType.String, param => param.DefaultValue = "Default")
 			.AddParameter("IntParam", DataType.Integer, param => param.DefaultValue = 100)
-			.AddParameter("BoolParam", DataType.Boolean, param => param.DefaultValue = true);
+			.AddParameter("BoolParam", DataType.Boolean, param => param.DefaultValue = true)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -526,8 +538,9 @@ public class ConnectionSettingsTests
 	public void Should_ValidateParameter_When_IndexerSetWithSchema()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("ValidParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("ValidParam", DataType.String)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -541,8 +554,9 @@ public class ConnectionSettingsTests
 	public void Should_ThrowArgumentException_When_IndexerSetWithSchemaInvalidParameter()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("ValidParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("ValidParam", DataType.String)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -594,13 +608,14 @@ public class ConnectionSettingsTests
 	public void Should_AllOperations_When_ComplexScenarioTwilioLikeProvider()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
 			.AddRequiredParameter("AccountSid", DataType.String)
 			.AddRequiredParameter("AuthToken", DataType.String, true)
 			.AddParameter("FromNumber", DataType.String)
 			.AddParameter("EnableStatusCallbacks", DataType.Boolean, param => param.DefaultValue = false)
 			.AddParameter("MaxRetries", DataType.Integer, param => param.DefaultValue = 3)
-			.AddParameter("TimeoutSeconds", DataType.Number, param => param.DefaultValue = 30.0);
+			.AddParameter("TimeoutSeconds", DataType.Number, param => param.DefaultValue = 30.0)
+			.Build();
 
 		var settings = new ConnectionSettings(schema);
 
@@ -632,7 +647,7 @@ public class ConnectionSettingsTests
 	public void Should_WithValidation_When_ComplexScenarioEmailProvider()
 	{
 		// Arrange
-		var schema = new ChannelSchema("SMTP", "Email", "1.0.0")
+		var schema = new ChannelSchemaBuilder("SMTP", "Email", "1.0.0")
 			.AddRequiredParameter("Host", DataType.String)
 			.AddParameter("Port", DataType.Integer, param =>
 			{
@@ -646,7 +661,8 @@ public class ConnectionSettingsTests
 			{
 				param.AllowedValues = new[] { "SMTP", "SMTPS", "STARTTLS" };
 				param.DefaultValue = "STARTTLS";
-			});
+			})
+			.Build();
 
 		// Act
 		// Assert
@@ -694,8 +710,9 @@ public class ConnectionSettingsTests
 		Assert.Equal("AdditionalValue", copiedSettings.GetParameter("Additional"));
 
 		// Test schema behavior separately with a new schema
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("Optional", DataType.Integer, param => param.DefaultValue = 100);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("Optional", DataType.Integer, param => param.DefaultValue = 100)
+			.Build();
 		var newSettings = new ConnectionSettings(schema);
 		Assert.Equal(100, newSettings.GetParameter<int>("Optional")); // Default from schema
 	}
@@ -796,8 +813,9 @@ public class ConnectionSettingsTests
 	public void Should_HandleCorrectly_When_SchemaWithNullDefaultValue()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("ParamWithNullDefault", DataType.String, param => param.DefaultValue = null);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("ParamWithNullDefault", DataType.String, param => param.DefaultValue = null)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -811,8 +829,9 @@ public class ConnectionSettingsTests
 	public void Should_HandleCorrectly_When_MultipleSchemaParametersSameNameDifferentCase()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("TestParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("TestParam", DataType.String)
+			.Build();
 		var settings = new ConnectionSettings(schema);
 
 		// Act
@@ -832,12 +851,13 @@ public class ConnectionSettingsTests
 	public void Should_ReturnNull_When_GetParameterGenericWithSchemaDefaultValueButNullInSettings()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("ParamWithDefault", DataType.String, param => 
 			{
 				param.DefaultValue = "DefaultValue";
 				param.IsRequired = false; // Allow null values
-			});
+			})
+			.Build();
 		
 		var settings = new ConnectionSettings(schema);
 		// Don't set the parameter at all, let it use the default

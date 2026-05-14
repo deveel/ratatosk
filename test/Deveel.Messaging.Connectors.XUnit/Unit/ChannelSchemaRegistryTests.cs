@@ -265,10 +265,10 @@ namespace Deveel.Messaging.XUnit
 		/// <summary>A connector registered directly in the DI container with a distinct schema.</summary>
 		private sealed class DirectTestConnector : IChannelConnector
 		{
-			public IChannelSchema Schema { get; } = new ChannelSchema("DirectProvider", "DirectType", "1.0.0")
+			public IChannelSchema Schema { get; } = new ChannelSchemaBuilder("DirectProvider", "DirectType", "1.0.0")
 				.WithCapabilities(ChannelCapability.SendMessages)
 				.HandlesMessageEndpoint(EndpointType.EmailAddress)
-				.AddContentType(MessageContentType.PlainText);
+				.AddContentType(MessageContentType.PlainText).Build();
 
 			public ConnectorState State => ConnectorState.Ready;
 			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
@@ -287,10 +287,10 @@ namespace Deveel.Messaging.XUnit
 		/// <summary>Same schema identity as TestConnector — used to test deduplication.</summary>
 		private sealed class DirectDuplicateTestConnector : IChannelConnector
 		{
-			public IChannelSchema Schema { get; } = new ChannelSchema("TestProvider", "TestType", "1.0.0")
+			public IChannelSchema Schema { get; } = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 				.WithCapabilities(ChannelCapability.SendMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
-				.AddContentType(MessageContentType.PlainText);
+				.AddContentType(MessageContentType.PlainText).Build();
 
 			public ConnectorState State => ConnectorState.Ready;
 			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
@@ -309,19 +309,19 @@ namespace Deveel.Messaging.XUnit
 		private class TestSchemaFactory : IChannelSchemaFactory
 		{
 			public IChannelSchema CreateSchema() =>
-				new ChannelSchema("TestProvider", "TestType", "1.0.0")
+				new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 					.WithCapabilities(ChannelCapability.SendMessages)
 					.HandlesMessageEndpoint(EndpointType.PhoneNumber)
-					.AddContentType(MessageContentType.PlainText);
+					.AddContentType(MessageContentType.PlainText).Build();
 		}
 
 		private class AnotherTestSchemaFactory : IChannelSchemaFactory
 		{
 			public IChannelSchema CreateSchema() =>
-				new ChannelSchema("AnotherProvider", "AnotherType", "1.0.0")
+				new ChannelSchemaBuilder("AnotherProvider", "AnotherType", "1.0.0")
 					.WithCapabilities(ChannelCapability.SendMessages)
 					.HandlesMessageEndpoint(EndpointType.EmailAddress)
-					.AddContentType(MessageContentType.Html);
+					.AddContentType(MessageContentType.Html).Build();
 		}
 	}
 }

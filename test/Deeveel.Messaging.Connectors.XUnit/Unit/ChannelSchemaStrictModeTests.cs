@@ -15,7 +15,7 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		// Act
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
 
 		// Assert
 		Assert.True(schema.IsStrict);
@@ -26,8 +26,8 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		// Act
-		var strictSchema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var flexibleSchema = new ChannelSchema("Provider", "Type", "1.0.0").WithFlexibleMode();
+		var strictSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
+		var flexibleSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").WithFlexibleMode().Build();
 
 		// Assert
 		Assert.True(strictSchema.IsStrict);
@@ -38,12 +38,12 @@ public class ChannelSchemaStrictModeTests
 	public void Should_FromSourceSchema_When_CopyConstructorCopiesStrictMode()
 	{
 		// Arrange
-		var strictSourceSchema = new ChannelSchema("Provider", "Type", "1.0.0");
-		var flexibleSourceSchema = new ChannelSchema("Provider", "Type", "1.0.0").WithFlexibleMode();
+		var strictSourceSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
+		var flexibleSourceSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").WithFlexibleMode().Build();
 
 		// Act
-		var strictCopy = new ChannelSchema(strictSourceSchema, "Strict Copy");
-		var flexibleCopy = new ChannelSchema(flexibleSourceSchema, "Flexible Copy");
+		var strictCopy = ChannelSchemaBuilder.From(strictSourceSchema, "Strict Copy").Build();
+		var flexibleCopy = ChannelSchemaBuilder.From(flexibleSourceSchema, "Flexible Copy").Build();
 
 		// Assert
 		Assert.True(strictCopy.IsStrict);
@@ -54,13 +54,14 @@ public class ChannelSchemaStrictModeTests
 	public void Should_SetStrictModeCorrectly_When_WithStrictModeIsInvoked()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0").WithFlexibleMode();
+		var builder = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").WithFlexibleMode();
 
 		// Act
-		var result = schema.WithStrictMode(true);
+		var result = builder.WithStrictMode(true);
+		var schema = builder.Build();
 
 		// Assert
-		Assert.Same(schema, result);
+		Assert.Same(builder, result);
 		Assert.True(schema.IsStrict);
 	}
 
@@ -68,13 +69,14 @@ public class ChannelSchemaStrictModeTests
 	public void Should_EnablesStrictMode_When_WithStrictModeNoParameters()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0").WithFlexibleMode();
+		var builder = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").WithFlexibleMode();
 
 		// Act
-		var result = schema.WithStrictMode();
+		var result = builder.WithStrictMode();
+		var schema = builder.Build();
 
 		// Assert
-		Assert.Same(schema, result);
+		Assert.Same(builder, result);
 		Assert.True(schema.IsStrict);
 	}
 
@@ -82,13 +84,14 @@ public class ChannelSchemaStrictModeTests
 	public void Should_DisablesStrictMode_When_WithFlexibleModeIsInvoked()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+		var builder = new ChannelSchemaBuilder("Provider", "Type", "1.0.0");
 
 		// Act
-		var result = schema.WithFlexibleMode();
+		var result = builder.WithFlexibleMode();
+		var schema = builder.Build();
 
 		// Assert
-		Assert.Same(schema, result);
+		Assert.Same(builder, result);
 		Assert.False(schema.IsStrict);
 	}
 
@@ -96,8 +99,8 @@ public class ChannelSchemaStrictModeTests
 	public void Should_RejectsUnknownParameters_When_ValidateConnectionSettingsStrictMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("KnownParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("KnownParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("KnownParam", "value")
@@ -116,9 +119,9 @@ public class ChannelSchemaStrictModeTests
 	public void Should_AllowsUnknownParameters_When_ValidateConnectionSettingsFlexibleMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddParameter("KnownParam", DataType.String);
+			.AddParameter("KnownParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("KnownParam", "value")
@@ -135,8 +138,8 @@ public class ChannelSchemaStrictModeTests
 	public void Should_RejectsUnknownProperties_When_ValidateMessageStrictMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty("KnownProperty", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddMessageProperty("KnownProperty", DataType.String).Build();
 
 		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
@@ -157,9 +160,9 @@ public class ChannelSchemaStrictModeTests
 	public void Should_AllowsUnknownProperties_When_ValidateMessageFlexibleMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty("KnownProperty", DataType.String);
+			.AddMessageProperty("KnownProperty", DataType.String).Build();
 
 		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
@@ -178,8 +181,8 @@ public class ChannelSchemaStrictModeTests
 	public void Should_StillValidatesRequiredParameters_When_ValidateConnectionSettingsStrictMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddRequiredParameter("RequiredParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddRequiredParameter("RequiredParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -195,9 +198,9 @@ public class ChannelSchemaStrictModeTests
 	public void Should_StillValidatesRequiredParameters_When_ValidateConnectionSettingsFlexibleMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddRequiredParameter("RequiredParam", DataType.String);
+			.AddRequiredParameter("RequiredParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -213,8 +216,8 @@ public class ChannelSchemaStrictModeTests
 	public void Should_StillValidatesParameterTypes_When_ValidateConnectionSettingsStrictMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("IntParam", DataType.Integer);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("IntParam", DataType.Integer).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("IntParam", "not an integer");
@@ -231,9 +234,9 @@ public class ChannelSchemaStrictModeTests
 	public void Should_StillValidatesParameterTypes_When_ValidateConnectionSettingsFlexibleMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddParameter("IntParam", DataType.Integer);
+			.AddParameter("IntParam", DataType.Integer).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("IntParam", "not an integer");
@@ -250,8 +253,8 @@ public class ChannelSchemaStrictModeTests
 	public void Should_StillValidatesRequiredProperties_When_ValidateMessageStrictMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true).Build();
 
 		var message = CreateTestMessage(properties: new Dictionary<string, object?>());
 
@@ -267,9 +270,9 @@ public class ChannelSchemaStrictModeTests
 	public void Should_StillValidatesRequiredProperties_When_ValidateMessageFlexibleMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true);
+			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true).Build();
 
 		var message = CreateTestMessage(properties: new Dictionary<string, object?>());
 
@@ -285,8 +288,8 @@ public class ChannelSchemaStrictModeTests
 	public void Should_StillValidatesPropertyTypes_When_ValidateMessageStrictMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddMessageProperty("IntProp", DataType.Integer);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddMessageProperty("IntProp", DataType.Integer).Build();
 
 		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
@@ -305,9 +308,9 @@ public class ChannelSchemaStrictModeTests
 	public void Should_StillValidatesPropertyTypes_When_ValidateMessageFlexibleMode()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
-			.AddMessageProperty("IntProp", DataType.Integer);
+			.AddMessageProperty("IntProp", DataType.Integer).Build();
 
 		var message = CreateTestMessage(properties: new Dictionary<string, object?>
 		{
@@ -327,17 +330,17 @@ public class ChannelSchemaStrictModeTests
 	{
 		// Arrange
 		// Act
-		var strictSchema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var strictSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithDisplayName("Strict Schema")
 			.WithStrictMode()
 			.AddParameter("Param1", DataType.String)
-			.AddMessageProperty("Prop1", DataType.String);
+			.AddMessageProperty("Prop1", DataType.String).Build();
 
-		var flexibleSchema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var flexibleSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithDisplayName("Flexible Schema")
 			.WithFlexibleMode()
 			.AddParameter("Param1", DataType.String)
-			.AddMessageProperty("Prop1", DataType.String);
+			.AddMessageProperty("Prop1", DataType.String).Build();
 
 		// Assert
 		Assert.True(strictSchema.IsStrict);
@@ -350,25 +353,25 @@ public class ChannelSchemaStrictModeTests
 	public void Should_CanChangeBetweenModes_When_StrictModeToggleIsInvoked()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
 
 		// Act
 		// Assert
 		Assert.True(schema.IsStrict);
 
 		// Switch to flexible
-		schema.WithFlexibleMode();
+		schema.IsStrict = false;
 		Assert.False(schema.IsStrict);
 
 		// Switch back to strict
-		schema.WithStrictMode();
+		schema.IsStrict = true;
 		Assert.True(schema.IsStrict);
 
 		// Switch using boolean parameter
-		schema.WithStrictMode(false);
+		schema.IsStrict = false;
 		Assert.False(schema.IsStrict);
 
-		schema.WithStrictMode(true);
+		schema.IsStrict = true;
 		Assert.True(schema.IsStrict);
 	}
 
@@ -376,18 +379,18 @@ public class ChannelSchemaStrictModeTests
 	public void Should_DemonstratesDifference_When_ComplexValidationScenarioStrictVsFlexible()
 	{
 		// Arrange
-		var strictSchema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var strictSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddRequiredParameter("RequiredParam", DataType.String)
 			.AddParameter("OptionalParam", DataType.Integer)
 			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true)
-			.AddMessageProperty("OptionalProp", DataType.Boolean);
+			.AddMessageProperty("OptionalProp", DataType.Boolean).Build();
 
-		var flexibleSchema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var flexibleSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
 			.AddRequiredParameter("RequiredParam", DataType.String)
 			.AddParameter("OptionalParam", DataType.Integer)
 			.AddMessageProperty("RequiredProp", DataType.String, p => p.IsRequired = true)
-			.AddMessageProperty("OptionalProp", DataType.Boolean);
+			.AddMessageProperty("OptionalProp", DataType.Boolean).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("RequiredParam", "valid value")
@@ -430,21 +433,21 @@ public class ChannelSchemaStrictModeTests
 	public void Should_PreservesStrictMode_When_SchemaDerivationIsInvoked()
 	{
 		// Arrange
-		var strictBaseSchema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var strictBaseSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("Param1", DataType.String)
-			.AddParameter("Param2", DataType.String);
+			.AddParameter("Param2", DataType.String).Build();
 
-		var flexibleBaseSchema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var flexibleBaseSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.WithFlexibleMode()
 			.AddParameter("Param1", DataType.String)
-			.AddParameter("Param2", DataType.String);
+			.AddParameter("Param2", DataType.String).Build();
 
 		// Act
-		var strictDerived = new ChannelSchema(strictBaseSchema, "Strict Derived")
-			.RemoveParameter("Param2");
+		var strictDerived = ChannelSchemaBuilder.From(strictBaseSchema, "Strict Derived")
+			.RemoveParameter("Param2").Build();
 
-		var flexibleDerived = new ChannelSchema(flexibleBaseSchema, "Flexible Derived")
-			.RemoveParameter("Param2");
+		var flexibleDerived = ChannelSchemaBuilder.From(flexibleBaseSchema, "Flexible Derived")
+			.RemoveParameter("Param2").Build();
 
 		// Assert
 		Assert.True(strictDerived.IsStrict);
@@ -468,11 +471,11 @@ public class ChannelSchemaStrictModeTests
 	public void Should_CanOverrideStrictMode_When_SchemaDerivationIsInvoked()
 	{
 		// Arrange
-		var strictBaseSchema = new ChannelSchema("Provider", "Type", "1.0.0");
+		var strictBaseSchema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
 
 		// Act
-		var flexibleDerived = new ChannelSchema(strictBaseSchema, "Flexible Derived")
-			.WithFlexibleMode();
+		var flexibleDerived = ChannelSchemaBuilder.From(strictBaseSchema, "Flexible Derived")
+			.WithFlexibleMode().Build();
 
 		// Assert
 		Assert.True(strictBaseSchema.IsStrict);

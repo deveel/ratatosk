@@ -14,10 +14,10 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_PassesValidation_When_ValidateConnectionSettingsTwilioAuthConfigurationValidCredentials()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
 			.AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication())
 			.AddRequiredParameter("AccountSid", DataType.String)
-			.AddRequiredParameter("AuthToken", DataType.String);
+			.AddRequiredParameter("AuthToken", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("AccountSid", "AC123456789")
@@ -34,10 +34,10 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_PassesValidation_When_ValidateConnectionSettingsCustomBasicAuthConfigurationValidCredentials()
 	{
 		// Arrange
-		var schema = new ChannelSchema("CustomProvider", "API", "1.0.0")
+		var schema = new ChannelSchemaBuilder("CustomProvider", "API", "1.0.0")
 			.AddAuthenticationConfiguration(AuthenticationConfigurations.CustomBasicAuthentication("UserId", "SecretKey"))
 			.AddRequiredParameter("UserId", DataType.String)
-			.AddRequiredParameter("SecretKey", DataType.String);
+			.AddRequiredParameter("SecretKey", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("UserId", "user123")
@@ -54,8 +54,8 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_PassesValidation_When_ValidateConnectionSettingsFlexibleApiKeyConfigurationValidKey()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "API", "1.0.0")
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleApiKeyAuthentication("ApiKey", "Key", "AccessKey"));
+		var schema = new ChannelSchemaBuilder("Provider", "API", "1.0.0")
+			.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleApiKeyAuthentication("ApiKey", "Key", "AccessKey")).Build();
 
 		// Test different key parameter names
 		var testCases = new[]
@@ -82,8 +82,8 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_FailValidation_When_ValidateConnectionSettingsAuthConfigurationMissingRequiredField()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication());
+		var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
+			.AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication()).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("AccountSid", "AC123456789");
@@ -102,10 +102,10 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_PassesValidation_When_ValidateConnectionSettingsMultipleAuthConfigurationsOneValid()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Flexible", "API", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Flexible", "API", "1.0.0")
 			.AddAuthenticationConfiguration(AuthenticationConfigurations.BasicAuthentication())
 			.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.TokenAuthentication());
+			.AddAuthenticationConfiguration(AuthenticationConfigurations.TokenAuthentication()).Build();
 
 		// Provide only API Key authentication
 		var connectionSettings = new ConnectionSettings()
@@ -154,8 +154,8 @@ public class ChannelSchemaAuthenticationConfigurationTests
 			requiredFields, 
 			optionalFields);
 
-		var schema = new ChannelSchema("CustomProvider", "API", "1.0.0")
-			.AddAuthenticationConfiguration(customAuth);
+		var schema = new ChannelSchemaBuilder("CustomProvider", "API", "1.0.0")
+			.AddAuthenticationConfiguration(customAuth).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("TenantId", "tenant123")
@@ -173,8 +173,8 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_PassesValidation_When_ValidateConnectionSettingsFlexibleCertificateAuthValidCertificateThumbprint()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Secure", "API", "1.0.0")
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleCertificateAuthentication());
+		var schema = new ChannelSchemaBuilder("Secure", "API", "1.0.0")
+			.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleCertificateAuthentication()).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("CertificateThumbprint", "1234567890ABCDEF");
@@ -190,8 +190,8 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_PassesValidation_When_ValidateConnectionSettingsFlexibleCertificateAuthValidPfxFile()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Secure", "API", "1.0.0")
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleCertificateAuthentication());
+		var schema = new ChannelSchemaBuilder("Secure", "API", "1.0.0")
+			.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleCertificateAuthentication()).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("PfxFile", "/path/to/cert.pfx")
@@ -208,13 +208,14 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_ThrowException_When_AddAuthenticationConfigurationDuplicateAuthenticationType()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.BasicAuthentication());
+		var builder = new ChannelSchemaBuilder("Provider", "Type", "1.0.0");
+		builder.AddAuthenticationConfiguration(AuthenticationConfigurations.BasicAuthentication());
+		var schema = builder.Build();
 
 		// Act
 		// Assert
 		var exception = Assert.Throws<InvalidOperationException>(() =>
-			schema.AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication()));
+			builder.AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication()));
 
 		Assert.Contains("An authentication configuration for 'Basic' authentication type already exists", exception.Message);
 	}
@@ -224,9 +225,9 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	{
 		// Arrange
 		// Act
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddAuthenticationConfiguration(AuthenticationConfigurations.BasicAuthentication())
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication());
+			.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication()).Build();
 
 		// Assert
 		Assert.Equal(2, schema.AuthenticationConfigurations.Count);
@@ -242,12 +243,13 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_RemovesBothConfigurationAndType_When_RemoveAuthenticationConfigurationExistingConfiguration()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.BasicAuthentication())
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication());
+		var builder = new ChannelSchemaBuilder("Provider", "Type", "1.0.0");
+		builder.AddAuthenticationConfiguration(AuthenticationConfigurations.BasicAuthentication())
+			   .AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication());
 
 		// Act
-		schema.RemoveAuthenticationConfiguration(AuthenticationType.Basic);
+		builder.RemoveAuthenticationConfiguration(AuthenticationType.Basic);
+		var schema = builder.Build();
 
 		// Assert
 		Assert.Single(schema.AuthenticationConfigurations);
@@ -260,10 +262,10 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_ReplacesExisting_When_RestrictAuthenticationConfigurationsNewConfigurations()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.BasicAuthentication())
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
-			.AddAuthenticationConfiguration(AuthenticationConfigurations.TokenAuthentication());
+		var builder = new ChannelSchemaBuilder("Provider", "Type", "1.0.0");
+		builder.AddAuthenticationConfiguration(AuthenticationConfigurations.BasicAuthentication())
+			   .AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+			   .AddAuthenticationConfiguration(AuthenticationConfigurations.TokenAuthentication());
 
 		var restrictedConfigs = new[]
 		{
@@ -272,7 +274,8 @@ public class ChannelSchemaAuthenticationConfigurationTests
 		};
 
 		// Act
-		schema.RestrictAuthenticationConfigurations(restrictedConfigs);
+		builder.RestrictAuthenticationConfigurations(restrictedConfigs);
+		var schema = builder.Build();
 
 		// Assert
 		Assert.Equal(2, schema.AuthenticationConfigurations.Count);
@@ -290,7 +293,7 @@ public class ChannelSchemaAuthenticationConfigurationTests
 	public void Should_WithConfiguration_When_ValidateConnectionSettingsRealisticTwilioScenario()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
 			.AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication())
 			.AddParameter("AccountSid", DataType.String, param =>
 			{
@@ -307,7 +310,7 @@ public class ChannelSchemaAuthenticationConfigurationTests
 			{
 				param.IsRequired = true;
 				param.Description = "Sender phone number";
-			});
+			}).Build();
 
 		// Valid Twilio-style configuration
 		var validSettings = new ConnectionSettings()

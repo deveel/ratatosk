@@ -45,11 +45,12 @@ public class ConnectorBaseExtendedTests
             => Task.CompletedTask;
     }
 
-    private static ChannelSchema CreateSchema()
-        => new ChannelSchema("Test", "Test", "1.0")
-            .WithCapability(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.HealthCheck)
-            .AddContentType(MessageContentType.PlainText)
-            .WithFlexibleMode();
+	private static ChannelSchema CreateSchema()
+		=> new ChannelSchemaBuilder("Test", "Test", "1.0")
+			.WithCapability(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.HealthCheck)
+			.AddContentType(MessageContentType.PlainText)
+			.WithFlexibleMode()
+			.Build();
 
     [Fact]
     public async Task Should_TestConnection_When_Ready()

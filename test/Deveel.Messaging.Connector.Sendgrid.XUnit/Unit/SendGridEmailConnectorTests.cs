@@ -163,8 +163,8 @@ public class SendGridEmailConnectorTests
     public async Task Should_ThrowNotSupportedException_When_SendMessageAsyncWithoutSendCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("SendGrid", "Email", "1.0.0")
-            .WithCapabilities(ChannelCapability.ReceiveMessages); // No send capability
+        var schema = new ChannelSchemaBuilder("SendGrid", "Email", "1.0.0")
+            .WithCapabilities(ChannelCapability.ReceiveMessages).Build(); // No send capability
         var connectionSettings = SendGridMockFactory.CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -257,8 +257,8 @@ public class SendGridEmailConnectorTests
     public async Task Should_ThrowNotSupportedException_When_GetMessageStatusAsyncWithoutCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("SendGrid", "Email", "1.0.0")
-            .WithCapabilities(ChannelCapability.SendMessages); // No status query capability
+        var schema = new ChannelSchemaBuilder("SendGrid", "Email", "1.0.0")
+            .WithCapabilities(ChannelCapability.SendMessages).Build(); // No status query capability
         var connectionSettings = SendGridMockFactory.CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);

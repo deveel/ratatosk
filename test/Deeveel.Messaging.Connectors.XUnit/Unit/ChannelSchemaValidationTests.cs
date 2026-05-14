@@ -14,7 +14,7 @@ public class ChannelSchemaValidationTests
 	public void Should_ThrowArgumentNullException_When_ValidateConnectionSettingsWithNullConnectionSettings()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0");
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0").Build();
 
 		// Act
 		// Assert
@@ -25,8 +25,8 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnEmptyWhenNoRequiredParameters_When_ValidateConnectionSettingsWithEmptyConnectionSettings()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("OptionalParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("OptionalParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -41,8 +41,8 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnValidationError_When_ValidateConnectionSettingsWithMissingRequiredParameter()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddRequiredParameter("RequiredParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddRequiredParameter("RequiredParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -59,9 +59,9 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnEmpty_When_ValidateConnectionSettingsWithAllRequiredParameters()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddRequiredParameter("RequiredParam1", DataType.String)
-			.AddRequiredParameter("RequiredParam2", DataType.Integer);
+			.AddRequiredParameter("RequiredParam2", DataType.Integer).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("RequiredParam1", "test")
@@ -78,8 +78,8 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnValidationError_When_ValidateConnectionSettingsWithIncompatibleType()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddRequiredParameter("StringParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddRequiredParameter("StringParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("StringParam", 123); // Wrong type: should be string
@@ -97,12 +97,12 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnValidationError_When_ValidateConnectionSettingsWithInvalidAllowedValue()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("EnumParam", DataType.String, param =>
 			{
 				param.IsRequired = true;
 				param.AllowedValues = new object[] { "option1", "option2", "option3" };
-			});
+			}).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("EnumParam", "invalid_option");
@@ -120,12 +120,12 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnEmpty_When_ValidateConnectionSettingsWithValidAllowedValue()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("EnumParam", DataType.String, param =>
 			{
 				param.IsRequired = true;
 				param.AllowedValues = new object[] { "option1", "option2", "option3" };
-			});
+			}).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("EnumParam", "option2");
@@ -141,8 +141,8 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnValidationError_When_ValidateConnectionSettingsWithUnknownParameter()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddParameter("KnownParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddParameter("KnownParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("KnownParam", "test")
@@ -161,12 +161,12 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnEmpty_When_ValidateConnectionSettingsWithOptionalParameterWithDefaultValue()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddParameter("OptionalParam", DataType.Integer, param =>
 			{
 				param.IsRequired = false;
 				param.DefaultValue = 30;
-			});
+			}).Build();
 
 		var connectionSettings = new ConnectionSettings(); // No parameters set
 
@@ -181,9 +181,9 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnAllValidationErrors_When_ValidateConnectionSettingsWithMultipleErrors()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
 			.AddRequiredParameter("RequiredParam", DataType.String)
-			.AddRequiredParameter("TypedParam", DataType.Boolean);
+			.AddRequiredParameter("TypedParam", DataType.Boolean).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("TypedParam", "not_a_boolean") // Wrong type
@@ -213,8 +213,8 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnEmpty_When_ValidateConnectionSettingsWithCompatibleTypes(DataType parameterType, object value)
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddRequiredParameter("TestParam", parameterType);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddRequiredParameter("TestParam", parameterType).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("TestParam", value);
@@ -236,8 +236,8 @@ public class ChannelSchemaValidationTests
 	public void Should_ReturnValidationError_When_ValidateConnectionSettingsWithIncompatibleTypes(DataType parameterType, object value)
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddRequiredParameter("TestParam", parameterType);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddRequiredParameter("TestParam", parameterType).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("TestParam", value);
@@ -255,7 +255,7 @@ public class ChannelSchemaValidationTests
 	public void Should_ValidateCorrectly_When_ValidateConnectionSettingsWithComplexEmailScenario()
 	{
 		// Arrange
-		var emailSchema = new ChannelSchema("SMTP", "Email", "1.0.0")
+		var emailSchema = new ChannelSchemaBuilder("SMTP", "Email", "1.0.0")
 			.AddRequiredParameter("Host", DataType.String)
 			.AddParameter("Port", DataType.Integer, param =>
 			{
@@ -268,7 +268,7 @@ public class ChannelSchemaValidationTests
 			{
 				param.IsRequired = false;
 				param.DefaultValue = true;
-			});
+			}).Build();
 
 		var validConnectionSettings = new ConnectionSettings()
 			.SetParameter("Host", "smtp.gmail.com")
@@ -300,8 +300,8 @@ public class ChannelSchemaValidationTests
 	public void Should_HandleCorrectly_When_ValidateConnectionSettingsCaseInsensitiveParameterNames()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddRequiredParameter("TestParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddRequiredParameter("TestParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("testparam", "value"); // Different case
@@ -320,8 +320,8 @@ public class ChannelSchemaValidationTests
 	public void Should_BeCorrect_When_ValidateConnectionSettingsValidationResultStructure()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Provider", "Type", "1.0.0")
-			.AddRequiredParameter("RequiredParam", DataType.String);
+		var schema = new ChannelSchemaBuilder("Provider", "Type", "1.0.0")
+			.AddRequiredParameter("RequiredParam", DataType.String).Build();
 
 		var connectionSettings = new ConnectionSettings();
 
@@ -346,7 +346,7 @@ public class ChannelSchemaValidationTests
 	public void Should_ShowsProperApiUsage_When_ValidateConnectionSettingsUsageExample()
 	{
 		// Arrange
-		var emailSchema = new ChannelSchema("SMTP", "Email", "1.2.0")
+		var emailSchema = new ChannelSchemaBuilder("SMTP", "Email", "1.2.0")
 			.AddRequiredParameter("Host", DataType.String)
 			.AddParameter("Port", DataType.Integer, param =>
 			{
@@ -357,7 +357,7 @@ public class ChannelSchemaValidationTests
 			.AddParameter("EnableSsl", DataType.Boolean, param =>
 			{
 				param.DefaultValue = true;
-			});
+			}).Build();
 
 		var connectionSettings = new ConnectionSettings()
 			.SetParameter("Host", "smtp.example.com")

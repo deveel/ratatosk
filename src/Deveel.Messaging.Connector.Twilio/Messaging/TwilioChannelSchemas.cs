@@ -103,7 +103,7 @@ namespace Deveel.Messaging
         {
             sdkVersion = NormalizeSupportedVersion(sdkVersion);
 
-            var schema = new ChannelSchema(TwilioConnectorConstants.Provider, TwilioConnectorConstants.SmsChannel, sdkVersion)
+            var builder = new ChannelSchemaBuilder(TwilioConnectorConstants.Provider, TwilioConnectorConstants.SmsChannel, sdkVersion)
                 .WithDisplayName("Twilio SMS Connector")
                 .WithCapabilities(
                     ChannelCapability.SendMessages |
@@ -177,7 +177,7 @@ namespace Deveel.Messaging
             // Messaging Services support introduced in SDK v6.0
             if (IsAtLeastVersion(sdkVersion, TwilioConnectorConstants.SdkVersion6))
             {
-                schema = schema.AddParameter(new ChannelParameter(TwilioConnectionParameters.MessagingServiceSid, DataType.String)
+                builder.AddParameter(new ChannelParameter(TwilioConnectionParameters.MessagingServiceSid, DataType.String)
                 {
                     IsRequired = false,
                     Description = "The SID of the Messaging Service to use for the message. Can replace Sender for sending."
@@ -187,7 +187,7 @@ namespace Deveel.Messaging
             // AttemptLimits, SmartEncoded, and PersistentAction (RCS) introduced in SDK v7.0
             if (IsAtLeastVersion(sdkVersion, TwilioConnectorConstants.SdkVersion))
             {
-                schema = schema
+                builder
                     .AddMessageProperty("AttemptLimits", DataType.Integer, p =>
                     {
                         p.IsRequired = false;
@@ -205,7 +205,7 @@ namespace Deveel.Messaging
                     });
             }
 
-            return schema;
+            return builder.Build();
         }
 
         /// <summary>
@@ -236,7 +236,7 @@ namespace Deveel.Messaging
             if (hasTemplates)
                 capabilities |= ChannelCapability.Templates;
 
-            var schema = new ChannelSchema(TwilioConnectorConstants.Provider, TwilioConnectorConstants.WhatsAppChannel, sdkVersion)
+            var builder = new ChannelSchemaBuilder(TwilioConnectorConstants.Provider, TwilioConnectorConstants.WhatsAppChannel, sdkVersion)
                 .WithDisplayName("Twilio WhatsApp Business API Connector")
                 .WithCapabilities(capabilities)
                 .AddParameter(TwilioConnectionParameters.AccountSid, DataType.String, p =>
@@ -282,24 +282,24 @@ namespace Deveel.Messaging
 
             // Template support introduced in SDK v6.0 (WhatsApp Business API via whatsapp: prefix)
             if (hasTemplates)
-                schema = schema.AddContentType(MessageContentType.Template);
+                builder.AddContentType(MessageContentType.Template);
 
             // PersistentAction (RCS) introduced in SDK v7.0
             if (IsAtLeastVersion(sdkVersion, TwilioConnectorConstants.SdkVersion))
             {
-                schema = schema.AddMessageProperty("PersistentAction", DataType.String, p =>
+                builder.AddMessageProperty("PersistentAction", DataType.String, p =>
                 {
                     p.IsRequired = false;
                     p.Description = "Rich Communication Services (RCS) specific action for WhatsApp";
                 });
             }
 
-            return schema;
+            return builder.Build();
         }
 
         /// <summary>Creates a simplified send-only SMS schema without webhooks or advanced features.</summary>
         internal static ChannelSchema CreateSimpleSms(string sdkVersion) =>
-            new ChannelSchema(CreateTwilioSms(sdkVersion), "Twilio Simple SMS")
+            ChannelSchemaBuilder.From(CreateTwilioSms(sdkVersion), "Twilio Simple SMS")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
                 .RemoveCapability(ChannelCapability.BulkMessaging)
@@ -309,16 +309,18 @@ namespace Deveel.Messaging
                 .RemoveContentType(MessageContentType.Media)
                 .RemoveMessageProperty("ProvideCallback")
                 .RemoveMessageProperty("PersistentAction") // no-op for v5.0/v6.0
-                .RemoveMessageProperty("SmartEncoded"); // no-op for v5.0/v6.0
+                .RemoveMessageProperty("SmartEncoded") // no-op for v5.0/v6.0
+                .Build();
 
         /// <summary>Creates a send-only schema optimized for notifications and alerts.</summary>
         internal static ChannelSchema CreateNotificationSms(string sdkVersion) =>
-            new ChannelSchema(CreateTwilioSms(sdkVersion), "Twilio Notification SMS")
+            ChannelSchemaBuilder.From(CreateTwilioSms(sdkVersion), "Twilio Notification SMS")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
                 .RemoveParameter(TwilioConnectionParameters.WebhookUrl)
                 .RemoveContentType(MessageContentType.Media)
-                .RemoveMessageProperty("PersistentAction"); // no-op for v5.0/v6.0
+                .RemoveMessageProperty("PersistentAction") // no-op for v5.0/v6.0
+                .Build();
 
         /// <summary>
         /// Creates a bulk messaging schema optimized for high-volume SMS campaigns via a Messaging Service.
@@ -333,7 +335,7 @@ namespace Deveel.Messaging
                     $"BulkSms schema requires SDK v{TwilioConnectorConstants.SdkVersion6} or higher. " +
                     $"MessagingServiceSid is not available in SDK v{sdkVersion}.");
 
-            return new ChannelSchema(CreateTwilioSms(sdkVersion), "Twilio Bulk SMS")
+            return ChannelSchemaBuilder.From(CreateTwilioSms(sdkVersion), "Twilio Bulk SMS")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
                 .UpdateParameter(TwilioConnectionParameters.MessagingServiceSid, param => param.IsRequired = true)
@@ -342,12 +344,13 @@ namespace Deveel.Messaging
                     endpoint.IsRequired = false; // Not required when MessagingServiceSid is used
                     endpoint.CanReceive = false; // Send-only
                 })
-                .RemoveMessageProperty("PersistentAction"); // no-op for v6.0
+                .RemoveMessageProperty("PersistentAction") // no-op for v6.0
+                .Build();
         }
 
         /// <summary>Creates a simplified send-only WhatsApp schema for basic text and media use cases.</summary>
         internal static ChannelSchema CreateSimpleWhatsApp(string sdkVersion) =>
-            new ChannelSchema(CreateTwilioWhatsApp(sdkVersion), "Twilio Simple WhatsApp")
+            ChannelSchemaBuilder.From(CreateTwilioWhatsApp(sdkVersion), "Twilio Simple WhatsApp")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
                 .RemoveCapability(ChannelCapability.Templates)
@@ -355,7 +358,8 @@ namespace Deveel.Messaging
                 .RemoveParameter(TwilioConnectionParameters.StatusCallback)
                 .RemoveContentType(MessageContentType.Template) // no-op for v5.0
                 .RemoveMessageProperty("ProvideCallback")
-                .RemoveMessageProperty("PersistentAction"); // no-op for v5.0/v6.0
+                .RemoveMessageProperty("PersistentAction") // no-op for v5.0/v6.0
+                .Build();
 
         /// <summary>
         /// Creates a template-focused WhatsApp schema for business notifications using approved templates.
@@ -370,11 +374,12 @@ namespace Deveel.Messaging
                     $"WhatsAppTemplates schema requires SDK v{TwilioConnectorConstants.SdkVersion6} or higher. " +
                     $"WhatsApp template support is not available in SDK v{sdkVersion}.");
 
-            return new ChannelSchema(CreateTwilioWhatsApp(sdkVersion), "Twilio WhatsApp Templates")
+            return ChannelSchemaBuilder.From(CreateTwilioWhatsApp(sdkVersion), "Twilio WhatsApp Templates")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
                 .RemoveCapability(ChannelCapability.MediaAttachments)
-                .RemoveContentType(MessageContentType.Media);
+                .RemoveContentType(MessageContentType.Media)
+                .Build();
         }
 
         private static bool IsAtLeastVersion(string sdkVersion, string minVersion) =>

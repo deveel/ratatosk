@@ -14,7 +14,7 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var emailSchema = new ChannelSchema("SMTP", "Email", "1.2.0")
+		var emailSchema = new ChannelSchemaBuilder("SMTP", "Email", "1.2.0")
 			.WithDisplayName("SMTP Email Connector")
 			.WithCapabilities(
 				ChannelCapability.SendMessages | 
@@ -61,7 +61,7 @@ public class ChannelSchemaIntegrationTests
 				e.CanSend = true;
 				e.CanReceive = false;
 			})
-			.AddAuthenticationType(AuthenticationType.Basic);
+			.AddAuthenticationType(AuthenticationType.Basic).Build();
 
 		// Assert
 		Assert.Equal("SMTP", emailSchema.ChannelProvider);
@@ -105,7 +105,7 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var smsSchema = new ChannelSchema("Twilio", "SMS", "2.1.0")
+		var smsSchema = new ChannelSchemaBuilder("Twilio", "SMS", "2.1.0")
 			.WithDisplayName("Twilio SMS Connector")
 			.WithCapabilities(
 				ChannelCapability.SendMessages | 
@@ -134,7 +134,7 @@ public class ChannelSchemaIntegrationTests
 				e.CanSend = false;
 				e.CanReceive = true;
 			})
-			.AddAuthenticationType(AuthenticationType.Token);
+			.AddAuthenticationType(AuthenticationType.Token).Build();
 
 		// Assert
 		Assert.Equal("Twilio", smsSchema.ChannelProvider);
@@ -170,14 +170,14 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var schema = new ChannelSchema("Generic", "API", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Generic", "API", "1.0.0")
 			.AllowsAnyMessageEndpoint()
 			.AddAuthenticationType(AuthenticationType.None)
 			.AddAuthenticationType(AuthenticationType.Basic)
 			.AddAuthenticationType(AuthenticationType.Token)
 			.AddAuthenticationType(AuthenticationType.ClientCredentials)
 			.AddAuthenticationType(AuthenticationType.Certificate)
-			.AddAuthenticationType(AuthenticationType.Custom);
+			.AddAuthenticationType(AuthenticationType.Custom).Build();
 
 		// Assert
 		Assert.Equal(6, schema.GetAuthenticationTypes().Count());
@@ -210,8 +210,8 @@ public class ChannelSchemaIntegrationTests
 		                     ChannelCapability.HealthCheck;
 
 		// Act
-		var schema = new ChannelSchema("Universal", "Multi", "1.0.0")
-			.WithCapabilities(allCapabilities);
+		var schema = new ChannelSchemaBuilder("Universal", "Multi", "1.0.0")
+			.WithCapabilities(allCapabilities).Build();
 
 		// Assert
 		Assert.Equal(allCapabilities, schema.Capabilities);
@@ -230,7 +230,7 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var schema = new ChannelSchema("Complex", "Test", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Complex", "Test", "1.0.0")
 			.AddParameter("BoolParam", DataType.Boolean, param =>
 			{
 				param.DefaultValue = false;
@@ -253,7 +253,7 @@ public class ChannelSchemaIntegrationTests
 				param.IsSensitive = true;
 				param.AllowedValues = new object[] { "dev", "test", "prod" };
 				param.Description = "String parameter with environment values";
-			});
+			}).Build();
 
 		// Assert
 		Assert.Equal(4, schema.Parameters.Count);
@@ -289,9 +289,9 @@ public class ChannelSchemaIntegrationTests
 		// Arrange
 		var schemas = new List<IChannelSchema>
 		{
-			new ChannelSchema("Provider1", "Email", "1.0.0"),
-			new ChannelSchema("Provider2", "SMS", "2.0.0"),
-			new ChannelSchema("Provider3", "Push", "1.5.0")
+			new ChannelSchemaBuilder("Provider1", "Email", "1.0.0").Build(),
+			new ChannelSchemaBuilder("Provider2", "SMS", "2.0.0").Build(),
+			new ChannelSchemaBuilder("Provider3", "Push", "1.5.0").Build()
 		};
 
 		// Act
@@ -318,14 +318,14 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var schema = new ChannelSchema("Universal", "Multi", "1.0.0")
+		var schema = new ChannelSchemaBuilder("Universal", "Multi", "1.0.0")
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
 			.AddContentType(MessageContentType.Multipart)
 			.AddContentType(MessageContentType.Template)
 			.AddContentType(MessageContentType.Media)
 			.AddContentType(MessageContentType.Json)
-			.AddContentType(MessageContentType.Binary);
+			.AddContentType(MessageContentType.Binary).Build();
 
 		// Assert
 		Assert.Equal(7, schema.ContentTypes.Count);
@@ -353,7 +353,7 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var webApiSchema = new ChannelSchema("RestAPI", "WebAPI", "3.0.0")
+		var webApiSchema = new ChannelSchemaBuilder("RestAPI", "WebAPI", "3.0.0")
 			.WithDisplayName("REST API Connector")
 			.WithCapabilities(
 				ChannelCapability.SendMessages | 
@@ -379,7 +379,7 @@ public class ChannelSchemaIntegrationTests
 				e.IsRequired = true;
 			})
 			.AddAuthenticationType(AuthenticationType.Token)
-			.AddAuthenticationType(AuthenticationType.Basic);
+			.AddAuthenticationType(AuthenticationType.Basic).Build();
 
 		// Assert
 		Assert.Equal("RestAPI", webApiSchema.ChannelProvider);
@@ -407,7 +407,7 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var queueSchema = new ChannelSchema("RabbitMQ", "Queue", "2.0.0")
+		var queueSchema = new ChannelSchemaBuilder("RabbitMQ", "Queue", "2.0.0")
 			.WithDisplayName("RabbitMQ Connector")
 			.WithCapabilities(
 				ChannelCapability.SendMessages | 
@@ -431,7 +431,7 @@ public class ChannelSchemaIntegrationTests
 				e.CanSend = true;
 				e.CanReceive = true;
 			})
-			.AddAuthenticationType(AuthenticationType.Basic);
+			.AddAuthenticationType(AuthenticationType.Basic).Build();
 
 		// Assert
 		Assert.Equal("RabbitMQ", queueSchema.ChannelProvider);
@@ -462,7 +462,7 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var flexibleSchema = new ChannelSchema("Universal", "Flexible", "1.0.0")
+		var flexibleSchema = new ChannelSchemaBuilder("Universal", "Flexible", "1.0.0")
 			.WithDisplayName("Universal Flexible Connector")
 			.WithCapabilities(
 				ChannelCapability.SendMessages | 
@@ -476,7 +476,7 @@ public class ChannelSchemaIntegrationTests
 			.AddContentType(MessageContentType.Binary)
 			.AllowsAnyMessageEndpoint()
 			.AddAuthenticationType(AuthenticationType.None)
-			.AddAuthenticationType(AuthenticationType.Token);
+			.AddAuthenticationType(AuthenticationType.Token).Build();
 
 		// Assert
 		Assert.Equal("Universal", flexibleSchema.ChannelProvider);
@@ -498,7 +498,7 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var emailSchema = new ChannelSchema("SMTP", "Email", "2.0.0")
+		var emailSchema = new ChannelSchemaBuilder("SMTP", "Email", "2.0.0")
 			.WithDisplayName("Advanced SMTP Email Connector")
 			.WithCapabilities(
 				ChannelCapability.SendMessages | 
@@ -541,7 +541,7 @@ public class ChannelSchemaIntegrationTests
 				p.IsSensitive = true;
 				p.Description = "Email sensitivity level for compliance";
 			})
-			.AddAuthenticationType(AuthenticationType.Basic);
+			.AddAuthenticationType(AuthenticationType.Basic).Build();
 
 		// Assert
 		Assert.Equal("SMTP", emailSchema.ChannelProvider);
@@ -585,7 +585,7 @@ public class ChannelSchemaIntegrationTests
 	public void Should_ValidateCorrectly_When_MessagePropertyValidationEmailConnectorScenario()
 	{
 		// Arrange
-		var emailSchema = new ChannelSchema("SMTP", "Email", "2.0.0")
+		var emailSchema = new ChannelSchemaBuilder("SMTP", "Email", "2.0.0")
 			.AddMessageProperty("Priority", DataType.Integer, p =>
 			{
 				p.IsRequired = true;
@@ -603,7 +603,7 @@ public class ChannelSchemaIntegrationTests
 			.AddMessageProperty("Category", DataType.String, p =>
 			{
 				p.Description = "Email category";
-			});
+			}).Build();
 
 		// Valid message properties
 		var validProperties = new Dictionary<string, object?>
@@ -662,7 +662,7 @@ public class ChannelSchemaIntegrationTests
 	{
 		// Arrange
 		// Act
-		var smsSchema = new ChannelSchema("Twilio", "SMS", "3.0.0")
+		var smsSchema = new ChannelSchemaBuilder("Twilio", "SMS", "3.0.0")
 			.WithDisplayName("Enhanced Twilio SMS Connector")
 			.WithCapabilities(
 				ChannelCapability.SendMessages | 
@@ -691,7 +691,7 @@ public class ChannelSchemaIntegrationTests
 			{
 				e.CanSend = true;
 				e.CanReceive = true;
-			});
+			}).Build();
 
 		// Test valid message properties
 		var validSmsProperties = new Dictionary<string, object?>

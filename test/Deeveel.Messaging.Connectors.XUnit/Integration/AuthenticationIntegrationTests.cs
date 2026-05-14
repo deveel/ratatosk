@@ -21,17 +21,18 @@ namespace Deveel.Messaging
         public async Task Should_InitializeSuccessfully_When_EmailConnectorWithApiKeyAuth()
         {
             // Arrange
-            var schema = new ChannelSchema("TestEmail", "Email", "1.0.0")
-                .WithCapability(ChannelCapability.SendMessages)
-                .AddContentType(MessageContentType.PlainText)
-                .HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
-                {
-                    e.CanSend = true;
-                    e.CanReceive = false;
-                })
-                .AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication());
+			var schema = new ChannelSchemaBuilder("TestEmail", "Email", "1.0.0")
+				.WithCapability(ChannelCapability.SendMessages)
+				.AddContentType(MessageContentType.PlainText)
+				.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
+				{
+					e.CanSend = true;
+					e.CanReceive = false;
+				})
+				.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+				.Build();
 
-            var connectionSettings = new ConnectionSettings()
+			var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "sk-test-email-api-key-12345");
 
             var connector = new TestEmailConnector(schema, connectionSettings);
@@ -55,17 +56,18 @@ namespace Deveel.Messaging
         public async Task Should_InitializeSuccessfully_When_SmsConnectorWithBasicAuth()
         {
             // Arrange
-            var schema = new ChannelSchema("TestSms", "SMS", "1.0.0")
-                .WithCapability(ChannelCapability.SendMessages)
-                .AddContentType(MessageContentType.PlainText)
-                .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
-                {
-                    e.CanSend = true;
-                    e.CanReceive = false;
-                })
-                .AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication());
+			var schema = new ChannelSchemaBuilder("TestSms", "SMS", "1.0.0")
+				.WithCapability(ChannelCapability.SendMessages)
+				.AddContentType(MessageContentType.PlainText)
+				.HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
+				{
+					e.CanSend = true;
+					e.CanReceive = false;
+				})
+				.AddAuthenticationConfiguration(AuthenticationConfigurations.TwilioBasicAuthentication())
+				.Build();
 
-            var connectionSettings = new ConnectionSettings()
+			var connectionSettings = new ConnectionSettings()
                 .SetParameter("AccountSid", "AC123456789012345678901234567890")
                 .SetParameter("AuthToken", "your_auth_token_here");
 
@@ -91,18 +93,19 @@ namespace Deveel.Messaging
         public async Task Should_PickCorrectAuth_When_FlexibleAuthConnectorWithMultipleAuthOptions()
         {
             // Arrange
-            var schema = new ChannelSchema("TestFlexible", "Multi", "1.0.0")
-                .WithCapability(ChannelCapability.SendMessages)
-                .AddContentType(MessageContentType.PlainText)
-                .HandlesMessageEndpoint(EndpointType.Any, e =>
-                {
-                    e.CanSend = true;
-                    e.CanReceive = false;
-                })
-                .AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleBasicAuthentication())
-                .AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleApiKeyAuthentication());
+			var schema = new ChannelSchemaBuilder("TestFlexible", "Multi", "1.0.0")
+				.WithCapability(ChannelCapability.SendMessages)
+				.AddContentType(MessageContentType.PlainText)
+				.HandlesMessageEndpoint(EndpointType.Any, e =>
+				{
+					e.CanSend = true;
+					e.CanReceive = false;
+				})
+				.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleBasicAuthentication())
+				.AddAuthenticationConfiguration(AuthenticationConfigurations.FlexibleApiKeyAuthentication())
+				.Build();
 
-            // Test with API key (should pick API key auth)
+			// Test with API key (should pick API key auth)
             var apiKeySettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "test-api-key-123");
 
@@ -128,11 +131,12 @@ namespace Deveel.Messaging
         public async Task Should_RefreshesAutomatically_When_ConnectorWithExpiredToken()
         {
             // Arrange
-            var schema = new ChannelSchema("TestRefresh", "Test", "1.0.0")
-                .WithCapability(ChannelCapability.SendMessages)
-                .AddAuthenticationConfiguration(AuthenticationConfigurations.TokenAuthentication());
+			var schema = new ChannelSchemaBuilder("TestRefresh", "Test", "1.0.0")
+				.WithCapability(ChannelCapability.SendMessages)
+				.AddAuthenticationConfiguration(AuthenticationConfigurations.TokenAuthentication())
+				.Build();
 
-            var connectionSettings = new ConnectionSettings()
+			var connectionSettings = new ConnectionSettings()
                 .SetParameter("Token", "initial-token");
 
             var connector = new TestRefreshConnector(schema, connectionSettings);

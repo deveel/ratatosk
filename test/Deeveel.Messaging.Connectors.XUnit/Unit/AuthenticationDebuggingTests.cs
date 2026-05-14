@@ -30,17 +30,18 @@ namespace Deveel.Messaging
         public void Should_Step2_When_DebugSimpleApiKeyAuthentication()
         {
             // Step 2: Test if schema creation works
-            var schema = new ChannelSchema("TestEmail", "Email", "1.0.0")
-                .WithCapability(ChannelCapability.SendMessages)
-                .AddContentType(MessageContentType.PlainText)
-                .HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
-                {
-                    e.CanSend = true;
-                    e.CanReceive = false;
-                })
-                .AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication());
+			var schema = new ChannelSchemaBuilder("TestEmail", "Email", "1.0.0")
+				.WithCapability(ChannelCapability.SendMessages)
+				.AddContentType(MessageContentType.PlainText)
+				.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
+				{
+					e.CanSend = true;
+					e.CanReceive = false;
+				})
+				.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+				.Build();
 
-            Assert.NotNull(schema);
+			Assert.NotNull(schema);
             Assert.Single(schema.AuthenticationConfigurations);
             Assert.Equal(AuthenticationType.ApiKey, schema.AuthenticationConfigurations.First().AuthenticationType);
         }
@@ -78,10 +79,11 @@ namespace Deveel.Messaging
         public async Task Should_Step5_When_DebugSimpleApiKeyAuthentication()
         {
             // Step 5: Test basic connector authentication without sending messages
-            var schema = new ChannelSchema("TestEmail", "Email", "1.0.0")
-                .AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication());
+			var schema = new ChannelSchemaBuilder("TestEmail", "Email", "1.0.0")
+				.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+				.Build();
 
-            var connectionSettings = new ConnectionSettings()
+			var connectionSettings = new ConnectionSettings()
                 .SetParameter("ApiKey", "test-api-key");
 
             var connector = new DebugTestConnector(schema, connectionSettings);

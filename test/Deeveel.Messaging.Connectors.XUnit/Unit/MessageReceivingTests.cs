@@ -18,14 +18,14 @@ public class MessageReceivingTests
     public async Task Should_ParseMessageCorrectly_When_ReceiveMessagesAsyncWithTextSource()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-            });
+            }).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -54,14 +54,14 @@ public class MessageReceivingTests
     public async Task Should_ParseMessageCorrectly_When_ReceiveMessagesAsyncWithJsonWebhookSource()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "WhatsApp", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "WhatsApp", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-            });
+            }).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -99,14 +99,14 @@ public class MessageReceivingTests
     public async Task Should_ParseMessageCorrectly_When_ReceiveMessagesAsyncWithUrlEncodedWebhookSource()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-            });
+            }).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -134,7 +134,7 @@ public class MessageReceivingTests
     public async Task Should_ReturnMultipleMessages_When_ReceiveMessagesAsyncWithBatchMessages()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.BulkMessaging)
             .AddContentType(MessageContentType.PlainText)
@@ -142,7 +142,7 @@ public class MessageReceivingTests
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-            });
+            }).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -181,14 +181,14 @@ public class MessageReceivingTests
     public async Task Should_ParseCorrectly_When_ReceiveMessagesAsyncWithMultipartContent()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.Multipart)
             .HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-            });
+            }).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -231,7 +231,7 @@ public class MessageReceivingTests
     public async Task Should_ParseMediaCorrectly_When_ReceiveMessagesAsyncWithMediaContent()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "MMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "MMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.MediaAttachments)
             .AddContentType(MessageContentType.Binary)
@@ -239,7 +239,7 @@ public class MessageReceivingTests
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-            });
+            }).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -277,14 +277,14 @@ public class MessageReceivingTests
     public async Task Should_ParseCorrectly_When_ReceiveMessageStatusAsyncWithWebhookStatusUpdate()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.HandleMessageState)
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-            });
+            }).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -316,8 +316,8 @@ public class MessageReceivingTests
     public async Task Should_ThrowNotSupportedException_When_ReceiveMessagesAsyncWithoutReceiveCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-            .WithCapability(ChannelCapability.SendMessages); // No receive capability
+        var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+            .WithCapability(ChannelCapability.SendMessages).Build(); // No receive capability
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -334,8 +334,8 @@ public class MessageReceivingTests
     public async Task Should_ThrowNotSupportedException_When_ReceiveMessageStatusAsyncWithoutStatusCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-            .WithCapability(ChannelCapability.SendMessages); // No status handling capability
+        var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+            .WithCapability(ChannelCapability.SendMessages).Build(); // No status handling capability
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -352,8 +352,8 @@ public class MessageReceivingTests
     public async Task Should_ReturnError_When_ReceiveMessagesAsyncWithInvalidJsonSource()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
-            .WithCapability(ChannelCapability.ReceiveMessages);
+        var schema = new ChannelSchemaBuilder("TestProvider", "SMS", "1.0.0")
+            .WithCapability(ChannelCapability.ReceiveMessages).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -374,8 +374,8 @@ public class MessageReceivingTests
     public async Task Should_ReturnEmptyBatch_When_ReceiveMessagesAsyncWithEmptySource()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
-            .WithCapability(ChannelCapability.ReceiveMessages);
+        var schema = new ChannelSchemaBuilder("TestProvider", "SMS", "1.0.0")
+            .WithCapability(ChannelCapability.ReceiveMessages).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -395,9 +395,9 @@ public class MessageReceivingTests
     public async Task Should_ParseCorrectly_When_ReceiveMessagesAsyncWithXmlSource()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "SOAP", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "SOAP", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .AddContentType(MessageContentType.PlainText);
+            .AddContentType(MessageContentType.PlainText).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -428,9 +428,9 @@ public class MessageReceivingTests
     public async Task Should_ProcessCorrectly_When_ReceiveMessagesAsyncWithBinarySource()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "Binary", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "Binary", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .AddContentType(MessageContentType.Binary);
+            .AddContentType(MessageContentType.Binary).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -458,11 +458,11 @@ public class MessageReceivingTests
     public async Task Should_HandleCorrectly_When_ReceiveMessagesAsyncWithDifferentContentTypes(string contentType, string content)
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "Universal", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "Universal", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
             .AddContentType(MessageContentType.Json)
-            .AddContentType(MessageContentType.Binary);
+            .AddContentType(MessageContentType.Binary).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -484,9 +484,9 @@ public class MessageReceivingTests
     public async Task Should_HandleCorrectly_When_ReceiveMessagesAsyncConcurrentRequests()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TestProvider", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .AddContentType(MessageContentType.PlainText);
+            .AddContentType(MessageContentType.PlainText).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -509,8 +509,8 @@ public class MessageReceivingTests
     public async Task Should_OperationCancelled_When_ReceiveMessagesAsyncWithCancellation()
     {
         // Arrange
-        var schema = new ChannelSchema("TestProvider", "SMS", "1.0.0")
-            .WithCapability(ChannelCapability.ReceiveMessages);
+        var schema = new ChannelSchemaBuilder("TestProvider", "SMS", "1.0.0")
+            .WithCapability(ChannelCapability.ReceiveMessages).Build();
 
         var connector = new TestReceivingConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);

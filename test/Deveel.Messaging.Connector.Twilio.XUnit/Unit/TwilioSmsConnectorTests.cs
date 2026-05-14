@@ -161,8 +161,8 @@ public class TwilioSmsConnectorTests
     public async Task Should_ThrowNotSupportedException_When_SendMessageAsyncWithoutSendCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
-            .WithCapabilities(ChannelCapability.ReceiveMessages); // No send capability
+        var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
+            .WithCapabilities(ChannelCapability.ReceiveMessages).Build(); // No send capability
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -193,8 +193,8 @@ public class TwilioSmsConnectorTests
     public async Task Should_ThrowNotSupportedException_When_GetMessageStatusAsyncWithoutCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
-            .WithCapabilities(ChannelCapability.SendMessages); // No status query capability
+        var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
+            .WithCapabilities(ChannelCapability.SendMessages).Build(); // No status query capability
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);

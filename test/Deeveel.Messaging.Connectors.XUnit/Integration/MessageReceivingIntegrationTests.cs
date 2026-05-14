@@ -19,7 +19,7 @@ public class MessageReceivingIntegrationTests
         // Arrange
         var processedMessages = new List<IMessage>();
 
-        var schema = new ChannelSchema("IntegrationTest", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("IntegrationTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.HandleMessageState)
             .AddContentType(MessageContentType.PlainText)
@@ -27,7 +27,8 @@ public class MessageReceivingIntegrationTests
             {
                 e.CanSend = true;
                 e.CanReceive = true;
-            });
+            })
+            .Build();
 
         var connector = new IntegrationTestConnector(schema, processedMessages);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -69,10 +70,11 @@ public class MessageReceivingIntegrationTests
         // Arrange
         var messageStatuses = new Dictionary<string, List<MessageStatus>>();
 
-        var schema = new ChannelSchema("StatusTracking", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("StatusTracking", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.HandleMessageState)
-            .AddContentType(MessageContentType.PlainText);
+            .AddContentType(MessageContentType.PlainText)
+            .Build();
 
         var connector = new StatusTrackingConnector(schema, messageStatuses);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -117,10 +119,11 @@ public class MessageReceivingIntegrationTests
         // Arrange
         var processedMessages = new List<IMessage>();
 
-        var schema = new ChannelSchema("BatchProcessing", "Email", "1.0.0")
+        var schema = new ChannelSchemaBuilder("BatchProcessing", "Email", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.BulkMessaging)
-            .AddContentType(MessageContentType.PlainText);
+            .AddContentType(MessageContentType.PlainText)
+            .Build();
 
         var connector = new IntegrationTestConnector(schema, processedMessages);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -164,13 +167,14 @@ public class MessageReceivingIntegrationTests
     public async Task Should_HandledCorrectly_When_MessageReceivingWithValidationInvalidMessages()
     {
         // Arrange
-        var schema = new ChannelSchema("ValidationTest", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("ValidationTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
                 e.CanReceive = true;
-            });
+            })
+            .Build();
 
         var connector = new ValidationTestConnector(schema);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -211,9 +215,10 @@ public class MessageReceivingIntegrationTests
         // Arrange
         var filteredMessages = new List<IMessage>();
 
-        var schema = new ChannelSchema("FilterTest", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("FilterTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .AddContentType(MessageContentType.PlainText);
+            .AddContentType(MessageContentType.PlainText)
+            .Build();
 
         var connector = new FilteringTestConnector(schema, filteredMessages);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -245,9 +250,10 @@ public class MessageReceivingIntegrationTests
     {
         // Arrange
         var attemptCount = 0;
-        var schema = new ChannelSchema("RetryTest", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("RetryTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .AddContentType(MessageContentType.PlainText);
+            .AddContentType(MessageContentType.PlainText)
+            .Build();
 
         var connector = new RetryTestConnector(schema, () => ++attemptCount);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -269,9 +275,10 @@ public class MessageReceivingIntegrationTests
         // Arrange
         var transformedMessages = new List<IMessage>();
 
-        var schema = new ChannelSchema("TransformTest", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("TransformTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .AddContentType(MessageContentType.PlainText);
+            .AddContentType(MessageContentType.PlainText)
+            .Build();
 
         var connector = new TransformationTestConnector(schema, transformedMessages);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -303,9 +310,10 @@ public class MessageReceivingIntegrationTests
     {
         // Arrange
         var receivedMessages = new ConcurrentBag<IMessage>();
-        var schema = new ChannelSchema("ConcurrencyTest", "SMS", "1.0.0")
+        var schema = new ChannelSchemaBuilder("ConcurrencyTest", "SMS", "1.0.0")
             .WithCapability(ChannelCapability.ReceiveMessages)
-            .AddContentType(MessageContentType.PlainText);
+            .AddContentType(MessageContentType.PlainText)
+            .Build();
 
         var connector = new ConcurrentTestConnector(schema, receivedMessages);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);

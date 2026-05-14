@@ -113,21 +113,23 @@ namespace Deveel.Messaging
     {
         internal static ChannelSchema CreateFacebookMessenger(string graphApiVersion) => CreateBaseSchema(NormalizeSupportedVersion(graphApiVersion));
 
-        internal static ChannelSchema CreateSimpleMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Simple Messenger")
+        internal static ChannelSchema CreateSimpleMessenger(string graphApiVersion) => ChannelSchemaBuilder.From(CreateFacebookMessenger(graphApiVersion), "Facebook Simple Messenger")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .RemoveParameter(FacebookConnectionParameters.WebhookUrl)
             .RemoveParameter(FacebookConnectionParameters.VerifyToken)
             .RemoveContentType(MessageContentType.Media)
             .RemoveMessageProperty("QuickReplies")
-            .RemoveMessageProperty("Tag");
+            .RemoveMessageProperty("Tag")
+            .Build();
 
-        internal static ChannelSchema CreateNotificationMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Notification Messenger")
+        internal static ChannelSchema CreateNotificationMessenger(string graphApiVersion) => ChannelSchemaBuilder.From(CreateFacebookMessenger(graphApiVersion), "Facebook Notification Messenger")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .RemoveParameter(FacebookConnectionParameters.WebhookUrl)
             .RemoveParameter(FacebookConnectionParameters.VerifyToken)
-            .RemoveMessageProperty("QuickReplies");
+            .RemoveMessageProperty("QuickReplies")
+            .Build();
 
-        internal static ChannelSchema CreateMediaMessenger(string graphApiVersion) => new ChannelSchema(CreateFacebookMessenger(graphApiVersion), "Facebook Media Messenger")
+        internal static ChannelSchema CreateMediaMessenger(string graphApiVersion) => ChannelSchemaBuilder.From(CreateFacebookMessenger(graphApiVersion), "Facebook Media Messenger")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .AddMessageProperty("Attachment", DataType.String, p =>
             {
@@ -138,9 +140,10 @@ namespace Deveel.Messaging
             {
                 p.IsRequired = false;
                 p.Description = "JSON object defining structured message template";
-            });
+            })
+            .Build();
 
-        private static ChannelSchema CreateBaseSchema(string version) => new ChannelSchema(
+        private static ChannelSchema CreateBaseSchema(string version) => new ChannelSchemaBuilder(
                 FacebookConnectorConstants.Provider,
                 FacebookConnectorConstants.MessengerChannel,
                 version)
@@ -211,7 +214,8 @@ namespace Deveel.Messaging
             {
                 p.IsRequired = false;
                 p.Description = "Message tag for sending outside 24-hour window";
-            });
+            })
+            .Build();
 
         private static string NormalizeSupportedVersion(string graphApiVersion)
         {

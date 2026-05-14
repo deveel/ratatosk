@@ -184,28 +184,31 @@ namespace Deveel.Messaging.XUnit
 		private class TestSchemaFactory : IChannelSchemaFactory
 		{
 			public IChannelSchema CreateSchema() =>
-				new ChannelSchema("TestProvider", "TestType", "1.0.0")
+				new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 					.WithCapabilities(ChannelCapability.SendMessages)
 					.HandlesMessageEndpoint(EndpointType.PhoneNumber)
-					.AddContentType(MessageContentType.PlainText);
+					.AddContentType(MessageContentType.PlainText)
+					.Build();
 		}
 
 		private class AnotherTestSchemaFactory : IChannelSchemaFactory
 		{
 			public IChannelSchema CreateSchema() =>
-				new ChannelSchema("AnotherProvider", "AnotherType", "1.0.0")
+				new ChannelSchemaBuilder("AnotherProvider", "AnotherType", "1.0.0")
 					.WithCapabilities(ChannelCapability.SendMessages)
 					.HandlesMessageEndpoint(EndpointType.EmailAddress)
-					.AddContentType(MessageContentType.Html);
+					.AddContentType(MessageContentType.Html)
+					.Build();
 		}
 
 		private class ThirdTestSchemaFactory : IChannelSchemaFactory
 		{
 			public IChannelSchema CreateSchema() =>
-				new ChannelSchema("ThirdProvider", "ThirdType", "1.0.0")
+				new ChannelSchemaBuilder("ThirdProvider", "ThirdType", "1.0.0")
 					.WithCapabilities(ChannelCapability.ReceiveMessages)
 					.HandlesMessageEndpoint(EndpointType.Url)
-					.AddContentType(MessageContentType.Json);
+					.AddContentType(MessageContentType.Json)
+					.Build();
 		}
 	}
 }

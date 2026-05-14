@@ -336,13 +336,14 @@ namespace Deveel.Messaging
         public async Task Should_InitializeSuccessfully_When_TestConnectorWithAuthentication()
         {
             // Arrange
-            var schema = new ChannelSchema("Test", "Test", "1.0.0")
-                .AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication());
+			var schema = new ChannelSchemaBuilder("Test", "Test", "1.0.0")
+				.AddAuthenticationConfiguration(AuthenticationConfigurations.ApiKeyAuthentication())
+				.Build();
 
-            var connectionSettings = new ConnectionSettings()
-                .SetParameter("ApiKey", "test-api-key");
+			var connectionSettings = new ConnectionSettings()
+				.SetParameter("ApiKey", "test-api-key");
 
-            var connector = new TestAuthConnector(schema, connectionSettings);
+			var connector = new TestAuthConnector(schema, connectionSettings);
 
             // Act
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -358,8 +359,8 @@ namespace Deveel.Messaging
         public async Task Should_InitializeWithoutAuth_When_TestConnectorWithoutAuthenticationConfig()
         {
             // Arrange
-            var schema = new ChannelSchema("Test", "Test", "1.0.0");
-            var connectionSettings = new ConnectionSettings();
+			var schema = new ChannelSchemaBuilder("Test", "Test", "1.0.0").Build();
+			var connectionSettings = new ConnectionSettings();
             var connector = new TestAuthConnector(schema, connectionSettings);
 
             // Act

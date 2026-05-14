@@ -19,7 +19,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateTwilioSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio SMS webhook form data
@@ -69,7 +69,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateTwilioWhatsAppSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio WhatsApp webhook
@@ -120,7 +120,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.MediaAttachments);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio MMS webhook with media
@@ -177,7 +177,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.HandleMessageState);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio status callback
@@ -220,7 +220,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.HandleMessageState);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio failed status callback
@@ -267,7 +267,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate Twilio webhook in JSON format (less common but supported by some configurations)
@@ -322,7 +322,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.HandleMessageState);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var statusData = $"MessageSid=SM1234567890&MessageStatus={twilioStatus}&To=%2B1987654321&From=%2B1234567890";
@@ -354,7 +354,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.BulkMessaging);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate batch of Twilio messages in JSON format
@@ -416,7 +416,7 @@ public class TwilioMessageReceivingTests
             .WithCapability(ChannelCapability.ReceiveMessages)
             .WithCapability(ChannelCapability.Templates);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Simulate WhatsApp template response
@@ -478,7 +478,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Invalid webhook data (missing required fields)
@@ -512,7 +512,7 @@ public class TwilioMessageReceivingTests
         var schema = CreateSimpleSmsSchema()
             .WithCapability(ChannelCapability.ReceiveMessages);
 
-        var connector = new TwilioSmsConnector(schema, CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
+        var connector = new TwilioSmsConnector(schema.Build(), CreateValidConnectionSettings(), TwilioMockFactory.CreateMockTwilioService().Object);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         var webhookData = "MessageSid=SM1234567890&From=%2B1234567890&To=%2B1987654321&Body=Test%20message";
@@ -606,9 +606,9 @@ public class TwilioMessageReceivingTests
     }
 
     // Schema helper methods
-    private static ChannelSchema CreateTwilioSmsSchema()
+    private static ChannelSchemaBuilder CreateTwilioSmsSchema()
     {
-        return new ChannelSchema("Twilio", "SMS", "1.0.0")
+        return new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
@@ -617,9 +617,9 @@ public class TwilioMessageReceivingTests
             });
     }
 
-    private static ChannelSchema CreateTwilioWhatsAppSchema()
+    private static ChannelSchemaBuilder CreateTwilioWhatsAppSchema()
     {
-        return new ChannelSchema("Twilio", "WhatsApp", "1.0.0")
+        return new ChannelSchemaBuilder("Twilio", "WhatsApp", "1.0.0")
             .AddContentType(MessageContentType.PlainText)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>
             {
@@ -628,9 +628,9 @@ public class TwilioMessageReceivingTests
             });
     }
 
-    private static ChannelSchema CreateSimpleSmsSchema()
+    private static ChannelSchemaBuilder CreateSimpleSmsSchema()
     {
-        return new ChannelSchema("Twilio", "SMS", "1.0.0")
+        return new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
             .AddContentType(MessageContentType.PlainText)
             .AddContentType(MessageContentType.Binary)
             .HandlesMessageEndpoint(EndpointType.PhoneNumber, e =>

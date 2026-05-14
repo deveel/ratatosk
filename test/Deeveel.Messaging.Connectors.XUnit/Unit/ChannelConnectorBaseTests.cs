@@ -15,7 +15,7 @@ public class ChannelConnectorBaseTests
 	public void Should_SetSchemaCorrectly_When_ConstructorWithValidSchema()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 
 		// Act
 		var connector = new TestConnector(schema);
@@ -37,7 +37,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_TransitionToInitializingThenReady_When_InitializeAsyncWhenUninitialized()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 
 		// Act
@@ -52,7 +52,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnFailure_When_InitializeAsyncWhenAlreadyInitialized()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -68,7 +68,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_TransitionToErrorState_When_InitializeAsyncWhenInitializationFails()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema) { ShouldFailInitialization = true };
 
 		// Act
@@ -83,7 +83,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_TransitionToErrorState_When_InitializeAsyncWhenInitializationThrows()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema) { ShouldThrowOnInitialization = true };
 
 		// Act
@@ -99,7 +99,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_AutoInitialize_When_TestConnectionAsyncWhenNotInitialized()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 
 		// Act
@@ -114,7 +114,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnResult_When_TestConnectionAsyncWhenOperational()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -130,8 +130,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowNotSupportedException_When_SendMessageAsyncWithoutSendCapability()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.WithCapabilities(ChannelCapability.ReceiveMessages); // No send capability
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.WithCapabilities(ChannelCapability.ReceiveMessages).Build(); // No send capability
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var message = new Message
@@ -150,7 +150,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowArgumentNullException_When_SendMessageAsyncWithNullMessage()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -164,7 +164,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnResult_When_SendMessageAsyncWhenSupported()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var message = new Message
@@ -186,7 +186,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowNotSupportedException_When_SendBatchAsyncWithoutBulkCapability()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var batch = new MessageBatch {
@@ -204,8 +204,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_CallsImplementation_When_SendBatchAsyncWithCapability()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.WithCapability(ChannelCapability.BulkMessaging);
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.WithCapability(ChannelCapability.BulkMessaging).Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var batch = new MessageBatch {
@@ -230,7 +230,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowNotSupportedException_When_GetMessageStatusAsyncWithoutCapability()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -244,8 +244,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowArgumentNullException_When_GetMessageStatusAsyncWithNullMessageId()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.WithCapability(ChannelCapability.MessageStatusQuery);
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.WithCapability(ChannelCapability.MessageStatusQuery).Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -259,8 +259,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnValidationResults_When_ValidateMessageAsyncWithMessage()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.AddContentType(MessageContentType.PlainText);
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.AddContentType(MessageContentType.PlainText).Build();
 		var connector = new TestConnector(schema);
 		var message = new Message
 		{
@@ -284,7 +284,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowNotSupportedException_When_ReceiveStatusAsyncWithoutCapability()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -298,7 +298,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowNotSupportedException_When_ReceiveMessagesAsyncWithoutCapability()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -312,7 +312,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowNotSupportedException_When_GetHealthAsyncWithoutCapability()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 
 		// Act
@@ -325,8 +325,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnHealthInfo_When_GetHealthAsyncWithCapability()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.WithCapability(ChannelCapability.HealthCheck);
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.WithCapability(ChannelCapability.HealthCheck).Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -344,8 +344,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnUnhealthyStatus_When_GetHealthAsyncWhenNotReady()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.WithCapability(ChannelCapability.HealthCheck);
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.WithCapability(ChannelCapability.HealthCheck).Build();
 		var connector = new TestConnector(schema) { ShouldFailInitialization = true };
 		await connector.InitializeAsync(TestContext.Current.CancellationToken); // This will put it in Error state
 
@@ -364,7 +364,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_TransitionToShutdownState_When_ShutdownAsyncIsInvoked()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -379,7 +379,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_DoNothing_When_ShutdownAsyncWhenAlreadyShutdown()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		await connector.ShutdownAsync(TestContext.Current.CancellationToken);
@@ -398,7 +398,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ThrowInvalidOperationException_When_OperationalMethodsWithNonOperationalState(ConnectorState state)
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		connector.SetStatePublic(state);
 		var message = new Message {
@@ -425,7 +425,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_AutoInitialize_When_SendMessageAsyncWhenNotInitialized()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		var message = new Message {
 			Id = Guid.NewGuid().ToString(),
@@ -445,7 +445,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnStatus_When_GetStatusAsyncIsInvoked()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 
 		// Act
@@ -460,8 +460,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnValidationFailure_When_SendMessageAsyncWithValidationErrors()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.AddContentType(MessageContentType.Html); // Only supports HTML, not PlainText
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.AddContentType(MessageContentType.Html).Build(); // Only supports HTML, not PlainText
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 		var message = new Message
@@ -489,9 +489,9 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnValidationFailure_When_SendBatchAsyncWithValidationErrors()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
 			.WithCapability(ChannelCapability.BulkMessaging)
-			.AddContentType(MessageContentType.Html); // Only supports HTML
+			.AddContentType(MessageContentType.Html).Build(); // Only supports HTML
 		var connector = new TestConnector(schema);
 		await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
@@ -524,8 +524,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnValidationError_When_ValidateMessageAsyncWithInvalidContentType()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.AddContentType(MessageContentType.Html); // Only supports HTML
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.AddContentType(MessageContentType.Html).Build(); // Only supports HTML
 		var connector = new TestConnector(schema);
 		var message = new Message
 		{
@@ -552,7 +552,7 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnValidationError_When_ValidateMessageAsyncWithMissingMessageId()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		var message = new Message {
 			Id = ""
@@ -577,8 +577,8 @@ public class ChannelConnectorBaseTests
 	public async Task Should_ReturnSuccess_When_ValidateMessageAsyncWithValidMessage()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
-			.AddContentType(MessageContentType.PlainText); // Supports PlainText
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
+			.AddContentType(MessageContentType.PlainText).Build(); // Supports PlainText
 		var connector = new TestConnector(schema);
 		var message = new Message
 		{
@@ -602,7 +602,7 @@ public class ChannelConnectorBaseTests
 	public void Should_ReturnEndpointTypeProperty_When_GetEndpointTypeIsInvoked()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0");
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0").Build();
 		var connector = new TestConnector(schema);
 		var endpoint = Endpoint.EmailAddress("test@example.com");
 
@@ -617,12 +617,12 @@ public class ChannelConnectorBaseTests
 	public void Should_ReturnTrue_When_IsEndpointTypeSupportedWithMatchingEndpointType()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
 			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
 				e.CanSend = true;
 				e.CanReceive = false;
-			});
+			}).Build();
 		var connector = new TestConnector(schema);
 
 		// Act
@@ -636,12 +636,12 @@ public class ChannelConnectorBaseTests
 	public void Should_ReturnFalse_When_IsEndpointTypeSupportedWithNonMatchingEndpointType()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
 			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
 				e.CanSend = true;
 				e.CanReceive = false;
-			});
+			}).Build();
 		var connector = new TestConnector(schema);
 
 		// Act
@@ -655,13 +655,13 @@ public class ChannelConnectorBaseTests
 	public async Task Should_WorksCorrectly_When_ValidateMessageAsyncWithEndpointTypeValidation()
 	{
 		// Arrange
-		var schema = new ChannelSchema("TestProvider", "Email", "1.0.0")
+		var schema = new ChannelSchemaBuilder("TestProvider", "Email", "1.0.0")
 			.AddContentType(MessageContentType.PlainText)
 			.HandlesMessageEndpoint(EndpointType.EmailAddress, e =>
 			{
 				e.CanSend = true;
 				e.CanReceive = false;
-			});
+			}).Build();
 
 		var connector = new TestConnector(schema);
 		var validMessage = new Message

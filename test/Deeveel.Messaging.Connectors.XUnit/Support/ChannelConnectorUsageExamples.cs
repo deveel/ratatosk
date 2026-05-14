@@ -12,14 +12,15 @@ public class ChannelConnectorUsageExamples
 	public async Task EmailConnector_Example_CanSendMessage()
 	{
 		// Arrange
-		var schema = new ChannelSchema("SMTP", "Email", "1.0.0")
+		var schema = new ChannelSchemaBuilder("SMTP", "Email", "1.0.0")
 			.WithDisplayName("Email Connector")
 			.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.HealthCheck)
 			.AddRequiredParameter("Host", DataType.String)
 			.AddParameter("Port", DataType.Integer, param => param.DefaultValue = 587)
 			.AddContentType(MessageContentType.PlainText)
 			.AddContentType(MessageContentType.Html)
-			.AddAuthenticationType(AuthenticationType.Basic);
+			.AddAuthenticationType(AuthenticationType.Basic)
+			.Build();
 
 		var connector = new ExampleEmailConnector(schema);
 
@@ -44,7 +45,7 @@ public class ChannelConnectorUsageExamples
 	public async Task SmsConnector_Example_SupportsStatusQueries()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Twilio", "SMS", "2.0.0")
+		var schema = new ChannelSchemaBuilder("Twilio", "SMS", "2.0.0")
 			.WithDisplayName("SMS Connector")
 			.WithCapabilities(
 				ChannelCapability.SendMessages |
@@ -53,7 +54,8 @@ public class ChannelConnectorUsageExamples
 			.AddRequiredParameter("AccountSid", DataType.String)
 			.AddRequiredParameter("AuthToken", DataType.String, true)
 			.AddContentType(MessageContentType.PlainText)
-			.AddAuthenticationType(AuthenticationType.Token);
+			.AddAuthenticationType(AuthenticationType.Token)
+			.Build();
 
 		var connector = new ExampleSmsConnector(schema);
 
@@ -79,8 +81,9 @@ public class ChannelConnectorUsageExamples
 	public async Task ConnectorWithHealthCheck_Example_ReturnsHealthStatus()
 	{
 		// Arrange
-		var schema = new ChannelSchema("Custom", "Health", "1.0.0")
-			.WithCapabilities(ChannelCapability.HealthCheck);
+		var schema = new ChannelSchemaBuilder("Custom", "Health", "1.0.0")
+			.WithCapabilities(ChannelCapability.HealthCheck)
+			.Build();
 
 		var connector = new ExampleHealthConnector(schema);
 
