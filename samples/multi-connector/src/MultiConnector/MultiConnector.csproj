@@ -7,42 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Deveel.Messaging.Abstractions">
-      <HintPath>..\..\libs\Deveel.Messaging.Abstractions.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connector.Abstractions">
-      <HintPath>..\..\libs\Deveel.Messaging.Connector.Abstractions.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connectors">
-      <HintPath>..\..\libs\Deveel.Messaging.Connectors.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging">
-      <HintPath>..\..\libs\Deveel.Messaging.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connector.Facebook">
-      <HintPath>..\..\libs\Deveel.Messaging.Connector.Facebook.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connector.Firebase">
-      <HintPath>..\..\libs\Deveel.Messaging.Connector.Firebase.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connector.Sendgrid">
-      <HintPath>..\..\libs\Deveel.Messaging.Connector.Sendgrid.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connector.Telegram">
-      <HintPath>..\..\libs\Deveel.Messaging.Connector.Telegram.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connector.Twilio">
-      <HintPath>..\..\libs\Deveel.Messaging.Connector.Twilio.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Abstractions\Deveel.Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Abstractions\Deveel.Messaging.Connector.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connectors\Deveel.Messaging.Connectors.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging\Deveel.Messaging.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Facebook\Deveel.Messaging.Connector.Facebook.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Firebase\Deveel.Messaging.Connector.Firebase.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Sendgrid\Deveel.Messaging.Connector.Sendgrid.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Telegram\Deveel.Messaging.Connector.Telegram.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Twilio\Deveel.Messaging.Connector.Twilio.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,7 +25,4 @@
 
 </ItemGroup>
 
-  <Target Name="EnsureConnectorLibs" BeforeTargets="ResolveReferences">
-    <Error Condition="!Exists('..\..\libs\Deveel.Messaging.Connector.Facebook.dll')" Text="Run ./build-libs.sh from the sample root to populate libs/ before building this sample." />
-  </Target>
 </Project>

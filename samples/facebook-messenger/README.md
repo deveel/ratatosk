@@ -63,30 +63,24 @@ export FACEBOOK_WEBHOOK_URL="https://example.com/webhook"
 
 ## Building & Running
 
-The `run.sh` script builds the required libraries (only if missing) and runs the sample in one step:
-
 ```bash
 ./run.sh -- facebook <command>
 ```
 
 | Flag | Description |
 |------|-------------|
-| `-b`, `--build-libs` | Force rebuild library dependencies even if already present |
 | `-v`, `--verbose` | Enable console logging output (hidden by default) |
 
 Examples:
 
 ```bash
-./run.sh -- facebook send           # quiet, build deps only if needed
-./run.sh -v -- facebook status      # show logs, build deps only if needed
-./run.sh -b -- facebook configure   # force rebuild deps, quiet run
-./run.sh -b -v -- facebook send     # force rebuild deps + show logs
+./run.sh -- facebook send       # quiet
+./run.sh -v -- facebook status  # show logs
 ```
 
 To build without running:
 
 ```bash
-./build-libs.sh
 dotnet build
 ```
 

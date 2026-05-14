@@ -81,3 +81,7 @@ The framework is deliberately focused on the messaging contract and connector co
 **Connector guides:**
 
 - [Connector index](connectors/README.md) — all supported providers
+
+**Samples:**
+
+- [Samples overview](samples/README.md) — runnable sample applications for each channel

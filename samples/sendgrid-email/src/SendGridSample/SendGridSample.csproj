@@ -7,26 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Deveel.Messaging.Abstractions">
-      <HintPath>..\..\libs\Deveel.Messaging.Abstractions.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connector.Abstractions">
-      <HintPath>..\..\libs\Deveel.Messaging.Connector.Abstractions.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connectors">
-      <HintPath>..\..\libs\Deveel.Messaging.Connectors.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging">
-      <HintPath>..\..\libs\Deveel.Messaging.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Deveel.Messaging.Connector.Sendgrid">
-      <HintPath>..\..\libs\Deveel.Messaging.Connector.Sendgrid.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Abstractions\Deveel.Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Abstractions\Deveel.Messaging.Connector.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connectors\Deveel.Messaging.Connectors.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging\Deveel.Messaging.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Sendgrid\Deveel.Messaging.Connector.Sendgrid.csproj" />
     <PackageReference Include="Spectre.Console" Version="0.49.1" />
   </ItemGroup>
 
@@ -46,7 +31,4 @@
     <Compile Include="..\..\..\shared\SampleOutputHelper.cs" Link="Support\SampleOutputHelper.cs" />
   </ItemGroup>
 
-  <Target Name="EnsureConnectorLibs" BeforeTargets="ResolveReferences">
-    <Error Condition="!Exists('..\..\libs\Deveel.Messaging.dll') or !Exists('..\..\libs\Deveel.Messaging.Connectors.dll') or !Exists('..\..\libs\Deveel.Messaging.Connector.Sendgrid.dll')" Text="Run ./build-libs.sh from the sample root to populate libs/ before building this sample." />
-  </Target>
 </Project>

@@ -49,30 +49,24 @@ export TELEGRAM_WEBHOOK_URL="https://example.com/webhook"
 
 ## Building & Running
 
-The `run.sh` script builds the required libraries (only if missing) and runs the sample in one step:
-
 ```bash
 ./run.sh -- telegram <command>
 ```
 
 | Flag | Description |
 |------|-------------|
-| `-b`, `--build-libs` | Force rebuild library dependencies even if already present |
 | `-v`, `--verbose` | Enable console logging output (hidden by default) |
 
 Examples:
 
 ```bash
-./run.sh -- telegram send           # quiet, build deps only if needed
-./run.sh -v -- telegram status      # show logs, build deps only if needed
-./run.sh -b -- telegram configure   # force rebuild deps, quiet run
-./run.sh -b -v -- telegram send     # force rebuild deps + show logs
+./run.sh -- telegram send       # quiet
+./run.sh -v -- telegram status  # show logs
 ```
 
 To build without running:
 
 ```bash
-./build-libs.sh
 dotnet build
 ```
 

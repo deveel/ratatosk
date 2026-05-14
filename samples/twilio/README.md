@@ -56,30 +56,24 @@ export TWILIO_WHATSAPP_TO="whatsapp:+15557654321"
 
 ## Building & Running
 
-The `run.sh` script builds the required libraries (only if missing) and runs the sample in one step:
-
 ```bash
 ./run.sh -- twilio <command>
 ```
 
 | Flag | Description |
 |------|-------------|
-| `-b`, `--build-libs` | Force rebuild library dependencies even if already present |
 | `-v`, `--verbose` | Enable console logging output (hidden by default) |
 
 Examples:
 
 ```bash
-./run.sh -- twilio sms send            # quiet, build deps only if needed
-./run.sh -v -- twilio status           # show logs, build deps only if needed
-./run.sh -b -- twilio configure        # force rebuild deps, quiet run
-./run.sh -b -v -- twilio whatsapp send # force rebuild deps + show logs
+./run.sh -- twilio sms send   # quiet
+./run.sh -v -- twilio status  # show logs
 ```
 
 To build without running:
 
 ```bash
-./build-libs.sh
 dotnet build
 ```
 
