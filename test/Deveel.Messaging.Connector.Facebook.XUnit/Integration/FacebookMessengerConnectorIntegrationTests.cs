@@ -233,7 +233,7 @@ public class FacebookMessengerConnectorIntegrationTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidWebhookData, result.Error!.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error!.Code);
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public class FacebookMessengerConnectorIntegrationTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.UnsupportedContentType, result.Error!.Code);
+        Assert.Equal(MessagingErrorCodes.UnsupportedContentType, result.Error!.Code);
     }
 
     [Fact]

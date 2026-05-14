@@ -64,7 +64,7 @@ namespace Deveel.Messaging
         {
             if (!Schema.Capabilities.HasFlag(capability))
             {
-                throw new NotSupportedException($"The connector does not support the '{capability}' capability.");
+                throw new MessagingException(MessagingErrorCodes.InvalidConfiguration, MessagingErrorCodes.ErrorDomain, $"The connector does not support the '{capability}' capability.");
             }
         }
 
@@ -84,7 +84,7 @@ namespace Deveel.Messaging
                 currentState == ConnectorState.ShuttingDown ||
                 currentState == ConnectorState.Shutdown)
             {
-                throw new InvalidOperationException($"The connector is not in an operational state. Current state: {currentState}");
+                throw new MessagingException(MessagingErrorCodes.MessagingError, MessagingErrorCodes.ErrorDomain, $"The connector is not in an operational state. Current state: {currentState}");
             }
         }
 
@@ -108,7 +108,7 @@ namespace Deveel.Messaging
             if (State != ConnectorState.Uninitialized)
             {
                 return OperationResult<bool>.Fail(ConnectorErrorCodes.AlreadyInitialized,
-                    Schema.ChannelType,
+                    MessagingErrorCodes.ErrorDomain,
                     "The connector has already been initialized.");
             }
 
@@ -153,7 +153,7 @@ namespace Deveel.Messaging
                 SetState(ConnectorState.Error);
                 return OperationResult<bool>.Fail(
                     ConnectorErrorCodes.InitializationError,
-                    Schema.ChannelType, ex.Message);
+                    MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 
@@ -176,7 +176,7 @@ namespace Deveel.Messaging
                     Logger.LogNoAuthenticationConfigurationFound();
                     return OperationResult<bool>.Fail(
                         ConnectorErrorCodes.AuthenticationFailed,
-                        Schema.ChannelType,
+                        MessagingErrorCodes.ErrorDomain,
                         "No suitable authentication configuration found for the provided connection settings");
                 }
 
@@ -196,7 +196,7 @@ namespace Deveel.Messaging
                     Logger.LogAuthenticationFailed(authConfig.Scheme);
                     return OperationResult<bool>.Fail(
                         ConnectorErrorCodes.AuthenticationFailed,
-                        Schema.ChannelType,
+                        MessagingErrorCodes.ErrorDomain,
                         authResult.ErrorMessage ?? "Authentication failed");
                 }
             }
@@ -210,7 +210,7 @@ namespace Deveel.Messaging
                 Logger.LogAuthenticationException(ex);
                 return OperationResult<bool>.Fail(
                     ConnectorErrorCodes.AuthenticationFailed,
-                    Schema.ChannelType,
+                    MessagingErrorCodes.ErrorDomain,
                     $"Authentication error: {ex.Message}");
             }
         }
@@ -251,16 +251,21 @@ namespace Deveel.Messaging
                     Logger.LogAuthenticationRefreshFailed();
                     return OperationResult<bool>.Fail(
                         ConnectorErrorCodes.AuthenticationFailed,
-                        Schema.ChannelType,
+                        MessagingErrorCodes.ErrorDomain,
                         authResult.ErrorMessage ?? "Authentication refresh failed");
                 }
+            }
+            catch (MessagingException ex)
+            {
+                Logger.LogAuthenticationRefreshException(ex);
+                return OperationResult<bool>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
                 Logger.LogAuthenticationRefreshException(ex);
                 return OperationResult<bool>.Fail(
                     ConnectorErrorCodes.AuthenticationFailed,
-                    Schema.ChannelType,
+                    MessagingErrorCodes.ErrorDomain,
                     $"Authentication refresh error: {ex.Message}");
             }
         }
@@ -314,7 +319,7 @@ namespace Deveel.Messaging
 
                 return true;
             }
-            catch (ConnectorException ex)
+            catch (MessagingException ex)
             {
                 Logger.LogConnectionTestFailed(ex);
 
@@ -326,7 +331,7 @@ namespace Deveel.Messaging
 
                 return OperationResult<bool>.Fail(
                     ConnectorErrorCodes.ConnectionTestError,
-                    Schema.ChannelType, ex.Message);
+                    MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 
@@ -360,7 +365,7 @@ namespace Deveel.Messaging
 
                     return OperationResult<SendResult>.ValidationFailed(
                         ConnectorErrorCodes.MessageValidationFailed,
-                        Schema.ChannelType,
+                        MessagingErrorCodes.ErrorDomain,
                         validationErrors);
                 }
 
@@ -382,7 +387,7 @@ namespace Deveel.Messaging
             catch (Exception ex)
             {
                 Logger.LogMessageSendFailed(message.Id, ex);
-                return OperationResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, Schema.ChannelType, ex.Message);
+                return OperationResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 
@@ -425,7 +430,7 @@ namespace Deveel.Messaging
 
                     return OperationResult<BatchSendResult>.ValidationFailed(
                         ConnectorErrorCodes.BatchValidationFailed,
-                        Schema.ChannelType,
+                        MessagingErrorCodes.ErrorDomain,
                         allValidationErrors);
                 }
 
@@ -445,7 +450,7 @@ namespace Deveel.Messaging
             catch (Exception ex)
             {
                 Logger.LogBatchSendFailed(batch.Messages.Count(), ex);
-                return OperationResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, Schema.ChannelType, ex.Message);
+                return OperationResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 
@@ -468,10 +473,15 @@ namespace Deveel.Messaging
 
                 return result;
             }
+            catch (MessagingException ex)
+            {
+                Logger.LogStatusReadFailed(ex);
+                return OperationResult<StatusInfo>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
+            }
             catch (Exception ex)
             {
                 Logger.LogStatusReadFailed(ex);
-                return OperationResult<StatusInfo>.Fail(ConnectorErrorCodes.GetStatusError, Schema.ChannelType, ex.Message);
+                return OperationResult<StatusInfo>.Fail(ConnectorErrorCodes.GetStatusError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 
@@ -495,10 +505,15 @@ namespace Deveel.Messaging
 
                 return result;
             }
+            catch (MessagingException ex)
+            {
+                Logger.LogMessageStatusReadFailed(messageId, ex);
+                return OperationResult<StatusUpdatesResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
+            }
             catch (Exception ex)
             {
                 Logger.LogMessageStatusReadFailed(messageId, ex);
-                return OperationResult<StatusUpdatesResult>.Fail(ConnectorErrorCodes.GetMessageStatusError, Schema.ChannelType, ex.Message);
+                return OperationResult<StatusUpdatesResult>.Fail(ConnectorErrorCodes.GetMessageStatusError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 
@@ -587,7 +602,7 @@ namespace Deveel.Messaging
             catch (Exception ex)
             {
                 Logger.LogMessageStatusReceiveFailed(ex);
-                return OperationResult<StatusUpdateResult>.Fail(ConnectorErrorCodes.ReceiveStatusError, Schema.ChannelType, ex.Message);
+                return OperationResult<StatusUpdateResult>.Fail(ConnectorErrorCodes.ReceiveStatusError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 
@@ -623,7 +638,7 @@ namespace Deveel.Messaging
                 Logger.LogMessageReceiveFailed(ex);
                 return OperationResult<ReceiveResult>.Fail(
                     ConnectorErrorCodes.ReceiveMessagesError,
-                    Schema.ChannelType, ex.Message);
+                    MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 
@@ -648,10 +663,15 @@ namespace Deveel.Messaging
 
                 return result;
             }
+            catch (MessagingException ex)
+            {
+                Logger.LogHealthCheckFailed(ex);
+                return OperationResult<ConnectorHealth>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
+            }
             catch (Exception ex)
             {
                 Logger.LogHealthCheckFailed(ex);
-                return OperationResult<ConnectorHealth>.Fail(ConnectorErrorCodes.GetHealthError, Schema.ChannelType, ex.Message);
+                return OperationResult<ConnectorHealth>.Fail(ConnectorErrorCodes.GetHealthError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
         }
 

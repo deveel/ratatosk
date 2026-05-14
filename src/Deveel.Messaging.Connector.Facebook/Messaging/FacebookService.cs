@@ -18,6 +18,7 @@ namespace Deveel.Messaging
         private readonly RestClient _restClient;
         private string? _pageAccessToken;
 
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FacebookService"/> class.
         /// </summary>
@@ -60,7 +61,13 @@ namespace Deveel.Messaging
                 if (!response.IsSuccessful)
                 {
                     var errorDetails = ParseFacebookError(response);
-                    throw new InvalidOperationException($"Facebook Graph API error: {errorDetails}");
+                    var (graphApiCode, _) = ParseFacebookErrorCode(response);
+                    var errorCode = MapGraphApiErrorCode(graphApiCode);
+
+                    throw new ConnectorException(
+                        errorCode,
+                        FacebookErrorCodes.ErrorDomain,
+                        $"Facebook Graph API error: {errorDetails}");
                 }
 
                 if (string.IsNullOrEmpty(response.Content))
@@ -75,9 +82,9 @@ namespace Deveel.Messaging
                     Category = GetJsonStringProperty(pageData, "category") ?? ""
                 };
             }
-            catch (Exception ex) when (!(ex is InvalidOperationException))
+            catch (Exception ex) when (!(ex is ConnectorException))
             {
-                throw new InvalidOperationException($"Error fetching Facebook page: {ex.Message}", ex);
+                throw new ConnectorException(FacebookErrorCodes.ConnectionTestFailed, FacebookErrorCodes.ErrorDomain, $"Error fetching Facebook page: {ex.Message}", ex);
             }
         }
 
@@ -110,11 +117,17 @@ namespace Deveel.Messaging
                 if (!response.IsSuccessful)
                 {
                     var errorDetails = ParseFacebookError(response);
-                    throw new InvalidOperationException($"Facebook Graph API error: {errorDetails}");
+                    var (graphApiCode, _) = ParseFacebookErrorCode(response);
+                    var errorCode = MapGraphApiErrorCode(graphApiCode);
+
+                    throw new ConnectorException(
+                        errorCode,
+                        FacebookErrorCodes.ErrorDomain,
+                        $"Facebook Graph API error: {errorDetails}");
                 }
 
                 if (string.IsNullOrEmpty(response.Content))
-                    throw new InvalidOperationException("Facebook API returned empty response");
+                    throw new ConnectorException(FacebookErrorCodes.GraphApiError, FacebookErrorCodes.ErrorDomain, "Facebook API returned empty response");
 
                 var responseData = JsonSerializer.Deserialize<JsonElement>(response.Content);
 
@@ -124,9 +137,9 @@ namespace Deveel.Messaging
                     RecipientId = request.Recipient
                 };
             }
-            catch (Exception ex) when (!(ex is InvalidOperationException || ex is ArgumentException))
+            catch (Exception ex) when (!(ex is ConnectorException || ex is ArgumentException))
             {
-                throw new InvalidOperationException($"Error sending Facebook message: {ex.Message}", ex);
+                throw new ConnectorException(FacebookErrorCodes.GraphApiError, FacebookErrorCodes.ErrorDomain, $"Error sending Facebook message: {ex.Message}", ex);
             }
         }
 
@@ -245,6 +258,51 @@ namespace Deveel.Messaging
             }
 
             return content;
+        }
+
+        /// <summary>
+        /// Parses the Facebook Graph API error code from the response.
+        /// </summary>
+        internal static (int? code, int? subcode) ParseFacebookErrorCode(RestResponse response)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(response.Content))
+                    return (null, null);
+
+                var errorData = JsonSerializer.Deserialize<JsonElement>(response.Content);
+
+                if (errorData.TryGetProperty("error", out var error))
+                {
+                    var code = error.TryGetProperty("code", out var codeProp) ? codeProp.GetInt32() : (int?)null;
+                    var subcode = error.TryGetProperty("error_subcode", out var subcodeProp) ? subcodeProp.GetInt32() : (int?)null;
+
+                    return (code, subcode);
+                }
+
+                return (null, null);
+            }
+            catch
+            {
+                return (null, null);
+            }
+        }
+
+        /// <summary>
+        /// Maps a Facebook Graph API error code to an internal error code.
+        /// </summary>
+        internal static string MapGraphApiErrorCode(int? graphApiCode)
+        {
+            return graphApiCode switch
+            {
+                1 or 2 => FacebookErrorCodes.GraphApiError,
+                4 => FacebookErrorCodes.GraphApiError,
+                100 => FacebookErrorCodes.GraphApiError,
+                190 => FacebookErrorCodes.InvalidAccessToken,
+                200 => FacebookErrorCodes.GraphApiError,
+                368 => FacebookErrorCodes.GraphApiError,
+                _ => FacebookErrorCodes.GraphApiError
+            };
         }
 
         /// <summary>

@@ -4,6 +4,7 @@
 //
 
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Requests;
@@ -21,6 +22,7 @@ namespace Deveel.Messaging
 	{
 		private ITelegramBotClient? _botClient;
 		private string? _botToken;
+
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TelegramService"/> class.
@@ -49,7 +51,91 @@ namespace Deveel.Messaging
 		public async Task<User> GetMeAsync(CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			return await _botClient!.SendRequest(new GetMeRequest(), cancellationToken);
+			try
+			{
+				return await _botClient!.SendRequest(new GetMeRequest(), cancellationToken);
+			}
+			catch (ApiRequestException ex)
+			{
+				throw new ConnectorException(
+					MapTelegramErrorCode(ex.ErrorCode),
+					TelegramErrorCodes.ErrorDomain,
+					$"Telegram API error: {ex.Message}",
+					ex);
+			}
+		}
+
+		private static string MapTelegramErrorCode(int errorCode)
+		{
+			return errorCode switch
+			{
+				400 => MessagingErrorCodes.InvalidCredentials,
+				401 => TelegramErrorCodes.Unauthorized,
+				403 => TelegramErrorCodes.BotBlocked,
+				404 => TelegramErrorCodes.ChatNotFound,
+				429 => MessagingErrorCodes.UnsupportedContentType,
+				_ => TelegramErrorCodes.Unauthorized
+			};
+		}
+
+		private static string MapTelegramSendErrorCode(int errorCode)
+		{
+			return errorCode switch
+			{
+				400 => TelegramErrorCodes.InvalidChatId,
+				403 => TelegramErrorCodes.BotBlocked,
+				404 => TelegramErrorCodes.ChatNotFound,
+				429 => MessagingErrorCodes.UnsupportedContentType,
+				_ => MessagingErrorCodes.UnsupportedContentType
+			};
+		}
+
+		private async Task<T> SendWithErrorHandlingAsync<T>(Func<Task<T>> apiCall, string errorCode, string operationDescription)
+		{
+			try
+			{
+				return await apiCall();
+			}
+			catch (ApiRequestException ex)
+			{
+				throw new ConnectorException(
+					errorCode,
+					TelegramErrorCodes.ErrorDomain,
+					$"Telegram API error {operationDescription}: {ex.Message}",
+					ex);
+			}
+		}
+
+		private async Task SendWithErrorHandlingAsync(Func<Task> apiCall, string errorCode, string operationDescription)
+		{
+			try
+			{
+				await apiCall();
+			}
+			catch (ApiRequestException ex)
+			{
+				throw new ConnectorException(
+					errorCode,
+					TelegramErrorCodes.ErrorDomain,
+					$"Telegram API error {operationDescription}: {ex.Message}",
+					ex);
+			}
+		}
+
+		private async Task<T> SendWithErrorHandlingAsync<T>(Func<Task<T>> apiCall, Func<int, string> mapErrorCode, string operationDescription)
+		{
+			try
+			{
+				return await apiCall();
+			}
+			catch (ApiRequestException ex)
+			{
+				throw new ConnectorException(
+					mapErrorCode(ex.ErrorCode),
+					TelegramErrorCodes.ErrorDomain,
+					$"Telegram API error {operationDescription}: {ex.Message}",
+					ex);
+			}
 		}
 
 		/// <inheritdoc/>
@@ -78,7 +164,18 @@ namespace Deveel.Messaging
 			if (parseMode.HasValue)
 				request.ParseMode = parseMode.Value;
 
-			return await _botClient!.SendRequest(request, cancellationToken);
+			try
+			{
+				return await _botClient!.SendRequest(request, cancellationToken);
+			}
+			catch (ApiRequestException ex)
+			{
+				throw new ConnectorException(
+					MapTelegramSendErrorCode(ex.ErrorCode),
+					TelegramErrorCodes.ErrorDomain,
+					$"Telegram API error sending text message: {ex.Message}",
+					ex);
+			}
 		}
 
 		/// <inheritdoc/>
@@ -107,7 +204,10 @@ namespace Deveel.Messaging
 			if (parseMode.HasValue)
 				request.ParseMode = parseMode.Value;
 
-			return await _botClient!.SendRequest(request, cancellationToken);
+			return await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(request, cancellationToken),
+				MapTelegramSendErrorCode,
+				"sending photo");
 		}
 
 		/// <inheritdoc/>
@@ -146,7 +246,10 @@ namespace Deveel.Messaging
 			if (parseMode.HasValue)
 				request.ParseMode = parseMode.Value;
 
-			return await _botClient!.SendRequest(request, cancellationToken);
+			return await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(request, cancellationToken),
+				MapTelegramSendErrorCode,
+				"sending video");
 		}
 
 		/// <inheritdoc/>
@@ -183,7 +286,10 @@ namespace Deveel.Messaging
 			if (parseMode.HasValue)
 				request.ParseMode = parseMode.Value;
 
-			return await _botClient!.SendRequest(request, cancellationToken);
+			return await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(request, cancellationToken),
+				MapTelegramSendErrorCode,
+				"sending audio");
 		}
 
 		/// <inheritdoc/>
@@ -216,7 +322,10 @@ namespace Deveel.Messaging
 			if (parseMode.HasValue)
 				request.ParseMode = parseMode.Value;
 
-			return await _botClient!.SendRequest(request, cancellationToken);
+			return await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(request, cancellationToken),
+				MapTelegramSendErrorCode,
+				"sending document");
 		}
 
 		/// <inheritdoc/>
@@ -247,7 +356,10 @@ namespace Deveel.Messaging
 				ReplyMarkup = replyMarkup
 			};
 
-			return await _botClient!.SendRequest(request, cancellationToken);
+			return await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(request, cancellationToken),
+				MapTelegramSendErrorCode,
+				"sending location");
 		}
 
 		/// <inheritdoc/>
@@ -274,7 +386,10 @@ namespace Deveel.Messaging
 				SecretToken = secretToken
 			};
 
-			await _botClient!.SendRequest(request, cancellationToken);
+			await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(request, cancellationToken),
+				MessagingErrorCodes.UnsupportedContentType,
+				"setting webhook");
 		}
 
 		/// <inheritdoc/>
@@ -285,14 +400,20 @@ namespace Deveel.Messaging
 			{
 				DropPendingUpdates = dropPendingUpdates ?? false
 			};
-			await _botClient!.SendRequest(request, cancellationToken);
+			await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(request, cancellationToken),
+				MessagingErrorCodes.UnsupportedContentType,
+				"deleting webhook");
 		}
 
 		/// <inheritdoc/>
 		public async Task<WebhookInfo> GetWebhookInfoAsync(CancellationToken cancellationToken = default)
 		{
 			EnsureInitialized();
-			return await _botClient!.SendRequest(new GetWebhookInfoRequest(), cancellationToken);
+			return await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(new GetWebhookInfoRequest(), cancellationToken),
+				MessagingErrorCodes.UnsupportedContentType,
+				"getting webhook info");
 		}
 
 		/// <inheritdoc/>
@@ -313,7 +434,10 @@ namespace Deveel.Messaging
 				AllowedUpdates = allowedUpdates
 			};
 
-			return await _botClient!.SendRequest(request, cancellationToken);
+			return await SendWithErrorHandlingAsync(
+				() => _botClient!.SendRequest(request, cancellationToken),
+				MessagingErrorCodes.UnsupportedContentType,
+				"getting updates");
 		}
 
 		/// <summary>

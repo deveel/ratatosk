@@ -26,15 +26,15 @@ namespace Deveel.Messaging
             var messages = new List<IMessage>();
 
             if (!formData.TryGetValue("MessageSid", out var messageSid) || string.IsNullOrEmpty(messageSid))
-                throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData, channelType ?? string.Empty,
+                throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData, TwilioErrorCodes.ErrorDomain,
                     "MessageSid is required for Twilio webhooks");
 
             if (!formData.TryGetValue("From", out var from) || string.IsNullOrEmpty(from))
-                throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData, channelType ?? string.Empty,
+                throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData, TwilioErrorCodes.ErrorDomain,
                     "From field is required for Twilio webhooks");
 
             if (!formData.TryGetValue("To", out var to) || string.IsNullOrEmpty(to))
-                throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData, channelType ?? string.Empty,
+                throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData, TwilioErrorCodes.ErrorDomain,
                     "To field is required for Twilio webhooks");
 
             var body = formData.TryGetValue("Body", out var bodyValue) ? bodyValue : "";

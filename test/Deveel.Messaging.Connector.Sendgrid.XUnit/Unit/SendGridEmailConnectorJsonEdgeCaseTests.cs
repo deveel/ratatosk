@@ -30,7 +30,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         // Assert
         Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -369,7 +369,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         // Assert
         Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]

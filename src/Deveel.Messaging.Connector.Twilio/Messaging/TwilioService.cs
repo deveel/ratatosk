@@ -4,6 +4,7 @@
 //
 
 using Twilio;
+using Twilio.Exceptions;
 using Twilio.Rest.Api.V2010;
 using Twilio.Rest.Api.V2010.Account;
 
@@ -23,18 +24,67 @@ public class TwilioService : ITwilioService
     /// <inheritdoc/>
     public async Task<AccountResource?> FetchAccountAsync(string accountSid, CancellationToken cancellationToken = default)
     {
-        return await AccountResource.FetchAsync(accountSid);
+        try
+        {
+            return await AccountResource.FetchAsync(accountSid);
+        }
+        catch (ApiException ex)
+        {
+            throw new ConnectorException(
+                MessagingErrorCodes.ConnectionFailed,
+                TwilioErrorCodes.ErrorDomain,
+                $"Twilio API error fetching account: {ex.Message}",
+                ex);
+        }
     }
 
     /// <inheritdoc/>
     public async Task<MessageResource> CreateMessageAsync(CreateMessageOptions options, CancellationToken cancellationToken = default)
     {
-        return await MessageResource.CreateAsync(options);
+        try
+        {
+            return await MessageResource.CreateAsync(options);
+        }
+        catch (ApiException ex)
+        {
+            var errorCode = MapTwilioErrorCode(ex.Code);
+
+            throw new ConnectorException(
+                errorCode,
+                TwilioErrorCodes.ErrorDomain,
+                $"Twilio API error sending message: {ex.Message}",
+                ex);
+        }
     }
 
     /// <inheritdoc/>
     public async Task<MessageResource> FetchMessageAsync(string messageSid, CancellationToken cancellationToken = default)
     {
-        return await MessageResource.FetchAsync(messageSid);
+        try
+        {
+            return await MessageResource.FetchAsync(messageSid);
+        }
+        catch (ApiException ex)
+        {
+            throw new ConnectorException(
+                TwilioErrorCodes.StatusQueryFailed,
+                TwilioErrorCodes.ErrorDomain,
+                $"Twilio API error fetching message status: {ex.Message}",
+                ex);
+        }
+    }
+
+    private static string MapTwilioErrorCode(int? twilioCode)
+    {
+        // Map common Twilio error codes to internal error codes
+        return twilioCode switch
+        {
+            21211 => MessagingErrorCodes.InvalidRecipient,
+            21610 => MessagingErrorCodes.InvalidRecipient,
+            21614 => TwilioErrorCodes.InvalidSender,
+            21408 => TwilioErrorCodes.InvalidSender,
+            20001 => TwilioErrorCodes.InvalidMessage,
+            _ => MessagingErrorCodes.SendMessageFailed
+        };
     }
 }

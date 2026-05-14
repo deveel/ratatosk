@@ -80,7 +80,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
             {
                 throw new MessagingException(
-                    TwilioErrorCodes.MissingCredentials, Schema.ChannelType,
+                    MessagingErrorCodes.MissingCredentials, TwilioErrorCodes.ErrorDomain,
                     "Account SID and Auth Token are required for Twilio SMS connector");
             }
 
@@ -102,7 +102,8 @@ namespace Deveel.Messaging
 
             if (account == null)
             {
-                throw new ConnectorException(TwilioErrorCodes.ConnectionFailed,
+                throw new ConnectorException(MessagingErrorCodes.ConnectionFailed,
+                    TwilioErrorCodes.ErrorDomain,
                     "Unable to retrieve account information");
             }
         }
@@ -119,7 +120,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(senderNumber) && string.IsNullOrWhiteSpace(_messagingServiceSid))
             {
                 throw new ConnectorException(TwilioErrorCodes.MissingFromNumber,
-                    Schema.ChannelType,
+                    TwilioErrorCodes.ErrorDomain,
                     "Sender phone number is required when MessagingServiceSid is not configured");
             }
 
@@ -127,8 +128,8 @@ namespace Deveel.Messaging
             var toNumber = ExtractPhoneNumber(message.Receiver);
             if (string.IsNullOrWhiteSpace(toNumber))
             {
-                throw new ConnectorException(TwilioErrorCodes.InvalidRecipient,
-                    Schema.ChannelType,
+                throw new ConnectorException(MessagingErrorCodes.InvalidRecipient,
+                    TwilioErrorCodes.ErrorDomain,
                     "Recipient phone number is required and must be in E.164 format");
             }
 
@@ -366,7 +367,8 @@ namespace Deveel.Messaging
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData,
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                        TwilioErrorCodes.ErrorDomain,
                         "No valid messages found in webhook form data");
                 }
 
@@ -379,7 +381,8 @@ namespace Deveel.Messaging
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData,
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                        TwilioErrorCodes.ErrorDomain,
                         "No valid messages found in webhook JSON");
                 }
 
@@ -387,7 +390,8 @@ namespace Deveel.Messaging
                 return Task.FromResult(result);
             }
 
-            throw new ConnectorException(TwilioErrorCodes.UnsupportedContentType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                TwilioErrorCodes.ErrorDomain,
                 "Only form data and JSON are supported for Twilio message receiving");
         }
 
@@ -408,7 +412,8 @@ namespace Deveel.Messaging
                 return Task.FromResult(statusResult);
             }
 
-            throw new ConnectorException(TwilioErrorCodes.UnsupportedContentType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                TwilioErrorCodes.ErrorDomain,
                 "Only form data and JSON are supported for Twilio status callbacks");
         }
 

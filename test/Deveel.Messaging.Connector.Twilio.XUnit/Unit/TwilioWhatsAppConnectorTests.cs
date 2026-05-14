@@ -96,7 +96,7 @@ public class TwilioWhatsAppConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(TwilioErrorCodes.MissingCredentials, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.MissingCredentials, result.Error?.Code);
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public class TwilioWhatsAppConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(TwilioErrorCodes.InvalidRecipient, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidRecipient, result.Error?.Code);
         Assert.Contains("WhatsApp phone number is required", result.Error?.Message);
 
         // Verify Twilio service was not called due to validation failure

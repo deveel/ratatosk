@@ -11,14 +11,17 @@ namespace Deveel.Messaging
 	public static class TelegramErrorCodes
 	{
 		/// <summary>
+		/// The error domain for Telegram Bot connector errors.
+		/// </summary>
+		public const string ErrorDomain = "Telegram";
+
+		/// <summary>
 		/// Error code for missing bot token.
 		/// </summary>
-		public const string MissingBotToken = "MISSING_BOT_TOKEN";
 
 		/// <summary>
 		/// Error code for invalid bot token format.
 		/// </summary>
-		public const string InvalidBotToken = "INVALID_BOT_TOKEN";
 
 		/// <summary>
 		/// Error code for invalid chat ID.
@@ -26,19 +29,8 @@ namespace Deveel.Messaging
 		public const string InvalidChatId = "INVALID_CHAT_ID";
 
 		/// <summary>
-		/// Error code for unsupported content type.
-		/// </summary>
-		public const string UnsupportedContentType = "UNSUPPORTED_CONTENT_TYPE";
-
-		/// <summary>
-		/// Error code for invalid webhook data.
-		/// </summary>
-		public const string InvalidWebhookData = "INVALID_WEBHOOK_DATA";
-
-		/// <summary>
 		/// Error code for message text too long.
 		/// </summary>
-		public const string MessageTooLong = "MESSAGE_TOO_LONG";
 
 		/// <summary>
 		/// Error code for file too large.

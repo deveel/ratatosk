@@ -177,7 +177,7 @@ namespace Deveel.Messaging
 
             // Act
             // Assert
-            await Assert.ThrowsAsync<NotSupportedException>(async () => 
+            await Assert.ThrowsAsync<MessagingException>(async () => 
                 await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
         }
 

@@ -325,7 +325,7 @@ public class TwilioSmsConnectorJsonTests
         // Assert
         Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -355,7 +355,7 @@ public class TwilioSmsConnectorJsonTests
         // Assert
         Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]

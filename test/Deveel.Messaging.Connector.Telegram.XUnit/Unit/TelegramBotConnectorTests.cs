@@ -114,7 +114,7 @@ namespace Deveel.Messaging
 
 			// Assert
 			Assert.False(result.IsSuccess());
-			Assert.Equal(TelegramErrorCodes.MissingBotToken, result.Error?.Code);
+			Assert.Equal(MessagingErrorCodes.MissingCredentials, result.Error?.Code);
 			Assert.Equal(ConnectorState.Error, connector.State);
 		}
 
@@ -468,7 +468,7 @@ namespace Deveel.Messaging
 
 			// Assert
 			Assert.False(result.IsSuccess());
-			Assert.Equal(TelegramErrorCodes.UnsupportedContentType, result.Error?.Code);
+			Assert.Equal(MessagingErrorCodes.UnsupportedContentType, result.Error?.Code);
 		}
 
 		#endregion
@@ -488,7 +488,7 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			// The base connector validates capabilities first and throws NotSupportedException
-			await Assert.ThrowsAsync<NotSupportedException>(async () => 
+			await Assert.ThrowsAsync<MessagingException>(async () => 
 				await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
 		}
 

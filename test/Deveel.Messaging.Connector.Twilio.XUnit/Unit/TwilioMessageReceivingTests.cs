@@ -496,7 +496,7 @@ public class TwilioMessageReceivingTests
         Assert.NotNull(result.Error?.Code);
         Assert.NotEmpty(result.Error.Code);
         Assert.NotNull(result.Error?.Message);
-        Assert.Equal(TwilioErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
         Assert.Contains("MessageSid", result.Error?.Message);
         Assert.Contains("required", result.Error?.Message);
 

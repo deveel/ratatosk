@@ -15,6 +15,11 @@ namespace Deveel.Messaging
     /// </remarks>
     public static class FacebookErrorCodes
     {
+        /// <summary>
+        /// The error domain for Facebook Messenger connector errors.
+        /// </summary>
+        public const string ErrorDomain = "Facebook";
+
         #region Authentication and Credentials
 
         /// <summary>
@@ -24,7 +29,6 @@ namespace Deveel.Messaging
         /// This error occurs during initialization when the connection settings do not
         /// contain a valid Page Access Token required for Facebook Graph API access.
         /// </remarks>
-        public const string MissingCredentials = "MISSING_CREDENTIALS";
 
         /// <summary>
         /// Indicates that the provided access token is invalid or expired.
@@ -62,22 +66,12 @@ namespace Deveel.Messaging
         #region Message Validation
 
         /// <summary>
-        /// Indicates that the recipient User ID is invalid or missing.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the message receiver endpoint does not contain
-        /// a valid Facebook User ID (PSID), which is required for message delivery.
-        /// </remarks>
-        public const string InvalidRecipient = "INVALID_RECIPIENT";
-
-        /// <summary>
         /// Indicates that the message content is too long.
         /// </summary>
         /// <remarks>
         /// This error occurs when the message text exceeds Facebook's limits,
         /// which is typically 2000 characters for text messages.
         /// </remarks>
-        public const string MessageTooLong = "MESSAGE_TOO_LONG";
 
         #endregion
 
@@ -95,24 +89,6 @@ namespace Deveel.Messaging
         #endregion
 
         #region Message Receiving
-
-        /// <summary>
-        /// Indicates that the webhook data provided is invalid or malformed.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the webhook payload from Facebook does not contain
-        /// the expected fields or has invalid data that cannot be processed.
-        /// </remarks>
-        public const string InvalidWebhookData = "INVALID_WEBHOOK_DATA";
-
-        /// <summary>
-        /// Indicates that the content type for webhook data is not supported.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the webhook content type is not JSON,
-        /// which is the required format for Facebook webhooks.
-        /// </remarks>
-        public const string UnsupportedContentType = "UNSUPPORTED_CONTENT_TYPE";
 
         #endregion
 

@@ -18,6 +18,7 @@ namespace Deveel.Messaging
         private FirebaseApp? _app;
         private FirebaseMessaging? _messaging;
 
+
         /// <inheritdoc/>
         public FirebaseApp? App => _app;
 
@@ -55,9 +56,21 @@ namespace Deveel.Messaging
 
                 await Task.CompletedTask;
             }
+            catch (FirebaseMessagingException ex)
+            {
+                throw new ConnectorException(
+                    MapFirebaseErrorCode(ex.MessagingErrorCode),
+                    FirebaseErrorCodes.ErrorDomain,
+                    $"Failed to initialize Firebase service: {ex.Message}",
+                    ex);
+            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to initialize Firebase service: {ex.Message}", ex);
+                throw new ConnectorException(
+                    FirebaseErrorCodes.InitializationFailed,
+                    FirebaseErrorCodes.ErrorDomain,
+                    $"Failed to initialize Firebase service: {ex.Message}",
+                    ex);
             }
         }
 
@@ -71,9 +84,21 @@ namespace Deveel.Messaging
             {
                 return await _messaging!.SendAsync(message, dryRun, cancellationToken);
             }
+            catch (FirebaseMessagingException ex)
+            {
+                throw new ConnectorException(
+                    MapFirebaseErrorCode(ex.MessagingErrorCode),
+                    FirebaseErrorCodes.ErrorDomain,
+                    $"Firebase messaging error: {ex.Message}",
+                    ex);
+            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to send Firebase message: {ex.Message}", ex);
+                throw new ConnectorException(
+                    MessagingErrorCodes.SendMessageFailed,
+                    FirebaseErrorCodes.ErrorDomain,
+                    $"Failed to send Firebase message: {ex.Message}",
+                    ex);
             }
         }
 
@@ -87,9 +112,21 @@ namespace Deveel.Messaging
             {
                 return await _messaging!.SendEachAsync(messages, dryRun, cancellationToken);
             }
+            catch (FirebaseMessagingException ex)
+            {
+                throw new ConnectorException(
+                    MapFirebaseErrorCode(ex.MessagingErrorCode),
+                    FirebaseErrorCodes.ErrorDomain,
+                    $"Firebase messaging error: {ex.Message}",
+                    ex);
+            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to send Firebase messages: {ex.Message}", ex);
+                throw new ConnectorException(
+                    MessagingErrorCodes.SendMessageFailed,
+                    FirebaseErrorCodes.ErrorDomain,
+                    $"Failed to send Firebase messages: {ex.Message}",
+                    ex);
             }
         }
 
@@ -103,9 +140,21 @@ namespace Deveel.Messaging
             {
                 return await _messaging!.SendMulticastAsync(message, dryRun, cancellationToken);
             }
+            catch (FirebaseMessagingException ex)
+            {
+                throw new ConnectorException(
+                    MapFirebaseErrorCode(ex.MessagingErrorCode),
+                    FirebaseErrorCodes.ErrorDomain,
+                    $"Firebase messaging error: {ex.Message}",
+                    ex);
+            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to send Firebase multicast message: {ex.Message}", ex);
+                throw new ConnectorException(
+                    MessagingErrorCodes.SendMessageFailed,
+                    FirebaseErrorCodes.ErrorDomain,
+                    $"Failed to send Firebase multicast message: {ex.Message}",
+                    ex);
             }
         }
 
@@ -143,6 +192,24 @@ namespace Deveel.Messaging
                 // Any other exception means connection failed
                 return false;
             }
+        }
+
+        private static string MapFirebaseErrorCode(MessagingErrorCode? errorCode)
+        {
+            if (!errorCode.HasValue)
+                return MessagingErrorCodes.SendMessageFailed;
+
+            return errorCode.Value switch
+            {
+                MessagingErrorCode.InvalidArgument => FirebaseErrorCodes.InvalidArgument,
+                MessagingErrorCode.Unregistered => FirebaseErrorCodes.UnregisteredToken,
+                MessagingErrorCode.SenderIdMismatch => FirebaseErrorCodes.SenderIdMismatch,
+                MessagingErrorCode.QuotaExceeded => MessagingErrorCodes.RateLimitExceeded,
+                MessagingErrorCode.ThirdPartyAuthError => FirebaseErrorCodes.ThirdPartyAuthError,
+                MessagingErrorCode.Unavailable => FirebaseErrorCodes.ServiceUnavailable,
+                MessagingErrorCode.Internal => FirebaseErrorCodes.InternalError,
+                _ => MessagingErrorCodes.SendMessageFailed
+            };
         }
 
         private void EnsureInitialized()

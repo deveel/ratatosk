@@ -68,7 +68,7 @@ namespace Deveel.Messaging
             if (!result.IsSuccess())
                 throw new ConnectorException(
                     result.Error?.Code ?? ConnectorErrorCodes.AuthenticationFailed,
-                    result.Error?.Domain ?? Schema.ChannelType,
+                    result.Error?.Domain ?? FirebaseErrorCodes.ErrorDomain,
                     result.Error?.Message ?? "Authentication failed");
 
             // Extract configuration from connection settings with proper handling of missing values
@@ -79,7 +79,7 @@ namespace Deveel.Messaging
             {
                 throw new MessagingException(
                     ConnectorErrorCodes.InitializationError,
-                    Schema.ChannelType,
+                    FirebaseErrorCodes.ErrorDomain,
                     "ProjectId is required");
             }
 
@@ -93,7 +93,7 @@ namespace Deveel.Messaging
             else
             {
                 throw new MessagingException(ConnectorErrorCodes.InitializationError,
-                    Schema.ChannelType,
+                    FirebaseErrorCodes.ErrorDomain,
                     "Service account authentication is required for Firebase");
             }
 
@@ -108,7 +108,7 @@ namespace Deveel.Messaging
 
             if (!isConnected)
                 throw new ConnectorException(ConnectorErrorCodes.ConnectionTestError,
-                    Schema.ChannelType,
+                    FirebaseErrorCodes.ErrorDomain,
                     "Firebase connection test failed");
         }
 

@@ -52,7 +52,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.MissingCredentials, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.MissingCredentials, result.Error?.Code);
         Assert.Equal(ConnectorState.Error, connector.State);
     }
 
@@ -489,7 +489,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.MissingCredentials, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.MissingCredentials, result.Error?.Code);
         Assert.Equal(ConnectorState.Error, connector.State);
     }
 
@@ -618,7 +618,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidRecipient, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidRecipient, result.Error?.Code);
     }
 
     [Fact]
@@ -645,7 +645,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidRecipient, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidRecipient, result.Error?.Code);
     }
 
     [Fact]
@@ -672,7 +672,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidRecipient, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidRecipient, result.Error?.Code);
     }
 
     [Fact]
@@ -844,7 +844,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.UnsupportedContentType, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.UnsupportedContentType, result.Error?.Code);
         Assert.Contains("Only application/json is supported", result.Error?.Message);
     }
 
@@ -867,7 +867,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
         Assert.Contains("No valid messages found", result.Error?.Message);
     }
 
@@ -973,7 +973,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     #endregion
@@ -1169,7 +1169,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -1205,7 +1205,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -1240,7 +1240,7 @@ public class FacebookMessengerConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(FacebookErrorCodes.InvalidWebhookData, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]

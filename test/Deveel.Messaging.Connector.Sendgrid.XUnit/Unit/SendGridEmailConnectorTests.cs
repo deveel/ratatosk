@@ -99,7 +99,7 @@ public class SendGridEmailConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(SendGridErrorCodes.MissingApiKey, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.MissingCredentials, result.Error?.Code);
         Assert.Equal(ConnectorState.Error, connector.State);
     }
 
@@ -155,7 +155,7 @@ public class SendGridEmailConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(SendGridErrorCodes.ConnectionFailed, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.ConnectionFailed, result.Error?.Code);
         mockService.Verify(x => x.TestConnectionAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -172,7 +172,7 @@ public class SendGridEmailConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(async () => 
+        await Assert.ThrowsAsync<MessagingException>(async () => 
             await connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
     }
 
@@ -250,7 +250,7 @@ public class SendGridEmailConnectorTests
 
         // Assert
         Assert.False(result.IsSuccess());
-        Assert.Equal(SendGridErrorCodes.InvalidRecipient, result.Error?.Code);
+        Assert.Equal(MessagingErrorCodes.InvalidRecipient, result.Error?.Code);
     }
 
     [Fact]
@@ -265,7 +265,7 @@ public class SendGridEmailConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(async () => 
+        await Assert.ThrowsAsync<MessagingException>(async () => 
             await connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
     }
 

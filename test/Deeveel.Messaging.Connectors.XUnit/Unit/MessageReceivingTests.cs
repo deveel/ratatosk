@@ -326,7 +326,7 @@ public class MessageReceivingTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(async () =>
+        await Assert.ThrowsAsync<MessagingException>(async () =>
             await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken));
     }
 
@@ -344,7 +344,7 @@ public class MessageReceivingTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(async () =>
+        await Assert.ThrowsAsync<MessagingException>(async () =>
             await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken));
     }
 

@@ -70,7 +70,7 @@ namespace Deveel.Messaging
             _timeoutSeconds = ConnectionSettings.GetTimeoutSeconds() ?? 60;
 
             if (string.IsNullOrWhiteSpace(_botToken))
-                throw new MessagingException(TelegramErrorCodes.MissingBotToken, "Bot token is required for Telegram Bot API");
+                throw new MessagingException(MessagingErrorCodes.MissingCredentials, TelegramErrorCodes.ErrorDomain, "Bot token is required for Telegram Bot API");
 
             _telegramService.Initialize(_botToken);
             _botInfo = await _telegramService.GetMeAsync(cancellationToken);
@@ -86,7 +86,7 @@ namespace Deveel.Messaging
             var botInfo = await _telegramService.GetMeAsync(cancellationToken);
 
             if (botInfo == null)
-                throw new ConnectorException(ConnectorErrorCodes.ConnectionTestError, "Unable to retrieve bot information");
+                throw new ConnectorException(ConnectorErrorCodes.ConnectionTestError, TelegramErrorCodes.ErrorDomain, "Unable to retrieve bot information");
 
             Logger.LogBotConnectionTestSuccessful(botInfo.Username, botInfo.Id);
         }
@@ -96,7 +96,7 @@ namespace Deveel.Messaging
         {
             var chatId = TelegramMessageBuilder.ExtractChatId(message.Receiver);
             if (chatId == null)
-                throw new ConnectorException(TelegramErrorCodes.InvalidChatId, "Receiver must contain a valid Telegram chat ID");
+                throw new ConnectorException(TelegramErrorCodes.InvalidChatId, TelegramErrorCodes.ErrorDomain, "Receiver must contain a valid Telegram chat ID");
 
             Telegram.Bot.Types.Message sentMessage = await SendMessageByContentType(message, chatId, cancellationToken);
 
@@ -208,12 +208,13 @@ namespace Deveel.Messaging
                 var messages = TelegramMessageParser.ParseWebhookJson(source);
 
                 if (messages.Count == 0)
-                    throw new ConnectorException(TelegramErrorCodes.InvalidWebhookData, "No valid messages found in webhook data");
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData, TelegramErrorCodes.ErrorDomain, "No valid messages found in webhook data");
 
                 return Task.FromResult(new ReceiveResult(Guid.NewGuid().ToString(), messages));
             }
 
-            throw new ConnectorException(TelegramErrorCodes.UnsupportedContentType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                 TelegramErrorCodes.ErrorDomain,
                  $"Unsupported content type: {source.ContentType}. Only JSON content type is supported for Telegram message receiving");
         }
 

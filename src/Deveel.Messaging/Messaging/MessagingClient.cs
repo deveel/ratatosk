@@ -82,7 +82,7 @@ namespace Deveel.Messaging
 
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
-                return OperationResult<SendResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for channel '{channelName}'.");
+                return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
 
             var result = await connector.SendMessageAsync(message, cancellationToken);
             if (result.IsSuccess())
@@ -100,7 +100,7 @@ namespace Deveel.Messaging
 
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
-                return OperationResult<ReceiveResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for channel '{channelName}'.");
+                return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
 
             var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
             if (result.IsSuccess())
@@ -118,7 +118,7 @@ namespace Deveel.Messaging
 
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
-                return OperationResult<StatusInfo>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for channel '{channelName}'.");
+                return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
 
             var result = await connector.GetStatusAsync(cancellationToken);
             if (result.IsSuccess())
@@ -136,7 +136,7 @@ namespace Deveel.Messaging
 
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
-                return OperationResult<StatusUpdateResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for channel '{channelName}'.");
+                return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
 
             var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
             if (result.IsSuccess())
@@ -157,7 +157,7 @@ namespace Deveel.Messaging
 
             var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
             if (connector == null)
-                return OperationResult<SendResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for type '{channelName}'.");
+                return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
 
             var result = await connector.SendMessageAsync(message, cancellationToken);
             if (result.IsSuccess())
@@ -176,7 +176,7 @@ namespace Deveel.Messaging
 
             var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
             if (connector == null)
-                return OperationResult<ReceiveResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for type '{channelName}'.");
+                return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
 
             var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
             if (result.IsSuccess())
@@ -195,7 +195,7 @@ namespace Deveel.Messaging
 
             var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
             if (connector == null)
-                return OperationResult<StatusInfo>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for type '{channelName}'.");
+                return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
 
             var result = await connector.GetStatusAsync(cancellationToken);
             if (result.IsSuccess())
@@ -214,7 +214,7 @@ namespace Deveel.Messaging
 
             var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
             if (connector == null)
-                return OperationResult<StatusUpdateResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for type '{channelName}'.");
+                return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
 
             var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
             if (result.IsSuccess())
@@ -234,7 +234,7 @@ namespace Deveel.Messaging
 
             var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
             if (connector == null)
-                return OperationResult<SendResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector type registered for channel '{channelName}'.");
+                return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
 
             var result = await connector.SendMessageAsync(message, cancellationToken);
             if (result.IsSuccess())
@@ -252,7 +252,7 @@ namespace Deveel.Messaging
 
             var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
             if (connector == null)
-                return OperationResult<ReceiveResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector type registered for channel '{channelName}'.");
+                return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
 
             var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
             if (result.IsSuccess())
@@ -270,7 +270,7 @@ namespace Deveel.Messaging
 
             var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
             if (connector == null)
-                return OperationResult<StatusInfo>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector type registered for channel '{channelName}'.");
+                return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
 
             var result = await connector.GetStatusAsync(cancellationToken);
             if (result.IsSuccess())
@@ -288,7 +288,7 @@ namespace Deveel.Messaging
 
             var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
             if (connector == null)
-                return OperationResult<StatusUpdateResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector type registered for channel '{channelName}'.");
+                return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
 
             var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
             if (result.IsSuccess())
@@ -309,7 +309,7 @@ namespace Deveel.Messaging
 
             var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
             if (connector == null)
-                return OperationResult<SendResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector type registered for '{channelName}'.");
+                return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
 
             var result = await connector.SendMessageAsync(message, cancellationToken);
             if (result.IsSuccess())
@@ -328,7 +328,7 @@ namespace Deveel.Messaging
 
             var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
             if (connector == null)
-                return OperationResult<ReceiveResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector type registered for '{channelName}'.");
+                return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
 
             var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
             if (result.IsSuccess())
@@ -347,7 +347,7 @@ namespace Deveel.Messaging
 
             var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
             if (connector == null)
-                return OperationResult<StatusInfo>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector type registered for '{channelName}'.");
+                return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
 
             var result = await connector.GetStatusAsync(cancellationToken);
             if (result.IsSuccess())
@@ -366,7 +366,7 @@ namespace Deveel.Messaging
 
             var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
             if (connector == null)
-                return OperationResult<StatusUpdateResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector type registered for '{channelName}'.");
+                return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
 
             var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
             if (result.IsSuccess())

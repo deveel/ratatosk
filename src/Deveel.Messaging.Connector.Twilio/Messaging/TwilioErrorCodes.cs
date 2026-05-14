@@ -15,6 +15,11 @@ namespace Deveel.Messaging
     /// </remarks>
     public static class TwilioErrorCodes
     {
+        /// <summary>
+        /// The error domain for Twilio connector errors.
+        /// </summary>
+        public const string ErrorDomain = "Twilio";
+
         #region Authentication and Credentials
 
         /// <summary>
@@ -24,7 +29,6 @@ namespace Deveel.Messaging
         /// This error occurs during initialization when the connection settings do not
         /// contain valid Account SID and Auth Token parameters required for Twilio API access.
         /// </remarks>
-        public const string MissingCredentials = "MISSING_CREDENTIALS";
 
         /// <summary>
         /// Indicates that connection settings validation failed.
@@ -72,15 +76,6 @@ namespace Deveel.Messaging
         /// required properties or invalid property values.
         /// </remarks>
         public const string InvalidMessage = "INVALID_MESSAGE";
-
-        /// <summary>
-        /// Indicates that the recipient phone number is invalid or missing.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the message receiver endpoint does not contain
-        /// a valid phone number in E.164 format, which is required for SMS delivery.
-        /// </remarks>
-        public const string InvalidRecipient = "INVALID_RECIPIENT";
 
         #endregion
 
@@ -135,7 +130,6 @@ namespace Deveel.Messaging
         /// information from the Twilio API fails, typically due to invalid credentials
         /// or network connectivity issues.
         /// </remarks>
-        public const string ConnectionFailed = "CONNECTION_FAILED";
 
         /// <summary>
         /// Indicates that sending an SMS message through Twilio failed.
@@ -144,7 +138,6 @@ namespace Deveel.Messaging
         /// This error occurs when the Twilio API call to send an SMS message fails,
         /// either due to API errors, invalid parameters, or service unavailability.
         /// </remarks>
-        public const string SendMessageFailed = "SEND_MESSAGE_FAILED";
 
         /// <summary>
         /// Indicates that querying message status from Twilio failed.
@@ -187,23 +180,7 @@ namespace Deveel.Messaging
         /// </remarks>
         public const string ReceiveStatusFailed = "RECEIVE_STATUS_FAILED";
 
-        /// <summary>
-        /// Indicates that the webhook data provided is invalid or malformed.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the webhook payload from Twilio does not contain
-        /// the expected fields or has invalid data that cannot be processed.
-        /// </remarks>
-        public const string InvalidWebhookData = "INVALID_WEBHOOK_DATA";
 
-        /// <summary>
-        /// Indicates that the content type for webhook data is not supported.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the webhook content type is neither form data nor JSON,
-        /// which are the only supported formats for Twilio webhooks.
-        /// </remarks>
-        public const string UnsupportedContentType = "UNSUPPORTED_CONTENT_TYPE";
 
         #endregion
     }

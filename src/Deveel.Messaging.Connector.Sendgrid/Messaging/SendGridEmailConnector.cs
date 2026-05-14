@@ -85,7 +85,7 @@ namespace Deveel.Messaging
 
             if (string.IsNullOrWhiteSpace(_apiKey))
             {
-                throw new ConnectorException(SendGridErrorCodes.MissingApiKey, Schema.ChannelType, "SendGrid API Key is required");
+                throw new ConnectorException(MessagingErrorCodes.MissingCredentials, SendGridErrorCodes.ErrorDomain, "SendGrid API Key is required");
             }
 
             _sendGridService.Initialize(_apiKey);
@@ -103,8 +103,8 @@ namespace Deveel.Messaging
 
             if (!isConnected)
             {
-                throw new ConnectorException(SendGridErrorCodes.ConnectionFailed,
-                    Schema.ChannelType,
+                throw new ConnectorException(MessagingErrorCodes.ConnectionFailed,
+                    SendGridErrorCodes.ErrorDomain,
                     "Unable to connect to SendGrid API - please verify your API key");
             }
         }
@@ -124,15 +124,15 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(senderEmail))
             {
                 throw new ConnectorException(
-                    SendGridErrorCodes.MissingSender,
-                    Schema.ChannelType,
+                    MessagingErrorCodes.MissingSender,
+                    SendGridErrorCodes.ErrorDomain,
                     "Sender email address is required");
             }
 
             if (!IsValidEmailAddress(senderEmail))
             {
                 throw new ConnectorException(SendGridErrorCodes.InvalidEmailAddress,
-                    Schema.ChannelType,
+                    SendGridErrorCodes.ErrorDomain,
                     "Sender email address is not valid");
             }
 
@@ -140,15 +140,15 @@ namespace Deveel.Messaging
             var (recipientEmail, recipientName) = ExtractEmailFromEndpoint(message.Receiver);
             if (string.IsNullOrWhiteSpace(recipientEmail))
             {
-                throw new ConnectorException(SendGridErrorCodes.InvalidRecipient,
-                    Schema.ChannelType,
+                throw new ConnectorException(MessagingErrorCodes.InvalidRecipient,
+                    SendGridErrorCodes.ErrorDomain,
                     "Recipient email address is required");
             }
 
             if (!IsValidEmailAddress(recipientEmail))
             {
-                throw new ConnectorException(SendGridErrorCodes.InvalidRecipient,
-                    Schema.ChannelType,
+                throw new ConnectorException(MessagingErrorCodes.InvalidRecipient,
+                    SendGridErrorCodes.ErrorDomain,
                     "Recipient email address is not valid");
             }
 
@@ -161,7 +161,7 @@ namespace Deveel.Messaging
             {
                 throw new ConnectorException(
                     SendGridErrorCodes.MissingEmailContent,
-                    Schema.ChannelType,
+                    SendGridErrorCodes.ErrorDomain,
                     "Email subject is required");
             }
 
@@ -209,10 +209,11 @@ namespace Deveel.Messaging
                 Logger.LogEmailSendFailed(response.StatusCode.ToString(), errorMessage);
 
                 var errorCode = response.StatusCode == HttpStatusCode.TooManyRequests
-                    ? SendGridErrorCodes.RateLimitExceeded
-                    : SendGridErrorCodes.SendMessageFailed;
+                    ? MessagingErrorCodes.RateLimitExceeded
+                    : MessagingErrorCodes.SendMessageFailed;
 
                 throw new ConnectorException(errorCode,
+                    SendGridErrorCodes.ErrorDomain,
                     $"Failed to send email: {response.StatusCode} - {errorMessage}");
             }
         }
@@ -383,8 +384,8 @@ namespace Deveel.Messaging
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(SendGridErrorCodes.InvalidWebhookData,
-                        Schema.ChannelType,
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                        SendGridErrorCodes.ErrorDomain,
                         "No valid messages found in webhook JSON");
                 }
 
@@ -399,8 +400,8 @@ namespace Deveel.Messaging
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(SendGridErrorCodes.InvalidWebhookData,
-                        Schema.ChannelType,
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                        SendGridErrorCodes.ErrorDomain,
                         "No valid messages found in webhook form data");
                 }
 
@@ -408,8 +409,8 @@ namespace Deveel.Messaging
                 return Task.FromResult(result);
             }
 
-            throw new ConnectorException(SendGridErrorCodes.UnsupportedContentType,
-                Schema.ChannelType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                SendGridErrorCodes.ErrorDomain,
                 "Only JSON and form data are supported for SendGrid email receiving");
         }
 
@@ -426,8 +427,8 @@ namespace Deveel.Messaging
                 return Task.FromResult(SendGridWebhookParser.ParseStatusCallbackFormData(formData));
             }
 
-            throw new ConnectorException(SendGridErrorCodes.UnsupportedContentType,
-                Schema.ChannelType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                SendGridErrorCodes.ErrorDomain,
                 "Only JSON and form data are supported for SendGrid status callbacks");
         }
 

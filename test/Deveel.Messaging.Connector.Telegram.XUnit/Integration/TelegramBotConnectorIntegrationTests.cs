@@ -392,7 +392,7 @@ namespace Deveel.Messaging
 
 			// Assert
 			Assert.False(result.IsSuccess());
-			Assert.Equal(TelegramErrorCodes.InvalidWebhookData, result.Error?.Code);
+			Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
 		}
 
 		#endregion

@@ -142,7 +142,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+		await Assert.ThrowsAsync<MessagingException>(async () =>
 			await connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
 	}
 
@@ -196,7 +196,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+		await Assert.ThrowsAsync<MessagingException>(async () =>
 			await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
 	}
 
@@ -236,7 +236,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+		await Assert.ThrowsAsync<MessagingException>(async () =>
 			await connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
 	}
 
@@ -290,7 +290,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+		await Assert.ThrowsAsync<MessagingException>(async () =>
 			await connector.ReceiveMessageStatusAsync(MessageSource.Text("test content"), TestContext.Current.CancellationToken));
 	}
 
@@ -304,7 +304,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+		await Assert.ThrowsAsync<MessagingException>(async () =>
 			await connector.ReceiveMessagesAsync(MessageSource.Text("test content"), TestContext.Current.CancellationToken));
 	}
 
@@ -317,7 +317,7 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+		await Assert.ThrowsAsync<MessagingException>(async () =>
 			await connector.GetHealthAsync(TestContext.Current.CancellationToken));
 	}
 
@@ -410,13 +410,13 @@ public class ChannelConnectorBaseTests
 		// Assert
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
 		{
-			await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+			await Assert.ThrowsAsync<MessagingException>(async () =>
 				await connector.TestConnectionAsync(TestContext.Current.CancellationToken));
 		}
 
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
 		{
-			await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+			await Assert.ThrowsAsync<MessagingException>(async () =>
 				await connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
 		}
 	}
