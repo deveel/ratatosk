@@ -121,49 +121,6 @@ namespace Deveel.Messaging
 
 		#endregion
 
-		#region Token Validation Tests
-
-		[Theory]
-		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789")] // Exactly 35 chars
-		[InlineData("987654321:abcdefghijklmnopqrstuvwxyz123456789")] // Exactly 35 chars, lowercase
-		[InlineData("1:ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789")] // Exactly 35 chars
-		[InlineData("123456789:ABCDEF-hijklmnop_QRSTUVWXYZ12345678")] // With hyphen and underscore, exactly 35 chars
-		public void Should_ReturnTrue_When_IsValidBotTokenWithValidTokens(string token)
-		{
-			// Act
-			var result = TelegramService.IsValidBotToken(token);
-
-			// Assert
-			Assert.True(result, $"Token should be valid: {token}");
-		}
-
-		[Theory]
-		[InlineData("")]
-		[InlineData("invalid")]
-		[InlineData("123:short")]
-		[InlineData("abc:ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789")]
-		[InlineData("123456789:short")]
-		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ12345678901")]
-		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@")]
-		[InlineData("123456789")]
-		[InlineData(":ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789")]
-		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")] // 36 chars - too long
-		[InlineData("987654321:ABCDEF-hijklmnop_QRSTUVWXYZ1234567890")] // 36 chars - too long
-		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ12345678")] // 34 chars - too short
-		[InlineData(null)]
-		[InlineData("   ")]
-		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789!")] // Invalid character
-		public void Should_ReturnFalse_When_IsValidBotTokenWithInvalidTokens(string? token)
-		{
-			// Act
-			var result = TelegramService.IsValidBotToken(token!);
-
-			// Assert
-			Assert.False(result);
-		}
-
-		#endregion
-
 		#region Uninitialized Service Tests
 
 		[Fact]

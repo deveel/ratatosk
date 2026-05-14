@@ -8,4 +8,8 @@
     <ProjectReference Include="..\..\src\Deveel.Messaging.Connector.Abstractions\Deveel.Messaging.Connector.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Support\" />
+  </ItemGroup>
+
 </Project>

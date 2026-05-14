@@ -60,7 +60,7 @@ namespace Deveel.Messaging
         }
 
         [Fact]
-        public async Task Should_ThrowInvalidOperationException_When_InitializeAsyncWithMissingRequiredFields()
+        public async Task Should_ThrowConnectorException_When_InitializeAsyncWithMissingRequiredFields()
         {
             // Arrange
             var service = CreateService();
@@ -73,14 +73,14 @@ namespace Deveel.Messaging
 
             // Act
             // Assert
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            var exception = await Assert.ThrowsAsync<ConnectorException>(() =>
                 service.InitializeAsync(incompleteServiceAccount, "test-project"));
 
             Assert.Contains("Failed to initialize Firebase service", exception.Message);
         }
 
         [Fact]
-        public async Task Should_ThrowInvalidOperationException_When_InitializeAsyncWithInvalidPrivateKeyFormat()
+        public async Task Should_ThrowConnectorException_When_InitializeAsyncWithInvalidPrivateKeyFormat()
         {
             // Arrange
             var service = CreateService();
@@ -96,14 +96,14 @@ namespace Deveel.Messaging
 
             // Act
             // Assert
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            var exception = await Assert.ThrowsAsync<ConnectorException>(() =>
                 service.InitializeAsync(invalidPrivateKeyServiceAccount, "test-project"));
 
             Assert.Contains("Failed to initialize Firebase service", exception.Message);
         }
 
         [Fact]
-        public async Task Should_ThrowInvalidOperationException_When_InitializeAsyncWithWrongServiceAccountType()
+        public async Task Should_ThrowConnectorException_When_InitializeAsyncWithWrongServiceAccountType()
         {
             // Arrange
             var service = CreateService();
@@ -119,7 +119,7 @@ namespace Deveel.Messaging
 
             // Act
             // Assert
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            var exception = await Assert.ThrowsAsync<ConnectorException>(() =>
                 service.InitializeAsync(wrongTypeServiceAccount, "test-project"));
 
             Assert.Contains("Failed to initialize Firebase service", exception.Message);
@@ -397,7 +397,7 @@ namespace Deveel.Messaging
 
             // Act
             // Assert
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            var exception = await Assert.ThrowsAsync<ConnectorException>(() =>
                 service.InitializeAsync(unexpectedJson, "test-project"));
 
             Assert.Contains("Failed to initialize Firebase service", exception.Message);
@@ -420,7 +420,7 @@ namespace Deveel.Messaging
 
             // Act
             // Assert
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            var exception = await Assert.ThrowsAsync<ConnectorException>(() =>
                 service.InitializeAsync(jsonWithEscapes, "test-project-with\tescapes\nand\"quotes"));
 
             Assert.Contains("Failed to initialize Firebase service", exception.Message);
@@ -449,7 +449,7 @@ namespace Deveel.Messaging
 
             // Act
             // Assert
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            var exception = await Assert.ThrowsAsync<ConnectorException>(() =>
                 service.InitializeAsync(largeJson, "test-project"));
 
             Assert.Contains("Failed to initialize Firebase service", exception.Message);

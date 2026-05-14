@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <Using Include="Xunit"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Deveel.Messaging.Connectors\Deveel.Messaging.Connectors.csproj" />
+    </ItemGroup>
+
+</Project>

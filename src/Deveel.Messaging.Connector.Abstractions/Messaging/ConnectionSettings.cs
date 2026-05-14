@@ -4,6 +4,7 @@
 //
 
 using System.Globalization;
+using System.Text;
 
 namespace Deveel.Messaging
 {
@@ -20,6 +21,7 @@ namespace Deveel.Messaging
 	public class ConnectionSettings
 	{
 		private readonly IDictionary<string, object?> _parameters;
+		private IDictionary<string, ChannelParameter>? _channelParams;
 		private readonly IChannelSchema? _schema;
 
 		/// <summary>
@@ -105,12 +107,22 @@ namespace Deveel.Messaging
 			set => SetParameter(key, value);
 		}
 
-		private ChannelParameter? FindParameter(string key)
+		private ChannelParameter? FindSchemaParameter(string key)
 		{
+			if (_channelParams != null && _channelParams.TryGetValue(key, out var channelParam))
+				return channelParam;
+			
 			if (_schema == null)
 				return null;
 
-			return _schema.Parameters.FirstOrDefault(x => String.Equals(x.Name, key, StringComparison.OrdinalIgnoreCase));
+			channelParam = _schema.Parameters.FirstOrDefault(x => String.Equals(x.Name, key, StringComparison.OrdinalIgnoreCase));
+			if (channelParam == null)
+				return null;
+			
+			if (_channelParams == null)
+				_channelParams = new Dictionary<string, ChannelParameter>(StringComparer.OrdinalIgnoreCase);
+			
+			return _channelParams[key] = channelParam;
 		}
 
 		/// <summary>
@@ -152,7 +164,7 @@ namespace Deveel.Messaging
 
 			if (_schema != null)
 			{
-				var schemaParam = FindParameter(key);
+				var schemaParam = FindSchemaParameter(key);
 
 				if (schemaParam != null && schemaParam.DefaultValue != null)
 					value = schemaParam.DefaultValue;
@@ -180,15 +192,19 @@ namespace Deveel.Messaging
 		public T GetParameter<T>(string key)
 		{
 			var value = GetParameter(key);
-			if (value == null && _schema != null)
+
+			var schemaParam = FindSchemaParameter(key);
+			if (schemaParam != null)
 			{
-				var schemaParam = FindParameter(key);
+				if (!CanConvertTo(schemaParam.DataType, typeof(T)))
+					throw new InvalidCastException($"Cannot convert a value of type '{schemaParam.DataType}' to '{typeof(T)}'.");
+			}
+			else if (value != null && !CanConvertValueTo(value, typeof(T)))
+			{
+				throw new InvalidCastException($"Cannot convert value of type '{value.GetType()}' to type '{typeof(T)}'.");
 			}
 
-			if (value is T tValue)
-				return tValue;
-
-			throw new InvalidCastException($"The value for the key '{key}' cannot be cast to type '{typeof(T)}'.");
+			return ConvertTo<T>(value);
 		}
 
 		private void ValidateParameter(string key, object? value)
@@ -196,7 +212,7 @@ namespace Deveel.Messaging
 			if (_schema == null)
 				return;
 
-			var schemaParam = FindParameter(key);
+			var schemaParam = FindSchemaParameter(key);
 			if (schemaParam == null)
 				throw new ArgumentException($"The parameter {key} is not supported by this schema");
 
@@ -225,16 +241,17 @@ namespace Deveel.Messaging
 				_ => false,
 			};
 		}
-
-		private T ConvertTo<T>(DataType sourceType, object? value)
+		
+		private T ConvertTo<T>(object? value)
 		{
 			if (value is T tValue)
 				return tValue;
 			if (value == null)
+			{
+				if (typeof(T).IsValueType && Nullable.GetUnderlyingType(typeof(T)) == null)
+					throw new InvalidCastException($"Cannot convert null to non-nullable type '{typeof(T)}'.");
 				return default!;
-
-			if (!CanConvertTo(sourceType, typeof(T)))
-				throw new InvalidCastException($"Cannot convert value '{value}' from type '{sourceType}' to type '{typeof(T)}'.");
+			}
 
 			try
 			{
@@ -245,7 +262,7 @@ namespace Deveel.Messaging
 				throw new InvalidCastException($"Cannot convert value '{value}' to type '{typeof(T)}'.");
 			}
 		}
-
+		
 		private bool CanConvertTo(DataType sourceType, Type destType)
 		{
 			return sourceType switch
@@ -259,6 +276,149 @@ namespace Deveel.Messaging
 										 destType == typeof(short) || destType == typeof(sbyte) || destType == typeof(string),
 				_ => false,
 			};
+		}
+
+		private bool CanConvertValueTo(object value, Type destType)
+		{
+			var sourceType = value.GetType();
+
+			if (destType.IsAssignableFrom(sourceType))
+				return true;
+
+			if (value is IConvertible)
+			{
+				try
+				{
+					_ = Convert.ChangeType(value, destType, CultureInfo.InvariantCulture);
+					return true;
+				}
+				catch
+				{
+					return false;
+				}
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// Parses a connection string into a <see cref="ConnectionSettings"/> instance.
+		/// </summary>
+		/// <param name="connectionString">
+		/// The connection string to parse, consisting of key=value pairs separated by semicolons.
+		/// </param>
+		/// <returns>
+		/// Returns a new <see cref="ConnectionSettings"/> instance populated with the
+		/// parsed parameters.
+		/// </returns>
+		/// <exception cref="ArgumentException">
+		/// Thrown if <paramref name="connectionString"/> is <c>null</c> or whitespace.
+		/// </exception>
+		public static ConnectionSettings Parse(string connectionString)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(connectionString, nameof(connectionString));
+
+			var parameters = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+			var span = connectionString.AsSpan();
+
+			while (!span.IsEmpty)
+			{
+				SkipWhitespace(ref span);
+				if (span.IsEmpty)
+					break;
+
+				var key = ReadKey(ref span);
+				if (key == null)
+					break;
+
+				SkipWhitespace(ref span);
+
+				if (!span.IsEmpty && span[0] == '=')
+				{
+					span = span.Slice(1);
+					SkipWhitespace(ref span);
+
+					var value = ReadValue(ref span);
+					parameters[key] = value;
+				}
+				else
+				{
+					parameters[key] = "";
+				}
+
+				SkipWhitespace(ref span);
+
+				if (!span.IsEmpty && span[0] == ';')
+					span = span.Slice(1);
+			}
+
+			return new ConnectionSettings(parameters);
+		}
+
+		private static void SkipWhitespace(ref ReadOnlySpan<char> span)
+		{
+			while (!span.IsEmpty && char.IsWhiteSpace(span[0]))
+				span = span.Slice(1);
+		}
+
+		private static string? ReadKey(ref ReadOnlySpan<char> span)
+		{
+			int end = 0;
+			while (end < span.Length && span[end] != '=' && span[end] != ';' && !char.IsWhiteSpace(span[end]))
+				end++;
+
+			if (end == 0)
+				return null;
+
+			var key = span.Slice(0, end).ToString();
+			span = span.Slice(end);
+			return key;
+		}
+
+		private static string? ReadValue(ref ReadOnlySpan<char> span)
+		{
+			if (span.IsEmpty)
+				return null;
+
+			if (span[0] == '\'' || span[0] == '"')
+			{
+				return ReadQuotedValue(ref span, span[0]);
+			}
+
+			int end = 0;
+			while (end < span.Length && span[end] != ';')
+				end++;
+
+			var value = span.Slice(0, end).ToString();
+			span = span.Slice(end);
+			return value.TrimEnd();
+		}
+
+		private static string? ReadQuotedValue(ref ReadOnlySpan<char> span, char quote)
+		{
+			span = span.Slice(1);
+			var sb = new StringBuilder();
+
+			while (!span.IsEmpty)
+			{
+				if (span[0] == '\\' && span.Length > 1)
+				{
+					sb.Append(span[1]);
+					span = span.Slice(2);
+				}
+				else if (span[0] == quote)
+				{
+					span = span.Slice(1);
+					return sb.ToString();
+				}
+				else
+				{
+					sb.Append(span[0]);
+					span = span.Slice(1);
+				}
+			}
+
+			return sb.ToString();
 		}
 	}
 }

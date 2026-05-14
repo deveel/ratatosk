@@ -44,21 +44,21 @@ public class FacebookMessengerConnectorIntegrationTests
 
         // 1. Initialize
         var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-        Assert.True(initResult.Successful);
+        Assert.True(initResult.IsSuccess());
         Assert.Equal(ConnectorState.Ready, connector.State);
 
         // 2. Test connection
         var connectionResult = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
-        Assert.True(connectionResult.Successful);
+        Assert.True(connectionResult.IsSuccess());
 
         // 3. Get status
         var statusResult = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
-        Assert.True(statusResult.Successful);
+        Assert.True(statusResult.IsSuccess());
         Assert.Contains("Facebook Messenger Connector", statusResult.Value!.Description);
 
         // 4. Get health
         var healthResult = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
-        Assert.True(healthResult.Successful);
+        Assert.True(healthResult.IsSuccess());
         Assert.True(healthResult.Value!.IsHealthy);
 
         // 5. Send message
@@ -70,7 +70,7 @@ public class FacebookMessengerConnectorIntegrationTests
         };
 
         var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
-        Assert.True(sendResult.Successful);
+        Assert.True(sendResult.IsSuccess());
         Assert.Equal("test-msg-1", sendResult.Value!.MessageId);
         Assert.Equal("fb-msg-123", sendResult.Value.RemoteMessageId);
 
@@ -126,7 +126,7 @@ public class FacebookMessengerConnectorIntegrationTests
         var result = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -197,7 +197,7 @@ public class FacebookMessengerConnectorIntegrationTests
         var result = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -232,8 +232,8 @@ public class FacebookMessengerConnectorIntegrationTests
         var result = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.InvalidWebhookData, result.Error!.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error!.Code);
     }
 
     [Fact]
@@ -254,8 +254,8 @@ public class FacebookMessengerConnectorIntegrationTests
         var result = await connector.ReceiveMessagesAsync(messageSource, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal(FacebookErrorCodes.UnsupportedContentType, result.Error!.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal(MessagingErrorCodes.UnsupportedContentType, result.Error!.Code);
     }
 
     [Fact]
@@ -299,7 +299,7 @@ public class FacebookMessengerConnectorIntegrationTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(capturedRequest);
         Assert.Equal("user-999", capturedRequest.Recipient);
         Assert.Equal("Do you agree?", capturedRequest.Message.Text);
@@ -362,7 +362,7 @@ public class FacebookMessengerConnectorIntegrationTests
         var healthResult = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(healthResult.Successful); // Health check itself should succeed
+        Assert.True(healthResult.IsSuccess()); // Health check itself should succeed
         Assert.NotNull(healthResult.Value);
         Assert.False(healthResult.Value.IsHealthy); // But connector should be unhealthy
         Assert.Single(healthResult.Value.Issues);
@@ -417,7 +417,7 @@ public class FacebookMessengerConnectorIntegrationTests
         var results = await Task.WhenAll(tasks);
 
         // Assert
-        Assert.All(results, result => Assert.True(result.Successful));
+        Assert.All(results, result => Assert.True(result.IsSuccess()));
         Assert.Equal(messageCount, results.Length);
 
         // Verify all message IDs are unique
@@ -455,8 +455,8 @@ public class FacebookMessengerConnectorIntegrationTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error!.ErrorCode);
-        Assert.Contains("Facebook Graph API error", result.Error.ErrorMessage);
+        Assert.False(result.IsSuccess());
+        Assert.Equal(ConnectorErrorCodes.SendMessageError, result.Error!.Code);
+        Assert.Contains("Facebook Graph API error", result.Error.Message);
     }
 }

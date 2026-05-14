@@ -62,24 +62,28 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            // Extract required parameters first - use nullable versions to avoid exceptions
-            _accountSid = ConnectionSettings.GetParameter(TwilioConnectionParameters.AccountSid) as string;
-            _authToken = ConnectionSettings.GetParameter(TwilioConnectionParameters.AuthToken) as string;
-
-            // Extract optional parameters
-            _webhookUrl = ConnectionSettings.GetParameter(TwilioConnectionParameters.WebhookUrl) as string;
-            _statusCallback = ConnectionSettings.GetParameter(TwilioConnectionParameters.StatusCallback) as string;
-            _validityPeriod = ConnectionSettings.GetParameter(TwilioConnectionParameters.ValidityPeriod) as int?;
-            _maxPrice = ConnectionSettings.GetParameter(TwilioConnectionParameters.MaxPrice) as decimal?;
-            _messagingServiceSid = ConnectionSettings.GetParameter(TwilioConnectionParameters.MessagingServiceSid) as string;
-
-            // Perform custom validation logic
-            if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
+            if (AuthenticationCredential?.Scheme == AuthenticationScheme.Basic)
             {
-                throw new MessagingException(TwilioErrorCodes.MissingCredentials, "Account SID and Auth Token are required for Twilio SMS connector");
+                _accountSid = AuthenticationCredential.Properties.TryGetValue("Username", out var username) ? username?.ToString() : null;
+                _authToken = AuthenticationCredential.Properties.TryGetValue("Password", out var password) ? password?.ToString() : null;
             }
 
-            // Initialize Twilio client
+            _accountSid ??= ConnectionSettings.GetAccountSid();
+            _authToken ??= ConnectionSettings.GetAuthToken();
+
+            _webhookUrl = ConnectionSettings.GetWebhookUrl();
+            _statusCallback = ConnectionSettings.GetStatusCallback();
+            _validityPeriod = ConnectionSettings.GetValidityPeriod();
+            _maxPrice = ConnectionSettings.GetMaxPrice() is double mp ? (decimal)mp : null;
+            _messagingServiceSid = ConnectionSettings.GetMessagingServiceSid();
+
+            if (string.IsNullOrWhiteSpace(_accountSid) || string.IsNullOrWhiteSpace(_authToken))
+            {
+                throw new MessagingException(
+                    MessagingErrorCodes.MissingCredentials, TwilioErrorCodes.ErrorDomain,
+                    "Account SID and Auth Token are required for Twilio SMS connector");
+            }
+
             _twilioService.Initialize(_accountSid, _authToken);
 
             return ValueTask.CompletedTask;
@@ -98,7 +102,8 @@ namespace Deveel.Messaging
 
             if (account == null)
             {
-                throw new ConnectorException(TwilioErrorCodes.ConnectionFailed,
+                throw new ConnectorException(MessagingErrorCodes.ConnectionFailed,
+                    TwilioErrorCodes.ErrorDomain,
                     "Unable to retrieve account information");
             }
         }
@@ -115,6 +120,7 @@ namespace Deveel.Messaging
             if (string.IsNullOrWhiteSpace(senderNumber) && string.IsNullOrWhiteSpace(_messagingServiceSid))
             {
                 throw new ConnectorException(TwilioErrorCodes.MissingFromNumber,
+                    TwilioErrorCodes.ErrorDomain,
                     "Sender phone number is required when MessagingServiceSid is not configured");
             }
 
@@ -122,7 +128,8 @@ namespace Deveel.Messaging
             var toNumber = ExtractPhoneNumber(message.Receiver);
             if (string.IsNullOrWhiteSpace(toNumber))
             {
-                throw new ConnectorException(TwilioErrorCodes.InvalidRecipient,
+                throw new ConnectorException(MessagingErrorCodes.InvalidRecipient,
+                    TwilioErrorCodes.ErrorDomain,
                     "Recipient phone number is required and must be in E.164 format");
             }
 
@@ -161,8 +168,7 @@ namespace Deveel.Messaging
             // Send the message
             var messageResource = await _twilioService.CreateMessageAsync(createMessageOptions, cancellationToken);
 
-            Logger?.LogInformation("SMS message sent successfully. MessageSid: {MessageSid}, Status: {Status}",
-                messageResource.Sid, messageResource.Status);
+            Logger?.LogSmsSent(message.Id, messageResource.Sid, messageResource.Status.ToString());
 
             var result = new SendResult(message.Id, messageResource.Sid)
             {
@@ -190,7 +196,7 @@ namespace Deveel.Messaging
         protected override async Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId,
             CancellationToken cancellationToken)
         {
-            Logger.LogDebug("Querying status for message {MessageId}", messageId);
+            Logger.LogQueryingMessageStatus(messageId);
 
             // Assume messageId is the Twilio SID
             var messageResource = await _twilioService.FetchMessageAsync(messageId, cancellationToken);
@@ -288,7 +294,7 @@ namespace Deveel.Messaging
                     }
                     catch (UriFormatException ex)
                     {
-                        Logger?.LogWarning(ex, "Invalid media URL format: {MediaUrl}", mediaContent.FileUrl);
+                        Logger?.LogInvalidMediaUrl(mediaContent.FileUrl, ex);
                         return null;
                     }
                 }
@@ -348,20 +354,7 @@ namespace Deveel.Messaging
         }
 
         private MessageStatus MapTwilioStatusToMessageStatus(MessageResource.StatusEnum twilioStatus)
-        {
-            if (twilioStatus == MessageResource.StatusEnum.Accepted || twilioStatus == MessageResource.StatusEnum.Queued)
-                return MessageStatus.Queued;
-            if (twilioStatus == MessageResource.StatusEnum.Sending || twilioStatus == MessageResource.StatusEnum.Sent)
-                return MessageStatus.Sent;
-            if (twilioStatus == MessageResource.StatusEnum.Delivered)
-                return MessageStatus.Delivered;
-            if (twilioStatus == MessageResource.StatusEnum.Undelivered || twilioStatus == MessageResource.StatusEnum.Failed)
-                return MessageStatus.DeliveryFailed;
-            if (twilioStatus == MessageResource.StatusEnum.Received)
-                return MessageStatus.Received;
-
-            return MessageStatus.Unknown;
-        }
+            => TwilioMessageParser.MapStatusToMessageStatus(twilioStatus);
 
         /// <inheritdoc/>
         protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source,
@@ -370,11 +363,12 @@ namespace Deveel.Messaging
             if (source.ContentType == MessageSource.UrlPostContentType)
             {
                 var formData = source.AsUrlPostData();
-                var messages = ParseTwilioWebhookFormData(formData);
+                var messages = TwilioMessageParser.ParseWebhookFormData(formData, Schema.ChannelType);
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData,
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                        TwilioErrorCodes.ErrorDomain,
                         "No valid messages found in webhook form data");
                 }
 
@@ -383,11 +377,12 @@ namespace Deveel.Messaging
 
             if (source.ContentType == MessageSource.JsonContentType)
             {
-                var messages = ParseTwilioWebhookJson(source);
+                var messages = TwilioMessageParser.ParseWebhookJson(source);
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(TwilioErrorCodes.InvalidWebhookData,
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                        TwilioErrorCodes.ErrorDomain,
                         "No valid messages found in webhook JSON");
                 }
 
@@ -395,7 +390,8 @@ namespace Deveel.Messaging
                 return Task.FromResult(result);
             }
 
-            throw new ConnectorException(TwilioErrorCodes.UnsupportedContentType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                TwilioErrorCodes.ErrorDomain,
                 "Only form data and JSON are supported for Twilio message receiving");
         }
 
@@ -406,198 +402,25 @@ namespace Deveel.Messaging
             if (source.ContentType == MessageSource.UrlPostContentType)
             {
                 var formData = source.AsUrlPostData();
-                var statusResult = ParseTwilioStatusCallbackFormData(formData);
-
+                var statusResult = TwilioMessageParser.ParseStatusCallbackFormData(formData);
                 return Task.FromResult(statusResult);
             }
 
             if (source.ContentType == MessageSource.JsonContentType)
             {
-                var statusResult = ParseTwilioStatusCallbackJson(source);
+                var statusResult = TwilioMessageParser.ParseStatusCallbackJson(source);
                 return Task.FromResult(statusResult);
             }
 
-            throw new ConnectorException(TwilioErrorCodes.UnsupportedContentType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                TwilioErrorCodes.ErrorDomain,
                 "Only form data and JSON are supported for Twilio status callbacks");
         }
 
-        private List<IMessage> ParseTwilioWebhookFormData(IDictionary<string, string> formData)
-        {
-            var messages = new List<IMessage>();
-
-            // Validate required fields for Twilio SMS webhook
-            if (!formData.TryGetValue("MessageSid", out var messageSid) || string.IsNullOrEmpty(messageSid))
-            {
-                throw new ArgumentException("MessageSid is required for Twilio SMS webhooks");
-            }
-
-            if (!formData.TryGetValue("From", out var from) || string.IsNullOrEmpty(from))
-            {
-                throw new ArgumentException("From field is required for Twilio SMS webhooks");
-            }
-
-            if (!formData.TryGetValue("To", out var to) || string.IsNullOrEmpty(to))
-            {
-                throw new ArgumentException("To field is required for Twilio SMS webhooks");
-            }
-
-            // Body is optional for MMS messages
-            var body = formData.TryGetValue("Body", out var bodyValue) ? bodyValue : "";
-
-            // Create the message
-            var message = new Message
-            {
-                Id = messageSid,
-                Sender = new Endpoint(GetTwilioEndpointType(from), from),
-                Receiver = new Endpoint(GetTwilioEndpointType(to), to),
-                Content = new TextContent(body),
-                Properties = new Dictionary<string, MessageProperty>()
-            };
-
-            // Add all other Twilio webhook fields as message properties
-            foreach (var kvp in formData)
-            {
-                if (kvp.Key != "MessageSid" && kvp.Key != "From" && kvp.Key != "To" && kvp.Key != "Body")
-                {
-                    message.Properties[kvp.Key] = new MessageProperty(kvp.Key, kvp.Value);
-                }
-            }
-
-            messages.Add(message);
-            return messages;
-        }
-
-        private List<IMessage> ParseTwilioWebhookJson(MessageSource source)
-        {
-            var messages = new List<IMessage>();
-            var jsonData = source.AsJson<System.Text.Json.JsonElement>();
-
-            if (jsonData.TryGetProperty("Messages", out var messagesArray))
-            {
-                // Batch messages
-                foreach (var messageElement in messagesArray.EnumerateArray())
-                {
-                    var message = ParseTwilioJsonMessage(messageElement);
-                    if (message != null)
-                        messages.Add(message);
-                }
-            }
-            else
-            {
-                // Single message
-                var message = ParseTwilioJsonMessage(jsonData);
-                if (message != null)
-                    messages.Add(message);
-            }
-
-            return messages;
-        }
-
-        private IMessage? ParseTwilioJsonMessage(System.Text.Json.JsonElement jsonData)
-        {
-            if (!jsonData.TryGetProperty("MessageSid", out var sidProperty))
-                return null;
-
-            var messageSid = sidProperty.GetString();
-            if (string.IsNullOrEmpty(messageSid))
-                return null;
-
-            var from = jsonData.TryGetProperty("From", out var fromProp) ? fromProp.GetString() ?? "" : "";
-            var to = jsonData.TryGetProperty("To", out var toProp) ? toProp.GetString() ?? "" : "";
-            var body = jsonData.TryGetProperty("Body", out var bodyProp) ? bodyProp.GetString() ?? "" : "";
-
-            if (string.IsNullOrEmpty(from) || string.IsNullOrEmpty(to))
-                return null;
-
-            return new Message
-            {
-                Id = messageSid,
-                Sender = new Endpoint(GetTwilioEndpointType(from), from),
-                Receiver = new Endpoint(GetTwilioEndpointType(to), to),
-                Content = new TextContent(body)
-            };
-        }
-
-        private StatusUpdateResult ParseTwilioStatusCallbackFormData(IDictionary<string, string> formData)
-        {
-            var messageId = formData.TryGetValue("MessageSid", out var sid) ? sid : "unknown";
-            var statusString = formData.TryGetValue("MessageStatus", out var status) ? status : "unknown";
-
-            var messageStatus = MapTwilioStatusStringToMessageStatus(statusString);
-            var statusResult = new StatusUpdateResult(messageId, messageStatus);
-
-            // Add additional Twilio status data
-            if (formData.TryGetValue("MessagePrice", out var price))
-                statusResult.AdditionalData["MessagePrice"] = price;
-            if (formData.TryGetValue("MessagePriceUnit", out var priceUnit))
-                statusResult.AdditionalData["MessagePriceUnit"] = priceUnit;
-            if (formData.TryGetValue("ErrorCode", out var errorCode))
-                statusResult.AdditionalData["ErrorCode"] = errorCode;
-            if (formData.TryGetValue("ErrorMessage", out var errorMessage))
-                statusResult.AdditionalData["ErrorMessage"] = errorMessage;
-            if (formData.TryGetValue("To", out var to))
-                statusResult.AdditionalData["To"] = to;
-            if (formData.TryGetValue("From", out var from))
-                statusResult.AdditionalData["From"] = from;
-            if (formData.TryGetValue("AccountSid", out var accountSid))
-                statusResult.AdditionalData["AccountSid"] = accountSid;
-
-            return statusResult;
-        }
-
-        private StatusUpdateResult ParseTwilioStatusCallbackJson(MessageSource source)
-        {
-            var jsonData = source.AsJson<System.Text.Json.JsonElement>();
-
-            var messageId = jsonData.TryGetProperty("MessageSid", out var sidProp) ? sidProp.GetString() ?? "unknown" : "unknown";
-            var statusString = jsonData.TryGetProperty("MessageStatus", out var statusProp) ? statusProp.GetString() ?? "unknown" : "unknown";
-
-            var messageStatus = MapTwilioStatusStringToMessageStatus(statusString);
-            var statusResult = new StatusUpdateResult(messageId, messageStatus);
-
-            // Add additional JSON properties as additional data
-            foreach (var property in jsonData.EnumerateObject())
-            {
-                if (property.Name != "MessageSid" && property.Name != "MessageStatus")
-                {
-                    statusResult.AdditionalData[property.Name] = property.Value.GetString() ?? "";
-                }
-            }
-
-            return statusResult;
-        }
+        private static EndpointType GetTwilioEndpointType(string address)
+            => TwilioMessageParser.GetEndpointType(address);
 
         private MessageStatus MapTwilioStatusStringToMessageStatus(string statusString)
-        {
-            return statusString.ToLowerInvariant() switch
-            {
-                "delivered" => MessageStatus.Delivered,
-                "sent" => MessageStatus.Sent,
-                "failed" => MessageStatus.DeliveryFailed,
-                "undelivered" => MessageStatus.DeliveryFailed,
-                "received" => MessageStatus.Received,
-                "queued" => MessageStatus.Queued,
-                "accepted" => MessageStatus.Queued,
-                "sending" => MessageStatus.Sent,
-                _ => MessageStatus.Unknown
-            };
-        }
-
-        private static EndpointType GetTwilioEndpointType(string address)
-        {
-            if (string.IsNullOrEmpty(address))
-                return EndpointType.Id;
-
-            if (address.StartsWith("whatsapp:"))
-                return EndpointType.PhoneNumber;
-
-            if (address.StartsWith("+"))
-                return EndpointType.PhoneNumber;
-
-            if (address.Contains("@"))
-                return EndpointType.EmailAddress;
-
-            return EndpointType.Id;
-        }
+            => TwilioMessageParser.MapStatusStringToMessageStatus(statusString);
     }
 }

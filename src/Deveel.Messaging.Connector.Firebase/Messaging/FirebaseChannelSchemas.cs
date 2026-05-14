@@ -21,27 +21,27 @@ namespace Deveel.Messaging
         /// status queries, and health monitoring. It can be used as-is or derived to create
         /// more restrictive configurations for specific use cases.
         /// </remarks>
-        public static ChannelSchema FirebasePush => new ChannelSchema(FirebaseConnectorConstants.Provider, FirebaseConnectorConstants.PushChannel, "1.0.0")
+        public static ChannelSchema FirebasePush => new ChannelSchemaBuilder(FirebaseConnectorConstants.Provider, FirebaseConnectorConstants.PushChannel, "1.0.0")
             .WithDisplayName("Firebase Cloud Messaging (FCM) Connector")
             .WithCapabilities(
                 ChannelCapability.SendMessages |
                 ChannelCapability.BulkMessaging |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("ProjectId", DataType.String)
+            .AddParameter(new ChannelParameter(FirebaseConnectionParameters.ProjectId, DataType.String)
             {
                 IsRequired = true,
                 Description = "Firebase project ID - found in your Firebase Console project settings"
             })
-            .AddParameter(new ChannelParameter("ServiceAccountKey", DataType.String)
+            .AddParameter(new ChannelParameter(FirebaseConnectionParameters.ServiceAccountKey, DataType.String)
             {
                 IsRequired = true,
                 IsSensitive = true,
                 Description = "Firebase service account key JSON - download from Firebase Console > Project Settings > Service Accounts"
             })
-            .AddParameter(new ChannelParameter("DryRun", DataType.Boolean)
+            .AddParameter(new ChannelParameter(FirebaseConnectionParameters.DryRun, DataType.Boolean)
             {
                 IsRequired = false,
-                DefaultValue = false,
+                DefaultValue = FirebaseConnectionSettingsDefaults.DryRun,
                 Description = "Enable dry run mode for testing without actually sending push notifications"
             })
             .AddContentType(MessageContentType.Json)
@@ -58,19 +58,13 @@ namespace Deveel.Messaging
 				e.CanReceive = true;
                 e.IsRequired = false; // Alternative to device tokens
             })
-            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationType.Certificate, "Firebase Service Account Authentication")
-                .WithRequiredField("ServiceAccountKey", DataType.String, authField =>
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Certificate, "Firebase Service Account Authentication")
+                .WithField(FirebaseConnectionParameters.ServiceAccountKey, DataType.String, authField =>
                 {
                     authField.DisplayName = "Service Account Key";
                     authField.Description = "Firebase service account key JSON or file path";
-                    authField.AuthenticationRole = "Certificate";
+                    authField.AuthenticationRole = "principal";
                     authField.IsSensitive = true;
-                })
-                .WithOptionalField("ProjectId", DataType.String, authField =>
-                {
-                    authField.DisplayName = "Project ID";
-                    authField.Description = "Firebase project ID (can be extracted from service account key)";
-                    authField.AuthenticationRole = "ProjectId";
                 }))
             .AddMessageProperty("Title", DataType.String, p =>
             {
@@ -155,15 +149,16 @@ namespace Deveel.Messaging
                 p.IsRequired = false;
                 p.Description = "Custom data payload as JSON string";
                 p.CustomValidator = ValidateJsonContent;
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Gets a simplified push notification schema for basic messaging use cases.
         /// This schema removes advanced features and focuses on simple text notifications.
         /// </summary>
-        public static ChannelSchema SimplePush => new ChannelSchema(FirebasePush, "Firebase Simple Push")
+        public static ChannelSchema SimplePush => ChannelSchemaBuilder.From(FirebasePush, "Firebase Simple Push")
             .RemoveCapability(ChannelCapability.BulkMessaging)
-            .RemoveParameter("DryRun")
+            .RemoveParameter(FirebaseConnectionParameters.DryRun)
             .RemoveMessageProperty("ImageUrl")
             .RemoveMessageProperty("Sound")
             .RemoveMessageProperty("Badge")
@@ -177,13 +172,14 @@ namespace Deveel.Messaging
             .RemoveMessageProperty("MutableContent")
             .RemoveMessageProperty("ContentAvailable")
             .RemoveMessageProperty("ThreadId")
-            .RemoveMessageProperty("CustomData");
+            .RemoveMessageProperty("CustomData")
+            .Build();
 
         /// <summary>
         /// Gets a bulk push notification schema optimized for high-volume campaigns.
         /// This schema includes all bulk messaging capabilities and advanced targeting options.
         /// </summary>
-        public static ChannelSchema BulkPush => new ChannelSchema(FirebasePush, "Firebase Bulk Push")
+        public static ChannelSchema BulkPush => ChannelSchemaBuilder.From(FirebasePush, "Firebase Bulk Push")
             .AddMessageProperty("ConditionExpression", DataType.String, p =>
             {
                 p.IsRequired = false;
@@ -194,13 +190,14 @@ namespace Deveel.Messaging
             {
                 p.IsRequired = false;
                 p.Description = "Batch identifier for grouping related messages";
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Gets a rich push notification schema optimized for interactive and media-rich notifications.
         /// This schema includes advanced notification features and customization options.
         /// </summary>
-        public static ChannelSchema RichPush => new ChannelSchema(FirebasePush, "Firebase Rich Push")
+        public static ChannelSchema RichPush => ChannelSchemaBuilder.From(FirebasePush, "Firebase Rich Push")
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .AddMessageProperty("Actions", DataType.String, p =>
             {
@@ -218,74 +215,26 @@ namespace Deveel.Messaging
                 p.IsRequired = false;
                 p.Description = "iOS notification subtitle";
                 p.MaxLength = 256;
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Validates that the image URL is a valid HTTP/HTTPS URL.
         /// </summary>
         private static IEnumerable<ValidationResult> ValidateImageUrl(object? value)
-        {
-            if (value == null) yield break;
-
-            var url = value.ToString();
-            if (string.IsNullOrEmpty(url)) yield break;
-
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != "http" && uri.Scheme != "https"))
-            {
-                yield return new ValidationResult(
-                    "ImageUrl must be a valid HTTP or HTTPS URL",
-                    new[] { "ImageUrl" });
-            }
-        }
+            => FirebaseMessageValidator.ValidateImageUrl(value);
 
         /// <summary>
         /// Validates that the color is in valid hexadecimal format (#rrggbb or #aarrggbb).
         /// </summary>
         private static IEnumerable<ValidationResult> ValidateHexColor(object? value)
-        {
-            if (value == null) yield break;
-
-            var color = value.ToString();
-            if (string.IsNullOrEmpty(color)) yield break;
-
-            if (!color.StartsWith('#') ||
-                (color.Length != 7 && color.Length != 9) ||
-                !color[1..].All(c => char.IsDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')))
-            {
-                yield return new ValidationResult(
-                    "Color must be in hexadecimal format (#rrggbb or #aarrggbb)",
-                    new[] { "Color" });
-            }
-        }
+            => FirebaseMessageValidator.ValidateHexColor(value);
 
         /// <summary>
         /// Validates that the property contains valid JSON content.
         /// </summary>
         private static IEnumerable<ValidationResult> ValidateJsonContent(object? value)
-        {
-            if (value == null)
-                return Enumerable.Empty<ValidationResult>();
-
-            var jsonContent = value.ToString();
-            if (string.IsNullOrEmpty(jsonContent))
-                return Enumerable.Empty<ValidationResult>();
-
-            try
-            {
-                System.Text.Json.JsonDocument.Parse(jsonContent);
-                return Enumerable.Empty<ValidationResult>();
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                return new[]
-                {
-                    new ValidationResult(
-                        "CustomData must be valid JSON",
-                        new[] { "CustomData" })
-                };
-            }
-        }
+            => FirebaseMessageValidator.ValidateJsonContent(value);
 
         /// <summary>
         /// Validates FCM condition expressions for topic-based targeting.

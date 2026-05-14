@@ -5,180 +5,128 @@
 
 namespace Deveel.Messaging
 {
-	/// <summary>
-	/// Defines the authentication configuration for a channel, specifying 
-	/// which connection settings fields are required for a specific authentication type.
-	/// </summary>
-	/// <remarks>
-	/// This class allows channel schemas to define precise mappings between 
-	/// connection settings parameters and authentication requirements, providing 
-	/// more flexible and explicit authentication validation than the generic approach.
-	/// </remarks>
-	public class AuthenticationConfiguration
-	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="AuthenticationConfiguration"/> class.
-		/// </summary>
-		/// <param name="authenticationType">The type of authentication this configuration defines.</param>
-		/// <param name="displayName">An optional display name for this authentication method.</param>
-		public AuthenticationConfiguration(AuthenticationType authenticationType, string? displayName = null)
-		{
-			AuthenticationType = authenticationType;
-			DisplayName = displayName ?? (authenticationType == AuthenticationType.None ? "No Authentication" : authenticationType.ToString());
-			RequiredFields = new List<AuthenticationField>();
-			OptionalFields = new List<AuthenticationField>();
-		}
+    /// <summary>
+    /// Describes the set of fields required or accepted by a particular <see cref="AuthenticationScheme"/>
+    /// when authenticating against a messaging channel.
+    /// </summary>
+    /// <remarks>
+    /// This class is purely descriptive — it defines <em>what</em> fields a provider needs.
+    /// Validation of actual values against a <see cref="ConnectionSettings"/> instance is
+    /// performed by the <see cref="IAuthenticationProvider"/>, not by this class.
+    /// </remarks>
+    public class AuthenticationConfiguration
+    {
+        /// <summary>
+        /// Initializes a new instance with the given <paramref name="scheme"/>.
+        /// </summary>
+        /// <param name="scheme">The authentication scheme this configuration describes.</param>
+        /// <param name="displayName">An optional human-readable name; defaults to <c>scheme.Name</c>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="scheme"/> is <c>null</c>.</exception>
+        public AuthenticationConfiguration(AuthenticationScheme scheme, string? displayName = null)
+        {
+            Scheme = scheme ?? throw new ArgumentNullException(nameof(scheme));
+            DisplayName = displayName ?? scheme.Name;
+            Fields = new List<AuthenticationField>();
+        }
 
-		/// <summary>
-		/// Gets the authentication type this configuration defines.
-		/// </summary>
-		public AuthenticationType AuthenticationType { get; }
+        /// <summary>
+        /// Gets the authentication scheme this configuration is for.
+        /// </summary>
+        public AuthenticationScheme Scheme { get; }
 
-		/// <summary>
-		/// Gets the display name for this authentication method.
-		/// </summary>
-		public string DisplayName { get; }
+        /// <summary>
+        /// Gets the human-readable display name of this authentication method.
+        /// </summary>
+        public string DisplayName { get; }
 
-		/// <summary>
-		/// Gets the collection of required authentication fields.
-		/// </summary>
-		/// <remarks>
-		/// All required fields must be present in connection settings for this 
-		/// authentication method to be considered valid.
-		/// </remarks>
-		public IList<AuthenticationField> RequiredFields { get; }
+        /// <summary>
+        /// Gets the list of fields that this authentication method requires or accepts.
+        /// </summary>
+        /// <remarks>
+        /// Fields are matched to providers by their <see cref="AuthenticationField.AuthenticationRole"/>
+        /// value. A provider for a given scheme will look for fields with well-known role names
+        /// (e.g. <c>"principal"</c>, <c>"credential"</c>).
+        /// </remarks>
+        public IList<AuthenticationField> Fields { get; }
 
-		/// <summary>
-		/// Gets the collection of optional authentication fields.
-		/// </summary>
-		/// <remarks>
-		/// Optional fields can be used to provide additional authentication 
-		/// parameters but are not required for basic authentication validation.
-		/// </remarks>
-		public IList<AuthenticationField> OptionalFields { get; }
+        /// <summary>
+        /// Adds a pre-configured <see cref="AuthenticationField"/> to this configuration.
+        /// </summary>
+        /// <param name="field">The field to add.</param>
+        /// <returns>This instance for method chaining.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="field"/> is <c>null</c>.</exception>
+        public AuthenticationConfiguration WithField(AuthenticationField field)
+        {
+            ArgumentNullException.ThrowIfNull(field, nameof(field));
+            Fields.Add(field);
+            return this;
+        }
 
-		/// <summary>
-		/// Adds a required authentication field to this configuration.
-		/// </summary>
-		/// <param name="field">The authentication field to add as required.</param>
-		/// <returns>The current authentication configuration for method chaining.</returns>
-		/// <exception cref="ArgumentNullException">Thrown when field is null.</exception>
-		public AuthenticationConfiguration WithRequiredField(AuthenticationField field)
-		{
-			ArgumentNullException.ThrowIfNull(field, nameof(field));
-			RequiredFields.Add(field);
-			return this;
-		}
+        /// <summary>
+        /// Creates an <see cref="AuthenticationField"/> with the given <paramref name="fieldName"/>
+        /// and <paramref name="dataType"/>, optionally configures it, and adds it to this configuration.
+        /// </summary>
+        /// <param name="fieldName">The connection-settings key this field maps to.</param>
+        /// <param name="dataType">The expected data type of the field value.</param>
+        /// <param name="configure">An optional action to set additional properties (e.g. role, sensitivity).</param>
+        /// <returns>This instance for method chaining.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="fieldName"/> is <c>null</c> or empty.</exception>
+        public AuthenticationConfiguration WithField(string fieldName, DataType dataType, Action<AuthenticationField>? configure = null)
+        {
+            ArgumentNullException.ThrowIfNullOrWhiteSpace(fieldName, nameof(fieldName));
+            var field = new AuthenticationField(fieldName, dataType);
+            configure?.Invoke(field);
+            return WithField(field);
+        }
 
-		/// <summary>
-		/// Adds a required authentication field with the specified name and data type.
-		/// </summary>
-		/// <param name="fieldName">The name of the connection settings parameter.</param>
-		/// <param name="dataType">The expected data type of the field.</param>
-		/// <param name="configure">Optional action to configure additional field properties.</param>
-		/// <returns>The current authentication configuration for method chaining.</returns>
-		/// <exception cref="ArgumentNullException">Thrown when fieldName is null or whitespace.</exception>
-		public AuthenticationConfiguration WithRequiredField(string fieldName, DataType dataType, Action<AuthenticationField>? configure = null)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(fieldName, nameof(fieldName));
-			var field = new AuthenticationField(fieldName, dataType);
-			configure?.Invoke(field);
-			return WithRequiredField(field);
-		}
+        /// <summary>
+        /// Returns all fields whose <see cref="AuthenticationField.AuthenticationRole"/>
+        /// matches <paramref name="role"/> (case-insensitive).
+        /// </summary>
+        /// <param name="role">The role name to filter by.</param>
+        /// <returns>Zero or more matching fields.</returns>
+        public IEnumerable<AuthenticationField> GetFieldsByRole(string role)
+        {
+            return Fields.Where(f => string.Equals(f.AuthenticationRole, role, StringComparison.OrdinalIgnoreCase));
+        }
 
-		/// <summary>
-		/// Adds an optional authentication field to this configuration.
-		/// </summary>
-		/// <param name="field">The authentication field to add as optional.</param>
-		/// <returns>The current authentication configuration for method chaining.</returns>
-		/// <exception cref="ArgumentNullException">Thrown when field is null.</exception>
-		public AuthenticationConfiguration WithOptionalField(AuthenticationField field)
-		{
-			ArgumentNullException.ThrowIfNull(field, nameof(field));
-			OptionalFields.Add(field);
-			return this;
-		}
+        /// <summary>
+        /// Returns the names of every field defined in this configuration.
+        /// </summary>
+        /// <returns>All field names.</returns>
+        public IEnumerable<string> GetAllFieldNames()
+        {
+            return Fields.Select(f => f.FieldName);
+        }
 
-		/// <summary>
-		/// Adds an optional authentication field with the specified name and data type.
-		/// </summary>
-		/// <param name="fieldName">The name of the connection settings parameter.</param>
-		/// <param name="dataType">The expected data type of the field.</param>
-		/// <param name="configure">Optional action to configure additional field properties.</param>
-		/// <returns>The current authentication configuration for method chaining.</returns>
-		/// <exception cref="ArgumentNullException">Thrown when fieldName is null or whitespace.</exception>
-		public AuthenticationConfiguration WithOptionalField(string fieldName, DataType dataType, Action<AuthenticationField>? configure = null)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(fieldName, nameof(fieldName));
-			var field = new AuthenticationField(fieldName, dataType);
-			configure?.Invoke(field);
-			return WithOptionalField(field);
-		}
+        /// <summary>
+        /// Determines whether this configuration is satisfied by the given connection settings,
+        /// using role-aware matching: for configs with <c>principal</c>+<c>credential</c> roles,
+        /// at least one of each must be present; for configs with only <c>principal</c>,
+        /// at least one must be present; all other fields must be present.
+        /// </summary>
+        /// <param name="connectionSettings">The settings to check.</param>
+        /// <returns><c>true</c> if the configuration is satisfied.</returns>
+        public bool IsSatisfiedBy(ConnectionSettings connectionSettings)
+        {
+            var principalFields = Fields.Where(f => string.Equals(f.AuthenticationRole, "principal", StringComparison.OrdinalIgnoreCase)).ToList();
+            var credentialFields = Fields.Where(f => string.Equals(f.AuthenticationRole, "credential", StringComparison.OrdinalIgnoreCase)).ToList();
+            var otherFields = Fields.Where(f => !string.Equals(f.AuthenticationRole, "principal", StringComparison.OrdinalIgnoreCase) && !string.Equals(f.AuthenticationRole, "credential", StringComparison.OrdinalIgnoreCase)).ToList();
 
-		/// <summary>
-		/// Validates connection settings against this authentication configuration.
-		/// </summary>
-		/// <param name="connectionSettings">The connection settings to validate.</param>
-		/// <returns>A list of validation error messages. Empty if validation passes.</returns>
-		/// <exception cref="ArgumentNullException">Thrown when connectionSettings is null.</exception>
-		public virtual IList<string> Validate(ConnectionSettings connectionSettings)
-		{
-			ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
+            if (!otherFields.All(f => connectionSettings.GetParameter(f.FieldName) != null))
+                return false;
 
-			var errors = new List<string>();
+            if (principalFields.Any() && credentialFields.Any())
+                return principalFields.Any(f => connectionSettings.GetParameter(f.FieldName) != null) &&
+                       credentialFields.Any(f => connectionSettings.GetParameter(f.FieldName) != null);
 
-			// Validate all required fields are present and valid
-			foreach (var requiredField in RequiredFields)
-			{
-				var fieldErrors = requiredField.Validate(connectionSettings);
-				errors.AddRange(fieldErrors);
-			}
+            if (principalFields.Any())
+                return principalFields.Any(f => connectionSettings.GetParameter(f.FieldName) != null);
 
-			// Validate optional fields if they are present
-			foreach (var optionalField in OptionalFields)
-			{
-				var value = connectionSettings.GetParameter(optionalField.FieldName);
-				if (value != null)
-				{
-					var fieldErrors = optionalField.Validate(connectionSettings);
-					errors.AddRange(fieldErrors);
-				}
-			}
+            if (credentialFields.Any())
+                return credentialFields.Any(f => connectionSettings.GetParameter(f.FieldName) != null);
 
-			return errors;
-		}
-
-		/// <summary>
-		/// Determines whether this authentication configuration is satisfied by the given connection settings.
-		/// </summary>
-		/// <param name="connectionSettings">The connection settings to check.</param>
-		/// <returns>True if all required fields are present and valid; otherwise, false.</returns>
-		/// <exception cref="ArgumentNullException">Thrown when connectionSettings is null.</exception>
-		public virtual bool IsSatisfiedBy(ConnectionSettings connectionSettings)
-		{
-			ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
-
-			// Check that all required fields are present and valid
-			foreach (var requiredField in RequiredFields)
-			{
-				var errors = requiredField.Validate(connectionSettings);
-				if (errors.Any())
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		/// <summary>
-		/// Gets all field names (both required and optional) defined in this authentication configuration.
-		/// </summary>
-		/// <returns>An enumerable of all field names.</returns>
-		public IEnumerable<string> GetAllFieldNames()
-		{
-			return RequiredFields.Select(f => f.FieldName)
-				.Concat(OptionalFields.Select(f => f.FieldName));
-		}
-	}
+            return Fields.Any(f => connectionSettings.GetParameter(f.FieldName) != null);
+        }
+    }
 }

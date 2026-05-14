@@ -28,9 +28,9 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.InvalidWebhookData, result.Error.ErrorCode);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -102,7 +102,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -143,7 +143,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -177,7 +177,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("unknown", result.Value.MessageId); // Should default to "unknown"
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
@@ -208,7 +208,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("invalid_timestamp_123", result.Value.MessageId);
         // Timestamp should be recent (within last minute)
@@ -243,7 +243,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -284,7 +284,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -332,7 +332,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal("comprehensive_event_123", result.Value.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value.Status);
@@ -367,9 +367,9 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(SendGridErrorCodes.InvalidWebhookData, result.Error.ErrorCode);
+        Assert.Equal(MessagingErrorCodes.InvalidWebhookData, result.Error?.Code);
     }
 
     [Fact]
@@ -390,9 +390,9 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
+        Assert.False(result.IsSuccess());
         Assert.NotNull(result.Error);
-        Assert.Equal(ConnectorErrorCodes.ReceiveStatusError, result.Error.ErrorCode);
+        Assert.Equal(ConnectorErrorCodes.ReceiveStatusError, result.Error?.Code);
     }
 
     [Fact]
@@ -420,7 +420,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(2, result.Value.Messages.Count); // Only 2 valid messages
 
@@ -456,7 +456,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 
@@ -495,7 +495,7 @@ public class SendGridEmailConnectorJsonEdgeCaseTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Single(result.Value.Messages);
 

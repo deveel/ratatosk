@@ -21,7 +21,7 @@ namespace Deveel.Messaging
         /// status queries, templates, and webhook support. It can be used as-is
         /// or derived to create more restrictive configurations for specific use cases.
         /// </remarks>
-        public static ChannelSchema SendGridEmail => new ChannelSchema(SendGridConnectorConstants.Provider, SendGridConnectorConstants.EmailChannel, "1.0.0")
+        public static ChannelSchema SendGridEmail => new ChannelSchemaBuilder(SendGridConnectorConstants.Provider, SendGridConnectorConstants.EmailChannel, "1.0.0")
             .WithDisplayName("SendGrid Email Connector")
             .WithCapabilities(
                 ChannelCapability.SendMessages | 
@@ -32,35 +32,35 @@ namespace Deveel.Messaging
                 ChannelCapability.Templates |
                 ChannelCapability.MediaAttachments |
                 ChannelCapability.HealthCheck)
-            .AddParameter(new ChannelParameter("ApiKey", DataType.String)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.ApiKey, DataType.String)
             {
                 IsRequired = true,
                 IsSensitive = true,
                 Description = "SendGrid API Key - found in your SendGrid Dashboard under Settings > API Keys"
             })
-            .AddParameter(new ChannelParameter("SandboxMode", DataType.Boolean)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.SandboxMode, DataType.Boolean)
             {
                 IsRequired = false,
-                DefaultValue = false,
+                DefaultValue = SendGridConnectionSettingsDefaults.SandboxMode,
                 Description = "Enable sandbox mode for testing without actually sending emails"
             })
-            .AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.WebhookUrl, DataType.String)
             {
                 IsRequired = false,
                 Description = "URL to receive webhook notifications for email events and status updates"
             })
-            .AddParameter(new ChannelParameter("TrackingSettings", DataType.Boolean)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.TrackingSettings, DataType.Boolean)
             {
                 IsRequired = false,
-                DefaultValue = true,
+                DefaultValue = SendGridConnectionSettingsDefaults.TrackingSettings,
                 Description = "Enable tracking for opens, clicks, and other email engagement metrics"
             })
-            .AddParameter(new ChannelParameter("DefaultFromName", DataType.String)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.DefaultFromName, DataType.String)
             {
                 IsRequired = false,
                 Description = "Default sender name to use when not specified in the message"
             })
-            .AddParameter(new ChannelParameter("DefaultReplyTo", DataType.String)
+            .AddParameter(new ChannelParameter(SendGridConnectionParameters.DefaultReplyTo, DataType.String)
             {
                 IsRequired = false,
                 Description = "Default reply-to email address"
@@ -80,7 +80,14 @@ namespace Deveel.Messaging
                 e.CanSend = false;
                 e.CanReceive = true; // For webhooks
             })
-            .AddAuthenticationType(AuthenticationType.ApiKey)
+            .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.ApiKey, "SendGrid API Key")
+                .WithField(SendGridConnectionParameters.ApiKey, DataType.String, f =>
+                {
+                    f.DisplayName = "API Key";
+                    f.Description = "SendGrid API Key from your SendGrid Dashboard";
+                    f.AuthenticationRole = "principal";
+                    f.IsSensitive = true;
+                }))
             .AddMessageProperty("Subject", DataType.String, p =>
             {
                 p.IsRequired = true;
@@ -139,20 +146,21 @@ namespace Deveel.Messaging
                 p.IsRequired = false;
                 p.Description = "Unsubscribe group ID for subscription management";
                 p.MinValue = 1; // SendGrid requires group IDs to be positive integers
-			});
+			})
+            .Build();
 
         /// <summary>
         /// Gets a simplified email-only schema for basic email messaging use cases.
         /// This schema removes webhooks, templates, and advanced features.
         /// </summary>
-        public static ChannelSchema SimpleEmail => new ChannelSchema(SendGridEmail, "SendGrid Simple Email")
+        public static ChannelSchema SimpleEmail => ChannelSchemaBuilder.From(SendGridEmail, "SendGrid Simple Email")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .RemoveCapability(ChannelCapability.Templates)
             .RemoveCapability(ChannelCapability.MediaAttachments)
-            .RemoveParameter("WebhookUrl")
-            .RemoveParameter("TrackingSettings")
+            .RemoveParameter(SendGridConnectionParameters.WebhookUrl)
+            .RemoveParameter(SendGridConnectionParameters.TrackingSettings)
             .RemoveContentType(MessageContentType.Template)
             .RemoveContentType(MessageContentType.Multipart)
             .RemoveMessageProperty("Categories")
@@ -160,30 +168,32 @@ namespace Deveel.Messaging
             .RemoveMessageProperty("SendAt")
             .RemoveMessageProperty("BatchId")
             .RemoveMessageProperty("IpPoolName")
-            .RemoveMessageProperty("AsmGroupId");
+            .RemoveMessageProperty("AsmGroupId")
+            .Build();
 
         /// <summary>
         /// Gets a transactional email schema optimized for automated notifications and receipts.
         /// This schema includes tracking and delivery confirmation but removes bulk capabilities.
         /// </summary>
-        public static ChannelSchema TransactionalEmail => new ChannelSchema(SendGridEmail, "SendGrid Transactional Email")
+        public static ChannelSchema TransactionalEmail => ChannelSchemaBuilder.From(SendGridEmail, "SendGrid Transactional Email")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.BulkMessaging)
             .RemoveCapability(ChannelCapability.Templates)
-            .RemoveParameter("WebhookUrl")
-            .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
+            .RemoveParameter(SendGridConnectionParameters.WebhookUrl)
+            .UpdateParameter(SendGridConnectionParameters.TrackingSettings, param => param.DefaultValue = SendGridConnectionSettingsDefaults.TrackingSettings)
             .RemoveContentType(MessageContentType.Template)
             .RemoveMessageProperty("SendAt")
             .RemoveMessageProperty("BatchId")
-            .RemoveMessageProperty("IpPoolName");
+            .RemoveMessageProperty("IpPoolName")
+            .Build();
 
         /// <summary>
         /// Gets a marketing email schema optimized for campaigns and newsletters.
         /// This schema includes all tracking, templates, and bulk messaging capabilities.
         /// </summary>
-        public static ChannelSchema MarketingEmail => new ChannelSchema(SendGridEmail, "SendGrid Marketing Email")
-            .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
+        public static ChannelSchema MarketingEmail => ChannelSchemaBuilder.From(SendGridEmail, "SendGrid Marketing Email")
+            .UpdateParameter(SendGridConnectionParameters.TrackingSettings, param => param.DefaultValue = SendGridConnectionSettingsDefaults.TrackingSettings)
             .AddMessageProperty("ListId", DataType.String, p =>
             {
                 p.Description = "Marketing list ID for campaign tracking";
@@ -191,13 +201,14 @@ namespace Deveel.Messaging
             .AddMessageProperty("CampaignId", DataType.String, p =>
             {
                 p.Description = "Campaign ID for grouping and tracking marketing emails";
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Gets a template-focused email schema optimized for dynamic content using SendGrid templates.
         /// This schema focuses on template messaging capabilities with webhook support for tracking.
         /// </summary>
-        public static ChannelSchema TemplateEmail => new ChannelSchema(SendGridEmail, "SendGrid Template Email")
+        public static ChannelSchema TemplateEmail => ChannelSchemaBuilder.From(SendGridEmail, "SendGrid Template Email")
             .RemoveCapability(ChannelCapability.ReceiveMessages)
             .RemoveCapability(ChannelCapability.HandleMessageState)
             .RemoveCapability(ChannelCapability.MediaAttachments)
@@ -215,14 +226,15 @@ namespace Deveel.Messaging
                 p.IsRequired = false;
                 p.Description = "JSON object containing template variable substitutions";
                 p.CustomValidator = ValidateJsonContent;
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Gets a bulk email schema optimized for high-volume email campaigns.
         /// This schema includes batch processing and advanced delivery options.
         /// </summary>
-        public static ChannelSchema BulkEmail => new ChannelSchema(SendGridEmail, "SendGrid Bulk Email")
-            .UpdateParameter("TrackingSettings", param => param.DefaultValue = true)
+        public static ChannelSchema BulkEmail => ChannelSchemaBuilder.From(SendGridEmail, "SendGrid Bulk Email")
+            .UpdateParameter(SendGridConnectionParameters.TrackingSettings, param => param.DefaultValue = SendGridConnectionSettingsDefaults.TrackingSettings)
             .AddMessageProperty("MailBatchId", DataType.String, p =>
             {
                 p.IsRequired = false;
@@ -233,7 +245,8 @@ namespace Deveel.Messaging
                 p.IsRequired = false;
                 p.Description = "Unsubscribe group ID for bulk email compliance";
                 p.MinValue = 1;
-            });
+            })
+            .Build();
 
         /// <summary>
         /// Validates that categories property contains at most 10 categories with max 255 chars each.

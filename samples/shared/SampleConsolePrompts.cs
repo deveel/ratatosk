@@ -1,3 +1,5 @@
+using Spectre.Console;
+
 internal static class SampleConsolePrompts
 {
     public static string Select(string prompt, params string[] choices)
@@ -5,134 +7,83 @@ internal static class SampleConsolePrompts
 
     public static string Select(string prompt, IReadOnlyList<string> choices, string defaultValue)
     {
-        while (true)
-        {
-            Console.WriteLine(prompt);
-            for (var i = 0; i < choices.Count; i++)
-            {
-                Console.WriteLine($"  {i + 1}. {choices[i]}");
-            }
+        var selection = new SelectionPrompt<string>()
+            .Title(prompt)
+            .PageSize(10)
+            .MoreChoicesText("[dim](move up and down to reveal more options)[/]")
+            .AddChoices(choices);
 
-            Console.Write($"Select an option [{defaultValue}]: ");
-            var input = Console.ReadLine()?.Trim();
-            Console.WriteLine();
-
-            if (String.IsNullOrWhiteSpace(input))
-            {
-                return defaultValue;
-            }
-
-            if (Int32.TryParse(input, out var index) && index >= 1 && index <= choices.Count)
-            {
-                return choices[index - 1];
-            }
-
-            var selected = choices.FirstOrDefault(x => String.Equals(x, input, StringComparison.OrdinalIgnoreCase));
-            if (selected is not null)
-            {
-                return selected;
-            }
-
-            Console.WriteLine("Please choose one of the listed options.");
-            Console.WriteLine();
-        }
+        return AnsiConsole.Prompt(selection);
     }
 
     public static string RequiredText(string prompt, string? defaultValue = null)
     {
-        while (true)
-        {
-            var value = OptionalText(prompt, defaultValue);
-            if (!String.IsNullOrWhiteSpace(value))
+        var textPrompt = new TextPrompt<string>($"[bold]{prompt}[/]")
+            .Validate(value =>
             {
-                return value;
-            }
+                if (string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(defaultValue))
+                    return ValidationResult.Error("[red]A value is required.[/]");
+                return ValidationResult.Success();
+            });
 
-            Console.WriteLine("A value is required.");
-            Console.WriteLine();
-        }
+        if (!string.IsNullOrWhiteSpace(defaultValue))
+            textPrompt.DefaultValueStyle(new Style(foreground: Color.Default))
+                      .DefaultValue(defaultValue);
+
+        return AnsiConsole.Prompt(textPrompt);
     }
 
     public static string? OptionalText(string prompt, string? defaultValue = null)
     {
-        Console.Write(prompt);
-        if (!String.IsNullOrWhiteSpace(defaultValue))
-        {
-            Console.Write($" [{defaultValue}]");
-        }
+        var textPrompt = new TextPrompt<string>($"[bold]{prompt}[/]")
+            .AllowEmpty();
 
-        Console.Write(": ");
-        var input = Console.ReadLine();
-        Console.WriteLine();
+        if (!string.IsNullOrWhiteSpace(defaultValue))
+            textPrompt.DefaultValueStyle(new Style(foreground: Color.Default))
+                      .DefaultValue(defaultValue);
 
-        return String.IsNullOrWhiteSpace(input)
-            ? defaultValue
-            : input.Trim();
+        var result = AnsiConsole.Prompt(textPrompt);
+        return string.IsNullOrWhiteSpace(result) ? defaultValue : result.Trim();
     }
 
     public static bool Confirm(string prompt, bool defaultValue = true)
-    {
-        while (true)
-        {
-            Console.Write($"{prompt} [{(defaultValue ? "Y/n" : "y/N")}]: ");
-            var input = Console.ReadLine()?.Trim();
-            Console.WriteLine();
-
-            if (String.IsNullOrWhiteSpace(input))
-            {
-                return defaultValue;
-            }
-
-            if (input.Equals("y", StringComparison.OrdinalIgnoreCase) ||
-                input.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
-                input.Equals("true", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            if (input.Equals("n", StringComparison.OrdinalIgnoreCase) ||
-                input.Equals("no", StringComparison.OrdinalIgnoreCase) ||
-                input.Equals("false", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            Console.WriteLine("Please answer yes or no.");
-            Console.WriteLine();
-        }
-    }
+        => AnsiConsole.Confirm($"[bold]{prompt}[/]", defaultValue);
 
     public static int RequiredInt(string prompt, int defaultValue)
-    {
-        while (true)
-        {
-            var value = OptionalText(prompt, defaultValue.ToString());
-            if (Int32.TryParse(value, out var parsed))
-            {
-                return parsed;
-            }
-
-            Console.WriteLine("Please enter a valid integer.");
-            Console.WriteLine();
-        }
-    }
+        => AnsiConsole.Prompt(
+            new TextPrompt<int>($"[bold]{prompt}[/]")
+                .DefaultValue(defaultValue)
+                .DefaultValueStyle(new Style(foreground: Color.Default))
+                .ValidationErrorMessage("[red]Please enter a valid integer.[/]"));
 
     public static double RequiredDouble(string prompt, double defaultValue)
+        => AnsiConsole.Prompt(
+            new TextPrompt<double>($"[bold]{prompt}[/]")
+                .DefaultValue(defaultValue)
+                .DefaultValueStyle(new Style(foreground: Color.Default))
+                .ValidationErrorMessage("[red]Please enter a valid number using '.' as decimal separator.[/]"));
+
+    public static string MultiLineBody(string prompt, string? initial = null)
     {
+        if (!string.IsNullOrEmpty(initial))
+            AnsiConsole.MarkupLine($"[dim]Current body:[/] [italic]{initial}[/]");
+
+        AnsiConsole.MarkupLine($"[bold]{prompt}[/]");
+        AnsiConsole.MarkupLine("[dim](type [cyan]!done[/] on a new line to finish, or leave empty to keep current)[/]");
+
+        var lines = new List<string>();
         while (true)
         {
-            var value = OptionalText(prompt, defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            if (Double.TryParse(
-                value,
-                System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowThousands,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var parsed))
-            {
-                return parsed;
-            }
-
-            Console.WriteLine("Please enter a valid number using '.' as decimal separator.");
-            Console.WriteLine();
+            var line = System.Console.ReadLine();
+            if (line == null || line.Trim().Equals("!done", System.StringComparison.OrdinalIgnoreCase))
+                break;
+            lines.Add(line);
         }
+
+        var text = string.Join("\n", lines);
+        if (string.IsNullOrWhiteSpace(text) && !string.IsNullOrEmpty(initial))
+            return initial;
+
+        return text;
     }
 }

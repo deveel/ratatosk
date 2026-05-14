@@ -6,48 +6,52 @@
 namespace Deveel.Messaging
 {
     /// <summary>
-    /// Defines a contract for authentication providers that can obtain final authentication
-    /// credentials from initial authentication parameters during connector initialization.
+    /// Defines the contract for obtaining and refreshing authentication credentials
+    /// from connection settings.
     /// </summary>
     /// <remarks>
-    /// This interface enables connectors to implement authentication flows where initial
-    /// parameters (like Client ID and Client Secret) are used to obtain the actual
-    /// authentication factor (like Access Token) needed for API operations.
+    /// Implementations handle a single <see cref="AuthenticationScheme"/> and use
+    /// the <see cref="AuthenticationConfiguration"/> passed to each method to determine
+    /// which fields to extract from <see cref="ConnectionSettings"/>.
     /// </remarks>
     public interface IAuthenticationProvider
     {
         /// <summary>
-        /// Gets the authentication type that this provider supports.
+        /// Gets the authentication scheme this provider supports.
         /// </summary>
-        AuthenticationType AuthenticationType { get; }
+        AuthenticationScheme Scheme { get; }
 
         /// <summary>
-        /// Gets the display name of this authentication provider.
+        /// Gets the human-readable display name of this provider.
         /// </summary>
         string DisplayName { get; }
 
         /// <summary>
-        /// Determines whether this provider can handle the given authentication configuration.
+        /// Determines whether this provider can handle the given configuration.
         /// </summary>
-        /// <param name="configuration">The authentication configuration to check.</param>
-        /// <returns>True if this provider can handle the configuration; otherwise, false.</returns>
+        /// <param name="configuration">The configuration to check.</param>
+        /// <returns><c>true</c> if this provider can handle the configuration.</returns>
         bool CanHandle(AuthenticationConfiguration configuration);
 
         /// <summary>
-        /// Obtains the final authentication credential from the provided connection settings.
+        /// Obtains a credential by extracting the required fields from <paramref name="connectionSettings"/>
+        /// as described by <paramref name="configuration"/>.
         /// </summary>
-        /// <param name="connectionSettings">The connection settings containing initial authentication parameters.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        /// <returns>A task representing the asynchronous operation, containing the authentication result.</returns>
-        Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, CancellationToken cancellationToken = default);
+        /// <param name="connectionSettings">The settings containing credential values.</param>
+        /// <param name="configuration">The configuration describing which fields to use.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>A task whose result is the authentication outcome.</returns>
+        Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Refreshes an existing authentication credential if supported.
+        /// Attempts to refresh an existing credential, falling back to a fresh
+        /// <see cref="ObtainCredentialAsync"/> if refresh is not supported.
         /// </summary>
-        /// <param name="existingCredential">The existing credential to refresh.</param>
-        /// <param name="connectionSettings">The connection settings containing authentication parameters.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        /// <returns>A task representing the asynchronous operation, containing the refreshed authentication result.</returns>
-        Task<AuthenticationResult> RefreshCredentialAsync(AuthenticationCredential existingCredential, ConnectionSettings connectionSettings, CancellationToken cancellationToken = default);
+        /// <param name="existingCredential">The credential to refresh.</param>
+        /// <param name="connectionSettings">The settings containing credential values.</param>
+        /// <param name="configuration">The configuration describing which fields to use.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>A task whose result is the authentication outcome.</returns>
+        Task<AuthenticationResult> RefreshCredentialAsync(AuthenticationCredential existingCredential, ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default);
     }
 }

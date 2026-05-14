@@ -31,21 +31,19 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "text-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("This text should be the notification body")
-            };
-            
-            // Only add title - body should come from TextContent
-            message.With("Title", "Test Notification");
+            var message = new MessageBuilder()
+                .WithId("text-content-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("This text should be the notification body"))
+                // Only add title - body should come from TextContent
+                .WithProperty("Title", "Test Notification")
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.Is<FirebaseAdmin.Messaging.Message>(m => 
@@ -65,21 +63,19 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "priority-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Text from TextContent")
-            };
-            
-            message.With("Title", "Priority Test");
-            // Note: Body property is no longer part of the schema, so we test TextContent only
+            var message = new MessageBuilder()
+                .WithId("priority-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Text from TextContent"))
+                .WithProperty("Title", "Priority Test")
+                // Note: Body property is no longer part of the schema, so we test TextContent only
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.Is<FirebaseAdmin.Messaging.Message>(m => 
@@ -98,22 +94,20 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "empty-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("") // Empty TextContent
-            };
-            
-            message.With("Title", "Empty Content Test");
-            // Add some data to make it a valid data-only message
-            message.With("CustomData", @"{""action"":""silent""}");
+            var message = new MessageBuilder()
+                .WithId("empty-content-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("")) // Empty TextContent
+                .WithProperty("Title", "Empty Content Test")
+                // Add some data to make it a valid data-only message
+                .WithProperty("CustomData", @"{""action"":""silent""}")
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             // Should create a data-only message with title but no body
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -134,21 +128,19 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "null-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("") // Use empty string instead of null to avoid null reference
-            };
-            
-            message.With("Title", "Null Content Test");
-            message.With("CustomData", @"{""type"":""silent""}");
+            var message = new MessageBuilder()
+                .WithId("null-content-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("")) // Use empty string instead of null to avoid null reference
+                .WithProperty("Title", "Null Content Test")
+                .WithProperty("CustomData", @"{""type"":""silent""}")
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             // Should create a data-only message
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -169,21 +161,19 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "json-content-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new JsonContent(@"{""key"":""value""}")
-            };
-            
-            message.With("Title", "JSON Content Test");
-            message.With("CustomData", @"{""source"":""json""}");
+            var message = new MessageBuilder()
+                .WithId("json-content-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new JsonContent(@"{""key"":""value""}"))
+                .WithProperty("Title", "JSON Content Test")
+                .WithProperty("CustomData", @"{""source"":""json""}")
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             // Should create a data-only message since JsonContent doesn't provide notification body
             mockFirebaseService.Verify(x => x.SendAsync(
@@ -204,20 +194,18 @@ namespace Deveel.Messaging
             var mockFirebaseService = CreateInspectingMockFirebaseService();
             var connector = await CreateInitializedConnectorAsync(mockFirebaseService.Object);
             
-            var message = new Message
-            {
-                Id = "body-only-test",
-                Receiver = new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()),
-                Content = new TextContent("Only body text, no title")
-            };
-            
-            // Don't add any properties - only content
+            var message = new MessageBuilder()
+                .WithId("body-only-test")
+                .To(new Endpoint(EndpointType.DeviceId, CreateValidDeviceToken()))
+                .WithContent(new TextContent("Only body text, no title"))
+                // Don't add any properties - only content
+                .Build();
 
             // Act
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             
             mockFirebaseService.Verify(x => x.SendAsync(
                 It.Is<FirebaseAdmin.Messaging.Message>(m => 
@@ -239,7 +227,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-            Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
             
             return connector;
         }

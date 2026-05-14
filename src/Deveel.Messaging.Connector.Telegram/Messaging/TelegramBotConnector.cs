@@ -23,7 +23,7 @@ namespace Deveel.Messaging
 	/// sending messages, receiving messages via webhooks or long polling, media support,
 	/// inline keyboards, and health monitoring.
 	/// </remarks>
-	[ChannelSchema(typeof(TelegramBotSchemaFactory))]
+	[ChannelSchema(typeof(TelegramBotConnectorSchemaFactory))]
 	public class TelegramBotConnector : ChannelConnectorBase
 	{
 		private readonly ITelegramService _telegramService;
@@ -42,11 +42,6 @@ namespace Deveel.Messaging
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TelegramBotConnector"/> class.
 		/// </summary>
-		/// <param name="schema">The channel schema that defines the connector's capabilities and configuration.</param>
-		/// <param name="connectionSettings">The connection settings containing bot token and configuration.</param>
-		/// <param name="telegramService">The Telegram service for API operations.</param>
-		/// <param name="logger">Optional logger for diagnostic and operational logging.</param>
-		/// <exception cref="ArgumentNullException">Thrown when schema or connectionSettings is null.</exception>
 		public TelegramBotConnector(IChannelSchema schema, ConnectionSettings connectionSettings, ITelegramService? telegramService = null, ILogger<TelegramBotConnector>? logger = null)
 			: base(schema, connectionSettings, logger)
 		{
@@ -57,10 +52,6 @@ namespace Deveel.Messaging
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TelegramBotConnector"/> class using one of the predefined schemas.
 		/// </summary>
-		/// <param name="connectionSettings">The connection settings containing bot token and configuration.</param>
-		/// <param name="telegramService">The Telegram service for API operations.</param>
-		/// <param name="logger">Optional logger for diagnostic and operational logging.</param>
-		/// <exception cref="ArgumentNullException">Thrown when connectionSettings is null.</exception>
 		public TelegramBotConnector(ConnectionSettings connectionSettings, ITelegramService? telegramService = null, ILogger<TelegramBotConnector>? logger = null)
 			: this(TelegramChannelSchemas.TelegramBot, connectionSettings, telegramService, logger)
 		{
@@ -69,63 +60,43 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            // Extract required parameters
-            _botToken = ConnectionSettings.GetParameter("BotToken") as string;
+            _botToken = AuthenticationCredential?.Value ?? ConnectionSettings.GetBotToken();
+            _webhookUrl = ConnectionSettings.GetWebhookUrl();
+            _secretToken = ConnectionSettings.GetSecretToken();
+            _disableWebPagePreview = ConnectionSettings.GetDisableWebPagePreview() ?? TelegramConnectionSettingsDefaults.DisableWebPagePreview;
+            _disableNotification = ConnectionSettings.GetDisableNotification() ?? TelegramConnectionSettingsDefaults.DisableNotification;
+            _parseMode = ConnectionSettings.GetParseMode() ?? TelegramConnectionSettingsDefaults.ParseMode;
+            _maxRetries = ConnectionSettings.GetMaxRetries() ?? TelegramConnectionSettingsDefaults.MaxRetries;
+            _timeoutSeconds = ConnectionSettings.GetTimeoutSeconds() ?? 60;
 
-            // Extract optional parameters
-            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
-            _secretToken = ConnectionSettings.GetParameter("SecretToken") as string;
-            _disableWebPagePreview = ConnectionSettings.GetParameter("DisableWebPagePreview") as bool? ?? false;
-            _disableNotification = ConnectionSettings.GetParameter("DisableNotification") as bool? ?? false;
-            _parseMode = ConnectionSettings.GetParameter("ParseMode") as string ?? "Markdown";
-            _maxRetries = ConnectionSettings.GetParameter("MaxRetries") as int? ?? 3;
-            _timeoutSeconds = ConnectionSettings.GetParameter("TimeoutSeconds") as int? ?? 30;
-
-            // Validate required parameters
             if (string.IsNullOrWhiteSpace(_botToken))
-            {
-                throw new MessagingException(TelegramErrorCodes.MissingBotToken, "Bot token is required for Telegram Bot API");
-            }
+                throw new MessagingException(MessagingErrorCodes.MissingCredentials, TelegramErrorCodes.ErrorDomain, "Bot token is required for Telegram Bot API");
 
-            // Initialize Telegram service
             _telegramService.Initialize(_botToken);
-
-            // Get bot information to verify the token
             _botInfo = await _telegramService.GetMeAsync(cancellationToken);
             Logger.LogBotInitialized(_botInfo.Username, _botInfo.Id);
 
-            // Set up webhook if URL is provided
             if (!string.IsNullOrWhiteSpace(_webhookUrl))
-            {
                 await SetupWebhookAsync(cancellationToken);
-            }
         }
 
         /// <inheritdoc/>
         protected override async ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
         {
-            // Test connection by calling getMe API
             var botInfo = await _telegramService.GetMeAsync(cancellationToken);
 
             if (botInfo == null)
-            {
-                throw new ConnectorException(ConnectorErrorCodes.ConnectionTestError, "Unable to retrieve bot information");
-            }
+                throw new ConnectorException(ConnectorErrorCodes.ConnectionTestError, TelegramErrorCodes.ErrorDomain, "Unable to retrieve bot information");
 
             Logger.LogBotConnectionTestSuccessful(botInfo.Username, botInfo.Id);
         }
 
         /// <inheritdoc/>
-        protected override async Task<SendResult> SendMessageCoreAsync(IMessage message,
-            CancellationToken cancellationToken)
+        protected override async Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
         {
-            // Extract chat ID from receiver
-            var chatId = ExtractChatId(message.Receiver);
+            var chatId = TelegramMessageBuilder.ExtractChatId(message.Receiver);
             if (chatId == null)
-            {
-                throw new ConnectorException(TelegramErrorCodes.InvalidChatId,
-                    "Receiver must contain a valid Telegram chat ID");
-            }
+                throw new ConnectorException(TelegramErrorCodes.InvalidChatId, TelegramErrorCodes.ErrorDomain, "Receiver must contain a valid Telegram chat ID");
 
             Telegram.Bot.Types.Message sentMessage = await SendMessageByContentType(message, chatId, cancellationToken);
 
@@ -137,7 +108,6 @@ namespace Deveel.Messaging
                 Timestamp = sentMessage.Date
             };
 
-            // Add Telegram-specific properties
             result.AdditionalData["TelegramMessageId"] = sentMessage.MessageId;
             result.AdditionalData["ChatId"] = sentMessage.Chat.Id;
             result.AdditionalData["ChatType"] = sentMessage.Chat.Type.ToString();
@@ -145,9 +115,7 @@ namespace Deveel.Messaging
             result.AdditionalData["Date"] = sentMessage.Date;
 
             if (sentMessage.Chat.Username != null)
-            {
                 result.AdditionalData["ChatUsername"] = sentMessage.Chat.Username;
-            }
 
             return result;
         }
@@ -165,7 +133,6 @@ namespace Deveel.Messaging
             statusInfo.AdditionalData["WebhookUrl"] = _webhookUrl ?? "";
             statusInfo.AdditionalData["HasWebhook"] = !string.IsNullOrWhiteSpace(_webhookUrl);
 
-            // Get webhook info if webhook is configured
             if (!string.IsNullOrWhiteSpace(_webhookUrl))
             {
                 try
@@ -201,23 +168,17 @@ namespace Deveel.Messaging
 			{
 				try
 				{
-					// Test connectivity by calling getMe API
 					await TestConnectorConnectionAsync(cancellationToken);
 
-					// Check webhook health if configured
 					if (!string.IsNullOrWhiteSpace(_webhookUrl))
 					{
 						try
 						{
 							var webhookInfo = await _telegramService.GetWebhookInfoAsync(cancellationToken);
 							if (!string.IsNullOrEmpty(webhookInfo.LastErrorMessage))
-							{
 								health.Issues.Add($"Webhook error: {webhookInfo.LastErrorMessage}");
-							}
 							if (webhookInfo.PendingUpdateCount > 100)
-							{
 								health.Issues.Add($"High pending update count: {webhookInfo.PendingUpdateCount}");
-							}
 						}
 						catch (Exception ex)
 						{
@@ -240,30 +201,26 @@ namespace Deveel.Messaging
 		}
 
         /// <inheritdoc/>
-        protected override async Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source,
-            CancellationToken cancellationToken)
+        protected override Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             if (source.ContentType == MessageSource.JsonContentType)
             {
-                var messages = ParseTelegramWebhookJson(source);
+                var messages = TelegramMessageParser.ParseWebhookJson(source);
 
                 if (messages.Count == 0)
-                {
-                    throw new ConnectorException(TelegramErrorCodes.InvalidWebhookData, "No valid messages found in webhook data");
-                }
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData, TelegramErrorCodes.ErrorDomain, "No valid messages found in webhook data");
 
-                // TODO: find a better way to generate the ID of the receive batch
-                return new ReceiveResult(Guid.NewGuid().ToString(), messages);
+                return Task.FromResult(new ReceiveResult(Guid.NewGuid().ToString(), messages));
             }
 
-            throw new ConnectorException(TelegramErrorCodes.UnsupportedContentType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                 TelegramErrorCodes.ErrorDomain,
                  $"Unsupported content type: {source.ContentType}. Only JSON content type is supported for Telegram message receiving");
         }
 
         /// <inheritdoc/>
 		protected override async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
 		{
-			// Validate message content based on type
 			if (message.Content is ITextContent textContent)
 			{
 				if (!string.IsNullOrEmpty(textContent.Text) && textContent.Text.Length > TelegramConnectorConstants.MaxMessageLength)
@@ -274,19 +231,15 @@ namespace Deveel.Messaging
 				}
 			}
 
-			// Validate media content
 			if (message.Content is IMediaContent mediaContent)
 			{
 				if (!string.IsNullOrWhiteSpace(mediaContent.FileUrl))
 				{
 					if (!Uri.TryCreate(mediaContent.FileUrl, UriKind.Absolute, out _))
-					{
 						yield return new ValidationResult("Invalid media URL format", new[] { "Content" });
-					}
 				}
 
-				// Validate caption length
-				var caption = GetMessageProperty(message, "Caption");
+				var caption = TelegramMessageBuilder.GetMessageProperty(message, "Caption");
 				if (!string.IsNullOrEmpty(caption) && caption.Length > TelegramConnectorConstants.MaxCaptionLength)
 				{
 					yield return new ValidationResult(
@@ -295,50 +248,25 @@ namespace Deveel.Messaging
 				}
 			}
 
-			// Validate location content
 			if (message.Content is ILocationContent locationContent)
 			{
 				if (locationContent.Latitude < -90 || locationContent.Latitude > 90)
-				{
-					yield return new ValidationResult(
-						"Latitude must be between -90 and 90 degrees",
-						new[] { "Content.Latitude" });
-				}
+					yield return new ValidationResult("Latitude must be between -90 and 90 degrees", new[] { "Content.Latitude" });
 
 				if (locationContent.Longitude < -180 || locationContent.Longitude > 180)
-				{
-					yield return new ValidationResult(
-						"Longitude must be between -180 and 180 degrees",
-						new[] { "Content.Longitude" });
-				}
+					yield return new ValidationResult("Longitude must be between -180 and 180 degrees", new[] { "Content.Longitude" });
 
-				if (locationContent.LivePeriod.HasValue &&
-					(locationContent.LivePeriod.Value < 60 || locationContent.LivePeriod.Value > 86400))
-				{
-					yield return new ValidationResult(
-						"Live period must be between 60 and 86400 seconds",
-						new[] { "Content.LivePeriod" });
-				}
+				if (locationContent.LivePeriod.HasValue && (locationContent.LivePeriod.Value < 60 || locationContent.LivePeriod.Value > 86400))
+					yield return new ValidationResult("Live period must be between 60 and 86400 seconds", new[] { "Content.LivePeriod" });
 
-				if (locationContent.Heading.HasValue &&
-					(locationContent.Heading.Value < 1 || locationContent.Heading.Value > 360))
-				{
-					yield return new ValidationResult(
-						"Heading must be between 1 and 360 degrees",
-						new[] { "Content.Heading" });
-				}
+				if (locationContent.Heading.HasValue && (locationContent.Heading.Value < 1 || locationContent.Heading.Value > 360))
+					yield return new ValidationResult("Heading must be between 1 and 360 degrees", new[] { "Content.Heading" });
 
-				if (locationContent.ProximityAlertRadius.HasValue &&
-					(locationContent.ProximityAlertRadius.Value < 1 || locationContent.ProximityAlertRadius.Value > 100000))
-				{
-					yield return new ValidationResult(
-						"Proximity alert radius must be between 1 and 100000 meters",
-						new[] { "Content.ProximityAlertRadius" });
-				}
+				if (locationContent.ProximityAlertRadius.HasValue && (locationContent.ProximityAlertRadius.Value < 1 || locationContent.ProximityAlertRadius.Value > 100000))
+					yield return new ValidationResult("Proximity alert radius must be between 1 and 100000 meters", new[] { "Content.ProximityAlertRadius" });
 			}
 
-			// Validate inline keyboard if present
-			var inlineKeyboardJson = GetMessageProperty(message, "InlineKeyboard");
+			var inlineKeyboardJson = TelegramMessageBuilder.GetMessageProperty(message, "InlineKeyboard");
 			if (!string.IsNullOrEmpty(inlineKeyboardJson))
 			{
 				InlineKeyboardButton[][]? keyboard = null;
@@ -354,9 +282,7 @@ namespace Deveel.Messaging
 				}
 
 				foreach (var result in validationResults)
-				{
 					yield return result;
-				}
 
 				if (keyboard != null)
 				{
@@ -379,11 +305,8 @@ namespace Deveel.Messaging
 				}
 			}
 
-			// Call base validation last
 			await foreach (var result in base.ValidateMessageCoreAsync(message, cancellationToken))
-			{
 				yield return result;
-			}
 		}
 
 		/// <summary>
@@ -395,8 +318,8 @@ namespace Deveel.Messaging
 			{
 				Logger.LogSettingUpWebhook(_webhookUrl ?? string.Empty);
 
-				var maxConnections = ConnectionSettings.GetParameter("MaxConnections") as int?;
-				var dropPendingUpdates = ConnectionSettings.GetParameter("DropPendingUpdates") as bool? ?? false;
+				var maxConnections = ConnectionSettings.GetMaxConnections();
+				var dropPendingUpdates = ConnectionSettings.GetDropPendingUpdates() ?? TelegramConnectionSettingsDefaults.DropPendingUpdates;
 
 				await _telegramService.SetWebhookAsync(
 					_webhookUrl!,
@@ -415,37 +338,15 @@ namespace Deveel.Messaging
 		}
 
 		/// <summary>
-		/// Extracts chat ID from endpoint.
-		/// </summary>
-		private static ChatId? ExtractChatId(IEndpoint? endpoint)
-		{
-			if (endpoint?.Type != EndpointType.Id)
-				return null;
-
-			var address = endpoint.Address;
-			if (string.IsNullOrWhiteSpace(address))
-				return null;
-
-			// Try to parse as long (numeric chat ID)
-			if (long.TryParse(address, out var chatIdLong))
-			{
-				return new ChatId(chatIdLong);
-			}
-
-			// Use as string (username)
-			return new ChatId(address);
-		}
-
-		/// <summary>
 		/// Sends message based on content type.
 		/// </summary>
 		private async Task<Telegram.Bot.Types.Message> SendMessageByContentType(IMessage message, ChatId chatId, CancellationToken cancellationToken)
 		{
-			var parseMode = GetMessageParseMode(message);
-			var disableWebPagePreview = GetMessageBoolProperty(message, "DisableWebPagePreview", _disableWebPagePreview);
-			var disableNotification = GetMessageBoolProperty(message, "DisableNotification", _disableNotification);
-			var replyToMessageId = GetMessageIntProperty(message, "ReplyToMessageId");
-			var replyMarkup = CreateReplyMarkup(message);
+			var parseMode = TelegramMessageBuilder.GetMessageParseMode(message, _parseMode);
+			var disableWebPagePreview = TelegramMessageBuilder.GetMessageBoolProperty(message, "DisableWebPagePreview", _disableWebPagePreview);
+			var disableNotification = TelegramMessageBuilder.GetMessageBoolProperty(message, "DisableNotification", _disableNotification);
+			var replyToMessageId = TelegramMessageBuilder.GetMessageIntProperty(message, "ReplyToMessageId");
+			var replyMarkup = TelegramMessageBuilder.CreateReplyMarkup(message);
 
 			return message.Content switch
 			{
@@ -475,28 +376,11 @@ namespace Deveel.Messaging
 					replyMarkup: replyMarkup,
 					cancellationToken: cancellationToken),
 
-				// Handle location data as JSON content with latitude/longitude (for backward compatibility)
-				IJsonContent jsonContent when IsLocationMessage(jsonContent) => await SendLocationFromJson(
+				IJsonContent jsonContent when TelegramMessageBuilder.IsLocationMessage(jsonContent) => await SendLocationFromJson(
 					chatId, jsonContent, disableNotification, replyToMessageId, replyMarkup, cancellationToken),
 
 				_ => throw new NotSupportedException($"Content type {message.Content?.GetType().Name} is not supported")
 			};
-		}
-
-		/// <summary>
-		/// Checks if JSON content represents a location message.
-		/// </summary>
-		private static bool IsLocationMessage(IJsonContent jsonContent)
-		{
-			try
-			{
-				var json = JsonSerializer.Deserialize<JsonElement>(jsonContent.Json);
-				return json.TryGetProperty("latitude", out _) && json.TryGetProperty("longitude", out _);
-			}
-			catch
-			{
-				return false;
-			}
 		}
 
 		/// <summary>
@@ -530,8 +414,8 @@ namespace Deveel.Messaging
 		private async Task<Telegram.Bot.Types.Message> SendMediaMessage(ChatId chatId, IMediaContent mediaContent, IMessage message,
 			ParseMode? parseMode, bool? disableNotification, int? replyToMessageId, IReplyMarkup? replyMarkup, CancellationToken cancellationToken)
 		{
-			var caption = GetMessageProperty(message, "Caption");
-			var inputFile = CreateInputFile(mediaContent);
+			var caption = TelegramMessageBuilder.GetMessageProperty(message, "Caption");
+			var inputFile = TelegramMessageBuilder.CreateInputFile(mediaContent);
 
 			return mediaContent.MediaType switch
 			{
@@ -546,9 +430,9 @@ namespace Deveel.Messaging
 
 				MediaType.Video => await _telegramService.SendVideoAsync(
 					chatId, inputFile,
-					duration: GetMessageIntProperty(message, "Duration"),
-					width: GetMessageIntProperty(message, "Width"),
-					height: GetMessageIntProperty(message, "Height"),
+					duration: TelegramMessageBuilder.GetMessageIntProperty(message, "Duration"),
+					width: TelegramMessageBuilder.GetMessageIntProperty(message, "Width"),
+					height: TelegramMessageBuilder.GetMessageIntProperty(message, "Height"),
 					caption: caption,
 					parseMode: parseMode,
 					disableNotification: disableNotification,
@@ -560,9 +444,9 @@ namespace Deveel.Messaging
 					chatId, inputFile,
 					caption: caption,
 					parseMode: parseMode,
-					duration: GetMessageIntProperty(message, "Duration"),
-					performer: GetMessageProperty(message, "Performer"),
-					title: GetMessageProperty(message, "Title"),
+					duration: TelegramMessageBuilder.GetMessageIntProperty(message, "Duration"),
+					performer: TelegramMessageBuilder.GetMessageProperty(message, "Performer"),
+					title: TelegramMessageBuilder.GetMessageProperty(message, "Title"),
 					disableNotification: disableNotification,
 					replyToMessageId: replyToMessageId,
 					replyMarkup: replyMarkup,
@@ -581,272 +465,11 @@ namespace Deveel.Messaging
 			};
 		}
 
-		/// <summary>
-		/// Creates InputFile from media content.
-		/// </summary>
-		private static InputFile CreateInputFile(IMediaContent mediaContent)
-		{
-			if (!string.IsNullOrWhiteSpace(mediaContent.FileUrl))
-			{
-				return InputFile.FromUri(mediaContent.FileUrl);
-			}
-
-			if (mediaContent.Data != null && mediaContent.Data.Length > 0)
-			{
-				var fileName = mediaContent.FileName ?? "file";
-				return InputFile.FromStream(new MemoryStream(mediaContent.Data), fileName);
-			}
-
-			throw new ArgumentException("Media content must have either URL or data");
-		}
-
-		/// <summary>
-		/// Gets parse mode for message.
-		/// </summary>
-		private ParseMode? GetMessageParseMode(IMessage message)
-		{
-			var parseModeString = GetMessageProperty(message, "ParseMode") ?? _parseMode;
-
-			return parseModeString?.ToLowerInvariant() switch
-			{
-				"markdown" => ParseMode.Markdown,
-				"markdownv2" => ParseMode.MarkdownV2,
-				"html" => ParseMode.Html,
-				"none" => null,
-				_ => ParseMode.Markdown
-			};
-		}
-
-		/// <summary>
-		/// Creates reply markup from message properties.
-		/// </summary>
-		private static IReplyMarkup? CreateReplyMarkup(IMessage message)
-		{
-			var inlineKeyboardJson = GetMessageProperty(message, "InlineKeyboard");
-			if (!string.IsNullOrEmpty(inlineKeyboardJson))
-			{
-				try
-				{
-					var keyboard = JsonSerializer.Deserialize<InlineKeyboardButton[][]>(inlineKeyboardJson);
-					if (keyboard != null)
-					{
-						return new InlineKeyboardMarkup(keyboard);
-					}
-				}
-				catch (JsonException)
-				{
-					// Invalid JSON, ignore
-				}
-			}
-
-			var replyKeyboardJson = GetMessageProperty(message, "ReplyKeyboard");
-			if (!string.IsNullOrEmpty(replyKeyboardJson))
-			{
-				try
-				{
-					var keyboard = JsonSerializer.Deserialize<KeyboardButton[][]>(replyKeyboardJson);
-					if (keyboard != null)
-					{
-						return new ReplyKeyboardMarkup(keyboard);
-					}
-				}
-				catch (JsonException)
-				{
-					// Invalid JSON, ignore
-				}
-			}
-
-			return null;
-		}
-
-		/// <summary>
-		/// Gets message property value as string.
-		/// </summary>
-		private static string? GetMessageProperty(IMessage message, string propertyName)
-		{
-			if (message.Properties?.TryGetValue(propertyName, out var property) == true)
-			{
-				return property.Value?.ToString();
-			}
-			return null;
-		}
-
-		/// <summary>
-		/// Gets boolean property from message.
-		/// </summary>
-		private static bool? GetMessageBoolProperty(IMessage message, string propertyName, bool defaultValue = false)
-		{
-			var value = GetMessageProperty(message, propertyName);
-			if (bool.TryParse(value, out var parsedValue))
-				return parsedValue;
-			return defaultValue;
-		}
-
-		/// <summary>
-		/// Gets integer property from message.
-		/// </summary>
-		private static int? GetMessageIntProperty(IMessage message, string propertyName)
-		{
-			var value = GetMessageProperty(message, propertyName);
-			if (int.TryParse(value, out var parsedValue))
-				return parsedValue;
-			return null;
-		}
-
-		/// <summary>
-		/// Parses Telegram webhook JSON data.
-		/// </summary>
-		private List<IMessage> ParseTelegramWebhookJson(MessageSource source)
-		{
-			var messages = new List<IMessage>();
-			var jsonData = source.AsJson<JsonElement>();
-
-			if (jsonData.TryGetProperty("message", out var messageElement))
-			{
-				var message = ParseTelegramMessage(messageElement);
-				if (message != null)
-					messages.Add(message);
-			}
-			else if (jsonData.TryGetProperty("edited_message", out var editedMessageElement))
-			{
-				var message = ParseTelegramMessage(editedMessageElement);
-				if (message != null)
-					messages.Add(message);
-			}
-
-			return messages;
-		}
-
-		/// <summary>
-		/// Parses Telegram message from JSON element.
-		/// </summary>
-		private IMessage? ParseTelegramMessage(JsonElement messageElement)
-		{
-			if (!messageElement.TryGetProperty("message_id", out var messageIdElement))
-				return null;
-
-			var messageId = messageIdElement.GetInt32().ToString();
-
-			if (!messageElement.TryGetProperty("from", out var fromElement) ||
-				!messageElement.TryGetProperty("chat", out var chatElement))
-				return null;
-
-			var fromId = fromElement.TryGetProperty("id", out var fromIdElement) ? fromIdElement.GetInt64().ToString() : "";
-			var chatId = chatElement.TryGetProperty("id", out var chatIdElement) ? chatIdElement.GetInt64().ToString() : "";
-
-			if (string.IsNullOrEmpty(fromId) || string.IsNullOrEmpty(chatId))
-				return null;
-
-			var sender = new Endpoint(EndpointType.Id, fromId);
-			var receiver = new Endpoint(EndpointType.Id, chatId);
-
-			// Parse content based on message type
-			IMessageContent? content = null;
-
-			if (messageElement.TryGetProperty("text", out var textElement))
-			{
-				content = new TextContent(textElement.GetString() ?? "");
-			}
-			else if (messageElement.TryGetProperty("photo", out var photoElement))
-			{
-				var photoArray = photoElement.EnumerateArray().ToArray();
-				if (photoArray.Length > 0)
-				{
-					var largestPhoto = photoArray.OrderByDescending(p =>
-						p.TryGetProperty("file_size", out var sizeElement) ? sizeElement.GetInt32() : 0).First();
-
-					if (largestPhoto.TryGetProperty("file_id", out var fileIdElement))
-					{
-						content = new MediaContent(MediaType.Image, fileIdElement.GetString() ?? "", "");
-					}
-				}
-			}
-			else if (messageElement.TryGetProperty("video", out var videoElement))
-			{
-				if (videoElement.TryGetProperty("file_id", out var fileIdElement))
-				{
-					content = new MediaContent(MediaType.Video, fileIdElement.GetString() ?? "", "");
-				}
-			}
-			else if (messageElement.TryGetProperty("audio", out var audioElement))
-			{
-				if (audioElement.TryGetProperty("file_id", out var fileIdElement))
-				{
-					content = new MediaContent(MediaType.Audio, fileIdElement.GetString() ?? "", "");
-				}
-			}
-			else if (messageElement.TryGetProperty("document", out var documentElement))
-			{
-				if (documentElement.TryGetProperty("file_id", out var fileIdElement))
-				{
-					content = new MediaContent(MediaType.Document, fileIdElement.GetString() ?? "", "");
-				}
-			}
-			else if (messageElement.TryGetProperty("location", out var locationElement))
-			{
-				if (locationElement.TryGetProperty("latitude", out var latElement) &&
-					locationElement.TryGetProperty("longitude", out var lonElement))
-				{
-					var locationContent = new LocationContent(latElement.GetDouble(), lonElement.GetDouble());
-
-					// Parse optional location properties
-					if (locationElement.TryGetProperty("horizontal_accuracy", out var accuracyElement))
-					{
-						locationContent.WithHorizontalAccuracy(accuracyElement.GetDouble());
-					}
-
-					if (locationElement.TryGetProperty("live_period", out var livePeriodElement))
-					{
-						locationContent.WithLivePeriod(livePeriodElement.GetInt32());
-					}
-
-					if (locationElement.TryGetProperty("heading", out var headingElement))
-					{
-						locationContent.WithHeading(headingElement.GetInt32());
-					}
-
-					if (locationElement.TryGetProperty("proximity_alert_radius", out var proximityElement))
-					{
-						locationContent.WithProximityAlertRadius(proximityElement.GetInt32());
-					}
-
-					content = locationContent;
-				}
-			}
-
-			content ??= new TextContent();
-
-			var message = new Message
-			{
-				Id = messageId,
-				Sender = sender,
-				Receiver = receiver,
-				Content = MessageContent.Create(content),
-				Properties = new Dictionary<string, MessageProperty>()
-			};
-
-			// Add Telegram-specific properties
-			if (messageElement.TryGetProperty("date", out var dateElement))
-			{
-				var timestamp = DateTimeOffset.FromUnixTimeSeconds(dateElement.GetInt64()).DateTime;
-				message.Properties["Date"] = new MessageProperty("Date", timestamp);
-			}
-
-			if (messageElement.TryGetProperty("reply_to_message", out var replyElement) &&
-				replyElement.TryGetProperty("message_id", out var replyIdElement))
-			{
-				message.Properties["ReplyToMessageId"] = new MessageProperty("ReplyToMessageId", replyIdElement.GetInt32());
-			}
-
-			return message;
-		}
-
 		/// <inheritdoc/>
 		protected override async Task ShutdownConnectorAsync(CancellationToken cancellationToken)
 		{
 			try
 			{
-				// Remove webhook if it was set up
 				if (!string.IsNullOrWhiteSpace(_webhookUrl))
 				{
                     Logger.LogRemovingWebhook();

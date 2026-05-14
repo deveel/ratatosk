@@ -6,18 +6,18 @@
 namespace Deveel.Messaging
 {
     /// <summary>
-    /// Represents the result of an authentication operation, containing the obtained credential
-    /// and related metadata.
+    /// Represents the outcome of an authentication operation performed by an
+    /// <see cref="IAuthenticationProvider"/>.
     /// </summary>
     public class AuthenticationResult
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="AuthenticationResult"/> class.
+        /// Initializes a new instance.
         /// </summary>
-        /// <param name="isSuccessful">Indicates whether the authentication was successful.</param>
-        /// <param name="credential">The obtained authentication credential (if successful).</param>
-        /// <param name="errorMessage">The error message (if not successful).</param>
-        /// <param name="errorCode">The error code (if not successful).</param>
+        /// <param name="isSuccessful">Whether authentication succeeded.</param>
+        /// <param name="credential">The obtained credential (on success).</param>
+        /// <param name="errorMessage">An error message (on failure).</param>
+        /// <param name="errorCode">An optional error code (on failure).</param>
         public AuthenticationResult(bool isSuccessful, AuthenticationCredential? credential = null, string? errorMessage = null, string? errorCode = null)
         {
             IsSuccessful = isSuccessful;
@@ -29,40 +29,41 @@ namespace Deveel.Messaging
         }
 
         /// <summary>
-        /// Gets a value indicating whether the authentication operation was successful.
+        /// Gets whether the authentication operation succeeded.
         /// </summary>
         public bool IsSuccessful { get; }
 
         /// <summary>
-        /// Gets the obtained authentication credential, if the operation was successful.
+        /// Gets the credential obtained, if successful.
         /// </summary>
         public AuthenticationCredential? Credential { get; }
 
         /// <summary>
-        /// Gets the error message, if the operation was not successful.
+        /// Gets the error message, if the operation failed.
         /// </summary>
         public string? ErrorMessage { get; }
 
         /// <summary>
-        /// Gets the error code, if the operation was not successful.
+        /// Gets the error code, if the operation failed.
         /// </summary>
         public string? ErrorCode { get; }
 
         /// <summary>
-        /// Gets the timestamp when this authentication result was created.
+        /// Gets the UTC timestamp when this result was created.
         /// </summary>
         public DateTime Timestamp { get; }
 
         /// <summary>
-        /// Gets additional data associated with this authentication result.
+        /// Gets additional data attached to this result.
         /// </summary>
         public Dictionary<string, object?> AdditionalData { get; }
 
         /// <summary>
-        /// Creates a successful authentication result.
+        /// Creates a successful result with the given <paramref name="credential"/>.
         /// </summary>
-        /// <param name="credential">The obtained authentication credential.</param>
-        /// <returns>A successful authentication result.</returns>
+        /// <param name="credential">The obtained credential.</param>
+        /// <returns>A successful result.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="credential"/> is <c>null</c>.</exception>
         public static AuthenticationResult Success(AuthenticationCredential credential)
         {
             ArgumentNullException.ThrowIfNull(credential, nameof(credential));
@@ -70,11 +71,12 @@ namespace Deveel.Messaging
         }
 
         /// <summary>
-        /// Creates a failed authentication result.
+        /// Creates a failed result with the given <paramref name="errorMessage"/>.
         /// </summary>
-        /// <param name="errorMessage">The error message describing the failure.</param>
+        /// <param name="errorMessage">A description of the failure.</param>
         /// <param name="errorCode">An optional error code.</param>
-        /// <returns>A failed authentication result.</returns>
+        /// <returns>A failed result.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="errorMessage"/> is <c>null</c> or empty.</exception>
         public static AuthenticationResult Failure(string errorMessage, string? errorCode = null)
         {
             ArgumentNullException.ThrowIfNullOrWhiteSpace(errorMessage, nameof(errorMessage));

@@ -33,7 +33,7 @@ namespace Deveel.Messaging
 		[JsonConstructor]
 		public ChannelParameter(string name, DataType dataType)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+			ArgumentException.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
 			Name = name;
 			DataType = dataType;

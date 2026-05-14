@@ -19,6 +19,7 @@ namespace Deveel.Messaging
     /// sending emails, querying message status, health monitoring, and webhook support
     /// for receiving email events and status updates.
     /// </remarks>
+    [ChannelSchema(typeof(SendGridEmailSchemaFactory))]
     public class SendGridEmailConnector : ChannelConnectorBase
     {
         private readonly ISendGridService _sendGridService;
@@ -30,6 +31,7 @@ namespace Deveel.Messaging
         private bool _trackingSettings;
         private string? _defaultFromName;
         private string? _defaultReplyTo;
+        private SendGridMessageBuilder _messageBuilder = null!;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SendGridEmailConnector"/> class.
@@ -61,17 +63,14 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            // Extract required parameters first
-            _apiKey = ConnectionSettings.GetParameter("ApiKey") as string;
+            _apiKey = AuthenticationCredential?.Value;
 
-            // Extract optional parameters
-            _sandboxMode = ConnectionSettings.GetParameter("SandboxMode") as bool? ?? false;
-            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
-            _trackingSettings = ConnectionSettings.GetParameter("TrackingSettings") as bool? ?? true;
-            _defaultFromName = ConnectionSettings.GetParameter("DefaultFromName") as string;
-            _defaultReplyTo = ConnectionSettings.GetParameter("DefaultReplyTo") as string;
+            _sandboxMode = ConnectionSettings.GetSandboxMode() ?? SendGridConnectionSettingsDefaults.SandboxMode;
+            _webhookUrl = ConnectionSettings.GetWebhookUrl();
+            _trackingSettings = ConnectionSettings.GetTrackingSettings() ?? SendGridConnectionSettingsDefaults.TrackingSettings;
+            _defaultFromName = ConnectionSettings.GetDefaultFromName();
+            _defaultReplyTo = ConnectionSettings.GetDefaultReplyTo();
 
-            // Log configuration details
             Logger.LogSandboxMode(_sandboxMode);
             Logger.LogTrackingSettings(_trackingSettings);
 
@@ -84,14 +83,14 @@ namespace Deveel.Messaging
             if (!string.IsNullOrEmpty(_defaultReplyTo))
                 Logger.LogDefaultReplyTo(_defaultReplyTo);
 
-            // Perform custom validation logic
             if (string.IsNullOrWhiteSpace(_apiKey))
             {
-                throw new ConnectorException(SendGridErrorCodes.MissingApiKey, "SendGrid API Key is required");
+                throw new ConnectorException(MessagingErrorCodes.MissingCredentials, SendGridErrorCodes.ErrorDomain, "SendGrid API Key is required");
             }
 
-            // Initialize SendGrid client
             _sendGridService.Initialize(_apiKey);
+
+            _messageBuilder = new SendGridMessageBuilder(_sandboxMode, _trackingSettings, _defaultReplyTo, Logger);
 
             return ValueTask.CompletedTask;
         }
@@ -104,7 +103,8 @@ namespace Deveel.Messaging
 
             if (!isConnected)
             {
-                throw new ConnectorException(SendGridErrorCodes.ConnectionFailed,
+                throw new ConnectorException(MessagingErrorCodes.ConnectionFailed,
+                    SendGridErrorCodes.ErrorDomain,
                     "Unable to connect to SendGrid API - please verify your API key");
             }
         }
@@ -123,12 +123,16 @@ namespace Deveel.Messaging
             var (senderEmail, senderName) = ExtractEmailFromEndpoint(message.Sender);
             if (string.IsNullOrWhiteSpace(senderEmail))
             {
-                throw new ConnectorException(SendGridErrorCodes.MissingSender, "Sender email address is required");
+                throw new ConnectorException(
+                    MessagingErrorCodes.MissingSender,
+                    SendGridErrorCodes.ErrorDomain,
+                    "Sender email address is required");
             }
 
             if (!IsValidEmailAddress(senderEmail))
             {
                 throw new ConnectorException(SendGridErrorCodes.InvalidEmailAddress,
+                    SendGridErrorCodes.ErrorDomain,
                     "Sender email address is not valid");
             }
 
@@ -136,13 +140,15 @@ namespace Deveel.Messaging
             var (recipientEmail, recipientName) = ExtractEmailFromEndpoint(message.Receiver);
             if (string.IsNullOrWhiteSpace(recipientEmail))
             {
-                throw new ConnectorException(SendGridErrorCodes.InvalidRecipient,
+                throw new ConnectorException(MessagingErrorCodes.InvalidRecipient,
+                    SendGridErrorCodes.ErrorDomain,
                     "Recipient email address is required");
             }
 
             if (!IsValidEmailAddress(recipientEmail))
             {
-                throw new ConnectorException(SendGridErrorCodes.InvalidRecipient,
+                throw new ConnectorException(MessagingErrorCodes.InvalidRecipient,
+                    SendGridErrorCodes.ErrorDomain,
                     "Recipient email address is not valid");
             }
 
@@ -153,7 +159,10 @@ namespace Deveel.Messaging
 
             if (string.IsNullOrWhiteSpace(subject))
             {
-                throw new ConnectorException(SendGridErrorCodes.MissingEmailContent, "Email subject is required");
+                throw new ConnectorException(
+                    SendGridErrorCodes.MissingEmailContent,
+                    SendGridErrorCodes.ErrorDomain,
+                    "Email subject is required");
             }
 
             // Create SendGrid message
@@ -162,13 +171,13 @@ namespace Deveel.Messaging
             var sendGridMessage = MailHelper.CreateSingleEmail(from, to, subject, null, null);
 
             // Set content based on message content type
-            await SetMessageContentAsync(sendGridMessage, message);
+            await _messageBuilder.SetMessageContentAsync(sendGridMessage, message);
 
             // Apply message settings
-            ApplyMessageSettings(sendGridMessage, message, messageProperties);
+            _messageBuilder.ApplyMessageSettings(sendGridMessage, message, messageProperties);
 
             // Apply connector settings
-            ApplyConnectorSettings(sendGridMessage);
+            _messageBuilder.ApplyConnectorSettings(sendGridMessage);
 
             // Send the message
             var response = await _sendGridService.SendEmailAsync(sendGridMessage, cancellationToken);
@@ -177,9 +186,7 @@ namespace Deveel.Messaging
             {
                 var messageId = ExtractMessageIdFromResponse(response);
 
-                Logger.LogInformation(
-                    "Email message sent successfully. MessageId: {MessageId}, StatusCode: {StatusCode}",
-                    messageId ?? message.Id, response.StatusCode);
+                Logger.LogEmailSent(messageId ?? message.Id, response.StatusCode.ToString());
 
                 var result = new SendResult(message.Id, messageId ?? Guid.NewGuid().ToString())
                 {
@@ -199,14 +206,14 @@ namespace Deveel.Messaging
             else
             {
                 var errorMessage = await response.Body.ReadAsStringAsync();
-                Logger.LogError("Failed to send email. StatusCode: {StatusCode}, Error: {Error}",
-                    response.StatusCode, errorMessage);
+                Logger.LogEmailSendFailed(response.StatusCode.ToString(), errorMessage);
 
                 var errorCode = response.StatusCode == HttpStatusCode.TooManyRequests
-                    ? SendGridErrorCodes.RateLimitExceeded
-                    : SendGridErrorCodes.SendMessageFailed;
+                    ? MessagingErrorCodes.RateLimitExceeded
+                    : MessagingErrorCodes.SendMessageFailed;
 
                 throw new ConnectorException(errorCode,
+                    SendGridErrorCodes.ErrorDomain,
                     $"Failed to send email: {response.StatusCode} - {errorMessage}");
             }
         }
@@ -215,7 +222,7 @@ namespace Deveel.Messaging
         protected override async Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId,
             CancellationToken cancellationToken)
         {
-            Logger.LogDebug("Querying status for message {MessageId}", messageId);
+            Logger.LogQueryingMessageStatus(messageId);
 
             // Note: SendGrid doesn't provide a direct message status API like Twilio
             // In a real implementation, you would need to:
@@ -297,188 +304,6 @@ namespace Deveel.Messaging
             return properties;
         }
 
-        private Task SetMessageContentAsync(SendGridMessage sendGridMessage, IMessage message)
-        {
-            if (message.Content == null)
-                return Task.CompletedTask;
-
-            switch (message.Content.ContentType)
-            {
-                case MessageContentType.PlainText when message.Content is ITextContent textContent:
-                    sendGridMessage.PlainTextContent = textContent.Text;
-                    break;
-
-                case MessageContentType.Html when message.Content is IHtmlContent htmlContent:
-                    sendGridMessage.HtmlContent = htmlContent.Html;
-                    break;
-
-                case MessageContentType.Multipart when message.Content is IMultipartContent multipartContent:
-                    foreach (var part in multipartContent.Parts)
-                    {
-                        if (part.ContentType == MessageContentType.PlainText && part is ITextContent textPart)
-                        {
-                            sendGridMessage.PlainTextContent = textPart.Text;
-                        }
-                        else if (part.ContentType == MessageContentType.Html && part is IHtmlContent htmlPart)
-                        {
-                            sendGridMessage.HtmlContent = htmlPart.Html;
-                        }
-                    }
-                    break;
-
-                case MessageContentType.Template when message.Content is ITemplateContent templateContent:
-                    sendGridMessage.TemplateId = templateContent.TemplateId;
-                    if (templateContent.Parameters != null && templateContent.Parameters.Any())
-                    {
-                        sendGridMessage.SetTemplateData(templateContent.Parameters);
-                    }
-                    break;
-
-                default:
-                    // Fallback to plain text if we can extract it
-                    if (message.Content is ITextContent fallbackText)
-                    {
-                        sendGridMessage.PlainTextContent = fallbackText.Text;
-                    }
-                    break;
-            }
-
-            return Task.CompletedTask;
-        }
-
-        private void ApplyMessageSettings(SendGridMessage sendGridMessage, IMessage message, Dictionary<string, object?> properties)
-        {
-            // Apply priority if specified
-            if (properties.TryGetValue("Priority", out var priorityValue))
-            {
-                var priority = priorityValue?.ToString()?.ToLowerInvariant();
-                // SendGrid doesn't have direct priority setting, but we can use headers
-                if (!string.IsNullOrEmpty(priority))
-                {
-                    var priorityNum = priority switch
-                    {
-                        "high" => "1",
-                        "normal" => "3",
-                        "low" => "5",
-                        _ => "3"
-                    };
-                    sendGridMessage.AddHeader("X-Priority", priorityNum);
-                }
-            }
-
-            // Apply categories
-            if (properties.TryGetValue("Categories", out var categoriesValue))
-            {
-                var categories = categoriesValue?.ToString();
-                if (!string.IsNullOrEmpty(categories))
-                {
-                    var categoryList = categories.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(c => c.Trim())
-                        .Where(c => !string.IsNullOrEmpty(c))
-                        .ToList();
-
-                    sendGridMessage.Categories = categoryList;
-                }
-            }
-
-            // Apply custom arguments
-            if (properties.TryGetValue("CustomArgs", out var customArgsValue))
-            {
-                var customArgs = customArgsValue?.ToString();
-                if (!string.IsNullOrEmpty(customArgs))
-                {
-                    try
-                    {
-                        var argsDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(customArgs);
-                        if (argsDict != null)
-                        {
-                            sendGridMessage.CustomArgs = argsDict;
-                        }
-                    }
-                    catch (System.Text.Json.JsonException ex)
-                    {
-                        Logger.LogWarning(ex, "Failed to parse CustomArgs as JSON: {CustomArgs}", customArgs);
-                    }
-                }
-            }
-
-            // Apply send at time
-            if (properties.TryGetValue("SendAt", out var sendAtValue))
-            {
-                DateTime sendAt;
-                if (sendAtValue is DateTime dateTime)
-                {
-                    sendAt = dateTime;
-                }
-                else if (sendAtValue is string dateString && DateTime.TryParse(dateString, out var parsedDate))
-                {
-                    sendAt = parsedDate;
-                }
-                else
-                {
-                    // Skip invalid SendAt values
-                    goto skipSendAt;
-                }
-
-                var unixTimestamp = ((DateTimeOffset)sendAt.ToUniversalTime()).ToUnixTimeSeconds();
-                sendGridMessage.SendAt = unixTimestamp;
-            }
-            skipSendAt:
-
-            // Apply batch ID
-            if (properties.TryGetValue("BatchId", out var batchIdValue))
-            {
-                var batchId = batchIdValue?.ToString();
-                if (!string.IsNullOrEmpty(batchId))
-                {
-                    sendGridMessage.BatchId = batchId;
-                }
-            }
-
-            // Apply unsubscribe group
-            if (properties.TryGetValue("AsmGroupId", out var asmGroupIdValue))
-            {
-                if (int.TryParse(asmGroupIdValue?.ToString(), out var asmGroupId))
-                {
-                    sendGridMessage.Asm = new ASM { GroupId = asmGroupId };
-                }
-            }
-
-            // Apply IP pool name
-            if (properties.TryGetValue("IpPoolName", out var ipPoolValue))
-            {
-                var ipPoolName = ipPoolValue?.ToString();
-                if (!string.IsNullOrEmpty(ipPoolName))
-                {
-                    sendGridMessage.IpPoolName = ipPoolName;
-                }
-            }
-
-            // Apply reply-to
-            if (!string.IsNullOrEmpty(_defaultReplyTo))
-            {
-                sendGridMessage.ReplyTo = new EmailAddress(_defaultReplyTo);
-            }
-        }
-
-        private void ApplyConnectorSettings(SendGridMessage sendGridMessage)
-        {
-            // Apply sandbox mode
-            if (_sandboxMode)
-            {
-                sendGridMessage.MailSettings = sendGridMessage.MailSettings ?? new MailSettings();
-                sendGridMessage.MailSettings.SandboxMode = new SandboxMode { Enable = true };
-            }
-
-            // Apply tracking settings
-            if (_trackingSettings)
-            {
-                sendGridMessage.TrackingSettings = sendGridMessage.TrackingSettings ?? new TrackingSettings();
-                sendGridMessage.TrackingSettings.ClickTracking = new ClickTracking { Enable = true };
-                sendGridMessage.TrackingSettings.OpenTracking = new OpenTracking { Enable = true };
-            }
-        }
-
         private string? ExtractMessageIdFromResponse(SendGrid.Response response)
         {
             try
@@ -495,7 +320,7 @@ namespace Deveel.Messaging
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to extract message ID from SendGrid response");
+                Logger.LogExtractMessageIdFailed(ex);
             }
 
             return null;
@@ -555,11 +380,12 @@ namespace Deveel.Messaging
         {
             if (source.ContentType == MessageSource.JsonContentType)
             {
-                var messages = ParseSendGridWebhookJson(source);
+                var messages = SendGridWebhookParser.ParseWebhookJson(source);
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(SendGridErrorCodes.InvalidWebhookData,
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                        SendGridErrorCodes.ErrorDomain,
                         "No valid messages found in webhook JSON");
                 }
 
@@ -570,11 +396,12 @@ namespace Deveel.Messaging
             if (source.ContentType == MessageSource.UrlPostContentType)
             {
                 var formData = source.AsUrlPostData();
-                var messages = ParseSendGridWebhookFormData(formData);
+                var messages = SendGridWebhookParser.ParseWebhookFormData(formData);
 
                 if (messages.Count == 0)
                 {
-                    throw new ConnectorException(SendGridErrorCodes.InvalidWebhookData,
+                    throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                        SendGridErrorCodes.ErrorDomain,
                         "No valid messages found in webhook form data");
                 }
 
@@ -582,7 +409,8 @@ namespace Deveel.Messaging
                 return Task.FromResult(result);
             }
 
-            throw new ConnectorException(SendGridErrorCodes.UnsupportedContentType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                SendGridErrorCodes.ErrorDomain,
                 "Only JSON and form data are supported for SendGrid email receiving");
         }
 
@@ -591,304 +419,20 @@ namespace Deveel.Messaging
             CancellationToken cancellationToken)
         {
             if (source.ContentType == MessageSource.JsonContentType)
-            {
-                return Task.FromResult(ParseSendGridStatusCallbackJson(source));
-            }
+                return Task.FromResult(SendGridWebhookParser.ParseStatusCallbackJson(source));
 
             if (source.ContentType == MessageSource.UrlPostContentType)
             {
                 var formData = source.AsUrlPostData();
-                var statusResult = ParseSendGridStatusCallbackFormData(formData);
-                return Task.FromResult(statusResult);
+                return Task.FromResult(SendGridWebhookParser.ParseStatusCallbackFormData(formData));
             }
 
-            throw new ConnectorException(SendGridErrorCodes.UnsupportedContentType,
+            throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                SendGridErrorCodes.ErrorDomain,
                 "Only JSON and form data are supported for SendGrid status callbacks");
         }
 
-        private List<IMessage> ParseSendGridWebhookJson(MessageSource source)
-        {
-            var messages = new List<IMessage>();
-            var jsonData = source.AsJson<System.Text.Json.JsonElement>();
-
-            if (jsonData.ValueKind == System.Text.Json.JsonValueKind.Array)
-            {
-                // Batch events
-                foreach (var eventElement in jsonData.EnumerateArray())
-                {
-                    var message = ParseSendGridJsonEvent(eventElement);
-                    if (message != null)
-                        messages.Add(message);
-                }
-            }
-            else
-            {
-                // Single event
-                var message = ParseSendGridJsonEvent(jsonData);
-                if (message != null)
-                    messages.Add(message);
-            }
-
-            return messages;
-        }
-
-        private IMessage? ParseSendGridJsonEvent(System.Text.Json.JsonElement eventData)
-        {
-            // SendGrid webhook events that represent received emails (inbound parse)
-            if (!eventData.TryGetProperty("event", out var eventProperty))
-                return null;
-
-            var eventType = eventProperty.GetString();
-            if (eventType != "inbound" && eventType != "processed")
-                return null; // We only process inbound emails and processed events
-
-            // Extract message ID
-            var messageId = eventData.TryGetProperty("sg_message_id", out var idProp) ?
-                idProp.GetString() ?? Guid.NewGuid().ToString() :
-                Guid.NewGuid().ToString();
-
-            // Extract email addresses
-            var from = eventData.TryGetProperty("from", out var fromProp) ? fromProp.GetString() ?? "" : "";
-            var to = eventData.TryGetProperty("to", out var toProp) ? toProp.GetString() ?? "" : "";
-
-            if (string.IsNullOrEmpty(from) || string.IsNullOrEmpty(to))
-                return null;
-
-            // Extract content
-            var subject = eventData.TryGetProperty("subject", out var subjectProp) ? subjectProp.GetString() ?? "" : "";
-            var text = eventData.TryGetProperty("text", out var textProp) ? textProp.GetString() ?? "" : "";
-            var html = eventData.TryGetProperty("html", out var htmlProp) ? htmlProp.GetString() ?? "" : "";
-
-            // Create message content (prefer HTML over plain text)
-            MessageContent content;
-            if (!string.IsNullOrEmpty(html))
-            {
-                content = new HtmlContent(html);
-            }
-            else if (!string.IsNullOrEmpty(text))
-            {
-                content = new TextContent(text);
-            }
-            else
-            {
-                content = new TextContent("");
-            }
-
-            var message = new Message
-            {
-                Id = messageId,
-                Sender = new Endpoint(EndpointType.EmailAddress, from),
-                Receiver = new Endpoint(EndpointType.EmailAddress, to),
-                Content = content,
-                Properties = new Dictionary<string, MessageProperty>
-                {
-                    ["Subject"] = new MessageProperty("Subject", subject)
-                }
-            };
-
-            // Add all other SendGrid event fields as message properties
-            foreach (var property in eventData.EnumerateObject())
-            {
-                if (property.Name != "sg_message_id" && property.Name != "from" &&
-                    property.Name != "to" && property.Name != "subject" &&
-                    property.Name != "text" && property.Name != "html")
-                {
-                    var value = property.Value.ValueKind switch
-                    {
-                        JsonValueKind.String => property.Value.GetString() ?? "",
-                        JsonValueKind.Number => property.Value.GetInt64().ToString(),
-                        JsonValueKind.True => "true",
-                        JsonValueKind.False => "false",
-                        JsonValueKind.Array => property.Value.ToString(),
-                        JsonValueKind.Object => property.Value.ToString(),
-                        _ => property.Value.ToString()
-                    };
-                    message.Properties[property.Name] = new MessageProperty(property.Name, value);
-                }
-            }
-
-            return message;
-        }
-
-        private List<IMessage> ParseSendGridWebhookFormData(IDictionary<string, string> formData)
-        {
-            var messages = new List<IMessage>();
-
-            // Validate required fields for SendGrid inbound parse webhook
-            if (!formData.TryGetValue("from", out var from) || string.IsNullOrEmpty(from))
-            {
-                throw new ArgumentException("from field is required for SendGrid webhooks");
-            }
-
-            if (!formData.TryGetValue("to", out var to) || string.IsNullOrEmpty(to))
-            {
-                throw new ArgumentException("to field is required for SendGrid webhooks");
-            }
-
-            // Extract message ID (use envelope info or generate)
-            var messageId = formData.TryGetValue("envelope", out var envelope) ?
-                envelope : Guid.NewGuid().ToString();
-
-            // Extract content
-            var subject = formData.TryGetValue("subject", out var subjectValue) ? subjectValue : "";
-            var text = formData.TryGetValue("text", out var textValue) ? textValue : "";
-            var html = formData.TryGetValue("html", out var htmlValue) ? htmlValue : "";
-
-            // Create message content (prefer HTML over plain text)
-            MessageContent content;
-            if (!string.IsNullOrEmpty(html))
-            {
-                content = new HtmlContent(html);
-            }
-            else if (!string.IsNullOrEmpty(text))
-            {
-                content = new TextContent(text);
-            }
-            else
-            {
-                content = new TextContent("");
-            }
-
-            var message = new Message
-            {
-                Id = messageId,
-                Sender = new Endpoint(EndpointType.EmailAddress, from),
-                Receiver = new Endpoint(EndpointType.EmailAddress, to),
-                Content = content,
-                Properties = new Dictionary<string, MessageProperty>
-                {
-                    ["Subject"] = new MessageProperty("Subject", subject)
-                }
-            };
-
-            // Add all other form fields as message properties
-            foreach (var kvp in formData)
-            {
-                if (kvp.Key != "from" && kvp.Key != "to" && kvp.Key != "subject" &&
-                    kvp.Key != "text" && kvp.Key != "html" && kvp.Key != "envelope")
-                {
-                    message.Properties[kvp.Key] = new MessageProperty(kvp.Key, kvp.Value);
-                }
-            }
-
-            messages.Add(message);
-            return messages;
-        }
-
-        private StatusUpdateResult ParseSendGridStatusCallbackJson(MessageSource source)
-        {
-            var jsonData = source.AsJson<System.Text.Json.JsonElement>();
-
-            // For array of events, take the first one
-            if (jsonData.ValueKind == System.Text.Json.JsonValueKind.Array)
-            {
-                if (jsonData.GetArrayLength() > 0)
-                {
-                    jsonData = jsonData.EnumerateArray().First();
-                }
-                else
-                {
-                    throw new ArgumentException("Empty events array in SendGrid webhook");
-                }
-            }
-
-            var messageId = jsonData.TryGetProperty("sg_message_id", out var sidProp) ?
-                sidProp.GetString() ?? "unknown" : "unknown";
-            var eventType = jsonData.TryGetProperty("event", out var eventProp) ?
-                eventProp.GetString() ?? "unknown" : "unknown";
-
-            var messageStatus = MapSendGridEventToMessageStatus(eventType);
-            var timestamp = DateTime.UtcNow;
-
-            // Try to extract timestamp from the event
-            if (jsonData.TryGetProperty("timestamp", out var timestampProp))
-            {
-                if (timestampProp.ValueKind == System.Text.Json.JsonValueKind.Number &&
-                    timestampProp.TryGetInt64(out var unixTimestamp))
-                {
-                    timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;
-                }
-            }
-
-            var statusResult = new StatusUpdateResult(messageId, messageStatus, timestamp);
-
-            // Add additional JSON properties as additional data
-            foreach (var property in jsonData.EnumerateObject())
-            {
-                if (property.Name != "sg_message_id")
-                {
-                    var value = property.Value.ValueKind switch
-                    {
-                        System.Text.Json.JsonValueKind.String => property.Value.GetString() ?? "",
-                        System.Text.Json.JsonValueKind.Number => property.Value.GetInt64().ToString(),
-                        System.Text.Json.JsonValueKind.True => "true",
-                        System.Text.Json.JsonValueKind.False => "false",
-                        System.Text.Json.JsonValueKind.Array => property.Value.ToString(),
-                        System.Text.Json.JsonValueKind.Object => property.Value.ToString(),
-                        _ => property.Value.ToString()
-                    };
-                    statusResult.AdditionalData[property.Name] = value;
-                }
-            }
-
-            // Mark as SendGrid email channel
-            statusResult.AdditionalData["Channel"] = "Email";
-            statusResult.AdditionalData["Provider"] = "SendGrid";
-
-            return statusResult;
-        }
-
-        private StatusUpdateResult ParseSendGridStatusCallbackFormData(IDictionary<string, string> formData)
-        {
-            var messageId = formData.TryGetValue("sg_message_id", out var sid) ? sid : "unknown";
-            var eventType = formData.TryGetValue("event", out var evt) ? evt : "unknown";
-
-            var messageStatus = MapSendGridEventToMessageStatus(eventType);
-            var timestamp = DateTime.UtcNow;
-
-            // Try to extract timestamp from the event
-            if (formData.TryGetValue("timestamp", out var timestampString) &&
-                long.TryParse(timestampString, out var unixTimestamp))
-            {
-                timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).DateTime;
-            }
-
-            var statusResult = new StatusUpdateResult(messageId, messageStatus, timestamp);
-
-            // Add additional form data as additional data
-            foreach (var kvp in formData)
-            {
-                if (kvp.Key != "sg_message_id")
-                {
-                    statusResult.AdditionalData[kvp.Key] = kvp.Value;
-                }
-            }
-
-            // Mark as SendGrid email channel
-            statusResult.AdditionalData["Channel"] = "Email";
-            statusResult.AdditionalData["Provider"] = "SendGrid";
-
-            return statusResult;
-        }
-
         private MessageStatus MapSendGridEventToMessageStatus(string eventType)
-        {
-            return eventType.ToLowerInvariant() switch
-            {
-                "processed" => MessageStatus.Queued,
-                "deferred" => MessageStatus.Queued,
-                "delivered" => MessageStatus.Delivered,
-                "open" => MessageStatus.Delivered,
-                "click" => MessageStatus.Delivered,
-                "bounce" => MessageStatus.DeliveryFailed,
-                "dropped" => MessageStatus.DeliveryFailed,
-                "spamreport" => MessageStatus.DeliveryFailed,
-                "unsubscribe" => MessageStatus.Delivered, // Still delivered, but user unsubscribed
-                "group_unsubscribe" => MessageStatus.Delivered,
-                "group_resubscribe" => MessageStatus.Delivered,
-                "inbound" => MessageStatus.Received, // Inbound email received
-                _ => MessageStatus.Unknown
-            };
-        }
+            => SendGridWebhookParser.MapEventToMessageStatus(eventType);
     }
 }

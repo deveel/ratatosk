@@ -58,33 +58,34 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
         {
-            // Extract required parameters
-            _pageAccessToken = ConnectionSettings.GetParameter("PageAccessToken") as string;
-            _pageId = ConnectionSettings.GetParameter("PageId") as string;
-
-            // Extract optional parameters
-            _webhookUrl = ConnectionSettings.GetParameter("WebhookUrl") as string;
-            _verifyToken = ConnectionSettings.GetParameter("VerifyToken") as string;
-
-            // Perform custom validation logic
-            if (string.IsNullOrWhiteSpace(_pageAccessToken))
-            {
-                throw new MessagingException(FacebookErrorCodes.MissingCredentials, "Page Access Token is required");
-            }
+            _pageId = ConnectionSettings.GetPageId();
+            _webhookUrl = ConnectionSettings.GetWebhookUrl();
+            _verifyToken = ConnectionSettings.GetVerifyToken();
 
             if (string.IsNullOrWhiteSpace(_pageId))
             {
-                throw new MessagingException(FacebookErrorCodes.MissingPageId, "Page ID is required");
+                throw new MessagingException(
+                    FacebookErrorCodes.MissingPageId, FacebookErrorCodes.ErrorDomain,
+                    "Page ID is required");
+            }
+
+            _pageAccessToken = AuthenticationCredential?.Value;
+            if (string.IsNullOrWhiteSpace(_pageAccessToken))
+            {
+                throw new MessagingException(
+                    MessagingErrorCodes.MissingCredentials, FacebookErrorCodes.ErrorDomain,
+                    "Page Access Token is required");
             }
 
             try
             {
-                // Initialize Facebook service with authentication validation
                 _facebookService.Initialize(_pageAccessToken);
             }
             catch (ArgumentException ex)
             {
-                throw new ConnectorException(FacebookErrorCodes.InvalidAccessToken, "Invalid Page Access Token format", ex);
+                throw new ConnectorException(
+                    FacebookErrorCodes.InvalidAccessToken, FacebookErrorCodes.ErrorDomain,
+                    ex.Message, ex);
             }
 
             return ValueTask.CompletedTask;
@@ -105,14 +106,21 @@ namespace Deveel.Messaging
 
                 if (page == null)
                 {
-                    throw new ConnectorException(FacebookErrorCodes.MissingPageId, "Unable to retrieve page information - page may not exist or access token may be invalid");
+                    throw new ConnectorException(
+                        FacebookErrorCodes.MissingPageId,
+                        FacebookErrorCodes.ErrorDomain,
+                        "Unable to retrieve page information - page may not exist or access token may be invalid");
                 }
 
                 Logger?.LogConnectionTestSuccessful(page.Name, page.Category);
+            } catch (ConnectorException)
+            {
+                throw;
             } catch (InvalidOperationException ex) when (ex.Message.Contains("Facebook Graph API error"))
             {
                 Logger?.LogConnectionTestGraphApiError(ex.Message, ex);
                 throw new ConnectorException(FacebookErrorCodes.ConnectionTestFailed,
+                    FacebookErrorCodes.ErrorDomain,
                     $"Facebook Graph API error during connection test: {ex.Message}", ex);
             }
         }
@@ -122,15 +130,16 @@ namespace Deveel.Messaging
             CancellationToken cancellationToken)
         {
             // Extract recipient User ID first to get the right error code
-            var recipientId = ExtractUserId(message.Receiver);
+            var recipientId = FacebookMessageBuilder.ExtractUserId(message.Receiver);
             if (string.IsNullOrWhiteSpace(recipientId))
             {
-                throw new MessagingException(FacebookErrorCodes.InvalidRecipient,
+                throw new MessagingException(MessagingErrorCodes.InvalidRecipient,
+                    FacebookErrorCodes.ErrorDomain,
                     "Recipient User ID is required and must be a valid Facebook PSID");
             }
 
             // Build Facebook message request with Graph API validation
-            var request = BuildMessageRequest(message, recipientId);
+            var request = FacebookMessageBuilder.BuildMessageRequest(message, recipientId, Logger);
 
             // Send the message with Facebook Graph API requirements
             var response = await _facebookService.SendMessageAsync(request, cancellationToken);
@@ -212,223 +221,23 @@ namespace Deveel.Messaging
         {
             if (source.ContentType != MessageSource.JsonContentType)
             {
-                throw new ConnectorException(FacebookErrorCodes.UnsupportedContentType,
+                throw new ConnectorException(MessagingErrorCodes.UnsupportedContentType,
+                    FacebookErrorCodes.ErrorDomain,
                     $"Unsupported content type: {source.ContentType}. Only application/json is supported for Facebook webhooks.");
             }
 
-            var messages = ParseFacebookWebhook(source);
+            var messages = FacebookMessageParser.ParseWebhook(source, _pageId);
 
             if (messages.Count == 0)
             {
-                throw new ConnectorException(FacebookErrorCodes.InvalidWebhookData,
+                throw new ConnectorException(MessagingErrorCodes.InvalidWebhookData,
+                    FacebookErrorCodes.ErrorDomain,
                     "No valid messages found in webhook data");
             }
 
             return Task.FromResult(new ReceiveResult(Guid.NewGuid().ToString(), messages));
         }
 
-        private string? ExtractUserId(IEndpoint? endpoint)
-        {
-            if (endpoint?.Type == EndpointType.UserId)
-            {
-                return endpoint.Address;
-            }
-            return null;
-        }
-
-        private FacebookMessageRequest BuildMessageRequest(IMessage message, string recipientId)
-        {
-            var request = new FacebookMessageRequest
-            {
-                Recipient = recipientId
-            };
-
-            // Apply message properties
-            if (message.Properties != null)
-            {
-                foreach (var property in message.Properties)
-                {
-                    switch (property.Key.ToLowerInvariant())
-                    {
-                        case "messagingtype":
-                            request.MessagingType = property.Value?.Value?.ToString() ?? "RESPONSE";
-                            break;
-                        case "notificationtype":
-                            request.NotificationType = property.Value?.Value?.ToString() ?? "REGULAR";
-                            break;
-                        case "tag":
-                            request.Tag = property.Value?.Value?.ToString();
-                            break;
-                    }
-                }
-            }
-
-            // Build Facebook message based on content type
-            request.Message = BuildFacebookMessage(message);
-
-            return request;
-        }
-
-        private FacebookMessage BuildFacebookMessage(IMessage message)
-        {
-            var fbMessage = new FacebookMessage();
-
-            switch (message.Content?.ContentType)
-            {
-                case MessageContentType.PlainText when message.Content is ITextContent textContent:
-                    fbMessage.Text = textContent.Text;
-                    break;
-
-                case MessageContentType.Media when message.Content is IMediaContent mediaContent:
-                    fbMessage.Attachment = new FacebookAttachment
-                    {
-                        Type = GetFacebookAttachmentType(mediaContent.MediaType.ToString() ?? "file"),
-                        Payload = new FacebookPayload
-                        {
-                            Url = mediaContent.FileUrl ?? string.Empty,
-                            IsReusable = true
-                        }
-                    };
-                    break;
-            }
-
-            // Add quick replies if specified
-            if (message.Properties?.TryGetValue("QuickReplies", out var quickRepliesProperty) == true)
-            {
-                var quickRepliesJson = quickRepliesProperty.Value?.ToString();
-                if (!string.IsNullOrEmpty(quickRepliesJson))
-                {
-                    try
-                    {
-                        var options = new JsonSerializerOptions
-                        {
-                            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-                        };
-                        fbMessage.QuickReplies = JsonSerializer.Deserialize<List<FacebookQuickReply>>(quickRepliesJson, options);
-                    } catch (JsonException ex)
-                    {
-                        Logger?.LogQuickRepliesParsingFailed(quickRepliesJson, ex);
-                    }
-                }
-            }
-
-            return fbMessage;
-        }
-
-        private string GetFacebookAttachmentType(string mediaType)
-        {
-            return mediaType.ToLowerInvariant() switch
-            {
-                "image" => "image",
-                "audio" => "audio",
-                "video" => "video",
-                _ => "file"
-            };
-        }
-
-        private List<IMessage> ParseFacebookWebhook(MessageSource source)
-        {
-            var messages = new List<IMessage>();
-            var jsonData = source.AsJson<JsonElement>();
-
-            if (!jsonData.TryGetProperty("object", out var objectProperty) ||
-                objectProperty.GetString() != "page")
-            {
-                return messages;
-            }
-
-            if (!jsonData.TryGetProperty("entry", out var entryArray))
-            {
-                return messages;
-            }
-
-            foreach (var entry in entryArray.EnumerateArray())
-            {
-                if (entry.TryGetProperty("messaging", out var messagingArray))
-                {
-                    foreach (var messagingEvent in messagingArray.EnumerateArray())
-                    {
-                        var message = ParseMessagingEvent(messagingEvent);
-                        if (message != null)
-                            messages.Add(message);
-                    }
-                }
-            }
-
-            return messages;
-        }
-
-        private IMessage? ParseMessagingEvent(JsonElement messagingEvent)
-        {
-            // Check if this is a message event (not postback, delivery, etc.)
-            if (!messagingEvent.TryGetProperty("message", out var messageProperty))
-                return null;
-
-            // Extract sender and recipient
-            if (!messagingEvent.TryGetProperty("sender", out var senderProperty) ||
-                !messagingEvent.TryGetProperty("recipient", out var recipientProperty))
-                return null;
-
-            var senderId = senderProperty.GetProperty("id").GetString();
-            var recipientId = recipientProperty.GetProperty("id").GetString();
-
-            if (string.IsNullOrEmpty(senderId) || string.IsNullOrEmpty(recipientId))
-                return null;
-
-            // Extract message ID and timestamp - handle missing mid property safely
-            var messageId = messageProperty.TryGetProperty("mid", out var midProperty)
-                ? midProperty.GetString() ?? Guid.NewGuid().ToString()
-                : Guid.NewGuid().ToString();
-            var timestamp = messageProperty.TryGetProperty("timestamp", out var timestampProperty)
-                ? DateTimeOffset.FromUnixTimeMilliseconds(timestampProperty.GetInt64()).DateTime
-                : DateTime.UtcNow;
-
-            // Extract message content
-            MessageContent? content = null;
-            if (messageProperty.TryGetProperty("text", out var textProperty))
-            {
-                content = new TextContent(textProperty.GetString() ?? "");
-            } else if (messageProperty.TryGetProperty("attachments", out var attachmentsProperty))
-            {
-                // Handle attachments (simplified - just take the first one)
-                var firstAttachment = attachmentsProperty.EnumerateArray().FirstOrDefault();
-                if (firstAttachment.ValueKind != JsonValueKind.Undefined)
-                {
-                    var type = GetMediaType(firstAttachment.GetProperty("type").GetString() ?? "file");
-                    var payload = firstAttachment.GetProperty("payload");
-                    var url = payload.GetProperty("url").GetString() ?? "";
-
-                    content = new MediaContent(type, "", url);
-                }
-            }
-
-            if (content == null)
-                return null;
-
-            return new Message
-            {
-                Id = messageId,
-                Sender = new Endpoint(EndpointType.UserId, senderId),
-                Receiver = new Endpoint(EndpointType.UserId, recipientId),
-                Content = content,
-                Properties = new Dictionary<string, MessageProperty>
-                {
-                    { "Timestamp", new MessageProperty("Timestamp", timestamp.ToString()) },
-                    { "PageId", new MessageProperty("PageId", _pageId ?? "") }
-                }
-            };
-        }
-
-        private MediaType GetMediaType(string type)
-        {
-            return type.ToLowerInvariant() switch
-            {
-                "image" => MediaType.Image,
-                "video" => MediaType.Video,
-                "audio" => MediaType.Audio,
-                _ => MediaType.File
-            };
-        }
 
         /// <inheritdoc/>
         protected override async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)

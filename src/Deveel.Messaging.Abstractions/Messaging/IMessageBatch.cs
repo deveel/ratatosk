@@ -9,9 +9,9 @@ namespace Deveel.Messaging {
 	/// </summary>
 	public interface IMessageBatch {
 		/// <summary>
-		/// Gets the unique identifier of the batch.
+		/// Gets or sets the unique identifier of the batch.
 		/// </summary>
-		string Id { get; }
+		string? Id { get; set; }
 
 		/// <summary>
 		/// Gets a set of properties that are associated with the batch.

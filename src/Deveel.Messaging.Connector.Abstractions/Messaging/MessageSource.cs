@@ -141,7 +141,7 @@ namespace Deveel.Messaging
 		public string? AsText()
 		{
 			if (ContentType != TextContentType)
-				throw new InvalidOperationException($"Cannot interpret content of type '{ContentType}' as text.");
+				throw new MessagingException(MessagingErrorCodes.UnsupportedContentType, MessagingErrorCodes.ErrorDomain, $"Cannot interpret content of type '{ContentType}' as text.");
 
 			return AsEncodedString();
 		}
@@ -163,7 +163,7 @@ namespace Deveel.Messaging
 		public T? AsJson<T>(JsonSerializerOptions? options = null)
 		{
 			if (ContentType != JsonContentType)
-				throw new InvalidOperationException($"Cannot deserialize content of type '{ContentType}' as JSON.");
+				throw new MessagingException(MessagingErrorCodes.UnsupportedContentType, MessagingErrorCodes.ErrorDomain, $"Cannot deserialize content of type '{ContentType}' as JSON.");
 
 			var jsonString = AsEncodedString();
 			return JsonSerializer.Deserialize<T>(jsonString, options);
@@ -185,7 +185,7 @@ namespace Deveel.Messaging
 		public IDictionary<string, string> AsUrlPostData()
 		{
 			if (ContentType != UrlPostContentType)
-				throw new InvalidOperationException($"Cannot parse content of type '{ContentType}' as URL-encoded form data.");
+				throw new MessagingException(MessagingErrorCodes.UnsupportedContentType, MessagingErrorCodes.ErrorDomain, $"Cannot parse content of type '{ContentType}' as URL-encoded form data.");
 
 			var postData = AsEncodedString();
 			var pairs = postData.Split('&', StringSplitOptions.RemoveEmptyEntries);

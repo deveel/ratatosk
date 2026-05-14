@@ -82,7 +82,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
@@ -98,8 +98,8 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal("MISSING_CREDENTIALS", result.Error?.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal(MessagingErrorCodes.MissingCredentials, result.Error?.Code);
         Assert.Equal(ConnectorState.Error, connector.State);
     }
 
@@ -117,7 +117,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful); // Should succeed now since FromNumber is no longer required at connection level
+        Assert.True(result.IsSuccess()); // Should succeed now since FromNumber is no longer required at connection level
         Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
@@ -136,7 +136,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
@@ -153,30 +153,16 @@ public class TwilioSmsConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal("ALREADY_INITIALIZED", result.Error?.ErrorCode);
-    }
-
-    [Fact]
-    public async Task Should_ThrowInvalidOperationException_When_TestConnectionAsyncWhenNotInitialized()
-    {
-        // Arrange
-        var schema = TwilioChannelSchemas.SimpleSms;
-        var connectionSettings = CreateValidConnectionSettings();
-        var connector = new TwilioSmsConnector(schema, connectionSettings);
-
-        // Act
-        // Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            connector.TestConnectionAsync(TestContext.Current.CancellationToken));
+        Assert.False(result.IsSuccess());
+        Assert.Equal("ALREADY_INITIALIZED", result.Error?.Code);
     }
 
     [Fact]
     public async Task Should_ThrowNotSupportedException_When_SendMessageAsyncWithoutSendCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
-            .WithCapabilities(ChannelCapability.ReceiveMessages); // No send capability
+        var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
+            .WithCapabilities(ChannelCapability.ReceiveMessages).Build(); // No send capability
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -184,8 +170,8 @@ public class TwilioSmsConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<MessagingException>(async () => 
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -199,24 +185,24 @@ public class TwilioSmsConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
-            connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => 
+            await connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task Should_ThrowNotSupportedException_When_GetMessageStatusAsyncWithoutCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("Twilio", "SMS", "1.0.0")
-            .WithCapabilities(ChannelCapability.SendMessages); // No status query capability
+        var schema = new ChannelSchemaBuilder("Twilio", "SMS", "1.0.0")
+            .WithCapabilities(ChannelCapability.SendMessages).Build(); // No status query capability
         var connectionSettings = CreateValidConnectionSettings();
         var connector = new TwilioSmsConnector(schema, connectionSettings);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<MessagingException>(async () => 
+            await connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -232,7 +218,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(ConnectorState.Ready, result.Value.State);
         // Note: IsHealthy might be false due to connection test with test credentials
@@ -252,7 +238,7 @@ public class TwilioSmsConnectorTests
         var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         // StatusInfo is a value type, no need for NotNull check
         Assert.Contains("Twilio SMS Connector", result.Value.Status);
         Assert.True(result.Value.AdditionalData.ContainsKey("AccountSid"));

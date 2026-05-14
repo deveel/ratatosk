@@ -57,8 +57,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsCapabilityWithZeroCapability()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithCapabilities((ChannelCapability)0); // Explicitly set zero capabilities
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithCapabilities((ChannelCapability)0).Build(); // Explicitly set zero capabilities
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -70,10 +70,11 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsAnyCapabilityWithZeroCapabilities()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build();
 			// The ChannelSchema constructor sets SendMessages as default capability
 			// To test zero capabilities, we need to explicitly clear them
-			var schemaWithNoCaps = schema.WithCapabilities((ChannelCapability)0);
+			var builder = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0");
+			var schemaWithNoCaps = builder.WithCapabilities((ChannelCapability)0).Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schemaWithNoCaps);
 
 			// Act
@@ -89,8 +90,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsAllCapabilitiesWithZeroCapabilities()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithCapabilities((ChannelCapability)0); // Explicitly set zero capabilities
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithCapabilities((ChannelCapability)0).Build(); // Explicitly set zero capabilities
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -102,8 +103,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnTrue_When_SupportsEndpointTypeWithAnyEndpointType()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.HandlesMessageEndpoint(EndpointType.Any);
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.HandlesMessageEndpoint(EndpointType.Any).Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -116,7 +117,7 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsEndpointTypeWithNoEndpoints()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -128,7 +129,7 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsContentTypeWithEmptyContentTypes()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -140,19 +141,19 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnFalse_When_SupportsAuthenticationTypeWithNoAuthenticationConfigurations()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
 			// Assert
-			Assert.False(descriptor.SupportsAuthenticationType(AuthenticationType.Basic));
+			Assert.False(descriptor.SupportsAuthenticationScheme(AuthenticationScheme.Basic));
 		}
 
 		[Fact]
 		public void Should_ReturnConnectorTypeName_When_DisplayNameWithNullDisplayName()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0"); // DisplayName will be null
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0").Build(); // DisplayName will be null
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -164,8 +165,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnConnectorTypeName_When_DisplayNameWithEmptyDisplayName()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithDisplayName("");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithDisplayName("").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -179,8 +180,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnConnectorTypeName_When_DisplayNameWithWhitespaceDisplayName()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithDisplayName("   ");
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithDisplayName("   ").Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -255,8 +256,8 @@ namespace Deveel.Messaging.XUnit
 		public void Should_ReturnTrue_When_SupportsAllCapabilitiesWithSubsetCapabilities()
 		{
 			// Arrange
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
-				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.Templates);
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
+				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages | ChannelCapability.Templates).Build();
 			var descriptor = new ConnectorDescriptor(typeof(TestConnector), schema);
 
 			// Act
@@ -271,11 +272,11 @@ namespace Deveel.Messaging.XUnit
 
 		private static IChannelSchema CreateTestSchema()
 		{
-			return new ChannelSchema("TestProvider", "TestType", "1.0.0")
+			return new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText)
-				.AddAuthenticationType(AuthenticationType.Basic);
+				.AddAuthenticationScheme(AuthenticationScheme.Basic).Build();
 		}
 
 		// Test connector classes that implement IChannelConnector
@@ -284,38 +285,38 @@ namespace Deveel.Messaging.XUnit
 			public IChannelSchema Schema { get; } = CreateTestSchema();
 			public ConnectorState State => ConnectorState.Ready;
 
-			public Task<ConnectorResult<bool>> InitializeAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
+				=> new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
 
-			public Task<ConnectorResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			public ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
+				=> new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
 
-			public Task<ConnectorResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
+			public ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
+			public ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task ShutdownAsync(CancellationToken cancellationToken)
-				=> Task.CompletedTask;
+			public ValueTask ShutdownAsync(CancellationToken cancellationToken)
+				=> default;
 		}
 
 		private class ComplexNamedConnector : IChannelConnector
@@ -323,38 +324,38 @@ namespace Deveel.Messaging.XUnit
 			public IChannelSchema Schema { get; } = CreateTestSchema();
 			public ConnectorState State => ConnectorState.Ready;
 
-			public Task<ConnectorResult<bool>> InitializeAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
+				=> new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
 
-			public Task<ConnectorResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
-				=> Task.FromResult(ConnectorResult<bool>.Success(true));
+			public ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
+				=> new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
 
-			public Task<ConnectorResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
+			public ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
 			public IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
+			public ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task<ConnectorResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
+			public ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
 				=> throw new NotImplementedException();
 
-			public Task ShutdownAsync(CancellationToken cancellationToken)
-				=> Task.CompletedTask;
+			public ValueTask ShutdownAsync(CancellationToken cancellationToken)
+				=> default;
 		}
 	}
 }

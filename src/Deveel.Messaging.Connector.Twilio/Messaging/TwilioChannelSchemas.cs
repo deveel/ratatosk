@@ -103,7 +103,7 @@ namespace Deveel.Messaging
         {
             sdkVersion = NormalizeSupportedVersion(sdkVersion);
 
-            var schema = new ChannelSchema(TwilioConnectorConstants.Provider, TwilioConnectorConstants.SmsChannel, sdkVersion)
+            var builder = new ChannelSchemaBuilder(TwilioConnectorConstants.Provider, TwilioConnectorConstants.SmsChannel, sdkVersion)
                 .WithDisplayName("Twilio SMS Connector")
                 .WithCapabilities(
                     ChannelCapability.SendMessages |
@@ -112,34 +112,34 @@ namespace Deveel.Messaging
                     ChannelCapability.HandleMessageState |
                     ChannelCapability.BulkMessaging |
                     ChannelCapability.HealthCheck)
-                .AddParameter(new ChannelParameter("AccountSid", DataType.String)
+                .AddParameter(new ChannelParameter(TwilioConnectionParameters.AccountSid, DataType.String)
                 {
                     IsRequired = true,
                     Description = "Twilio Account SID - found in your Twilio Console Dashboard"
                 })
-                .AddParameter(new ChannelParameter("AuthToken", DataType.String)
+                .AddParameter(new ChannelParameter(TwilioConnectionParameters.AuthToken, DataType.String)
                 {
                     IsRequired = true,
                     IsSensitive = true,
                     Description = "Twilio Auth Token - found in your Twilio Console Dashboard"
                 })
-                .AddParameter(new ChannelParameter("WebhookUrl", DataType.String)
+                .AddParameter(new ChannelParameter(TwilioConnectionParameters.WebhookUrl, DataType.String)
                 {
                     IsRequired = false,
                     Description = "URL to receive webhook notifications for message status updates and incoming messages"
                 })
-                .AddParameter(new ChannelParameter("StatusCallback", DataType.String)
+                .AddParameter(new ChannelParameter(TwilioConnectionParameters.StatusCallback, DataType.String)
                 {
                     IsRequired = false,
                     Description = "URL to receive delivery status callbacks for sent messages"
                 })
-                .AddParameter(new ChannelParameter("ValidityPeriod", DataType.Integer)
+                .AddParameter(new ChannelParameter(TwilioConnectionParameters.ValidityPeriod, DataType.Integer)
                 {
                     IsRequired = false,
-                    DefaultValue = 14400, // 4 hours in seconds
+                    DefaultValue = TwilioConnectionSettingsDefaults.ValidityPeriod,
                     Description = "The number of seconds that the message can remain in Twilio's outgoing message queue"
                 })
-                .AddParameter(new ChannelParameter("MaxPrice", DataType.Number)
+                .AddParameter(new ChannelParameter(TwilioConnectionParameters.MaxPrice, DataType.Number)
                 {
                     IsRequired = false,
                     Description = "The maximum price in US dollars that you are willing to pay for the message"
@@ -157,7 +157,20 @@ namespace Deveel.Messaging
                     e.CanSend = false;
                     e.CanReceive = true;
                 })
-                .AddAuthenticationType(AuthenticationType.Basic)
+                .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Basic, "Twilio Basic Authentication")
+                    .WithField(TwilioConnectionParameters.AccountSid, DataType.String, f =>
+                    {
+                        f.DisplayName = "Account SID";
+                        f.Description = "Twilio Account SID (acts as username)";
+                        f.AuthenticationRole = "principal";
+                    })
+                    .WithField(TwilioConnectionParameters.AuthToken, DataType.String, f =>
+                    {
+                        f.DisplayName = "Auth Token";
+                        f.Description = "Twilio Auth Token (acts as password)";
+                        f.AuthenticationRole = "credential";
+                        f.IsSensitive = true;
+                    }))
                 .AddMessageProperty("ValidityPeriod", DataType.Integer, p =>
                 {
                     p.IsRequired = false;
@@ -177,7 +190,7 @@ namespace Deveel.Messaging
             // Messaging Services support introduced in SDK v6.0
             if (IsAtLeastVersion(sdkVersion, TwilioConnectorConstants.SdkVersion6))
             {
-                schema = schema.AddParameter(new ChannelParameter("MessagingServiceSid", DataType.String)
+                builder.AddParameter(new ChannelParameter(TwilioConnectionParameters.MessagingServiceSid, DataType.String)
                 {
                     IsRequired = false,
                     Description = "The SID of the Messaging Service to use for the message. Can replace Sender for sending."
@@ -187,7 +200,7 @@ namespace Deveel.Messaging
             // AttemptLimits, SmartEncoded, and PersistentAction (RCS) introduced in SDK v7.0
             if (IsAtLeastVersion(sdkVersion, TwilioConnectorConstants.SdkVersion))
             {
-                schema = schema
+                builder
                     .AddMessageProperty("AttemptLimits", DataType.Integer, p =>
                     {
                         p.IsRequired = false;
@@ -205,7 +218,7 @@ namespace Deveel.Messaging
                     });
             }
 
-            return schema;
+            return builder.Build();
         }
 
         /// <summary>
@@ -236,26 +249,26 @@ namespace Deveel.Messaging
             if (hasTemplates)
                 capabilities |= ChannelCapability.Templates;
 
-            var schema = new ChannelSchema(TwilioConnectorConstants.Provider, TwilioConnectorConstants.WhatsAppChannel, sdkVersion)
+            var builder = new ChannelSchemaBuilder(TwilioConnectorConstants.Provider, TwilioConnectorConstants.WhatsAppChannel, sdkVersion)
                 .WithDisplayName("Twilio WhatsApp Business API Connector")
                 .WithCapabilities(capabilities)
-                .AddParameter("AccountSid", DataType.String, p =>
+                .AddParameter(TwilioConnectionParameters.AccountSid, DataType.String, p =>
                 {
                     p.IsRequired = true;
                     p.Description = "Twilio Account SID - found in your Twilio Console Dashboard";
                 })
-                .AddParameter("AuthToken", DataType.String, p =>
+                .AddParameter(TwilioConnectionParameters.AuthToken, DataType.String, p =>
                 {
                     p.IsRequired = true;
                     p.IsSensitive = true;
                     p.Description = "Twilio Auth Token - found in your Twilio Console Dashboard";
                 })
-                .AddParameter("WebhookUrl", DataType.String, p =>
+                .AddParameter(TwilioConnectionParameters.WebhookUrl, DataType.String, p =>
                 {
                     p.IsRequired = false;
                     p.Description = "URL to receive webhook notifications for message status updates and incoming WhatsApp messages";
                 })
-                .AddParameter("StatusCallback", DataType.String, p =>
+                .AddParameter(TwilioConnectionParameters.StatusCallback, DataType.String, p =>
                 {
                     p.IsRequired = false;
                     p.Description = "URL to receive delivery status callbacks for sent WhatsApp messages";
@@ -273,7 +286,20 @@ namespace Deveel.Messaging
                     e.CanSend = false;
                     e.CanReceive = true;
                 })
-                .AddAuthenticationType(AuthenticationType.Basic)
+                .AddAuthenticationConfiguration(new AuthenticationConfiguration(AuthenticationScheme.Basic, "Twilio Basic Authentication")
+                    .WithField(TwilioConnectionParameters.AccountSid, DataType.String, f =>
+                    {
+                        f.DisplayName = "Account SID";
+                        f.Description = "Twilio Account SID (acts as username)";
+                        f.AuthenticationRole = "principal";
+                    })
+                    .WithField(TwilioConnectionParameters.AuthToken, DataType.String, f =>
+                    {
+                        f.DisplayName = "Auth Token";
+                        f.Description = "Twilio Auth Token (acts as password)";
+                        f.AuthenticationRole = "credential";
+                        f.IsSensitive = true;
+                    }))
                 .AddMessageProperty("ProvideCallback", DataType.Boolean, p =>
                 {
                     p.IsRequired = false;
@@ -282,43 +308,45 @@ namespace Deveel.Messaging
 
             // Template support introduced in SDK v6.0 (WhatsApp Business API via whatsapp: prefix)
             if (hasTemplates)
-                schema = schema.AddContentType(MessageContentType.Template);
+                builder.AddContentType(MessageContentType.Template);
 
             // PersistentAction (RCS) introduced in SDK v7.0
             if (IsAtLeastVersion(sdkVersion, TwilioConnectorConstants.SdkVersion))
             {
-                schema = schema.AddMessageProperty("PersistentAction", DataType.String, p =>
+                builder.AddMessageProperty("PersistentAction", DataType.String, p =>
                 {
                     p.IsRequired = false;
                     p.Description = "Rich Communication Services (RCS) specific action for WhatsApp";
                 });
             }
 
-            return schema;
+            return builder.Build();
         }
 
         /// <summary>Creates a simplified send-only SMS schema without webhooks or advanced features.</summary>
         internal static ChannelSchema CreateSimpleSms(string sdkVersion) =>
-            new ChannelSchema(CreateTwilioSms(sdkVersion), "Twilio Simple SMS")
+            ChannelSchemaBuilder.From(CreateTwilioSms(sdkVersion), "Twilio Simple SMS")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
                 .RemoveCapability(ChannelCapability.BulkMessaging)
-                .RemoveParameter("WebhookUrl")
-                .RemoveParameter("StatusCallback")
-                .RemoveParameter("MessagingServiceSid") // no-op for v5.0
+                .RemoveParameter(TwilioConnectionParameters.WebhookUrl)
+                .RemoveParameter(TwilioConnectionParameters.StatusCallback)
+                .RemoveParameter(TwilioConnectionParameters.MessagingServiceSid) // no-op for v5.0
                 .RemoveContentType(MessageContentType.Media)
                 .RemoveMessageProperty("ProvideCallback")
                 .RemoveMessageProperty("PersistentAction") // no-op for v5.0/v6.0
-                .RemoveMessageProperty("SmartEncoded"); // no-op for v5.0/v6.0
+                .RemoveMessageProperty("SmartEncoded") // no-op for v5.0/v6.0
+                .Build();
 
         /// <summary>Creates a send-only schema optimized for notifications and alerts.</summary>
         internal static ChannelSchema CreateNotificationSms(string sdkVersion) =>
-            new ChannelSchema(CreateTwilioSms(sdkVersion), "Twilio Notification SMS")
+            ChannelSchemaBuilder.From(CreateTwilioSms(sdkVersion), "Twilio Notification SMS")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
-                .RemoveParameter("WebhookUrl")
+                .RemoveParameter(TwilioConnectionParameters.WebhookUrl)
                 .RemoveContentType(MessageContentType.Media)
-                .RemoveMessageProperty("PersistentAction"); // no-op for v5.0/v6.0
+                .RemoveMessageProperty("PersistentAction") // no-op for v5.0/v6.0
+                .Build();
 
         /// <summary>
         /// Creates a bulk messaging schema optimized for high-volume SMS campaigns via a Messaging Service.
@@ -333,29 +361,31 @@ namespace Deveel.Messaging
                     $"BulkSms schema requires SDK v{TwilioConnectorConstants.SdkVersion6} or higher. " +
                     $"MessagingServiceSid is not available in SDK v{sdkVersion}.");
 
-            return new ChannelSchema(CreateTwilioSms(sdkVersion), "Twilio Bulk SMS")
+            return ChannelSchemaBuilder.From(CreateTwilioSms(sdkVersion), "Twilio Bulk SMS")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
-                .UpdateParameter("MessagingServiceSid", param => param.IsRequired = true)
+                .UpdateParameter(TwilioConnectionParameters.MessagingServiceSid, param => param.IsRequired = true)
                 .UpdateEndpoint(EndpointType.PhoneNumber, endpoint =>
                 {
                     endpoint.IsRequired = false; // Not required when MessagingServiceSid is used
                     endpoint.CanReceive = false; // Send-only
                 })
-                .RemoveMessageProperty("PersistentAction"); // no-op for v6.0
+                .RemoveMessageProperty("PersistentAction") // no-op for v6.0
+                .Build();
         }
 
         /// <summary>Creates a simplified send-only WhatsApp schema for basic text and media use cases.</summary>
         internal static ChannelSchema CreateSimpleWhatsApp(string sdkVersion) =>
-            new ChannelSchema(CreateTwilioWhatsApp(sdkVersion), "Twilio Simple WhatsApp")
+            ChannelSchemaBuilder.From(CreateTwilioWhatsApp(sdkVersion), "Twilio Simple WhatsApp")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
                 .RemoveCapability(ChannelCapability.Templates)
-                .RemoveParameter("WebhookUrl")
-                .RemoveParameter("StatusCallback")
+                .RemoveParameter(TwilioConnectionParameters.WebhookUrl)
+                .RemoveParameter(TwilioConnectionParameters.StatusCallback)
                 .RemoveContentType(MessageContentType.Template) // no-op for v5.0
                 .RemoveMessageProperty("ProvideCallback")
-                .RemoveMessageProperty("PersistentAction"); // no-op for v5.0/v6.0
+                .RemoveMessageProperty("PersistentAction") // no-op for v5.0/v6.0
+                .Build();
 
         /// <summary>
         /// Creates a template-focused WhatsApp schema for business notifications using approved templates.
@@ -370,11 +400,12 @@ namespace Deveel.Messaging
                     $"WhatsAppTemplates schema requires SDK v{TwilioConnectorConstants.SdkVersion6} or higher. " +
                     $"WhatsApp template support is not available in SDK v{sdkVersion}.");
 
-            return new ChannelSchema(CreateTwilioWhatsApp(sdkVersion), "Twilio WhatsApp Templates")
+            return ChannelSchemaBuilder.From(CreateTwilioWhatsApp(sdkVersion), "Twilio WhatsApp Templates")
                 .RemoveCapability(ChannelCapability.ReceiveMessages)
                 .RemoveCapability(ChannelCapability.HandleMessageState)
                 .RemoveCapability(ChannelCapability.MediaAttachments)
-                .RemoveContentType(MessageContentType.Media);
+                .RemoveContentType(MessageContentType.Media)
+                .Build();
         }
 
         private static bool IsAtLeastVersion(string sdkVersion, string minVersion) =>

@@ -30,7 +30,7 @@ public class TwilioSmsConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal("SM123456789", result.Value?.RemoteMessageId);
         mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -52,7 +52,7 @@ public class TwilioSmsConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(MessageStatus.Delivered, result.Value?.Status);
         Assert.Equal("SM987654321", result.Value?.RemoteMessageId);
     }
@@ -73,7 +73,7 @@ public class TwilioSmsConnectorExtendedMockTests
         var result = await connector.GetMessageStatusAsync("SM555666777", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(MessageStatus.Sent, result.Value?.Updates.First().Status);
         mockTwilioService.Verify(x => x.FetchMessageAsync("SM555666777", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -98,7 +98,7 @@ public class TwilioSmsConnectorExtendedMockTests
         var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         mockTwilioService.Verify(x => x.FetchAccountAsync("AC9999888877776666555544443333222211", It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -117,22 +117,22 @@ public class TwilioSmsConnectorExtendedMockTests
         // Act
         // Assert
         var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
-        Assert.True(initResult.Successful);
+        Assert.True(initResult.IsSuccess());
 
         // Act
         // Assert
         var connectionResult = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
-        Assert.True(connectionResult.Successful);
+        Assert.True(connectionResult.IsSuccess());
 
         // Act
         // Assert
         var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
-        Assert.True(sendResult.Successful);
+        Assert.True(sendResult.IsSuccess());
 
         // Act
         // Assert
         var statusResult = await connector.GetMessageStatusAsync(sendResult.Value!.RemoteMessageId, TestContext.Current.CancellationToken);
-        Assert.True(statusResult.Successful);
+        Assert.True(statusResult.IsSuccess());
 
         // Verify all expected calls were made
         mockTwilioService.Verify(x => x.Initialize(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
@@ -164,7 +164,7 @@ public class TwilioSmsConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful); // Message was sent, but has failed status
+        Assert.True(result.IsSuccess()); // Message was sent, but has failed status
         Assert.Equal(MessageStatus.DeliveryFailed, result.Value?.Status);
         
         // Check if the error information is available in additional data
@@ -206,8 +206,8 @@ public class TwilioSmsConnectorExtendedMockTests
         var result2 = await connector.SendMessageAsync(CreateTestMessage("msg2"), TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result1.Successful);
-        Assert.True(result2.Successful);
+        Assert.True(result1.IsSuccess());
+        Assert.True(result2.IsSuccess());
         Assert.Equal("SM111", result1.Value?.RemoteMessageId);
         Assert.Equal("SM222", result2.Value?.RemoteMessageId);
         Assert.Equal(MessageStatus.Queued, result1.Value?.Status);
@@ -234,20 +234,20 @@ public class TwilioSmsConnectorExtendedMockTests
         // Act
         // Assert
         var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
-        Assert.False(sendResult.Successful);
-        Assert.Contains("Network error", sendResult.Error?.ErrorMessage);
+        Assert.False(sendResult.IsSuccess());
+        Assert.Contains("Network error", sendResult.Error?.Message);
 
         // Act
         // Assert
         var statusResult = await connector.GetMessageStatusAsync("SM123", TestContext.Current.CancellationToken);
-        Assert.False(statusResult.Successful);
-        Assert.Contains("Network error", statusResult.Error?.ErrorMessage);
+        Assert.False(statusResult.IsSuccess());
+        Assert.Contains("Network error", statusResult.Error?.Message);
 
         // Act
         // Assert
         var connectionResult = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
-        Assert.False(connectionResult.Successful);
-        Assert.Contains("Network error", connectionResult.Error?.ErrorMessage);
+        Assert.False(connectionResult.IsSuccess());
+        Assert.Contains("Network error", connectionResult.Error?.Message);
     }
 
     [Theory]
@@ -297,7 +297,7 @@ public class TwilioSmsConnectorExtendedMockTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal(expectedStatus, result.Value?.Status);
     }
 

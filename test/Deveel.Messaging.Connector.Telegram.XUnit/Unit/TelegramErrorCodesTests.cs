@@ -17,12 +17,10 @@ namespace Deveel.Messaging
 		public void Should_HaveExpectedValues_When_TelegramErrorCodes()
 		{
 			// Assert that all expected error codes are defined
-			Assert.NotNull(TelegramErrorCodes.MissingBotToken);
-			Assert.NotNull(TelegramErrorCodes.InvalidBotToken);
+			Assert.NotNull(MessagingErrorCodes.MissingCredentials);
+			Assert.NotNull(MessagingErrorCodes.InvalidCredentials);
 			Assert.NotNull(TelegramErrorCodes.InvalidChatId);
-			Assert.NotNull(TelegramErrorCodes.InvalidWebhookData);
-			Assert.NotNull(TelegramErrorCodes.UnsupportedContentType);
-			Assert.NotNull(TelegramErrorCodes.MessageTooLong);
+			Assert.NotNull(MessagingErrorCodes.MessageTooLong);
 			Assert.NotNull(TelegramErrorCodes.FileTooLarge);
 			Assert.NotNull(TelegramErrorCodes.InvalidMediaUrl);
 			Assert.NotNull(TelegramErrorCodes.BotBlocked);
@@ -36,12 +34,10 @@ namespace Deveel.Messaging
 			// Get all error code values
 			var errorCodes = new[]
 			{
-				TelegramErrorCodes.MissingBotToken,
-				TelegramErrorCodes.InvalidBotToken,
+				MessagingErrorCodes.MissingCredentials,
+				MessagingErrorCodes.InvalidCredentials,
 				TelegramErrorCodes.InvalidChatId,
-				TelegramErrorCodes.InvalidWebhookData,
-				TelegramErrorCodes.UnsupportedContentType,
-				TelegramErrorCodes.MessageTooLong,
+				MessagingErrorCodes.MessageTooLong,
 				TelegramErrorCodes.FileTooLarge,
 				TelegramErrorCodes.InvalidMediaUrl,
 				TelegramErrorCodes.BotBlocked,
@@ -69,12 +65,7 @@ namespace Deveel.Messaging
 		}
 
 		[Theory]
-		[InlineData("MISSING_BOT_TOKEN")]
-		[InlineData("INVALID_BOT_TOKEN")]
 		[InlineData("INVALID_CHAT_ID")]
-		[InlineData("INVALID_WEBHOOK_DATA")]
-		[InlineData("UNSUPPORTED_CONTENT_TYPE")]
-		[InlineData("MESSAGE_TOO_LONG")]
 		[InlineData("FILE_TOO_LARGE")]
 		[InlineData("INVALID_MEDIA_URL")]
 		[InlineData("BOT_BLOCKED")]
@@ -99,7 +90,7 @@ namespace Deveel.Messaging
 			var errorCodesType = typeof(TelegramErrorCodes);
 			var fields = errorCodesType.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
-			foreach (var field in fields.Where(f => f.IsLiteral && !f.IsInitOnly))
+			foreach (var field in fields.Where(f => f.IsLiteral && !f.IsInitOnly && f.Name != nameof(TelegramErrorCodes.ErrorDomain)))
 			{
 				var value = field.GetValue(null)?.ToString();
 				Assert.NotNull(value);

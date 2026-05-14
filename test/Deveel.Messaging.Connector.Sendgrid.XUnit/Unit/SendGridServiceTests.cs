@@ -10,7 +10,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using Xunit;
 
-namespace Deveel.Messaging.Tests
+namespace Deveel.Messaging
 {
     /// <summary>
     /// Unit tests for the <see cref="SendGridService"/> class.

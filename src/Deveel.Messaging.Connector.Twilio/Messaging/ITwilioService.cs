@@ -8,11 +8,11 @@ using Twilio.Rest.Api.V2010;
 
 namespace Deveel.Messaging;
 
-/// <summary>
-/// Abstracts Twilio API operations to enable unit testing and mocking.
-/// </summary>
-public interface ITwilioService
-{
+    /// <summary>
+    /// Abstracts Twilio API operations to enable unit testing and mocking.
+    /// </summary>
+    public interface ITwilioService
+    {
     /// <summary>
     /// Initializes the Twilio client with the provided credentials.
     /// </summary>

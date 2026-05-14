@@ -82,7 +82,7 @@ public class SendGridEmailConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful initialization but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful initialization but got: {result.Error?.Code} - {result.Error?.Message}");
         Assert.Equal(ConnectorState.Ready, connector.State);
     }
 
@@ -98,8 +98,8 @@ public class SendGridEmailConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal(SendGridErrorCodes.MissingApiKey, result.Error?.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal(MessagingErrorCodes.MissingCredentials, result.Error?.Code);
         Assert.Equal(ConnectorState.Error, connector.State);
     }
 
@@ -116,22 +116,8 @@ public class SendGridEmailConnectorTests
         var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal("ALREADY_INITIALIZED", result.Error?.ErrorCode);
-    }
-
-    [Fact]
-    public async Task Should_ThrowInvalidOperationException_When_TestConnectionAsyncWhenNotInitialized()
-    {
-        // Arrange
-        var schema = SendGridChannelSchemas.SimpleEmail;
-        var connectionSettings = SendGridMockFactory.CreateValidConnectionSettings();
-        var connector = new SendGridEmailConnector(schema, connectionSettings);
-
-        // Act
-        // Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            connector.TestConnectionAsync(TestContext.Current.CancellationToken));
+        Assert.False(result.IsSuccess());
+        Assert.Equal("ALREADY_INITIALIZED", result.Error?.Code);
     }
 
     [Fact]
@@ -149,7 +135,7 @@ public class SendGridEmailConnectorTests
         var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         mockService.Verify(x => x.TestConnectionAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -168,8 +154,8 @@ public class SendGridEmailConnectorTests
         var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal(SendGridErrorCodes.ConnectionFailed, result.Error?.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal(MessagingErrorCodes.ConnectionFailed, result.Error?.Code);
         mockService.Verify(x => x.TestConnectionAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -177,8 +163,8 @@ public class SendGridEmailConnectorTests
     public async Task Should_ThrowNotSupportedException_When_SendMessageAsyncWithoutSendCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("SendGrid", "Email", "1.0.0")
-            .WithCapabilities(ChannelCapability.ReceiveMessages); // No send capability
+        var schema = new ChannelSchemaBuilder("SendGrid", "Email", "1.0.0")
+            .WithCapabilities(ChannelCapability.ReceiveMessages).Build(); // No send capability
         var connectionSettings = SendGridMockFactory.CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
@@ -186,8 +172,8 @@ public class SendGridEmailConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<MessagingException>(async () => 
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -201,8 +187,8 @@ public class SendGridEmailConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
-            connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => 
+            await connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -221,7 +207,7 @@ public class SendGridEmailConnectorTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         Assert.Equal(MessageStatus.Sent, result.Value.Status);
         mockService.Verify(x => x.SendEmailAsync(It.IsAny<SendGrid.Helpers.Mail.SendGridMessage>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -243,8 +229,8 @@ public class SendGridEmailConnectorTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal(SendGridErrorCodes.InvalidEmailAddress, result.Error?.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal(SendGridErrorCodes.InvalidEmailAddress, result.Error?.Code);
     }
 
     [Fact]
@@ -263,24 +249,24 @@ public class SendGridEmailConnectorTests
         var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.False(result.Successful);
-        Assert.Equal(SendGridErrorCodes.InvalidRecipient, result.Error?.ErrorCode);
+        Assert.False(result.IsSuccess());
+        Assert.Equal(MessagingErrorCodes.InvalidRecipient, result.Error?.Code);
     }
 
     [Fact]
     public async Task Should_ThrowNotSupportedException_When_GetMessageStatusAsyncWithoutCapability()
     {
         // Arrange
-        var schema = new ChannelSchema("SendGrid", "Email", "1.0.0")
-            .WithCapabilities(ChannelCapability.SendMessages); // No status query capability
+        var schema = new ChannelSchemaBuilder("SendGrid", "Email", "1.0.0")
+            .WithCapabilities(ChannelCapability.SendMessages).Build(); // No status query capability
         var connectionSettings = SendGridMockFactory.CreateValidConnectionSettings();
         var connector = new SendGridEmailConnector(schema, connectionSettings);
         await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<MessagingException>(async () => 
+            await connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -298,7 +284,7 @@ public class SendGridEmailConnectorTests
         var result = await connector.GetMessageStatusAsync("test-message-id", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.NotNull(result.Value);
         mockService.Verify(x => x.GetEmailActivityAsync("test-message-id", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -316,7 +302,7 @@ public class SendGridEmailConnectorTests
         var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Contains("SendGrid Email Connector", result.Value.Status);
         Assert.True(result.Value.AdditionalData.ContainsKey("ApiKeyConfigured"));
         Assert.True(result.Value.AdditionalData.ContainsKey("State"));
@@ -336,7 +322,7 @@ public class SendGridEmailConnectorTests
         var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(result.Successful, $"Expected successful result but got: {result.Error?.ErrorMessage}");
+        Assert.True(result.IsSuccess(), $"Expected successful result but got: {result.Error?.Message}");
         Assert.NotNull(result.Value);
         // Note: The health check includes a connection test, which might fail in some test environments
         // The important thing is that the result is successful and we get a health object back

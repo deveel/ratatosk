@@ -2,8 +2,9 @@
 
 This document describes the planned evolution of the **Deveel Messaging Framework** — a .NET library that provides a unified, provider-agnostic model for sending and receiving messages across multiple channels and connectors. Each milestone below includes a summary of its intent, detailed descriptions of every planned feature, and the rationale behind each decision.
 
-> **Current stable release:** `v0.3.1`  
-> Connectors available: Facebook Messenger, Firebase Push, SendGrid Email, Telegram Bot, Twilio SMS/WhatsApp
+> **Current stable release:** `v0.4.0`  
+> Connectors available: Facebook Messenger, Firebase Push, SendGrid Email, Telegram Bot, Twilio SMS/WhatsApp  
+> Framework includes: `IMessagingClient` facade, `MessageBuilder`, auto-initialization, `ChannelSchema` derivation, expanded validation
 
 ---
 

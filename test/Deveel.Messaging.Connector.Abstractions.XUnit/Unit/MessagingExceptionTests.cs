@@ -22,12 +22,14 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "ERR_001";
+            const string domain = "TEST";
 
             // Act
-            var exception = new MessagingException(errorCode);
+            var exception = new MessagingException(errorCode, domain);
 
             // Assert
             Assert.Equal(errorCode, exception.ErrorCode);
+            Assert.Equal(domain, exception.ErrorDomain);
             Assert.IsAssignableFrom<IMessagingError>(exception);
         }
 
@@ -36,9 +38,10 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "ERR_002";
+            const string domain = "TEST";
 
             // Act
-            var exception = new MessagingException(errorCode);
+            var exception = new MessagingException(errorCode, domain);
 
             // Assert
             Assert.False(string.IsNullOrEmpty(exception.Message));
@@ -55,7 +58,7 @@ namespace Deveel.Messaging
             // Act & Assert
             // ArgumentNullException.ThrowIfNullOrWhiteSpace throws ArgumentNullException for null,
             // ArgumentException for empty/whitespace — both derive from ArgumentException
-            Assert.ThrowsAny<ArgumentException>(() => new MessagingException(errorCode!));
+            Assert.ThrowsAny<ArgumentException>(() => new MessagingException(errorCode!, "TEST"));
         }
 
         #endregion
@@ -67,13 +70,15 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "ERR_003";
+            const string domain = "TEST";
             const string message = "Something went wrong";
 
             // Act
-            var exception = new MessagingException(errorCode, message);
+            var exception = new MessagingException(errorCode, domain, message);
 
             // Assert
             Assert.Equal(errorCode, exception.ErrorCode);
+            Assert.Equal(domain, exception.ErrorDomain);
             Assert.Equal(message, exception.Message);
             Assert.Null(exception.InnerException);
         }
@@ -83,12 +88,14 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "ERR_004";
+            const string domain = "TEST";
 
             // Act
-            var exception = new MessagingException(errorCode, null);
+            var exception = new MessagingException(errorCode, domain, null);
 
             // Assert
             Assert.Equal(errorCode, exception.ErrorCode);
+            Assert.Equal(domain, exception.ErrorDomain);
             Assert.Null(exception.InnerException);
         }
 
@@ -100,7 +107,7 @@ namespace Deveel.Messaging
         {
             // Arrange
             // Act & Assert
-            Assert.ThrowsAny<ArgumentException>(() => new MessagingException(errorCode!, "some message"));
+            Assert.ThrowsAny<ArgumentException>(() => new MessagingException(errorCode!, "TEST", "some message"));
         }
 
         #endregion
@@ -112,14 +119,16 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "ERR_005";
+            const string domain = "TEST";
             const string message = "Error with inner";
             var inner = new InvalidOperationException("inner error");
 
             // Act
-            var exception = new MessagingException(errorCode, message, inner);
+            var exception = new MessagingException(errorCode, domain, message, inner);
 
             // Assert
             Assert.Equal(errorCode, exception.ErrorCode);
+            Assert.Equal(domain, exception.ErrorDomain);
             Assert.Equal(message, exception.Message);
             Assert.Same(inner, exception.InnerException);
         }
@@ -129,13 +138,15 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "ERR_006";
+            const string domain = "TEST";
             const string message = "No inner exception";
 
             // Act
-            var exception = new MessagingException(errorCode, message, null);
+            var exception = new MessagingException(errorCode, domain, message, null);
 
             // Assert
             Assert.Equal(errorCode, exception.ErrorCode);
+            Assert.Equal(domain, exception.ErrorDomain);
             Assert.Equal(message, exception.Message);
             Assert.Null(exception.InnerException);
         }
@@ -148,7 +159,7 @@ namespace Deveel.Messaging
         {
             // Arrange
             // Act & Assert
-            Assert.ThrowsAny<ArgumentException>(() => new MessagingException(errorCode!, "msg", null));
+            Assert.ThrowsAny<ArgumentException>(() => new MessagingException(errorCode!, "TEST", "msg", null));
         }
 
         #endregion
@@ -160,14 +171,16 @@ namespace Deveel.Messaging
         {
             // Arrange
             const string errorCode = "ERR_007";
+            const string domain = "TEST";
             const string message = "Interface message";
 
             // Act
-            IMessagingError error = new MessagingException(errorCode, message);
+            IOperationError error = new MessagingException(errorCode, domain, message);
 
             // Assert
-            Assert.Equal(message, error.ErrorMessage);
-            Assert.Equal(errorCode, error.ErrorCode);
+            Assert.Equal(message, error.Message);
+            Assert.Equal(domain, error.Domain);
+            Assert.Equal(errorCode, error.Code);
         }
 
         #endregion

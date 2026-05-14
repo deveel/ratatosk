@@ -56,12 +56,13 @@ namespace Deveel.Messaging.XUnit
 		{
 			// Arrange
 			var connectorType = typeof(TestConnector);
-			var schema = new ChannelSchema("TestProvider", "TestType", "1.0.0")
+			var schema = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 				.WithDisplayName("Custom Display Name")
 				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText)
-				.AddAuthenticationType(AuthenticationType.Basic);
+				.AddAuthenticationScheme(AuthenticationScheme.Basic)
+				.Build();
 			var descriptor = new ConnectorDescriptor(connectorType, schema);
 
 			// Act
@@ -223,7 +224,7 @@ namespace Deveel.Messaging.XUnit
 			var descriptor = CreateTestDescriptor();
 
 			// Act
-			var supports = descriptor.SupportsAuthenticationType(AuthenticationType.Basic);
+			var supports = descriptor.SupportsAuthenticationScheme(AuthenticationScheme.Basic);
 
 			// Assert
 			Assert.True(supports);
@@ -236,7 +237,7 @@ namespace Deveel.Messaging.XUnit
 			var descriptor = CreateTestDescriptor();
 
 			// Act
-			var supports = descriptor.SupportsAuthenticationType(AuthenticationType.ApiKey);
+			var supports = descriptor.SupportsAuthenticationScheme(AuthenticationScheme.ApiKey);
 
 			// Assert
 			Assert.False(supports);
@@ -300,11 +301,12 @@ namespace Deveel.Messaging.XUnit
 
 		private static IChannelSchema CreateTestSchema()
 		{
-			return new ChannelSchema("TestProvider", "TestType", "1.0.0")
+			return new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 				.WithCapabilities(ChannelCapability.SendMessages | ChannelCapability.ReceiveMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText)
-				.AddAuthenticationType(AuthenticationType.Basic);
+				.AddAuthenticationScheme(AuthenticationScheme.Basic)
+				.Build();
 		}
 
 		// Simple test connector class that doesn't need to implement IChannelConnector fully

@@ -90,7 +90,7 @@ namespace Deveel.Messaging
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful initialization but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful initialization but got: {result.Error?.Code} - {result.Error?.Message}");
             Assert.Equal(ConnectorState.Ready, connector.State);
             
             // Verify Firebase service was initialized
@@ -110,9 +110,9 @@ namespace Deveel.Messaging
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful);
-            Assert.Equal(ConnectorErrorCodes.InitializationError, result.Error?.ErrorCode);
-            Assert.Contains("ProjectId is required", result.Error?.ErrorMessage);
+            Assert.False(result.IsSuccess());
+            Assert.Equal(ConnectorErrorCodes.InitializationError, result.Error?.Code);
+            Assert.Contains("ProjectId is required", result.Error?.Message);
             Assert.Equal(ConnectorState.Error, connector.State);
         }
 
@@ -129,12 +129,12 @@ namespace Deveel.Messaging
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful);
+            Assert.False(result.IsSuccess());
             // With the new authentication mechanism, missing ServiceAccountKey returns AUTHENTICATION_FAILED
             // which is more accurate than the generic INITIALIZATION_ERROR
-            Assert.Equal("AUTHENTICATION_FAILED", result.Error?.ErrorCode);
+            Assert.Equal("AUTHENTICATION_FAILED", result.Error?.Code);
             // The error message will be about no suitable authentication configuration found
-            Assert.Contains("authentication", result.Error?.ErrorMessage?.ToLower());
+            Assert.Contains("authentication", result.Error?.Message?.ToLower());
             Assert.Equal(ConnectorState.Error, connector.State);
         }
 
@@ -151,8 +151,8 @@ namespace Deveel.Messaging
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful);
-            Assert.Equal(ConnectorErrorCodes.InitializationError, result.Error?.ErrorCode);
+            Assert.False(result.IsSuccess());
+            Assert.Equal(ConnectorErrorCodes.InitializationError, result.Error?.Code);
             Assert.Equal(ConnectorState.Error, connector.State);
         }
 
@@ -166,7 +166,7 @@ namespace Deveel.Messaging
             var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
             Assert.True(result.Value);
         }
 
@@ -190,8 +190,8 @@ namespace Deveel.Messaging
             var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Successful);
-            Assert.Equal(ConnectorErrorCodes.ConnectionTestError, result.Error?.ErrorCode);
+            Assert.False(result.IsSuccess());
+            Assert.Equal(ConnectorErrorCodes.ConnectionTestError, result.Error?.Code);
         }
 
         [Fact]
@@ -206,7 +206,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             Assert.NotNull(result.Value);
             Assert.Equal(message.Id, result.Value.MessageId);
             Assert.NotNull(result.Value.RemoteMessageId);
@@ -234,7 +234,7 @@ namespace Deveel.Messaging
             var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful, $"Expected successful send but got: {result.Error?.ErrorCode} - {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Expected successful send but got: {result.Error?.Code} - {result.Error?.Message}");
             Assert.NotNull(result.Value);
             Assert.Equal(message.Id, result.Value.MessageId);
 
@@ -260,7 +260,7 @@ namespace Deveel.Messaging
             var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
             Assert.Contains("ProjectId", result.Value.AdditionalData.Keys);
             Assert.Contains("IsInitialized", result.Value.AdditionalData.Keys);
         }
@@ -275,7 +275,7 @@ namespace Deveel.Messaging
             var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
             Assert.NotNull(result.Value);
             Assert.True(result.Value.IsHealthy);
             Assert.Equal(ConnectorState.Ready, result.Value.State);
@@ -297,7 +297,7 @@ namespace Deveel.Messaging
             var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Successful);
+            Assert.True(result.IsSuccess());
             Assert.NotNull(result.Value);
             Assert.False(result.Value.IsHealthy);
             Assert.Contains("Firebase service is not initialized", result.Value.Issues);
@@ -421,7 +421,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             
-            Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
             return connector;
         }
 
@@ -436,7 +436,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             
-            Assert.True(result.Successful, $"Failed to initialize connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize connector: {result.Error?.Message}");
             return connector;
         }
 
@@ -451,7 +451,7 @@ namespace Deveel.Messaging
             var connector = new FirebasePushConnector(schema, connectionSettings, firebaseService);
             var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
             
-            Assert.True(result.Successful, $"Failed to initialize bulk connector: {result.Error?.ErrorMessage}");
+            Assert.True(result.IsSuccess(), $"Failed to initialize bulk connector: {result.Error?.Message}");
             return connector;
         }
 

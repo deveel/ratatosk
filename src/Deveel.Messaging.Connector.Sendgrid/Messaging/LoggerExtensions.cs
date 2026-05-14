@@ -54,6 +54,40 @@ namespace Deveel.Messaging
             Message = "Default reply-to address set: {DefaultReplyTo}")]
         internal static partial void LogDefaultReplyTo(this ILogger logger, string defaultReplyTo);
 
+        [LoggerMessage(
+            EventId = 3201,
+            Level = LogLevel.Information,
+            Message = "Email message sent successfully. MessageId: {MessageId}, StatusCode: {StatusCode}")]
+        internal static partial void LogEmailSent(this ILogger logger, string messageId, string statusCode);
+
+        [LoggerMessage(
+            EventId = 3202,
+            Level = LogLevel.Error,
+            Message = "Failed to send email. StatusCode: {StatusCode}, Error: {Error}")]
+        internal static partial void LogEmailSendFailed(this ILogger logger, string statusCode, string error);
+
+        [LoggerMessage(
+            EventId = 3203,
+            Level = LogLevel.Warning,
+            Message = "Failed to extract message ID from SendGrid response")]
+        internal static partial void LogExtractMessageIdFailed(this ILogger logger, Exception exception);
+
+        [LoggerMessage(
+            EventId = 3205,
+            Level = LogLevel.Debug,
+            Message = "Querying status for message {MessageId}")]
+        internal static partial void LogQueryingMessageStatus(this ILogger logger, string messageId);
+
+        #endregion
+
+        #region Message Building Logging
+
+        [LoggerMessage(
+            EventId = 3301,
+            Level = LogLevel.Warning,
+            Message = "Failed to parse CustomArgs as JSON: {CustomArgs}")]
+        internal static partial void LogCustomArgsParseFailed(this ILogger logger, string customArgs, Exception exception);
+
         #endregion
     }
 }

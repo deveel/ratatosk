@@ -105,7 +105,7 @@ public class TwilioSchemaCapabilityTests
         
         // The result may fail due to parsing (which is expected since we're using a mock),
         // but it should not fail due to capability validation
-        Assert.True(result.Successful || result.Error?.ErrorCode != "CAPABILITY_NOT_SUPPORTED");
+        Assert.True(result.IsSuccess() || result.Error?.Code != "CAPABILITY_NOT_SUPPORTED");
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class TwilioSchemaCapabilityTests
         var result = await connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
         
         // The result should be successful since we have valid status callback data
-        Assert.True(result.Successful);
+        Assert.True(result.IsSuccess());
         Assert.Equal("SM1234567890", result.Value?.MessageId);
         Assert.Equal(MessageStatus.Delivered, result.Value?.Status);
     }
