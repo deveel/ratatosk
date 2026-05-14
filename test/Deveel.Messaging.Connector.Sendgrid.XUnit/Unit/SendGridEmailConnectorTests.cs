@@ -172,8 +172,8 @@ public class SendGridEmailConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<NotSupportedException>(async () => 
+            await connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -187,8 +187,8 @@ public class SendGridEmailConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
-            connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => 
+            await connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -265,8 +265,8 @@ public class SendGridEmailConnectorTests
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
-            connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<NotSupportedException>(async () => 
+            await connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
     }
 
     [Fact]

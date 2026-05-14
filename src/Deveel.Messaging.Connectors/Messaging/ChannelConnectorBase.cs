@@ -172,7 +172,7 @@ namespace Deveel.Messaging
         }
 
 		/// <inheritdoc/>
-		public async Task<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
+		public async ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
         {
             using var scope = BeginConnectorLoggerScope();
 
@@ -399,7 +399,7 @@ namespace Deveel.Messaging
 		}
 
 		/// <inheritdoc/>
-		public async Task<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
+		public async ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
 		{
 			await EnsureInitializedAsync(cancellationToken);
 
@@ -439,7 +439,7 @@ namespace Deveel.Messaging
 		protected abstract ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken);
 
 		/// <inheritdoc/>
-		public async Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
+		public async ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(message);
 			ValidateCapability(ChannelCapability.SendMessages);
@@ -504,7 +504,7 @@ namespace Deveel.Messaging
 		protected abstract Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken);
 
 		/// <inheritdoc/>
-		public virtual async Task<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
+		public virtual async ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
 		{
 			ArgumentNullException.ThrowIfNull(batch);
 			ValidateCapability(ChannelCapability.BulkMessaging);
@@ -585,7 +585,7 @@ namespace Deveel.Messaging
 		}
 
 		/// <inheritdoc/>
-		public async Task<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
+		public async ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
 		{
             using var scope = BeginConnectorLoggerScope();
 
@@ -614,7 +614,7 @@ namespace Deveel.Messaging
 		protected abstract Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken);
 
 		/// <inheritdoc/>
-		public async Task<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
+		public async ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
 		{
 			ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
 			ValidateCapability(ChannelCapability.MessageStatusQuery);
@@ -732,7 +732,7 @@ namespace Deveel.Messaging
 		}
 
 		/// <inheritdoc/>
-		public async Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
+		public async ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
 		{
 			ValidateCapability(ChannelCapability.HandleMessageState);
 			await EnsureInitializedAsync(cancellationToken);
@@ -774,7 +774,7 @@ namespace Deveel.Messaging
 		}
 
 		/// <inheritdoc/>
-		public async Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
+		public async ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
 		{
 			ValidateCapability(ChannelCapability.ReceiveMessages);
 			await EnsureInitializedAsync(cancellationToken);
@@ -818,7 +818,7 @@ namespace Deveel.Messaging
 		}
 
 		/// <inheritdoc/>
-		public virtual async Task<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
+		public virtual async ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
 		{
 			ValidateCapability(ChannelCapability.HealthCheck);
 
@@ -866,7 +866,7 @@ namespace Deveel.Messaging
 		}
 
 		/// <inheritdoc/>
-		public async Task ShutdownAsync(CancellationToken cancellationToken)
+		public async ValueTask ShutdownAsync(CancellationToken cancellationToken)
 		{
             using var scope = BeginConnectorLoggerScope();
 

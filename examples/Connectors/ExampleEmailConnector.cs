@@ -10,42 +10,33 @@ namespace Deveel.Messaging;
 /// </summary>
 public class ExampleEmailConnector : ChannelConnectorBase
 {
-    private readonly ConnectionSettings _connectionSettings;
-
     public ExampleEmailConnector(IChannelSchema schema, ConnectionSettings connectionSettings)
-        : base(schema)
+        : base(schema, connectionSettings)
     {
-        _connectionSettings = connectionSettings;
     }
 
-    protected override async Task<ConnectorResult<bool>> InitializeConnectorAsync(CancellationToken cancellationToken)
+    protected override async ValueTask InitializeConnectorAsync(CancellationToken cancellationToken)
     {
-        var authResult = await AuthenticateAsync(_connectionSettings, cancellationToken);
-        if (!authResult.Successful)
-        {
-            return authResult;
-        }
-
-        return ConnectorResult<bool>.Success(true);
+        var authResult = await AuthenticateAsync(cancellationToken);
+        if (!authResult.IsSuccess())
+            throw new ConnectorException(
+                authResult.Error?.Code ?? ConnectorErrorCodes.AuthenticationFailed,
+                authResult.Error?.Domain ?? Schema.ChannelType,
+                authResult.Error?.Message ?? "Authentication failed");
     }
 
-    protected override Task<ConnectorResult<bool>> TestConnectorConnectionAsync(CancellationToken cancellationToken)
-    {
-        return Task.FromResult(ConnectorResult<bool>.Success(true));
-    }
+    protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken)
+        => ValueTask.CompletedTask;
 
-    protected override async Task<ConnectorResult<SendResult>> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
+    protected override async Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
     {
         var apiKey = GetApiKey();
 
         await Task.Delay(10, cancellationToken);
 
-        var result = new SendResult(message.Id, $"email-{Guid.NewGuid()}");
-        return ConnectorResult<SendResult>.Success(result);
+        return new SendResult(message.Id, $"email-{Guid.NewGuid()}");
     }
 
-    protected override Task<ConnectorResult<StatusInfo>> GetConnectorStatusAsync(CancellationToken cancellationToken)
-    {
-        return Task.FromResult(ConnectorResult<StatusInfo>.Success(new StatusInfo("Email Connector Ready")));
-    }
+    protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
+        => Task.FromResult(new StatusInfo("Email Connector Ready"));
 }

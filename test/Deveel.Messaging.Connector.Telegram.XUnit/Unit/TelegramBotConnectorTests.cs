@@ -488,8 +488,8 @@ namespace Deveel.Messaging
 			// Act
 			// Assert
 			// The base connector validates capabilities first and throws NotSupportedException
-			await Assert.ThrowsAsync<NotSupportedException>(() => 
-				connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
+			await Assert.ThrowsAsync<NotSupportedException>(async () => 
+				await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
 		}
 
 		[Fact]

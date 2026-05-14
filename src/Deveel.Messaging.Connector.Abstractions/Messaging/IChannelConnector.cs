@@ -41,7 +41,7 @@ namespace Deveel.Messaging
 		/// Returns a <see cref="OperationResult{TValue}"/> indicating whether 
 		/// the initialization was successful.
 		/// </returns>
-		Task<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken);
+		ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Tests the connection to the external service.
@@ -54,7 +54,7 @@ namespace Deveel.Messaging
 		/// Returns a <see cref="OperationResult{T}"/> indicating whether the 
 		/// connection test was successful.
 		/// </returns>
-		Task<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken);
+		ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Sends a message to the service provided by the connector.
@@ -78,7 +78,7 @@ namespace Deveel.Messaging
 		/// <exception cref="NotSupportedException">
 		/// Thrown if the connector does not support sending messages.
 		/// </exception>
-		Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken);
+		ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Sends a batch of messages asynchronously to the connector.
@@ -95,7 +95,7 @@ namespace Deveel.Messaging
 		/// <exception cref="NotSupportedException">
 		/// Thrown if the connector does not support sending batches of messages.
 		/// </exception>
-		Task<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken);
+		ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Gets the current status of the connector.
@@ -107,7 +107,7 @@ namespace Deveel.Messaging
 		/// Returns a <see cref="OperationResult{StatusInfo}"/> containing the
 		/// status information of the connector.
 		/// </returns>
-		Task<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken);
+		ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Retrieves the status updates for a specific message from
@@ -126,7 +126,7 @@ namespace Deveel.Messaging
 		/// <exception cref="NotSupportedException">
 		/// Thrown if the connector does not support retrieving status information.
 		/// </exception>
-		Task<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken);
+		ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Validates the specified message to ensure it meets the
@@ -150,7 +150,7 @@ namespace Deveel.Messaging
 		/// Returns a <see cref="OperationResult{StatusUpdateResult}"/> containing the
 		/// status update for the specified message.
 		/// </returns>
-		Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken);
+		ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Receives one or more messages from the specified source.
@@ -165,7 +165,7 @@ namespace Deveel.Messaging
 		/// Returns a <see cref="OperationResult{ReceiveResult}"/> containing the
 		/// received messages.
 		/// </returns>
-		Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken);
+		ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Queries the local health status of the connector.
@@ -180,7 +180,7 @@ namespace Deveel.Messaging
 		/// <exception cref="NotSupportedException">
 		/// Thrown if the connector does not support health checks.
 		/// </exception>
-		Task<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken);
+		ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken);
 
 		/// <summary>
 		/// Shuts down the connector, releasing any resources it holds,
@@ -195,6 +195,6 @@ namespace Deveel.Messaging
 		/// <returns>
 		/// Returns a <see cref="Task"/> that represents the asynchronous operation.
 		/// </returns>
-		Task ShutdownAsync(CancellationToken cancellationToken);
+		ValueTask ShutdownAsync(CancellationToken cancellationToken);
 	}
 }

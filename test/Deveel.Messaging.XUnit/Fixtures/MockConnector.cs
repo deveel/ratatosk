@@ -24,7 +24,7 @@ namespace Deveel.Messaging.XUnit.Fixtures
         public Func<IMessage, SendResult>? OnSend { get; set; }
         public Func<MessageSource, ReceiveResult>? OnReceive { get; set; }
 
-        public async Task<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
+        public async ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
         {
             if (_state != ConnectorState.Uninitialized)
                 return OperationResult<bool>.Fail("ALREADY_INIT", Schema.ChannelType, "Already initialized");
@@ -43,7 +43,7 @@ namespace Deveel.Messaging.XUnit.Fixtures
             return true;
         }
 
-        public async Task<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
+        public async ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
         {
             if (FailOnTestConnection)
                 return OperationResult<bool>.Fail("TEST_FAILED", Schema.ChannelType, "Simulated test failure");
@@ -52,7 +52,7 @@ namespace Deveel.Messaging.XUnit.Fixtures
             return true;
         }
 
-        public async Task<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
+        public async ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
         {
             if (OnSend != null)
             {
@@ -64,18 +64,19 @@ namespace Deveel.Messaging.XUnit.Fixtures
             return new SendResult(message.Id, $"remote-{message.Id}");
         }
 
-        public Task<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
+        public ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
-        public Task<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
+        public ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
         {
             var info = new StatusInfo("Mock connector is ready");
-            return Task.FromResult(OperationResult<StatusInfo>.Success(info));
+            return new ValueTask<OperationResult<StatusInfo>>(OperationResult<StatusInfo>.Success(info));
         }
 
-        public Task<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
-            => Task.FromResult(OperationResult<StatusUpdatesResult>.Success(
-                new StatusUpdatesResult(messageId, new[] { new StatusUpdateResult(messageId, MessageStatus.Sent) })));
+        public ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
+            => new ValueTask<OperationResult<StatusUpdatesResult>>(
+                OperationResult<StatusUpdatesResult>.Success(
+                    new StatusUpdatesResult(messageId, new[] { new StatusUpdateResult(messageId, MessageStatus.Sent) })));
 
         public async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
@@ -83,39 +84,39 @@ namespace Deveel.Messaging.XUnit.Fixtures
             yield break;
         }
 
-        public Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
+        public ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
         {
             var result = new StatusUpdateResult("msg-id", MessageStatus.Delivered);
-            return Task.FromResult(OperationResult<StatusUpdateResult>.Success(result));
+            return new ValueTask<OperationResult<StatusUpdateResult>>(OperationResult<StatusUpdateResult>.Success(result));
         }
 
-        public Task<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
+        public ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
         {
             if (OnReceive != null)
             {
                 var result = OnReceive(source);
-                return Task.FromResult(OperationResult<ReceiveResult>.Success(result));
+                return new ValueTask<OperationResult<ReceiveResult>>(OperationResult<ReceiveResult>.Success(result));
             }
 
             var messages = new List<IMessage> { new Message { Id = "rcvd-1" } };
             var receiveResult = new ReceiveResult("batch-1", messages);
-            return Task.FromResult(OperationResult<ReceiveResult>.Success(receiveResult));
+            return new ValueTask<OperationResult<ReceiveResult>>(OperationResult<ReceiveResult>.Success(receiveResult));
         }
 
-        public Task<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
+        public ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
         {
             var health = new ConnectorHealth
             {
                 IsHealthy = _state == ConnectorState.Ready,
                 State = _state
             };
-            return Task.FromResult(OperationResult<ConnectorHealth>.Success(health));
+            return new ValueTask<OperationResult<ConnectorHealth>>(OperationResult<ConnectorHealth>.Success(health));
         }
 
-        public Task ShutdownAsync(CancellationToken cancellationToken)
+        public ValueTask ShutdownAsync(CancellationToken cancellationToken)
         {
             _state = ConnectorState.Shutdown;
-            return Task.CompletedTask;
+            return default;
         }
     }
 

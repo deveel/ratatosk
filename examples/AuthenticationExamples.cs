@@ -37,9 +37,9 @@ namespace Deveel.Messaging
             
             // Initialize (triggers authentication)
             var initResult = await connector.InitializeAsync(CancellationToken.None);
-            if (!initResult.Successful)
+            if (!initResult.IsSuccess())
             {
-                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.ErrorMessage}");
+                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.Message}");
             }
 
             return connector;
@@ -72,9 +72,9 @@ namespace Deveel.Messaging
             
             // Initialize (triggers authentication)
             var initResult = await connector.InitializeAsync(CancellationToken.None);
-            if (!initResult.Successful)
+            if (!initResult.IsSuccess())
             {
-                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.ErrorMessage}");
+                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.Message}");
             }
 
             return connector;
@@ -109,9 +109,9 @@ namespace Deveel.Messaging
             
             // Initialize (triggers OAuth flow to get access token)
             var initResult = await connector.InitializeAsync(CancellationToken.None);
-            if (!initResult.Successful)
+            if (!initResult.IsSuccess())
             {
-                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.ErrorMessage}");
+                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.Message}");
             }
 
             return connector;
@@ -150,9 +150,9 @@ namespace Deveel.Messaging
             
             // Initialize (automatically detects and uses appropriate authentication)
             var initResult = await connector.InitializeAsync(CancellationToken.None);
-            if (!initResult.Successful)
+            if (!initResult.IsSuccess())
             {
-                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.ErrorMessage}");
+                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.Message}");
             }
 
             return connector;
@@ -182,9 +182,9 @@ namespace Deveel.Messaging
             var connector = new ExampleCustomConnector(schema, connectionSettings, authManager);
             
             var initResult = await connector.InitializeAsync(CancellationToken.None);
-            if (!initResult.Successful)
+            if (!initResult.IsSuccess())
             {
-                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.ErrorMessage}");
+                throw new InvalidOperationException($"Failed to initialize connector: {initResult.Error?.Message}");
             }
 
             return connector;

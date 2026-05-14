@@ -562,17 +562,17 @@ public class TwilioMessageReceivingTests
         if (contentType == MessageSource.UrlPostContentType)
         {
             var source = MessageSource.UrlPost(content);
-            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
+            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken).AsTask();
         }
         else if (contentType == MessageSource.JsonContentType)
         {
             var source = MessageSource.Json(content);
-            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
+            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken).AsTask();
         }
         else
         {
             var source = MessageSource.Text(content);
-            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
+            return connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken).AsTask();
         }
     }
 
@@ -584,17 +584,17 @@ public class TwilioMessageReceivingTests
         if (contentType == MessageSource.UrlPostContentType)
         {
             var source = MessageSource.UrlPost(content);
-            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
+            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken).AsTask();
         }
         else if (contentType == MessageSource.JsonContentType)
         {
             var source = MessageSource.Json(content);
-            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
+            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken).AsTask();
         }
         else
         {
             var source = MessageSource.Text(content);
-            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken);
+            return connector.ReceiveMessageStatusAsync(source, TestContext.Current.CancellationToken).AsTask();
         }
     }
 

@@ -142,8 +142,8 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+			await connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -156,8 +156,8 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<ArgumentNullException>(() =>
-			connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+			await connector.SendMessageAsync(null!, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -196,8 +196,8 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+			await connector.SendBatchAsync(batch, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -236,8 +236,8 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+			await connector.GetMessageStatusAsync("test-message", TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -251,8 +251,8 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<ArgumentNullException>(() =>
-			connector.GetMessageStatusAsync(null!, TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+			await connector.GetMessageStatusAsync(null!, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -290,8 +290,8 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.ReceiveMessageStatusAsync(MessageSource.Text("test content"), TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+			await connector.ReceiveMessageStatusAsync(MessageSource.Text("test content"), TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -304,8 +304,8 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.ReceiveMessagesAsync(MessageSource.Text("test content"), TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+			await connector.ReceiveMessagesAsync(MessageSource.Text("test content"), TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -317,8 +317,8 @@ public class ChannelConnectorBaseTests
 
 		// Act
 		// Assert
-		await Assert.ThrowsAsync<NotSupportedException>(() =>
-			connector.GetHealthAsync(TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<NotSupportedException>(async () =>
+			await connector.GetHealthAsync(TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
@@ -410,14 +410,14 @@ public class ChannelConnectorBaseTests
 		// Assert
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
 		{
-			await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				connector.TestConnectionAsync(TestContext.Current.CancellationToken));
+			await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+				await connector.TestConnectionAsync(TestContext.Current.CancellationToken));
 		}
 
 		if (state != ConnectorState.Shutdown && state != ConnectorState.ShuttingDown)
 		{
-			await Assert.ThrowsAsync<InvalidOperationException>(() =>
-				connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
+			await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+				await connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
 		}
 	}
 
