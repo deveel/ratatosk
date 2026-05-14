@@ -61,41 +61,73 @@ namespace Deveel.Messaging
         /// <inheritdoc/>
         public async Task<OperationResult<SendResult>> SendAsync(string channelName, IMessage message, CancellationToken cancellationToken = default)
         {
+            _logger.LogSendingMessage(channelName);
+
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
                 return OperationResult<SendResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for channel '{channelName}'.");
 
-            return await connector.SendMessageAsync(message, cancellationToken);
+            var result = await connector.SendMessageAsync(message, cancellationToken);
+            if (result.IsSuccess())
+                _logger.LogMessageSent(channelName);
+            else
+                _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+
+            return result;
         }
 
         /// <inheritdoc/>
         public async Task<OperationResult<ReceiveResult>> ReceiveAsync(string channelName, MessageSource source, CancellationToken cancellationToken = default)
         {
+            _logger.LogReceivingMessage(channelName);
+
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
                 return OperationResult<ReceiveResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for channel '{channelName}'.");
 
-            return await connector.ReceiveMessagesAsync(source, cancellationToken);
+            var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
+            if (result.IsSuccess())
+                _logger.LogMessageReceived(channelName);
+            else
+                _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
+
+            return result;
         }
 
         /// <inheritdoc/>
         public async Task<OperationResult<StatusInfo>> GetStatusAsync(string channelName, CancellationToken cancellationToken = default)
         {
+            _logger.LogReadingStatus(channelName);
+
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
                 return OperationResult<StatusInfo>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for channel '{channelName}'.");
 
-            return await connector.GetStatusAsync(cancellationToken);
+            var result = await connector.GetStatusAsync(cancellationToken);
+            if (result.IsSuccess())
+                _logger.LogStatusRead(channelName);
+            else
+                _logger.LogStatusReadFailed(channelName, result.Error?.Message);
+
+            return result;
         }
 
         /// <inheritdoc/>
         public async Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(string channelName, MessageSource source, CancellationToken cancellationToken = default)
         {
+            _logger.LogReceivingMessageStatus(channelName);
+
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
                 return OperationResult<StatusUpdateResult>.Fail("CHANNEL_NOT_FOUND", channelName, $"No connector registered for channel '{channelName}'.");
 
-            return await connector.ReceiveMessageStatusAsync(source, cancellationToken);
+            var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
+            if (result.IsSuccess())
+                _logger.LogMessageStatusReceived(channelName);
+            else
+                _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
+
+            return result;
         }
 
         /// <summary>
@@ -124,22 +156,30 @@ namespace Deveel.Messaging
                 if (_connectors.TryGetValue(channelName, out existing))
                     return existing;
 
+                _logger.LogResolvingChannel(channelName);
+
                 var connector = _serviceProvider.GetKeyedService<IChannelConnector>(channelName);
                 if (connector == null)
                 {
-                    _logger.LogWarning("No connector registered for channel '{ChannelName}'.", channelName);
+                    _logger.LogChannelNotFound(channelName);
                     return null;
                 }
 
                 if (_options.AutoInitialize && connector.State == ConnectorState.Uninitialized)
                 {
+                    _logger.LogInitializingConnector(channelName);
+
                     var initResult = await connector.InitializeAsync(cancellationToken);
                     if (!initResult.IsSuccess())
                     {
-                        _logger.LogError("Failed to initialize connector for channel '{ChannelName}': {Error}", channelName, initResult.Error?.Message);
+                        _logger.LogConnectorInitializationFailed(channelName, initResult.Error?.Message);
                         return null;
                     }
+
+                    _logger.LogConnectorInitialized(channelName);
                 }
+
+                _logger.LogChannelResolved(channelName);
 
                 _connectors[channelName] = connector;
                 return connector;
