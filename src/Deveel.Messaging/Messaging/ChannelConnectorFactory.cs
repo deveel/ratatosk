@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace Deveel.Messaging
 {
@@ -116,7 +115,10 @@ namespace Deveel.Messaging
             }
 
             public bool Equals(ConnectorPoolKey other) =>
-                Settings.Equals(other.Settings) && ReferenceEquals(Schema, other.Schema);
+                Settings.Equals(other.Settings) &&
+                string.Equals(Schema.ChannelProvider, other.Schema.ChannelProvider, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(Schema.ChannelType, other.Schema.ChannelType, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(Schema.Version, other.Schema.Version, StringComparison.OrdinalIgnoreCase);
 
             public override bool Equals(object? obj) =>
                 obj is ConnectorPoolKey other && Equals(other);
@@ -125,7 +127,9 @@ namespace Deveel.Messaging
             {
                 var hash = new HashCode();
                 hash.Add(Settings);
-                hash.Add(RuntimeHelpers.GetHashCode(Schema));
+                hash.Add(Schema.ChannelProvider, StringComparer.OrdinalIgnoreCase);
+                hash.Add(Schema.ChannelType, StringComparer.OrdinalIgnoreCase);
+                hash.Add(Schema.Version, StringComparer.OrdinalIgnoreCase);
                 return hash.ToHashCode();
             }
 
