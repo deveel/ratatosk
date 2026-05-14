@@ -47,9 +47,9 @@ namespace Deveel.Messaging
             {
                 _logger.LogObtainingServiceAccountCredential();
 
-                var serviceAccountKey = GetStringParameter(connectionSettings, "ServiceAccountKey") ??
-                                      GetStringParameter(connectionSettings, "ServiceAccountJson") ??
-                                      GetStringParameter(connectionSettings, "Certificate");
+                var serviceAccountKey = connectionSettings.GetParameter("ServiceAccountKey")?.ToString() ??
+                                      connectionSettings.GetParameter("ServiceAccountJson")?.ToString() ??
+                                      connectionSettings.GetParameter("Certificate")?.ToString();
 
                 if (string.IsNullOrWhiteSpace(serviceAccountKey))
                 {
@@ -83,7 +83,7 @@ namespace Deveel.Messaging
                 credential.Properties["CredentialType"] = "ServiceAccount";
                 credential.Properties["Provider"] = "Firebase";
 
-                var projectId = GetStringParameter(connectionSettings, "ProjectId");
+                var projectId = connectionSettings.GetParameter("ProjectId")?.ToString();
                 if (!string.IsNullOrWhiteSpace(projectId))
                 {
                     credential.Properties["ProjectId"] = projectId;

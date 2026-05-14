@@ -36,13 +36,13 @@ namespace Deveel.Messaging
 
             foreach (var principal in principalFields)
             {
-                var username = GetStringParameter(connectionSettings, principal.FieldName);
+                var username = connectionSettings.GetParameter(principal.FieldName)?.ToString();
                 if (string.IsNullOrWhiteSpace(username))
                     continue;
 
                 foreach (var credential in credentialFields)
                 {
-                    var password = GetStringParameter(connectionSettings, credential.FieldName);
+                    var password = connectionSettings.GetParameter(credential.FieldName)?.ToString();
                     if (!string.IsNullOrWhiteSpace(password))
                     {
                         _logger.LogFoundCredentials(AuthenticationScheme.Basic, principal.FieldName);

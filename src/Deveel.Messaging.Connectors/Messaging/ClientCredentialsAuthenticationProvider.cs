@@ -33,11 +33,11 @@ namespace Deveel.Messaging
                 var credentialFields = configuration.GetFieldsByRole("credential").ToList();
 
                 var clientId = principalFields
-                    .Select(f => GetStringParameter(connectionSettings, f.FieldName))
+                    .Select(f => connectionSettings.GetParameter(f.FieldName)?.ToString())
                     .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
                 var clientSecret = credentialFields
-                    .Select(f => GetStringParameter(connectionSettings, f.FieldName))
+                    .Select(f => connectionSettings.GetParameter(f.FieldName)?.ToString())
                     .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
                 if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
@@ -45,13 +45,13 @@ namespace Deveel.Messaging
                     return Failure("Client ID and Client Secret are required for OAuth Client Credentials flow", "MISSING_PARAMETERS");
                 }
 
-                var tokenEndpoint = GetStringParameter(connectionSettings, "TokenEndpoint");
+                var tokenEndpoint = connectionSettings.GetParameter("TokenEndpoint")?.ToString();
                 if (string.IsNullOrWhiteSpace(tokenEndpoint))
                 {
                     return Failure("Token endpoint URL is required for OAuth Client Credentials flow", "MISSING_TOKEN_ENDPOINT");
                 }
 
-                var scope = GetStringParameter(connectionSettings, "Scope");
+                var scope = connectionSettings.GetParameter("Scope")?.ToString();
 
                 var tokenRequest = new Dictionary<string, string>
                 {
@@ -164,9 +164,9 @@ namespace Deveel.Messaging
 
         private async Task<AuthenticationResult> RefreshUsingRefreshToken(string refreshToken, ConnectionSettings connectionSettings, CancellationToken cancellationToken)
         {
-            var clientId = GetStringParameter(connectionSettings, "ClientId");
-            var clientSecret = GetStringParameter(connectionSettings, "ClientSecret");
-            var tokenEndpoint = GetStringParameter(connectionSettings, "TokenEndpoint");
+            var clientId = connectionSettings.GetParameter("ClientId")?.ToString();
+            var clientSecret = connectionSettings.GetParameter("ClientSecret")?.ToString();
+            var tokenEndpoint = connectionSettings.GetParameter("TokenEndpoint")?.ToString();
 
             if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret) || string.IsNullOrWhiteSpace(tokenEndpoint))
             {

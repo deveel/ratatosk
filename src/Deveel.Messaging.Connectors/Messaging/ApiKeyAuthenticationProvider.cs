@@ -33,7 +33,7 @@ namespace Deveel.Messaging
 
             foreach (var field in principalFields)
             {
-                var value = GetStringParameter(connectionSettings, field.FieldName);
+                var value = connectionSettings.GetParameter(field.FieldName)?.ToString();
                 if (!string.IsNullOrWhiteSpace(value))
                 {
                     _logger.LogFoundCredentials(AuthenticationScheme.ApiKey, field.FieldName);

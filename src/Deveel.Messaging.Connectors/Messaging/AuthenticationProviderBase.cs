@@ -49,19 +49,6 @@ namespace Deveel.Messaging
         }
 
         /// <summary>
-        /// Safely retrieves a string parameter from the given connection settings.
-        /// </summary>
-        /// <param name="connectionSettings">The settings.</param>
-        /// <param name="parameterName">The parameter key.</param>
-        /// <returns>The value as a string, or <c>null</c> if not found.</returns>
-        protected static string? GetStringParameter(ConnectionSettings connectionSettings, string parameterName)
-        {
-            ArgumentNullException.ThrowIfNull(connectionSettings, nameof(connectionSettings));
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(parameterName, nameof(parameterName));
-            return connectionSettings.GetParameter(parameterName)?.ToString();
-        }
-
-        /// <summary>
         /// Creates a failed <see cref="AuthenticationResult"/>.
         /// </summary>
         /// <param name="errorMessage">The error message.</param>

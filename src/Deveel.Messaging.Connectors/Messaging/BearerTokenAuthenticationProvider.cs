@@ -33,15 +33,15 @@ namespace Deveel.Messaging
 
             foreach (var field in principalFields)
             {
-                var value = GetStringParameter(connectionSettings, field.FieldName);
+                var value = connectionSettings.GetParameter(field.FieldName)?.ToString();
                 if (!string.IsNullOrWhiteSpace(value))
                 {
                     _logger.LogFoundCredentials(AuthenticationScheme.Bearer, field.FieldName);
 
-                    var tokenType = GetStringParameter(connectionSettings, "TokenType") ?? "Bearer";
+                    var tokenType = connectionSettings.GetParameter("TokenType")?.ToString() ?? "Bearer";
 
                     DateTime? expiresAt = null;
-                    var expirationString = GetStringParameter(connectionSettings, "ExpiresAt");
+                    var expirationString = connectionSettings.GetParameter("ExpiresAt")?.ToString();
                     if (!string.IsNullOrWhiteSpace(expirationString) && DateTime.TryParse(expirationString, out var expirationDate))
                     {
                         expiresAt = expirationDate;
