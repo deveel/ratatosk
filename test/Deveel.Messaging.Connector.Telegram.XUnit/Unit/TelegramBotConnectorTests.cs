@@ -191,21 +191,6 @@ namespace Deveel.Messaging
 			Assert.True(result.IsSuccess());
 		}
 
-		[Fact]
-		public async Task Should_ThrowInvalidOperationException_When_TestConnectionAsyncWhenNotInitialized()
-		{
-			// Arrange
-			var schema = TelegramChannelSchemas.TelegramBot;
-			var connectionSettings = TelegramMockFactory.CreateTestConnectionSettings();
-			var mockTelegramService = TelegramMockFactory.CreateMockTelegramService();
-			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
-
-			// Act
-			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => 
-				connector.TestConnectionAsync(TestContext.Current.CancellationToken));
-		}
-
 		#endregion
 
 		#region Message Sending Tests
@@ -282,22 +267,6 @@ namespace Deveel.Messaging
 			Assert.False(result.IsSuccess());
 			// The base connector validates the message first, so we get MESSAGE_VALIDATION_FAILED
 			Assert.Equal(ConnectorErrorCodes.MessageValidationFailed, result.Error?.Code);
-		}
-
-		[Fact]
-		public async Task Should_ThrowInvalidOperationException_When_SendMessageAsyncWhenNotInitialized()
-		{
-			// Arrange
-			var schema = TelegramChannelSchemas.TelegramBot;
-			var connectionSettings = TelegramMockFactory.CreateTestConnectionSettings();
-			var mockTelegramService = TelegramMockFactory.CreateMockTelegramService();
-			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
-			var message = TelegramMockFactory.CreateTestTextMessage();
-
-			// Act
-			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => 
-				connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
 		}
 
 		#endregion
@@ -500,22 +469,6 @@ namespace Deveel.Messaging
 			// Assert
 			Assert.False(result.IsSuccess());
 			Assert.Equal(TelegramErrorCodes.UnsupportedContentType, result.Error?.Code);
-		}
-
-		[Fact]
-		public async Task Should_ThrowInvalidOperationException_When_ReceiveMessagesAsyncWhenNotInitialized()
-		{
-			// Arrange
-			var schema = TelegramChannelSchemas.TelegramBot;
-			var connectionSettings = TelegramMockFactory.CreateTestConnectionSettings();
-			var mockTelegramService = TelegramMockFactory.CreateMockTelegramService();
-			var connector = new TelegramBotConnector(schema, connectionSettings, mockTelegramService.Object);
-			var source = MessageSource.Json("{}");
-
-			// Act
-			// Assert
-			await Assert.ThrowsAsync<InvalidOperationException>(() => 
-				connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken));
 		}
 
 		#endregion

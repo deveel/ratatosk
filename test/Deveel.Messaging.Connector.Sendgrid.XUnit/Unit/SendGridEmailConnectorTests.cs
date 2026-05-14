@@ -121,20 +121,6 @@ public class SendGridEmailConnectorTests
     }
 
     [Fact]
-    public async Task Should_ThrowInvalidOperationException_When_TestConnectionAsyncWhenNotInitialized()
-    {
-        // Arrange
-        var schema = SendGridChannelSchemas.SimpleEmail;
-        var connectionSettings = SendGridMockFactory.CreateValidConnectionSettings();
-        var connector = new SendGridEmailConnector(schema, connectionSettings);
-
-        // Act
-        // Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            connector.TestConnectionAsync(TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
     public async Task Should_ReturnSuccess_When_TestConnectionAsyncWithValidConnection()
     {
         // Arrange

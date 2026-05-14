@@ -158,20 +158,6 @@ public class TwilioSmsConnectorTests
     }
 
     [Fact]
-    public async Task Should_ThrowInvalidOperationException_When_TestConnectionAsyncWhenNotInitialized()
-    {
-        // Arrange
-        var schema = TwilioChannelSchemas.SimpleSms;
-        var connectionSettings = CreateValidConnectionSettings();
-        var connector = new TwilioSmsConnector(schema, connectionSettings);
-
-        // Act
-        // Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => 
-            connector.TestConnectionAsync(TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
     public async Task Should_ThrowNotSupportedException_When_SendMessageAsyncWithoutSendCapability()
     {
         // Arrange

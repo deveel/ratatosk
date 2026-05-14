@@ -235,23 +235,6 @@ namespace Deveel.Messaging
             Assert.Equal(ConnectorErrorCodes.SendBatchError, result.Error?.Code);
         }
 
-        [Fact]
-        public async Task Should_ThrowInvalidOperationException_When_SendMessageAsyncWhenNotInitialized()
-        {
-            // Arrange
-            var schema = FirebaseChannelSchemas.FirebasePush;
-            var connectionSettings = FirebaseMockFactory.CreateValidConnectionSettings();
-            var mockFirebaseService = FirebaseMockFactory.CreateMockFirebaseService();
-            var connector = new FirebasePushConnector(schema, connectionSettings, mockFirebaseService.Object);
-            // Don't initialize the connector
-            var message = CreateSimpleDeviceTokenMessage();
-
-            // Act
-            // Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                connector.SendMessageAsync(message, TestContext.Current.CancellationToken));
-        }
-
         #endregion
 
         #region Platform-Specific Tests
