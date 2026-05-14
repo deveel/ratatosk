@@ -224,5 +224,88 @@ namespace Deveel.Messaging.XUnit.Unit
             var received = result.Value!.Messages.First();
             Assert.Equal("custom-rcvd", received.Id);
         }
+
+        // ── Type-based (anonymous) overloads ─────────────────────────────────
+
+        [Fact]
+        public async Task Should_SendMessage_WithTypeParameter()
+        {
+            var services = new ServiceCollection();
+            services.AddMessaging()
+                .AddConnector<MockConnector>(_ => { })
+                .AddClient();
+            var provider = services.BuildServiceProvider();
+            var client = provider.GetRequiredService<IMessagingClient>();
+
+            var message = new MessageBuilder().WithId("type-send").WithText("test").Build();
+            var result = await client.SendAsync<MockConnector>(message);
+
+            Assert.True(result.IsSuccess());
+            Assert.Equal("type-send", result.Value!.MessageId);
+        }
+
+        [Fact]
+        public async Task Should_ReturnFailure_When_TypeParameterNotFound()
+        {
+            var services = new ServiceCollection();
+            services.AddMessaging()
+                .AddClient();
+            var provider = services.BuildServiceProvider();
+            var client = provider.GetRequiredService<IMessagingClient>();
+
+            var message = new MessageBuilder().WithId("x").WithText("test").Build();
+            var result = await client.SendAsync<MockConnector>(message);
+
+            Assert.False(result.IsSuccess());
+            Assert.NotNull(result.Error);
+        }
+
+        [Fact]
+        public async Task Should_ReceiveMessages_WithTypeParameter()
+        {
+            var services = new ServiceCollection();
+            services.AddMessaging()
+                .AddConnector<MockConnector>(_ => { })
+                .AddClient();
+            var provider = services.BuildServiceProvider();
+            var client = provider.GetRequiredService<IMessagingClient>();
+
+            var result = await client.ReceiveAsync<MockConnector>(MessageSource.Json("{}"));
+
+            Assert.True(result.IsSuccess());
+            Assert.NotEmpty(result.Value!.Messages);
+        }
+
+        [Fact]
+        public async Task Should_GetStatus_WithTypeParameter()
+        {
+            var services = new ServiceCollection();
+            services.AddMessaging()
+                .AddConnector<MockConnector>(_ => { })
+                .AddClient();
+            var provider = services.BuildServiceProvider();
+            var client = provider.GetRequiredService<IMessagingClient>();
+
+            var result = await client.GetStatusAsync<MockConnector>();
+
+            Assert.True(result.IsSuccess());
+            Assert.NotNull(result.Value);
+        }
+
+        [Fact]
+        public async Task Should_ReceiveMessageStatus_WithTypeParameter()
+        {
+            var services = new ServiceCollection();
+            services.AddMessaging()
+                .AddConnector<MockConnector>(_ => { })
+                .AddClient();
+            var provider = services.BuildServiceProvider();
+            var client = provider.GetRequiredService<IMessagingClient>();
+
+            var result = await client.ReceiveMessageStatusAsync<MockConnector>(MessageSource.Json("{}"));
+
+            Assert.True(result.IsSuccess());
+            Assert.NotNull(result.Value);
+        }
     }
 }

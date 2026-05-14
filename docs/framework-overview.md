@@ -94,7 +94,21 @@ var smsResult = await twilioConnector.SendMessageAsync(message, ct);
 
 ### Messaging client
 
-**`IMessagingClient`** — a high-level facade that resolves named connectors from DI, handles lazy initialization, and exposes the 4 most common operations (`SendAsync`, `ReceiveAsync`, `GetStatusAsync`, `ReceiveMessageStatusAsync`). Implements `IDisposable` and `IAsyncDisposable` — when the client is disposed, all cached connectors are shut down gracefully. Callers do not manage connector state directly. Register it via `.AddClient()` on the `MessagingBuilder`.
+**`IMessagingClient`** — a high-level facade that resolves connectors from DI (by name or by type), handles lazy initialization, and exposes the 4 most common operations (`SendAsync`, `ReceiveAsync`, `GetStatusAsync`, `ReceiveMessageStatusAsync`). Implements `IDisposable` and `IAsyncDisposable` — when the client is disposed, all cached connectors are shut down gracefully. Callers do not manage connector state directly. Register it via `.AddClient()` on the `MessagingBuilder`.
+
+The client supports three resolution strategies:
+
+- **By name** — `SendAsync("channel-name", message)` resolves pre-configured named connectors via `IChannelConnectorResolver` (backed by DI keyed services)
+- **By type** — `SendAsync<TConnector>(message)` resolves anonymous (unnamed) connectors from DI by type
+- **At runtime with settings** — `SendAsync("name", settings, message)` or `SendAsync<TConnector>(settings, message)` creates connectors on-the-fly from runtime-provided `ConnectionSettings`, using schema discovery and `ActivatorUtilities.CreateInstance`
+
+### Connector type catalog
+
+**`ConnectorTypeCatalog`** — a singleton registry that maps channel names to connector types (without connection settings). Populated at startup via `AddConnectorType<TConnector>()`. Used by the client's runtime overloads to know which connector type to instantiate for a given channel name.
+
+### Connector resolver
+
+**`IChannelConnectorResolver`** — an abstraction for resolving pre-configured connectors by name. The default implementation (`ServiceProviderConnectorResolver`) delegates to DI keyed services. The client uses this internally for name-based resolution of statically registered connectors.
 
 ### Message builder
 

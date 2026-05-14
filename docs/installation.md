@@ -54,17 +54,23 @@ builder.Services
 
 `AddMessaging()` returns a `MessagingBuilder` instance. Each `AddConnector<T>()` call registers the connector as a singleton in DI and also registers the connector's schema in the `IChannelSchemaRegistry`. Connectors are resolved as `IChannelConnector` from DI.
 
-Call `.AddClient()` on the builder to register the `IMessagingClient` facade, which handles lazy connector initialization and named-channel routing (see [Quickstart](quickstart.md#6-imessagingclient-facade)).
+Call `.AddClient()` on the builder to register the `IMessagingClient` facade, which handles lazy connector initialization and channel routing (see [Quickstart](quickstart.md#6-imessagingclient-facade)).
 
 ### What AddMessaging registers
 
 - `IChannelSchemaRegistry` — singleton, aggregated view of all connector schemas
 - `IAuthenticationManager` — singleton, manages authentication providers and credential caching
+- `IChannelConnectorResolver` — singleton, resolves connectors by name from the DI container (registered by `AddClient`)
+- `ConnectorTypeCatalog` — singleton, maps channel names to connector types for runtime resolution (registered by `AddClient` only when `AddConnectorType` is used)
 - Per connector: the connector type as singleton, plus `IChannelConnector` forwarding to the same instance
 
-## Named connectors (keyed services)
+## Registration strategies
 
-A single application may need multiple instances of the same connector type with different settings — for example, a primary and fallback Twilio account, or per-tenant connector instances. Named connectors solve this by registering each instance under a distinct key.
+The framework supports two registration strategies that can be mixed in the same application:
+
+### Named connectors (keyed services)
+
+Use named connectors when you need multiple instances of the same connector type with different settings — for example, a primary and fallback Twilio account, or per-tenant connector instances.
 
 Register multiple instances of the same connector type with different names and configurations:
 
@@ -91,6 +97,62 @@ public class NotificationService(
             result = await fallback.SendMessageAsync(message, ct);
     }
 }
+```
+
+### Anonymous connectors (by type)
+
+When you only need one instance of a connector type, register it without a name:
+
+```csharp
+builder.Services
+    .AddMessaging()
+    .AddConnector<TwilioSmsConnector>(cfg => cfg
+        .WithSettings("Twilio"));
+```
+
+Anonymous connectors are resolved by type through the `IMessagingClient` generic overloads:
+
+```csharp
+await client.SendAsync<TwilioSmsConnector>(message, ct);
+```
+
+### Connector type registration (for runtime creation)
+
+For multi-tenant scenarios where connection settings are loaded at runtime (not from configuration), register the connector type without providing settings:
+
+```csharp
+builder.Services
+    .AddMessaging()
+    .AddConnectorType<TwilioSmsConnector>("tenant-sms")
+    .AddConnectorType<FacebookMessengerConnector>()
+    .AddClient();
+```
+
+`AddConnectorType` accepts an optional name parameter. When omitted, the connector type name is used as the key. This registration:
+- Registers the default `IChannelConnectorFactory<T>` for the connector type
+- Adds the type to a `ConnectorTypeCatalog` used at runtime to resolve connector types by name
+
+Runtime connectors are created on-demand using the `ConnectionSettings` provided at the call site:
+
+```csharp
+var tenantSettings = new ConnectionSettings()
+    .SetParameter("AccountSid", tenant.AccountSid)
+    .SetParameter("AuthToken", tenant.AuthToken);
+
+await client.SendAsync("tenant-sms", tenantSettings, message);
+```
+
+You can mix all three strategies in the same application:
+
+```csharp
+builder.Services
+    .AddMessaging()
+    .AddConnector<TwilioSmsConnector>("corporate", cfg => cfg
+        .WithSettings("Twilio:Corporate"))
+    .AddConnector<SendGridEmailConnector>(cfg => cfg
+        .WithSettings("SendGrid"))
+    .AddConnectorType<FacebookMessengerConnector>("tenant-fb")
+    .AddClient();
 ```
 
 ## Configuration from appsettings.json

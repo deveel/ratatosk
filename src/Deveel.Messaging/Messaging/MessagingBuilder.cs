@@ -29,6 +29,14 @@ namespace Deveel.Messaging
         /// </summary>
         public IServiceCollection Services { get; }
 
+        /// <summary>
+        /// Gets the list of connector type registrations added via
+        /// <see cref="AddConnectorType{TConnector}(string)"/>, used at
+        /// resolution time to populate <see cref="ConnectorTypeCatalog"/>.
+        /// </summary>
+        internal List<(string Name, Type ConnectorType)> ConnectorTypeRegistrations { get; }
+            = new();
+
         // ── Unnamed connector registration ────────────────────────────────────
 
         /// <summary>
@@ -225,6 +233,64 @@ namespace Deveel.Messaging
             });
 
             return this;
+        }
+
+        // ── Connector type registration (no settings) ──────────────────────────
+
+        /// <summary>
+        /// Registers a connector type under the given name, without providing
+        /// connection settings. This is used for multi-tenant scenarios where
+        /// settings are resolved at runtime via
+        /// <see cref="IMessagingClient"/> overloads that accept
+        /// <see cref="ConnectionSettings"/>.
+        /// </summary>
+        /// <typeparam name="TConnector">
+        /// The type of the connector to register.
+        /// </typeparam>
+        /// <param name="name">
+        /// The name that identifies the connector type for runtime resolution.
+        /// </param>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="name"/> is <c>null</c> or empty.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// Thrown if <typeparamref name="TConnector"/> does not implement
+        /// <see cref="IChannelConnector"/> or is missing the
+        /// <see cref="ChannelSchemaAttribute"/>.
+        /// </exception>
+        public MessagingBuilder AddConnectorType<TConnector>(string name)
+            where TConnector : class, IChannelConnector
+        {
+            ArgumentNullException.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
+            var connectorType = typeof(TConnector);
+            EnsureValidConnectorType(connectorType);
+            RegisterDefaultFactory(connectorType);
+
+            ConnectorTypeRegistrations.Add((name, connectorType));
+
+            return this;
+        }
+
+        /// <summary>
+        /// Registers a connector type without a name, allowing runtime creation
+        /// via the generic overloads of <see cref="IMessagingClient"/>.
+        /// </summary>
+        /// <typeparam name="TConnector">
+        /// The type of the connector to register.
+        /// </typeparam>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        public MessagingBuilder AddConnectorType<TConnector>()
+            where TConnector : class, IChannelConnector
+        {
+            return AddConnectorType<TConnector>(typeof(TConnector).Name);
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

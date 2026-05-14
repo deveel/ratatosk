@@ -156,7 +156,11 @@ public async Task<IActionResult> TwilioWebhook(
 
 ## 6. IMessagingClient facade
 
-For applications that use DI, the `IMessagingClient` facade simplifies further by managing connector resolution, lazy initialization, caching, and disposal. The client implements `IDisposable` and `IAsyncDisposable` — when disposed, it calls `ShutdownAsync` on all cached connectors and releases the synchronization guard. In DI scenarios the container manages disposal automatically. You register named connectors at startup and then call `SendAsync` by channel name.
+For applications that use DI, the `IMessagingClient` facade simplifies further by managing connector resolution, lazy initialization, caching, and disposal. The client implements `IDisposable` and `IAsyncDisposable` — when disposed, it calls `ShutdownAsync` on all cached connectors and releases the synchronization guard. In DI scenarios the container manages disposal automatically.
+
+You register `.AddClient()` on the builder and then send messages through whichever resolution strategy fits your architecture.
+
+### Resolution by name (named connectors)
 
 ```csharp
 // Program.cs
@@ -168,7 +172,7 @@ builder.Services
         .WithSettings("Twilio"))
     .AddConnector<SendGridEmailConnector>("email", cfg => cfg
         .WithSettings("SendGrid"))
-    .AddClient();   // registers IMessagingClient
+    .AddClient();
 
 builder.Services.AddSingleton<NotificationService>();
 var app = builder.Build();
@@ -195,7 +199,61 @@ public class NotificationService(IMessagingClient messagingClient)
 }
 ```
 
-The client automatically initializes the connector on first use (configurable via `MessagingClientOptions.AutoInitialize`).
+### Resolution by type (anonymous connectors)
+
+When you register a single instance of a connector type without a name, resolve it through the generic overload:
+
+```csharp
+builder.Services
+    .AddMessaging()
+    .AddConnector<TwilioSmsConnector>(cfg => cfg.WithSettings("Twilio"))
+    .AddClient();
+
+// Usage
+var result = await client.SendAsync<TwilioSmsConnector>(message, ct);
+```
+
+### Runtime resolution (multi-tenant)
+
+For multi-tenant applications where connection settings are loaded at runtime (from a database, API, or per-request context), register the connector type at startup without providing settings, and supply the settings at the call site:
+
+```csharp
+// Program.cs — register the type, no settings
+builder.Services
+    .AddMessaging()
+    .AddConnectorType<FacebookMessengerConnector>("facebook")
+    .AddClient();
+
+// In a request handler — load settings per tenant
+var tenantSettings = await db.TenantConnections
+    .Where(t => t.TenantId == tenantId)
+    .Select(t => new ConnectionSettings()
+        .SetParameter("PageAccessToken", t.AccessToken)
+        .SetParameter("PageId", t.PageId))
+    .FirstAsync();
+
+var result = await client.SendAsync("facebook", tenantSettings, message);
+```
+
+The same pattern works with type parameters for anonymous runtime resolution:
+
+```csharp
+builder.Services
+    .AddMessaging()
+    .AddConnectorType<FacebookMessengerConnector>()
+    .AddClient();
+
+// Usage
+await client.SendAsync<FacebookMessengerConnector>(tenantSettings, message);
+```
+
+### Auto-initialization
+
+The client automatically initializes the connector on first use. To disable this (for scenarios where initialization is handled externally), configure `MessagingClientOptions`:
+
+```csharp
+builder.AddClient(o => o.AutoInitialize = false);
+```
 
 ## Next steps
 

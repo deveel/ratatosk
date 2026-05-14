@@ -10,6 +10,23 @@ namespace Deveel.Messaging
     /// </summary>
     public static class MessagingClientBuilderExtensions
     {
+        private static void RegisterClientServices(MessagingBuilder builder)
+        {
+            var registrations = builder.ConnectorTypeRegistrations.ToList();
+            if (registrations.Count > 0)
+            {
+                builder.Services.TryAddSingleton<ConnectorTypeCatalog>(sp =>
+                {
+                    var catalog = new ConnectorTypeCatalog();
+                    foreach (var (name, type) in registrations)
+                        catalog.Register(name, type);
+                    return catalog;
+                });
+            }
+
+            builder.Services.TryAddSingleton<IChannelConnectorResolver, ServiceProviderConnectorResolver>();
+        }
+
         /// <summary>
         /// Registers an <see cref="IMessagingClient"/> singleton into the
         /// service collection with default options.
@@ -29,6 +46,7 @@ namespace Deveel.Messaging
         {
             ArgumentNullException.ThrowIfNull(builder);
 
+            RegisterClientServices(builder);
             builder.Services.TryAddSingleton<MessagingClientOptions>(new MessagingClientOptions());
             builder.Services.TryAddSingleton<IMessagingClient, MessagingClient>();
             return builder;
@@ -59,6 +77,7 @@ namespace Deveel.Messaging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(configure);
 
+            RegisterClientServices(builder);
             var options = new MessagingClientOptions();
             configure(options);
             builder.Services.TryAddSingleton<MessagingClientOptions>(options);
