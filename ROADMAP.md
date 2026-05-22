@@ -413,9 +413,12 @@ WhatsApp messaging is currently only available through the Twilio connector. Tea
 
 A `Deveel.Messaging.Connector.WhatsApp` package that connects directly to Meta's WhatsApp Business Cloud API. It supports text, media, interactive, and template messages, and implements both send and receive (inbound message webhooks handled at the model level, not via a webhook framework).
 
+The connector is compatible with any BSP that exposes the standard WhatsApp Cloud API, including self-hosted platforms like [OpenBSP](https://github.com/matiasbattocchia/open-bsp-api) — an open-source, multi-tenant WhatsApp Business platform built with Deno and Supabase. OpenBSP provides the server-side BSP infrastructure (message storage, webhook management, AI agent orchestration, MCP server, multi-tenant isolation) while the Deveel connector provides the .NET client-side abstraction, giving teams a complete end-to-end WhatsApp messaging stack without proprietary SaaS dependencies.
+
 #### Benefits
 
 - Direct WhatsApp integration without a SaaS intermediary
+- Compatible with self-hosted BSP platforms like OpenBSP for teams that need multi-tenant isolation, message archival, or AI agent integration
 - Enables access to Cloud API features not exposed through Twilio (e.g. native template management)
 
 #### Depends on
