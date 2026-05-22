@@ -1,13 +1,17 @@
+using Bogus;
+
 using Deveel.Messaging;
 
 namespace Deveel.Messaging.Testing;
 
 public static class InteractiveContentBuilder {
+	private static readonly ButtonType[] SupportedButtonTypes = { ButtonType.Url, ButtonType.Postback };
+
 	public static ButtonContent CreateButton(Action<ButtonContent>? configure = null) {
-		var faker = new Bogus.Faker();
+		var faker = new Faker("en") { Random = new Randomizer(0x5EED) };
 		var button = new ButtonContent(
 			faker.Lorem.Word(),
-			faker.PickRandom<ButtonType>(),
+			faker.PickRandom(SupportedButtonTypes),
 			faker.Internet.Url()
 		);
 		configure?.Invoke(button);
@@ -21,7 +25,7 @@ public static class InteractiveContentBuilder {
 	}
 
 	public static QuickReplyContent CreateQuickReply(Action<QuickReplyContent>? configure = null) {
-		var faker = new Bogus.Faker();
+		var faker = new Faker("en") { Random = new Randomizer(0x5EED) };
 		var qr = new QuickReplyContent(
 			faker.Lorem.Word(),
 			faker.Lorem.Sentence(),
@@ -38,7 +42,7 @@ public static class InteractiveContentBuilder {
 	}
 
 	public static CarouselContent CreateCarousel(int cardCount, Action<CarouselContent>? configure = null) {
-		var faker = new Bogus.Faker();
+		var faker = new Faker("en") { Random = new Randomizer(0x5EED) };
 		var carousel = new CarouselContent();
 		for (int i = 0; i < cardCount; i++) {
 			carousel.AddCard(new CarouselCard(
@@ -52,7 +56,7 @@ public static class InteractiveContentBuilder {
 	}
 
 	public static ListPickerContent CreateListPicker(int itemCount, Action<ListPickerContent>? configure = null) {
-		var faker = new Bogus.Faker();
+		var faker = new Faker("en") { Random = new Randomizer(0x5EED) };
 		var picker = new ListPickerContent(
 			faker.Lorem.Sentence(),
 			faker.Lorem.Sentence(),
