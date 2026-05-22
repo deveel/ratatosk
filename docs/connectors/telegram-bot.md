@@ -120,11 +120,10 @@ new MessageBuilder()
 ### Message with inline buttons
 
 ```csharp
-// Using the convenience method
+// The button text is used as the message body
 new MessageBuilder()
     .To(Endpoint.Id("123456789"))
-    .WithText("What would you like to do?")
-    .WithButton("Open Website", ButtonType.Url, "https://example.com")
+    .WithButton("What would you like to do?", ButtonType.Url, "https://example.com")
     .Build();
 ```
 

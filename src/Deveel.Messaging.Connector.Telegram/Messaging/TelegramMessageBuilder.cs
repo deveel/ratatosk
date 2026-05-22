@@ -140,8 +140,11 @@ namespace Deveel.Messaging
             {
                 var tgButton = button.ButtonType switch
                 {
-                    ButtonType.Url => InlineKeyboardButton.WithUrl(button.Text, button.Value ?? ""),
+                    ButtonType.Url => string.IsNullOrWhiteSpace(button.Value)
+                        ? throw new ArgumentException("URL button requires a non-empty URL value", nameof(button))
+                        : InlineKeyboardButton.WithUrl(button.Text, button.Value),
                     ButtonType.Postback => InlineKeyboardButton.WithCallbackData(button.Text, button.Value ?? button.Text),
+                    ButtonType.PhoneNumber => throw new NotSupportedException("PhoneNumber buttons are not supported by Telegram inline keyboards"),
                     _ => InlineKeyboardButton.WithCallbackData(button.Text, button.Value ?? button.Text)
                 };
                 rows.Add(new[] { tgButton });
