@@ -97,6 +97,51 @@ public static class MessageMapper
 
                 return location;
 
+            case "button":
+                var buttonType = (dto.ButtonType ?? "url").ToLowerInvariant() switch
+                {
+                    "postback" => ButtonType.Postback,
+                    "phonenumber" => ButtonType.PhoneNumber,
+                    _ => ButtonType.Url
+                };
+
+                return new ButtonContent(dto.ButtonText ?? "Click", buttonType, dto.ButtonValue);
+
+            case "quickreply":
+                return new QuickReplyContent(
+                    dto.QuickReplyTitle ?? "Yes",
+                    dto.QuickReplyPayload,
+                    dto.QuickReplyImageUrl);
+
+            case "carousel":
+                var carousel = new CarouselContent();
+                if (dto.CarouselCards != null)
+                {
+                    foreach (var card in dto.CarouselCards)
+                    {
+                        carousel.AddCard(new CarouselCard(card.Title ?? "Card", card.Subtitle, card.ImageUrl));
+                    }
+                }
+                return carousel;
+
+            case "listpicker":
+                var style = (dto.ListStyle ?? "compact").ToLowerInvariant() switch
+                {
+                    "large" => ListPickerStyle.Large,
+                    "inlined" => ListPickerStyle.Inlined,
+                    _ => ListPickerStyle.Compact
+                };
+
+                var picker = new ListPickerContent(dto.ListTitle ?? "Options", dto.ListSubtitle, style: style);
+                if (dto.ListItems != null)
+                {
+                    foreach (var item in dto.ListItems)
+                    {
+                        picker.AddItem(new ListPickerItem(item.Title ?? "Item", item.Description, item.ImageUrl));
+                    }
+                }
+                return picker;
+
             case "text":
             default:
                 return new TextContent(dto.Text ?? string.Empty, dto.Encoding);

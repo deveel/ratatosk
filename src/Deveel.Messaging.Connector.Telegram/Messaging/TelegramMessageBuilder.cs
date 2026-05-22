@@ -131,6 +131,47 @@ namespace Deveel.Messaging
         }
 
         /// <summary>
+        /// Creates an <see cref="InlineKeyboardMarkup"/> from a collection of buttons.
+        /// </summary>
+        public static InlineKeyboardMarkup CreateInlineKeyboardMarkup(IReadOnlyList<IButtonContent> buttons)
+        {
+            var rows = new List<InlineKeyboardButton[]>();
+            foreach (var button in buttons)
+            {
+                var tgButton = button.ButtonType switch
+                {
+                    ButtonType.Url => string.IsNullOrWhiteSpace(button.Value)
+                        ? throw new ArgumentException("URL button requires a non-empty URL value", nameof(button))
+                        : InlineKeyboardButton.WithUrl(button.Text, button.Value),
+                    ButtonType.Postback => InlineKeyboardButton.WithCallbackData(button.Text, button.Value ?? button.Text),
+                    ButtonType.PhoneNumber => throw new NotSupportedException("PhoneNumber buttons are not supported by Telegram inline keyboards"),
+                    _ => InlineKeyboardButton.WithCallbackData(button.Text, button.Value ?? button.Text)
+                };
+                rows.Add(new[] { tgButton });
+            }
+
+            return new InlineKeyboardMarkup(rows.ToArray());
+        }
+
+        /// <summary>
+        /// Creates a <see cref="ReplyKeyboardMarkup"/> from a collection of quick replies.
+        /// </summary>
+        public static ReplyKeyboardMarkup CreateReplyKeyboardMarkup(IReadOnlyList<IQuickReplyContent> quickReplies)
+        {
+            var rows = new List<KeyboardButton[]>();
+            foreach (var qr in quickReplies)
+            {
+                rows.Add(new[] { new KeyboardButton(qr.Title) });
+            }
+
+            return new ReplyKeyboardMarkup(rows.ToArray())
+            {
+                OneTimeKeyboard = true,
+                ResizeKeyboard = true
+            };
+        }
+
+        /// <summary>
         /// Creates an <see cref="InputFile"/> from a media content, preferring a URL over
         /// raw byte data.
         /// </summary>

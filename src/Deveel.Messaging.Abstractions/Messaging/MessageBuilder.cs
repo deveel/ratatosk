@@ -194,6 +194,73 @@ namespace Deveel.Messaging
             => WithProperty(KnownMessageProperties.ReplyTo, messageId);
 
         /// <summary>
+        /// Sets the content as a single button.
+        /// </summary>
+        /// <param name="text">The text displayed on the button.</param>
+        /// <param name="buttonType">The type of the button.</param>
+        /// <param name="value">An optional value (URL, callback data, etc.).</param>
+        /// <returns>This instance for chaining.</returns>
+        public MessageBuilder WithButton(string text, ButtonType buttonType, string? value = null)
+            => WithContent(new ButtonContent(text, buttonType, value));
+
+        /// <summary>
+        /// Sets the content as a single quick reply option.
+        /// </summary>
+        /// <param name="title">The title of the quick reply.</param>
+        /// <param name="payload">An optional payload returned when selected.</param>
+        /// <param name="imageUrl">An optional image URL.</param>
+        /// <returns>This instance for chaining.</returns>
+        public MessageBuilder WithQuickReply(string title, string? payload = null, string? imageUrl = null)
+            => WithContent(new QuickReplyContent(title, payload, imageUrl));
+
+        /// <summary>
+        /// Sets the content as a quick reply and configures it with the given action.
+        /// </summary>
+        /// <param name="configure">An action to configure the quick reply.</param>
+        /// <returns>This instance for chaining.</returns>
+        public MessageBuilder WithQuickReply(Action<QuickReplyBuilder> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure);
+            var builder = new QuickReplyBuilder();
+            configure(builder);
+            return WithContent(builder.Build());
+        }
+
+        /// <summary>
+        /// Sets the content as a carousel of cards, configured with a sub-builder.
+        /// </summary>
+        /// <param name="configure">An action to configure the carousel.</param>
+        /// <returns>This instance for chaining.</returns>
+        public MessageBuilder WithCarousel(Action<CarouselBuilder> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure);
+            var builder = new CarouselBuilder();
+            configure(builder);
+            return WithContent(builder.Build());
+        }
+
+        /// <summary>
+        /// Sets the content as a carousel from a collection of cards.
+        /// </summary>
+        /// <param name="cards">The cards to include in the carousel.</param>
+        /// <returns>This instance for chaining.</returns>
+        public MessageBuilder WithCarousel(IEnumerable<CarouselCard> cards)
+            => WithContent(new CarouselContent(cards));
+
+        /// <summary>
+        /// Sets the content as a list picker, configured with a sub-builder.
+        /// </summary>
+        /// <param name="configure">An action to configure the list picker.</param>
+        /// <returns>This instance for chaining.</returns>
+        public MessageBuilder WithListPicker(Action<ListPickerBuilder> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure);
+            var builder = new ListPickerBuilder();
+            configure(builder);
+            return WithContent(builder.Build());
+        }
+
+        /// <summary>
         /// Builds the <see cref="Message"/> instance with the configured values.
         /// </summary>
         /// <returns>The constructed <see cref="Message"/>.</returns>

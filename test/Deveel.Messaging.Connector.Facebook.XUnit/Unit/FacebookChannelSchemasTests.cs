@@ -158,13 +158,15 @@ public class FacebookChannelSchemasTests
         var expectedCapabilities = ChannelCapability.SendMessages | 
                                   ChannelCapability.ReceiveMessages |
                                   ChannelCapability.MediaAttachments |
-                                  ChannelCapability.HealthCheck;
+                                  ChannelCapability.HealthCheck |
+                                  ChannelCapability.InteractiveContent;
 
         Assert.Equal(expectedCapabilities, schema.Capabilities);
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.SendMessages));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.ReceiveMessages));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.MediaAttachments));
         Assert.True(schema.Capabilities.HasFlag(ChannelCapability.HealthCheck));
+        Assert.True(schema.Capabilities.HasFlag(ChannelCapability.InteractiveContent));
     }
 
     [Fact]
@@ -217,7 +219,11 @@ public class FacebookChannelSchemasTests
         var contentTypes = schema.ContentTypes.ToList();
         Assert.Contains(MessageContentType.PlainText, contentTypes);
         Assert.Contains(MessageContentType.Media, contentTypes);
-        Assert.Equal(2, contentTypes.Count);
+        Assert.Contains(MessageContentType.Button, contentTypes);
+        Assert.Contains(MessageContentType.QuickReply, contentTypes);
+        Assert.Contains(MessageContentType.Carousel, contentTypes);
+        Assert.Contains(MessageContentType.ListPicker, contentTypes);
+        Assert.Equal(6, contentTypes.Count);
     }
 
     [Fact]

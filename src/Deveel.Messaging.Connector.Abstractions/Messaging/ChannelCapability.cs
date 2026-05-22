@@ -64,5 +64,11 @@ namespace Deveel.Messaging
 		/// messaging system.
 		/// </summary>
 		HealthCheck = 128,
+
+		/// <summary>
+		/// The connector supports interactive content types
+		/// such as buttons, quick replies, carousels, and list pickers.
+		/// </summary>
+		InteractiveContent = 256,
 	}
 }

@@ -60,5 +60,35 @@ namespace Deveel.Messaging
 		/// The base URL for Facebook Graph API
 		/// </summary>
 		public const string GraphApiBaseUrl = "https://graph.facebook.com";
+
+		/// <summary>
+		/// The maximum number of quick replies allowed per message (Facebook limit).
+		/// </summary>
+		public const int MaxQuickReplies = 13;
+
+		/// <summary>
+		/// The maximum number of buttons per template message (Facebook limit).
+		/// </summary>
+		public const int MaxButtonsPerMessage = 3;
+
+		/// <summary>
+		/// The maximum number of carousel cards (generic template elements).
+		/// </summary>
+		public const int MaxCarouselCards = 10;
+
+		/// <summary>
+		/// The maximum number of buttons per carousel card.
+		/// </summary>
+		public const int MaxButtonsPerCard = 3;
+
+		/// <summary>
+		/// The maximum number of list items.
+		/// </summary>
+		public const int MaxListItems = 4;
+
+		/// <summary>
+		/// The minimum number of list items.
+		/// </summary>
+		public const int MinListItems = 2;
 	}
 }

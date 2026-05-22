@@ -294,6 +294,113 @@ public class FacebookServiceTests
 
     #endregion
 
+    #region BuildMessageContent Tests
+
+    private static object? BuildMessageContent(FacebookMessage message) {
+        var method = typeof(FacebookService).GetMethod("BuildMessageContent",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        return method!.Invoke(null, new object[] { message });
+    }
+
+    private static Dictionary<string, object?> AsDict(object? obj) =>
+        obj as Dictionary<string, object?> ?? new();
+
+    [Fact]
+    public void Should_SetText_When_BuildMessageContentWithTextOnly() {
+        var message = new FacebookMessage { Text = "Hello" };
+
+        var content = BuildMessageContent(message);
+        var dict = AsDict(content);
+
+        Assert.Contains("text", dict.Keys);
+        Assert.Equal("Hello", dict["text"]);
+        Assert.DoesNotContain("attachment", dict.Keys);
+    }
+
+    [Fact]
+    public void Should_SetAttachment_When_BuildMessageContentWithAttachment() {
+        var message = new FacebookMessage {
+            Text = "See this:",
+            Attachment = new FacebookAttachment {
+                Type = "image",
+                Payload = new FacebookPayload {
+                    Url = "https://example.com/img.png",
+                    IsReusable = true
+                }
+            }
+        };
+
+        var content = BuildMessageContent(message);
+        var dict = AsDict(content);
+
+        Assert.Contains("attachment", dict.Keys);
+        var attachment = (dynamic)dict["attachment"]!;
+        Assert.Equal("image", attachment.type);
+    }
+
+    [Fact]
+    public void Should_SetTemplate_When_BuildMessageContentWithTemplate() {
+        var message = new FacebookMessage {
+            Text = "Pick one:",
+            Template = new FacebookTemplate {
+                Payload = new Dictionary<string, object> {
+                    ["template_type"] = "button",
+                    ["text"] = "Tap",
+                    ["buttons"] = new[] { new Dictionary<string, object> { ["type"] = "postback", ["title"] = "A", ["payload"] = "A" } }
+                }
+            }
+        };
+
+        var content = BuildMessageContent(message);
+        var dict = AsDict(content);
+
+        Assert.Contains("attachment", dict.Keys);
+        var attachment = (dynamic)dict["attachment"]!;
+        Assert.Equal("template", attachment.type);
+    }
+
+    [Fact]
+    public void Should_PreferAttachmentOverTemplate_When_BothSet() {
+        var message = new FacebookMessage {
+            Text = "Hi",
+            Attachment = new FacebookAttachment {
+                Type = "image",
+                Payload = new FacebookPayload {
+                    Url = "https://example.com/img.png",
+                    IsReusable = false
+                }
+            },
+            Template = new FacebookTemplate {
+                Payload = new Dictionary<string, object> {
+                    ["template_type"] = "button",
+                    ["text"] = "Tap",
+                    ["buttons"] = Array.Empty<object>()
+                }
+            }
+        };
+
+        var content = BuildMessageContent(message);
+        var dict = AsDict(content);
+        var attachment = (dynamic)dict["attachment"]!;
+
+        // Should be the media attachment, not the template
+        Assert.Equal("image", attachment.type);
+    }
+
+    [Fact]
+    public void Should_NotContainAttachment_When_NeitherSet() {
+        var message = new FacebookMessage {
+            Text = "Just text"
+        };
+
+        var content = BuildMessageContent(message);
+        var dict = AsDict(content);
+
+        Assert.DoesNotContain("attachment", dict.Keys);
+    }
+
+    #endregion
+
     #region Argument Validation Edge Cases
 
     [Fact]

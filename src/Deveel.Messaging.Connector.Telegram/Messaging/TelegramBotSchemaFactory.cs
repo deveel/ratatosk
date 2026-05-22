@@ -27,7 +27,8 @@ namespace Deveel.Messaging
 					ChannelCapability.ReceiveMessages |
 					ChannelCapability.MessageStatusQuery |
 					ChannelCapability.HandleMessageState |
-					ChannelCapability.HealthCheck)
+					ChannelCapability.HealthCheck |
+					ChannelCapability.InteractiveContent)
             .AddParameter(new ChannelParameter(TelegramConnectionParameters.BotToken, DataType.String)
             {
                 IsRequired = true,
@@ -115,6 +116,8 @@ namespace Deveel.Messaging
 				.AddContentType(MessageContentType.Media)
 				.AddContentType(MessageContentType.Location)
 				.AddContentType(MessageContentType.Json) // For custom data
+				.AddContentType(MessageContentType.Button)
+				.AddContentType(MessageContentType.QuickReply)
 				.HandlesMessageEndpoint(EndpointType.Id, e =>
 				{
 					e.CanSend = true;

@@ -215,6 +215,10 @@ public class MessageContentTypeTests
         Assert.Equal(5, (int)MessageContentType.Media);
         Assert.Equal(6, (int)MessageContentType.Json);
         Assert.Equal(7, (int)MessageContentType.Binary);
+        Assert.Equal(9, (int)MessageContentType.Button);
+        Assert.Equal(10, (int)MessageContentType.QuickReply);
+        Assert.Equal(11, (int)MessageContentType.Carousel);
+        Assert.Equal(12, (int)MessageContentType.ListPicker);
     }
 
     [Fact]
@@ -238,6 +242,8 @@ public class MessageContentTypeTests
     [InlineData(MessageContentType.Media)]
     [InlineData(MessageContentType.Json)]
     [InlineData(MessageContentType.Binary)]
+    [InlineData(MessageContentType.Button)]
+    [InlineData(MessageContentType.QuickReply)]
     public void Should_CanBeUsedInSwitchStatement_When_MessageContentTypeIsInvoked(MessageContentType contentType)
     {
         // Act
@@ -251,6 +257,10 @@ public class MessageContentTypeTests
             MessageContentType.Media => "Media content",
             MessageContentType.Json => "JSON content",
             MessageContentType.Binary => "Binary content",
+            MessageContentType.Button => "Button content",
+            MessageContentType.QuickReply => "Quick reply content",
+            MessageContentType.Carousel => "Carousel content",
+            MessageContentType.ListPicker => "List picker content",
             _ => "Unknown content type"
         };
 
@@ -269,6 +279,10 @@ public class MessageContentTypeTests
         var mediaString = MessageContentType.Media.ToString();
         var jsonString = MessageContentType.Json.ToString();
         var binaryString = MessageContentType.Binary.ToString();
+        var buttonString = MessageContentType.Button.ToString();
+        var quickReplyString = MessageContentType.QuickReply.ToString();
+        var carouselString = MessageContentType.Carousel.ToString();
+        var listPickerString = MessageContentType.ListPicker.ToString();
 
         // Assert
         Assert.Equal("PlainText", plainTextString);
@@ -278,6 +292,10 @@ public class MessageContentTypeTests
         Assert.Equal("Media", mediaString);
         Assert.Equal("Json", jsonString);
         Assert.Equal("Binary", binaryString);
+        Assert.Equal("Button", buttonString);
+        Assert.Equal("QuickReply", quickReplyString);
+        Assert.Equal("Carousel", carouselString);
+        Assert.Equal("ListPicker", listPickerString);
     }
 
     [Fact]
@@ -293,3 +311,92 @@ public class MessageContentTypeTests
         Assert.Equal(1, (int)minValue);
     }
 }
+
+public class ButtonTypeTests
+{
+    [Fact]
+    public void Should_HaveCorrectValues_When_ButtonTypeIsInvoked()
+    {
+        Assert.Equal(0, (int)ButtonType.Url);
+        Assert.Equal(1, (int)ButtonType.Postback);
+        Assert.Equal(2, (int)ButtonType.PhoneNumber);
+    }
+
+    [Fact]
+    public void Should_AllValuesAreDistinct_When_ButtonTypeIsInvoked()
+    {
+        var values = Enum.GetValues<ButtonType>();
+        var distinctValues = values.Distinct().ToArray();
+        Assert.Equal(values.Length, distinctValues.Length);
+    }
+
+    [Theory]
+    [InlineData(ButtonType.Url)]
+    [InlineData(ButtonType.Postback)]
+    [InlineData(ButtonType.PhoneNumber)]
+    public void Should_CanBeUsedInSwitchStatement_When_ButtonTypeIsInvoked(ButtonType buttonType)
+    {
+        var description = buttonType switch
+        {
+            ButtonType.Url => "URL button",
+            ButtonType.Postback => "Postback button",
+            ButtonType.PhoneNumber => "Phone number button",
+            _ => "Unknown button type"
+        };
+
+        Assert.NotEqual("Unknown button type", description);
+    }
+
+    [Fact]
+    public void Should_CanBeConvertedToString_When_ButtonTypeIsInvoked()
+    {
+        Assert.Equal("Url", ButtonType.Url.ToString());
+        Assert.Equal("Postback", ButtonType.Postback.ToString());
+        Assert.Equal("PhoneNumber", ButtonType.PhoneNumber.ToString());
+    }
+}
+
+public class ListPickerStyleTests
+{
+    [Fact]
+    public void Should_HaveCorrectValues_When_ListPickerStyleIsInvoked()
+    {
+        Assert.Equal(0, (int)ListPickerStyle.Inlined);
+        Assert.Equal(1, (int)ListPickerStyle.Compact);
+        Assert.Equal(2, (int)ListPickerStyle.Large);
+    }
+
+    [Fact]
+    public void Should_AllValuesAreDistinct_When_ListPickerStyleIsInvoked()
+    {
+        var values = Enum.GetValues<ListPickerStyle>();
+        var distinctValues = values.Distinct().ToArray();
+        Assert.Equal(values.Length, distinctValues.Length);
+    }
+
+    [Theory]
+    [InlineData(ListPickerStyle.Inlined)]
+    [InlineData(ListPickerStyle.Compact)]
+    [InlineData(ListPickerStyle.Large)]
+    public void Should_CanBeUsedInSwitchStatement_When_ListPickerStyleIsInvoked(ListPickerStyle style)
+    {
+        var description = style switch
+        {
+            ListPickerStyle.Inlined => "Inlined list",
+            ListPickerStyle.Compact => "Compact list",
+            ListPickerStyle.Large => "Large list",
+            _ => "Unknown style"
+        };
+
+        Assert.NotEqual("Unknown style", description);
+    }
+
+    [Fact]
+    public void Should_CanBeConvertedToString_When_ListPickerStyleIsInvoked()
+    {
+        Assert.Equal("Inlined", ListPickerStyle.Inlined.ToString());
+        Assert.Equal("Compact", ListPickerStyle.Compact.ToString());
+        Assert.Equal("Large", ListPickerStyle.Large.ToString());
+    }
+}
+

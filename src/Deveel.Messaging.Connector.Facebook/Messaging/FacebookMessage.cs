@@ -24,5 +24,10 @@ namespace Deveel.Messaging
         /// Gets or sets the quick reply options available to the recipient.
         /// </summary>
         public List<FacebookQuickReply>? QuickReplies { get; set; }
+
+        /// <summary>
+        /// Gets or sets the structured template payload (button, generic, list).
+        /// </summary>
+        public FacebookTemplate? Template { get; set; }
     }
 }
