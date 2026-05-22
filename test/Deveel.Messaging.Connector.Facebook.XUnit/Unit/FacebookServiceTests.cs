@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
-using RestSharp;
 using Moq;
 using Moq.Protected;
 using System.Net;
@@ -12,7 +11,7 @@ using System.Text.Json;
 namespace Deveel.Messaging;
 
 /// <summary>
-/// Unit tests for the FacebookService class using RestSharp for Facebook Graph API integration.
+/// Unit tests for the FacebookService class using HttpClient for Facebook Graph API integration.
 /// </summary>
 [Trait("Category", "Unit")]
 [Trait("Layer", "Infrastructure")]
@@ -206,26 +205,20 @@ public class FacebookServiceTests
     }
 
     [Fact]
-    public void Should_CreateDefaultClient_When_ConstructorWithoutRestClient()
+    public void Should_CreateDefaultClient_When_ConstructorWithoutHttpClient()
     {
-        // Arrange
-        // Act
         var service = new FacebookService();
 
-        // Assert
         Assert.NotNull(service);
     }
 
     [Fact]
-    public void Should_UseProvidedClient_When_ConstructorWithRestClient()
+    public void Should_UseProvidedClient_When_ConstructorWithHttpClient()
     {
-        // Arrange
-        var restClient = new RestClient("https://graph.facebook.com");
+        using var httpClient = new HttpClient { BaseAddress = new Uri(FacebookConnectorConstants.GraphApiBaseUrl) };
 
-        // Act
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
 
-        // Assert
         Assert.NotNull(service);
     }
 
@@ -520,21 +513,20 @@ public class FacebookServiceTests
 
     #region SendMessageAsync API Interaction Tests
 
-    private static (Mock<HttpMessageHandler> Handler, RestClient Client) CreateMockRestClient()
+    private static (Mock<HttpMessageHandler> Handler, HttpClient Client) CreateMockHttpClient()
     {
         var handlerMock = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(handlerMock.Object)
         {
             BaseAddress = new Uri(FacebookConnectorConstants.GraphApiBaseUrl)
         };
-        var restClient = new RestClient(httpClient);
-        return (handlerMock, restClient);
+        return (handlerMock, httpClient);
     }
 
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_ValidTextOnly()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -545,7 +537,7 @@ public class FacebookServiceTests
                 Content = new StringContent("""{"message_id":"m_mid.123456"}""")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -564,7 +556,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithAttachment()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -575,7 +567,7 @@ public class FacebookServiceTests
                 Content = new StringContent("""{"message_id":"m_mid.789"}""")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -605,7 +597,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithTemplate()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -616,7 +608,7 @@ public class FacebookServiceTests
                 Content = new StringContent("""{"message_id":"m_mid.tpl"}""")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -654,7 +646,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithQuickReplies()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -665,7 +657,7 @@ public class FacebookServiceTests
                 Content = new StringContent("""{"message_id":"m_mid.qr"}""")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -691,7 +683,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithNotificationTypeSilent()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -702,7 +694,7 @@ public class FacebookServiceTests
                 Content = new StringContent("""{"message_id":"m_mid.silent"}""")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -721,7 +713,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithTag()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -732,7 +724,7 @@ public class FacebookServiceTests
                 Content = new StringContent("""{"message_id":"m_mid.tag"}""")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -751,7 +743,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_ThrowConnectorException_When_ApiReturnsError()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -770,7 +762,7 @@ public class FacebookServiceTests
                     """)
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -789,7 +781,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_ThrowConnectorExceptionWithInvalidAccessToken_When_ApiReturnsTokenError()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -808,7 +800,7 @@ public class FacebookServiceTests
                     """)
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -826,7 +818,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_ThrowConnectorException_When_ApiReturnsEmptyResponse()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -837,7 +829,7 @@ public class FacebookServiceTests
                 Content = new StringContent("")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -855,7 +847,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_ThrowConnectorException_When_ApiReturnsMalformedJson()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -866,7 +858,7 @@ public class FacebookServiceTests
                 Content = new StringContent("this is not json")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var request = new FacebookMessageRequest
@@ -891,7 +883,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_FetchPageSuccessfully_When_ValidResponse()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -908,7 +900,7 @@ public class FacebookServiceTests
                     """)
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var result = await service.FetchPageAsync("123456789", TestContext.Current.CancellationToken);
@@ -922,7 +914,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_FallbackToPageId_When_ResponseMissingId()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -938,7 +930,7 @@ public class FacebookServiceTests
                     """)
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var result = await service.FetchPageAsync("my-page-id", TestContext.Current.CancellationToken);
@@ -951,7 +943,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_ReturnNull_When_FetchPageApiReturnsEmptyContent()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -962,7 +954,7 @@ public class FacebookServiceTests
                 Content = new StringContent("")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var result = await service.FetchPageAsync("123456789", TestContext.Current.CancellationToken);
@@ -973,7 +965,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_ThrowConnectorException_When_FetchPageApiReturnsError()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -992,7 +984,7 @@ public class FacebookServiceTests
                     """)
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var ex = await Assert.ThrowsAsync<ConnectorException>(() =>
@@ -1005,7 +997,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_ThrowConnectorExceptionWithInvalidAccessToken_When_FetchPageApiReturnsTokenError()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -1024,7 +1016,7 @@ public class FacebookServiceTests
                     """)
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var ex = await Assert.ThrowsAsync<ConnectorException>(() =>
@@ -1036,7 +1028,7 @@ public class FacebookServiceTests
     [Fact]
     public async Task Should_ThrowConnectorException_When_FetchPageApiReturnsMalformedJson()
     {
-        var (handlerMock, restClient) = CreateMockRestClient();
+        var (handlerMock, httpClient) = CreateMockHttpClient();
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
@@ -1047,7 +1039,7 @@ public class FacebookServiceTests
                 Content = new StringContent("not json at all")
             });
 
-        var service = new FacebookService(restClient);
+        var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
 
         var ex = await Assert.ThrowsAsync<ConnectorException>(() =>

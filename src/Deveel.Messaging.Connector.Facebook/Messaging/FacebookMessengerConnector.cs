@@ -156,7 +156,7 @@ namespace Deveel.Messaging
             result.AdditionalData["FacebookMessageId"] = response.MessageId;
             result.AdditionalData["RecipientId"] = response.RecipientId;
             result.AdditionalData["PageId"] = _pageId ?? "";
-            result.AdditionalData["HttpClient"] = "RestSharp";
+            result.AdditionalData["HttpClient"] = "HttpClient";
             result.AdditionalData["ApiVersion"] = FacebookConnectorConstants.GraphApiVersion;
 
             return result;
@@ -188,7 +188,7 @@ namespace Deveel.Messaging
                 Uptime = DateTime.UtcNow - _startTime
             };
 
-            // Add RestSharp and Graph API specific health metrics
+            // Add Graph API specific health metrics
             health.Metrics["ApiVersion"] = FacebookConnectorConstants.GraphApiVersion;
             health.Metrics["PageId"] = _pageId ?? "";
             health.Metrics["GraphApiCompliance"] = "Full";
