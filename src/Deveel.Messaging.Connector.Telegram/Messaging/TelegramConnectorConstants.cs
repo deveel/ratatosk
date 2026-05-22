@@ -66,11 +66,6 @@ namespace Deveel.Messaging
 		public const int MaxInlineKeyboardRows = 100;
 
 		/// <summary>
-		/// The maximum number of buttons per inline keyboard row.
-		/// </summary>
-		public const int MaxInteractiveButtonsPerRow = 8;
-
-		/// <summary>
 		/// The maximum number of quick reply buttons.
 		/// </summary>
 		public const int MaxQuickReplies = 12;
