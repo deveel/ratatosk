@@ -53,6 +53,34 @@ public class InteractiveContentValidatorTests {
 	}
 
 	[Fact]
+	public void Should_ReturnError_When_ValidateButtonCountListPickerExceedsMax() {
+		var picker = new ListPickerContent(items: new[] {
+			new ListPickerItem("Item 1"),
+			new ListPickerItem("Item 2"),
+			new ListPickerItem("Item 3")
+		});
+		var message = new Message { Content = picker };
+
+		var result = InteractiveContentValidator.ValidateButtonCount(message, 2);
+
+		Assert.NotNull(result);
+		Assert.Contains("exceed the maximum", result.ErrorMessage);
+	}
+
+	[Fact]
+	public void Should_ReturnNull_When_ValidateButtonCountListPickerWithinLimit() {
+		var picker = new ListPickerContent(items: new[] {
+			new ListPickerItem("Item 1"),
+			new ListPickerItem("Item 2")
+		});
+		var message = new Message { Content = picker };
+
+		var result = InteractiveContentValidator.ValidateButtonCount(message, 3);
+
+		Assert.Null(result);
+	}
+
+	[Fact]
 	public void Should_ReturnNull_When_ValidateButtonCountCarouselWithinLimit() {
 		var carousel = new CarouselContent();
 		carousel.AddCard(new CarouselCard("Card", "Sub") {

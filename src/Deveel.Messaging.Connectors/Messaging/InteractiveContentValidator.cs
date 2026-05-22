@@ -26,11 +26,8 @@ namespace Deveel.Messaging {
 				}
 			}
 
-			if (message.Content is IListPickerContent listPicker) {
-				if (listPicker.Items.Count > 0) {
-					var lastItem = listPicker.Items[listPicker.Items.Count - 1];
-				}
-			}
+			if (message.Content is IListPickerContent listPicker && listPicker.Items.Count > maxButtons)
+				return new ValidationResult($"List picker items exceed the maximum of {maxButtons}", new[] { "Content.Items" });
 
 			return null;
 		}
