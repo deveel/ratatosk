@@ -1,3 +1,5 @@
+using Deveel.Messaging;
+
 namespace Deveel.Messaging.Testing;
 
 public static class InteractiveContentBuilder {

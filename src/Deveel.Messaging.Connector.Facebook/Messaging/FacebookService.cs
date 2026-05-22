@@ -222,7 +222,7 @@ namespace Deveel.Messaging
                 content["text"] = message.Text;
             }
 
-            // Add attachment
+            // Add attachment (media or template — mutually exclusive in Facebook API)
             if (message.Attachment != null)
             {
                 content["attachment"] = new
@@ -235,9 +235,7 @@ namespace Deveel.Messaging
                     }
                 };
             }
-
-            // Add structured template attachment
-            if (message.Template != null)
+            else if (message.Template != null)
             {
                 content["attachment"] = new
                 {
