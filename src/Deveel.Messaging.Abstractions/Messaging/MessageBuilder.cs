@@ -220,6 +220,7 @@ namespace Deveel.Messaging
         /// <returns>This instance for chaining.</returns>
         public MessageBuilder WithQuickReply(Action<QuickReplyBuilder> configure)
         {
+            ArgumentNullException.ThrowIfNull(configure);
             var builder = new QuickReplyBuilder();
             configure(builder);
             return WithContent(builder.Build());
@@ -232,6 +233,7 @@ namespace Deveel.Messaging
         /// <returns>This instance for chaining.</returns>
         public MessageBuilder WithCarousel(Action<CarouselBuilder> configure)
         {
+            ArgumentNullException.ThrowIfNull(configure);
             var builder = new CarouselBuilder();
             configure(builder);
             return WithContent(builder.Build());
@@ -252,6 +254,7 @@ namespace Deveel.Messaging
         /// <returns>This instance for chaining.</returns>
         public MessageBuilder WithListPicker(Action<ListPickerBuilder> configure)
         {
+            ArgumentNullException.ThrowIfNull(configure);
             var builder = new ListPickerBuilder();
             configure(builder);
             return WithContent(builder.Build());

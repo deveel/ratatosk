@@ -2,6 +2,8 @@ using Xunit;
 
 using Telegram.Bot.Types.ReplyMarkups;
 
+using Deveel.Messaging;
+
 namespace Deveel.Messaging.Testing;
 
 public static class TelegramInteractiveMappingAssertions {
