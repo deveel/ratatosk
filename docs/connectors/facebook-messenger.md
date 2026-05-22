@@ -31,8 +31,8 @@ The `PageAccessToken` must be a long-lived token (valid ~60 days). Generate it f
 | Provider | `Facebook` |
 | Type | `Messenger` |
 | Version | `1.0.0` |
-| Capabilities | `SendMessages`, `ReceiveMessages`, `MediaAttachments` |
-| Content types | `PlainText`, `Media`, `Json` |
+| Capabilities | `SendMessages`, `ReceiveMessages`, `MediaAttachments`, `InteractiveContent` |
+| Content types | `PlainText`, `Media`, `Json`, `Button`, `QuickReply`, `Carousel`, `ListPicker` |
 | Endpoints | `UserId` (PSID), `Id` (page-scoped ID) |
 | Authentication | API Key (`PageAccessToken`) |
 
@@ -75,6 +75,55 @@ new MessageBuilder()
     .To(Endpoint.User("psid-123"))
     .WithText("Choose an option:")
     .WithQuickReplies("[{\"content_type\":\"text\",\"title\":\"Yes\",\"payload\":\"YES\"},{\"content_type\":\"text\",\"title\":\"No\",\"payload\":\"NO\"}]")
+    .Build();
+```
+
+### Message with buttons
+
+```csharp
+// Using the convenience method
+new MessageBuilder()
+    .To(Endpoint.User("psid-123"))
+    .WithButton("Open Website", ButtonType.Url, "https://example.com")
+    .Build();
+```
+
+### Message with quick reply options
+
+```csharp
+// Single quick reply option
+new MessageBuilder()
+    .To(Endpoint.User("psid-123"))
+    .WithQuickReply("Yes", "YES_PAYLOAD")
+    .Build();
+```
+
+### Message with carousel (horizontal cards)
+
+```csharp
+// Using the sub-builder API
+new MessageBuilder()
+    .To(Endpoint.User("psid-123"))
+    .WithCarousel(carousel => carousel
+        .AddCard("https://example.com/img1.jpg", "Product A", "Amazing", card =>
+            card.WithButton("Buy", ButtonType.Postback, "BUY_A")
+                .WithButton("Details", ButtonType.Url, "https://example.com/a"))
+        .AddCard("https://example.com/img2.jpg", "Product B", "Even better", card =>
+            card.WithButton("Buy", ButtonType.Postback, "BUY_B")
+                .WithButton("Details", ButtonType.Url, "https://example.com/b")))
+    .Build();
+```
+
+### Message with list picker
+
+```csharp
+// Using the sub-builder API
+new MessageBuilder()
+    .To(Endpoint.User("psid-123"))
+    .WithListPicker(list => list
+        .WithStyle(ListPickerStyle.Compact)
+        .AddItem("Pizza", "Delicious cheese pizza")
+        .AddItem("Burger", "Juicy beef burger"))
     .Build();
 ```
 

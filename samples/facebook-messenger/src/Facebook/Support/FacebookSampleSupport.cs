@@ -68,8 +68,13 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagi
                     "facebook validate media",
                     FacebookChannelSchemas.MediaMessenger.ValidateMessage(CreateMediaMessage("USER-PSID", "https://example.com/welcome.png")));
                 break;
+            case "button":
+                SampleOutputHelper.PrintValidationResult(
+                    "facebook validate button",
+                    FacebookChannelSchemas.FacebookMessenger.ValidateMessage(CreateButtonMessage("USER-PSID")));
+                break;
             default:
-                Console.WriteLine($"Unsupported validation kind '{kind}'. Use text or media.");
+                Console.WriteLine($"Unsupported validation kind '{kind}'. Use text, media, or button.");
                 break;
         }
     }
@@ -110,12 +115,18 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagi
         }
         var kind = SampleConsolePrompts.Select(
             "Select the Facebook message type",
-            ["Text", "Media"],
+            ["Text", "Media", "Button", "Quick Reply", "Carousel", "List Picker"],
             GetValue("MediaUrl", "FACEBOOK_MEDIA_URL") is null ? "Text" : "Media");
 
-        var message = kind == "Text"
-            ? BuildTextMessage(recipient)
-            : BuildMediaMessage(recipient);
+        var message = kind switch
+        {
+            "Text" => BuildTextMessage(recipient),
+            "Media" => BuildMediaMessage(recipient),
+            "Button" => BuildButtonMessage(recipient),
+            "Quick Reply" => BuildQuickReplyMessage(recipient),
+            "Carousel" => BuildCarouselMessage(recipient),
+            _ => BuildListPickerMessage(recipient)
+        };
 
         SampleOutputHelper.PrintSendResult($"facebook send {kind.ToLowerInvariant()}", await client.SendAsync("facebook", message, CancellationToken.None));
     }
@@ -193,6 +204,99 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagi
             SampleConsolePrompts.RequiredText("Media file name", "welcome.png"),
             SampleConsolePrompts.RequiredText("Media URL", defaultMediaUrl),
             SampleConsolePrompts.Select("Messaging type", ["UPDATE", "RESPONSE", "MESSAGE_TAG"], "UPDATE"));
+    }
+
+    private Message BuildButtonMessage(string recipientId)
+    {
+        var text = SampleConsolePrompts.RequiredText("Button text", "Click here");
+        var buttonType = SampleConsolePrompts.Select("Button type", ["Url", "Postback", "PhoneNumber"], "Url");
+        var value = buttonType == "Url"
+            ? SampleConsolePrompts.RequiredText("URL", "https://example.com")
+            : SampleConsolePrompts.OptionalText("Payload", "BTN_PAYLOAD");
+
+        return CreateButtonMessage(
+            recipientId,
+            SampleConsolePrompts.RequiredText("Message ID", "facebook-button-sample"),
+            text,
+            buttonType switch
+            {
+                "Url" => ButtonType.Url,
+                "Postback" => ButtonType.Postback,
+                _ => ButtonType.PhoneNumber
+            },
+            value);
+    }
+
+    private Message BuildQuickReplyMessage(string recipientId)
+    {
+        var title = SampleConsolePrompts.RequiredText("Quick reply title", "Start");
+        var payload = SampleConsolePrompts.OptionalText("Payload", "QR_PAYLOAD");
+        var imageUrl = SampleConsolePrompts.OptionalText("Image URL (optional)");
+
+        return CreateQuickReplyMessage(
+            recipientId,
+            SampleConsolePrompts.RequiredText("Message ID", "facebook-quickreply-sample"),
+            title,
+            payload,
+            imageUrl);
+    }
+
+    private Message BuildCarouselMessage(string recipientId)
+    {
+        var cardCount = SampleConsolePrompts.RequiredInt("Number of cards", 3);
+
+        var carousel = new CarouselContent();
+        for (int i = 1; i <= cardCount; i++)
+        {
+            Console.WriteLine($"--- Card {i} ---");
+            var card = new CarouselCard(
+                SampleConsolePrompts.RequiredText($"Card {i} title", $"Card {i}"),
+                SampleConsolePrompts.OptionalText($"Card {i} subtitle"),
+                SampleConsolePrompts.OptionalText($"Card {i} image URL"));
+            carousel.AddCard(card);
+        }
+
+        return new Message
+        {
+            Id = SampleConsolePrompts.RequiredText("Message ID", "facebook-carousel-sample"),
+            Receiver = Endpoint.User(recipientId),
+            Content = carousel,
+            Properties = new Dictionary<string, MessageProperty>
+            {
+                ["MessagingType"] = new("MessagingType", "RESPONSE")
+            }
+        };
+    }
+
+    private Message BuildListPickerMessage(string recipientId)
+    {
+        var title = SampleConsolePrompts.RequiredText("List title", "Options");
+        var style = SampleConsolePrompts.Select("List style", ["Compact", "Large"], "Compact");
+        var itemCount = SampleConsolePrompts.RequiredInt("Number of items", 3);
+
+        var picker = new ListPickerContent(title,
+            SampleConsolePrompts.OptionalText("Subtitle (optional)"),
+            style: style == "Compact" ? ListPickerStyle.Compact : ListPickerStyle.Large);
+
+        for (int i = 1; i <= itemCount; i++)
+        {
+            Console.WriteLine($"--- Item {i} ---");
+            picker.AddItem(new ListPickerItem(
+                SampleConsolePrompts.RequiredText($"Item {i} title", $"Option {i}"),
+                SampleConsolePrompts.OptionalText($"Item {i} description"),
+                SampleConsolePrompts.OptionalText($"Item {i} image URL")));
+        }
+
+        return new Message
+        {
+            Id = SampleConsolePrompts.RequiredText("Message ID", "facebook-list-sample"),
+            Receiver = Endpoint.User(recipientId),
+            Content = picker,
+            Properties = new Dictionary<string, MessageProperty>
+            {
+                ["MessagingType"] = new("MessagingType", "RESPONSE")
+            }
+        };
     }
 
     private static Message CreateTextMessage(string recipientId)
@@ -280,6 +384,50 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagi
         {
             Console.WriteLine($"  - id={message.Id}, from={message.Sender?.Address}, to={message.Receiver?.Address}, content={message.Content?.GetType().Name}");
         }
+    }
+
+    private static Message CreateButtonMessage(string recipientId)
+        => CreateButtonMessage(recipientId, "facebook-button-sample", "Click here", ButtonType.Url, "https://example.com");
+
+    private static Message CreateButtonMessage(
+        string recipientId,
+        string id,
+        string text,
+        ButtonType buttonType,
+        string? value)
+    {
+        return new Message
+        {
+            Id = id,
+            Receiver = Endpoint.User(recipientId),
+            Content = new ButtonContent(text, buttonType, value),
+            Properties = new Dictionary<string, MessageProperty>
+            {
+                ["MessagingType"] = new("MessagingType", "RESPONSE")
+            }
+        };
+    }
+
+    private static Message CreateQuickReplyMessage(string recipientId)
+        => CreateQuickReplyMessage(recipientId, "facebook-quickreply-sample", "Start", "QR_PAYLOAD", null);
+
+    private static Message CreateQuickReplyMessage(
+        string recipientId,
+        string id,
+        string title,
+        string? payload,
+        string? imageUrl)
+    {
+        return new Message
+        {
+            Id = id,
+            Receiver = Endpoint.User(recipientId),
+            Content = new QuickReplyContent(title, payload, imageUrl),
+            Properties = new Dictionary<string, MessageProperty>
+            {
+                ["MessagingType"] = new("MessagingType", "RESPONSE")
+            }
+        };
     }
 
     private const string DefaultReceivePayload = """

@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Deveel.Messaging.Connector.Facebook\Deveel.Messaging.Connector.Facebook.csproj" />
     <ProjectReference Include="..\..\test\Deveel.Messaging.Connector.Abstractions.XUnit\Deveel.Messaging.Connector.Abstractions.XUnit.csproj" />
+    <ProjectReference Include="..\..\test\Deveel.Messaging.Testing\Deveel.Messaging.Testing.csproj" />
   </ItemGroup>
 
 </Project>

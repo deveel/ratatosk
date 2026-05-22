@@ -236,6 +236,16 @@ namespace Deveel.Messaging
                 };
             }
 
+            // Add structured template attachment
+            if (message.Template != null)
+            {
+                content["attachment"] = new
+                {
+                    type = "template",
+                    payload = message.Template.Payload
+                };
+            }
+
             // Add quick replies with Facebook specification compliance
             if (message.QuickReplies != null && message.QuickReplies.Count > 0)
             {

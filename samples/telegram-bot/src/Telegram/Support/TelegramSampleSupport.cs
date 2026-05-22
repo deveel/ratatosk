@@ -69,8 +69,13 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory, IMessagi
                     "telegram validate location",
                     TelegramChannelSchemas.TelegramBot.ValidateMessage(CreateLocationMessage("123456789", 45.4642, 9.1900)));
                 break;
+            case "button":
+                SampleOutputHelper.PrintValidationResult(
+                    "telegram validate button",
+                    TelegramChannelSchemas.TelegramBot.ValidateMessage(CreateButtonMessage("123456789")));
+                break;
             default:
-                Console.WriteLine($"Unsupported validation kind '{kind}'. Use text or location.");
+                Console.WriteLine($"Unsupported validation kind '{kind}'. Use text, location, or button.");
                 break;
         }
     }
@@ -109,12 +114,14 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory, IMessagi
             return;
         }
 
-        var kind = SampleConsolePrompts.Select("Select the Telegram message type", ["Text", "Media", "Location"], "Text");
+        var kind = SampleConsolePrompts.Select("Select the Telegram message type", ["Text", "Media", "Location", "Button", "Quick Reply"], "Text");
         var message = kind switch
         {
             "Text" => BuildTextMessage(chatId),
             "Media" => BuildMediaMessage(chatId),
-            _ => BuildLocationMessage(chatId)
+            "Location" => BuildLocationMessage(chatId),
+            "Button" => BuildButtonMessage(chatId),
+            _ => BuildQuickReplyMessage(chatId)
         };
 
         SampleOutputHelper.PrintSendResult($"telegram send {kind.ToLowerInvariant()}", await client.SendAsync("telegram", message, CancellationToken.None));
@@ -239,6 +246,61 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory, IMessagi
             Id = id,
             Receiver = Endpoint.Id(chatId),
             Content = new LocationContent(latitude, longitude).WithLivePeriod(livePeriod)
+        };
+    }
+
+    private Message BuildButtonMessage(string chatId)
+    {
+        var text = SampleConsolePrompts.RequiredText("Button text", "Click here");
+        var buttonType = SampleConsolePrompts.Select("Button type", ["Url", "Postback"], "Url");
+        var value = buttonType == "Url"
+            ? SampleConsolePrompts.RequiredText("URL", "https://example.com")
+            : SampleConsolePrompts.RequiredText("Callback data", "BTN_PAYLOAD");
+
+        return CreateButtonMessage(
+            SampleConsolePrompts.RequiredText("Message ID", "telegram-button-sample"),
+            chatId,
+            text,
+            buttonType == "Url" ? ButtonType.Url : ButtonType.Postback,
+            value);
+    }
+
+    private Message BuildQuickReplyMessage(string chatId)
+    {
+        var title = SampleConsolePrompts.RequiredText("Quick reply title", "Yes");
+
+        return new Message
+        {
+            Id = SampleConsolePrompts.RequiredText("Message ID", "telegram-quickreply-sample"),
+            Receiver = Endpoint.Id(chatId),
+            Content = new QuickReplyContent(title, title),
+            Properties = new Dictionary<string, MessageProperty>
+            {
+                ["ParseMode"] = new("ParseMode", "Html")
+            }
+        };
+    }
+
+    private static Message CreateButtonMessage(string chatId)
+        => CreateButtonMessage("telegram-button-sample", chatId, "Click here", ButtonType.Url, "https://example.com");
+
+    private static Message CreateButtonMessage(
+        string id,
+        string chatId,
+        string text,
+        ButtonType buttonType,
+        string? value)
+    {
+        return new Message
+        {
+            Id = id,
+            Receiver = Endpoint.Id(chatId),
+            Content = new ButtonContent(text, buttonType, value),
+            Properties = new Dictionary<string, MessageProperty>
+            {
+                ["ParseMode"] = new("ParseMode", "Html"),
+                ["DisableWebPagePreview"] = new("DisableWebPagePreview", true)
+            }
         };
     }
 

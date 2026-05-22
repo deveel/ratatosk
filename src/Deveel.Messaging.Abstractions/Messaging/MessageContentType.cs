@@ -71,6 +71,26 @@ namespace Deveel.Messaging
 		/// This represents location data including latitude and longitude coordinates,
 		/// and optionally additional location-specific properties.
 		/// </remarks>
-		Location = 8
+		Location = 8,
+
+		/// <summary>
+		/// The content of the message is a button with a call-to-action.
+		/// </summary>
+		Button = 9,
+
+		/// <summary>
+		/// The content of the message is a quick reply for one-tap responses.
+		/// </summary>
+		QuickReply = 10,
+
+		/// <summary>
+		/// The content of the message is a carousel of horizontally scrollable cards.
+		/// </summary>
+		Carousel = 11,
+
+		/// <summary>
+		/// The content of the message is a structured list picker.
+		/// </summary>
+		ListPicker = 12
 	}
 }

@@ -128,7 +128,7 @@ new Message
 
 Different channels support different kinds of content. SMS carries plain text, email supports HTML and attachments, chat apps handle media and locations, and push notifications can carry structured JSON payloads. The framework models this with separate content classes, each implementing `IMessageContent`. When you build a message, you choose the content type that matches your channel — and the schema validator confirms the connector supports it.
 
-Eight content classes implement `IMessageContent`. The base class `MessageContent` provides a static factory `MessageContent.Create(IMessageContent?)` that auto-selects the correct subclass.
+Twelve content classes implement `IMessageContent`. The base class `MessageContent` provides a static factory `MessageContent.Create(IMessageContent?)` that auto-selects the correct subclass.
 
 ### TextContent
 
@@ -256,6 +256,110 @@ new Message { Content = multipart };
 ```
 
 Each part can be any `IMessageContentPart` implementation: `TextContentPart`, `HtmlContentPart`.
+
+### ButtonContent
+
+For sending interactive buttons in chat channels. Each button has a `Text`, `ButtonType` (`Url`, `Postback`, or `PhoneNumber`), and an optional `Value` (URL, callback data, or phone number):
+
+```csharp
+// Using the convenience method on MessageBuilder
+new MessageBuilder()
+    .WithButton("Open Website", ButtonType.Url, "https://example.com")
+    .Build();
+
+// Using explicit constructor
+new Message { Content = new ButtonContent("Open Website", ButtonType.Url, "https://example.com") };
+```
+
+Properties: `Text`, `ButtonType`, `Value`.
+
+### QuickReplyContent
+
+For offering a single quick, one-tap reply option that appears above the keyboard in chat apps:
+
+```csharp
+// Using the convenience method on MessageBuilder
+new MessageBuilder()
+    .WithQuickReply("Yes", "YES_PAYLOAD")
+    .Build();
+
+// With sub-builder configuration
+new MessageBuilder()
+    .WithQuickReply(qr => qr
+        .WithTitle("Maybe")
+        .WithPayload("MAYBE_PAYLOAD"))
+    .Build();
+
+// Using explicit constructor
+new Message { Content = new QuickReplyContent("No", "NO_PAYLOAD") };
+```
+
+Properties: `Title`, `Payload`, `ImageUrl`.
+
+### CarouselContent
+
+For sending a horizontal scrollable set of cards, each with an image, title, subtitle, and optional buttons (Facebook Messenger). Use the sub-builder API for a fluent construction:
+
+```csharp
+// Using the sub-builder API
+new MessageBuilder()
+    .WithCarousel(carousel => carousel
+        .AddCard("https://example.com/img1.jpg", "Product A", "Amazing", card =>
+            card.WithButton("Buy", ButtonType.Postback, "BUY_A")
+                .WithButton("Details", ButtonType.Url, "https://example.com/a"))
+        .AddCard("https://example.com/img2.jpg", "Product B", "Even better", card =>
+            card.WithButton("Buy", ButtonType.Postback, "BUY_B")
+                .WithButton("Details", ButtonType.Url, "https://example.com/b")))
+    .Build();
+
+// Using explicit construction
+var carousel = new CarouselContent();
+carousel.AddCard(new CarouselCard("Product A", "Amazing", "https://example.com/img1.jpg")
+{
+    Buttons = { new ButtonContent("Buy", ButtonType.Postback, "BUY_A") }
+});
+new Message { Content = carousel };
+```
+
+`CarouselCard` properties: `ImageUrl`, `Title`, `Subtitle`, `Buttons`.
+`CarouselContent` properties: `Cards` (read-only), `AddCard()`/`RemoveCard()`/`ClearCards()` for mutation.
+
+### ListPickerContent
+
+For sending a vertically-scrollable list of items the user can pick from (Facebook Messenger). Use the sub-builder API for a fluent construction:
+
+```csharp
+// Using the sub-builder API
+new MessageBuilder()
+    .WithListPicker(list => list
+        .WithStyle(ListPickerStyle.Compact)
+        .AddItem("Pizza", "Delicious cheese pizza")
+        .AddItem("Burger", "Juicy beef burger", payload: "ORDER_BURGER")
+        .AddItem(item => item
+            .WithTitle("Salad")
+            .WithDescription("Fresh garden salad")))
+    .Build();
+
+// Using explicit construction
+var list = new ListPickerContent("Our Menu", style: ListPickerStyle.Compact);
+list.AddItem(new ListPickerItem("Pizza", "Delicious cheese pizza"));
+new Message { Content = list };
+```
+
+`ListPickerStyle` values: `Inlined` (default), `Compact`, `Large`.
+`ListPickerItem` properties: `Title`, `Description`, `ImageUrl`, `Payload`.
+`ListPickerContent` properties: `Title`, `Subtitle`, `Style`, `Items`.
+
+### Channel support
+
+| Content type | Facebook Messenger | Telegram Bot |
+|---|---|---|
+| `ButtonContent` | Button template | InlineKeyboardMarkup |
+| `QuickReplyContent` | Quick Replies | ReplyKeyboardMarkup (one-time) |
+| `CarouselContent` | Generic template | — |
+| `ListPickerContent` | List template | — |
+
+Carousel and List picker content throw `NotSupportedException` on Telegram.
 
 ## Message properties
 

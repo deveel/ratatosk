@@ -19,6 +19,10 @@ namespace Deveel.Messaging {
 	// TODO: [JsonDerivedType(typeof(XmlContent), nameof(MessageContentType.Xml))]
 	[JsonDerivedType(typeof(MediaContent), nameof(MessageContentType.Media))]
 	[JsonDerivedType(typeof(LocationContent), nameof(MessageContentType.Location))]
+	[JsonDerivedType(typeof(ButtonContent), nameof(MessageContentType.Button))]
+	[JsonDerivedType(typeof(QuickReplyContent), nameof(MessageContentType.QuickReply))]
+	[JsonDerivedType(typeof(CarouselContent), nameof(MessageContentType.Carousel))]
+	[JsonDerivedType(typeof(ListPickerContent), nameof(MessageContentType.ListPicker))]
 	public abstract class MessageContent : IMessageContent {
 		/// <summary>
 		/// Gets the type of the content.
@@ -69,6 +73,19 @@ namespace Deveel.Messaging {
 			if (content.ContentType == MessageContentType.Location &&
 				content is ILocationContent locationContent)
 				return new LocationContent(locationContent);
+
+			if (content.ContentType == MessageContentType.Button &&
+				content is IButtonContent buttonContent)
+				return new ButtonContent(buttonContent);
+			if (content.ContentType == MessageContentType.QuickReply &&
+				content is IQuickReplyContent quickReplyContent)
+				return new QuickReplyContent(quickReplyContent);
+			if (content.ContentType == MessageContentType.Carousel &&
+				content is ICarouselContent carouselContent)
+				return new CarouselContent(carouselContent);
+			if (content.ContentType == MessageContentType.ListPicker &&
+				content is IListPickerContent listPickerContent)
+				return new ListPickerContent(listPickerContent);
 
 			throw new NotSupportedException($"The content of type '{content.ContentType}' is not supported");
 		}

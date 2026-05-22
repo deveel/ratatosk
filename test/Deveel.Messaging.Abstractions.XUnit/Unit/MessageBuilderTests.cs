@@ -302,4 +302,87 @@ public class MessageBuilderTests
         Assert.NotNull(iMessage.Properties);
         Assert.Equal("testValue", iMessage.Properties["testProp"].Value);
     }
+
+    [Fact]
+    public void Should_BuildWithButton_When_WithButtonCalled() {
+        var message = new MessageBuilder()
+            .WithButton("Click", ButtonType.Url, "https://example.com")
+            .Build();
+
+        Assert.IsType<ButtonContent>(message.Content);
+        var button = (ButtonContent)message.Content!;
+        Assert.Equal("Click", button.Text);
+        Assert.Equal(ButtonType.Url, button.ButtonType);
+        Assert.Equal("https://example.com", button.Value);
+    }
+
+    [Fact]
+    public void Should_BuildWithQuickReply_When_WithQuickReplyCalled() {
+        var message = new MessageBuilder()
+            .WithQuickReply("Yes", "YES_PAYLOAD")
+            .Build();
+
+        Assert.IsType<QuickReplyContent>(message.Content);
+        var qr = (QuickReplyContent)message.Content!;
+        Assert.Equal("Yes", qr.Title);
+        Assert.Equal("YES_PAYLOAD", qr.Payload);
+    }
+
+    [Fact]
+    public void Should_BuildWithQuickReplyBuilder_When_WithQuickReplyWithConfigure() {
+        var message = new MessageBuilder()
+            .WithQuickReply(qr => qr
+                .WithTitle("Maybe")
+                .WithPayload("MAYBE_PAYLOAD"))
+            .Build();
+
+        Assert.IsType<QuickReplyContent>(message.Content);
+        var qr = (QuickReplyContent)message.Content!;
+        Assert.Equal("Maybe", qr.Title);
+        Assert.Equal("MAYBE_PAYLOAD", qr.Payload);
+    }
+
+    [Fact]
+    public void Should_BuildWithCarousel_When_WithCarouselWithConfigure() {
+        var message = new MessageBuilder()
+            .WithCarousel(carousel => carousel
+                .AddCard("https://img.url", "Title", "Sub", card =>
+                    card.WithButton("Go", ButtonType.Url, "https://go.url")))
+            .Build();
+
+        Assert.IsType<CarouselContent>(message.Content);
+        var carousel = (CarouselContent)message.Content!;
+        Assert.Single(carousel.Cards);
+        Assert.Equal("Title", carousel.Cards[0].Title);
+    }
+
+    [Fact]
+    public void Should_BuildWithCarouselFromCards_When_WithCarouselWithCards() {
+        var cards = new[] {
+            new CarouselCard("Card 1"),
+            new CarouselCard("Card 2")
+        };
+
+        var message = new MessageBuilder()
+            .WithCarousel(cards)
+            .Build();
+
+        Assert.IsType<CarouselContent>(message.Content);
+        Assert.Equal(2, ((CarouselContent)message.Content!).Cards.Count);
+    }
+
+    [Fact]
+    public void Should_BuildWithListPicker_When_WithListPickerWithConfigure() {
+        var message = new MessageBuilder()
+            .WithListPicker(list => list
+                .WithStyle(ListPickerStyle.Compact)
+                .AddItem("Item A", "Description A"))
+            .Build();
+
+        Assert.IsType<ListPickerContent>(message.Content);
+        var picker = (ListPickerContent)message.Content!;
+        Assert.Single(picker.Items);
+        Assert.Equal(ListPickerStyle.Compact, picker.Style);
+        Assert.Equal("Item A", picker.Items[0].Title);
+    }
 }

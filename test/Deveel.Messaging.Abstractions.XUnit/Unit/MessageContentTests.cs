@@ -550,6 +550,65 @@ public class MessageContentTests
 
     // Helper classes for testing custom implementations
 
+    [Fact]
+    public void Should_ReturnButtonContent_When_CreateWithButtonContent()
+    {
+        var originalContent = new ButtonContent("Click", ButtonType.Url, "https://example.com");
+        var result = MessageContent.Create(originalContent);
+        Assert.IsType<ButtonContent>(result);
+        Assert.Same(originalContent, result);
+    }
+
+    [Fact]
+    public void Should_ReturnButtonContent_When_CreateWithIButtonContent()
+    {
+        IButtonContent buttonContent = new ButtonContent("Click", ButtonType.Postback, "PAYLOAD");
+        var result = MessageContent.Create(buttonContent);
+        Assert.IsType<ButtonContent>(result);
+        var btnResult = (ButtonContent)result;
+        Assert.Equal("Click", btnResult.Text);
+        Assert.Equal(ButtonType.Postback, btnResult.ButtonType);
+        Assert.Equal("PAYLOAD", btnResult.Value);
+    }
+
+    [Fact]
+    public void Should_ReturnQuickReplyContent_When_CreateWithIQuickReplyContent()
+    {
+        IQuickReplyContent qrContent = new QuickReplyContent("Yes", "YES_PAYLOAD", "https://img.url");
+        var result = MessageContent.Create(qrContent);
+        Assert.IsType<QuickReplyContent>(result);
+        var qrResult = (QuickReplyContent)result;
+        Assert.Equal("Yes", qrResult.Title);
+        Assert.Equal("YES_PAYLOAD", qrResult.Payload);
+        Assert.Equal("https://img.url", qrResult.ImageUrl);
+    }
+
+    [Fact]
+    public void Should_ReturnCarouselContent_When_CreateWithICarouselContent()
+    {
+        ICarouselContent carouselContent = new CarouselContent(new[] {
+            new CarouselCard("Card 1"),
+            new CarouselCard("Card 2")
+        });
+        var result = MessageContent.Create(carouselContent);
+        Assert.IsType<CarouselContent>(result);
+        var carResult = (CarouselContent)result;
+        Assert.Equal(2, carResult.Cards.Count);
+    }
+
+    [Fact]
+    public void Should_ReturnListPickerContent_When_CreateWithIListPickerContent()
+    {
+        IListPickerContent listContent = new ListPickerContent("Title", null,
+            new[] { new ListPickerItem("Item 1") }, ListPickerStyle.Compact);
+        var result = MessageContent.Create(listContent);
+        Assert.IsType<ListPickerContent>(result);
+        var listResult = (ListPickerContent)result;
+        Assert.Equal("Title", listResult.Title);
+        Assert.Single(listResult.Items);
+        Assert.Equal(ListPickerStyle.Compact, listResult.Style);
+    }
+
     private class CustomTextContent : ITextContent
     {
         public CustomTextContent(string text, string? encoding)

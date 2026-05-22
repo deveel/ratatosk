@@ -31,8 +31,8 @@ The Bot token is obtained from [@BotFather](https://t.me/BotFather) on Telegram.
 | Provider | `Telegram` |
 | Type | `Bot` |
 | Version | `1.0.0` |
-| Capabilities | `SendMessages`, `ReceiveMessages`, `MediaAttachments` |
-| Content types | `PlainText`, `Media` |
+| Capabilities | `SendMessages`, `ReceiveMessages`, `MediaAttachments`, `InteractiveContent` |
+| Content types | `PlainText`, `Media`, `Button`, `QuickReply` |
 | Endpoints | `Id` (chat ID) |
 | Authentication | Token (bot token) |
 
@@ -114,6 +114,27 @@ new MessageBuilder()
     .To(Endpoint.Id("123456789"))
     .WithContent(new LocationContent(41.9028, 12.4964)
         .WithHorizontalAccuracy(10))
+    .Build();
+```
+
+### Message with inline buttons
+
+```csharp
+// Using the convenience method
+new MessageBuilder()
+    .To(Endpoint.Id("123456789"))
+    .WithText("What would you like to do?")
+    .WithButton("Open Website", ButtonType.Url, "https://example.com")
+    .Build();
+```
+
+### Message with quick reply keyboard
+
+```csharp
+// Single quick reply option
+new MessageBuilder()
+    .To(Endpoint.Id("123456789"))
+    .WithQuickReply("Yes", "YES_PAYLOAD")
     .Build();
 ```
 

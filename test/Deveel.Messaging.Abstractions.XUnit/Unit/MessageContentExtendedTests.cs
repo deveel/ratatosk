@@ -22,6 +22,42 @@ public class MessageContentExtendedTests
     }
 
     [Fact]
+    public void Should_CreateButtonContent_FromInterface()
+    {
+        IMessageContent source = new ButtonContent("Click", ButtonType.Url, "url");
+        var result = MessageContent.Create(source);
+        Assert.NotNull(result);
+        Assert.Equal(MessageContentType.Button, result.ContentType);
+    }
+
+    [Fact]
+    public void Should_CreateQuickReplyContent_FromInterface()
+    {
+        IMessageContent source = new QuickReplyContent("Yes", "p");
+        var result = MessageContent.Create(source);
+        Assert.NotNull(result);
+        Assert.Equal(MessageContentType.QuickReply, result.ContentType);
+    }
+
+    [Fact]
+    public void Should_CreateCarouselContent_FromInterface()
+    {
+        IMessageContent source = new CarouselContent(new[] { new CarouselCard("Card") });
+        var result = MessageContent.Create(source);
+        Assert.NotNull(result);
+        Assert.Equal(MessageContentType.Carousel, result.ContentType);
+    }
+
+    [Fact]
+    public void Should_CreateListPickerContent_FromInterface()
+    {
+        IMessageContent source = new ListPickerContent(items: new[] { new ListPickerItem("Item") });
+        var result = MessageContent.Create(source);
+        Assert.NotNull(result);
+        Assert.Equal(MessageContentType.ListPicker, result.ContentType);
+    }
+
+    [Fact]
     public void Should_ReturnNull_WhenInputIsNull()
     {
         var result = MessageContent.Create(null);

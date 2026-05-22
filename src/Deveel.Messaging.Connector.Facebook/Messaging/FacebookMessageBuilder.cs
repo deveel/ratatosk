@@ -85,10 +85,36 @@ namespace Deveel.Messaging
                         }
                     };
                     break;
+
+                case MessageContentType.QuickReply when message.Content is IQuickReplyContent qrContent:
+                    fbMessage.QuickReplies = new List<FacebookQuickReply>
+                    {
+                        new FacebookQuickReply
+                        {
+                            ContentType = "text",
+                            Title = qrContent.Title,
+                            Payload = qrContent.Payload ?? qrContent.Title,
+                            ImageUrl = qrContent.ImageUrl
+                        }
+                    };
+                    break;
+
+                case MessageContentType.Button when message.Content is IButtonContent btnContent:
+                    fbMessage.Template = BuildButtonTemplate(btnContent);
+                    break;
+
+                case MessageContentType.Carousel when message.Content is ICarouselContent carouselContent:
+                    fbMessage.Template = BuildCarouselTemplate(carouselContent);
+                    break;
+
+                case MessageContentType.ListPicker when message.Content is IListPickerContent listContent:
+                    fbMessage.Template = BuildListTemplate(listContent);
+                    break;
             }
 
-            // Add quick replies if specified
-            if (message.Properties?.TryGetValue("QuickReplies", out var quickRepliesProperty) == true)
+            // Add quick replies if specified (backward compat with raw JSON property)
+            if (fbMessage.QuickReplies == null &&
+                message.Properties?.TryGetValue("QuickReplies", out var quickRepliesProperty) == true)
             {
                 var quickRepliesJson = quickRepliesProperty.Value?.ToString();
                 if (!string.IsNullOrEmpty(quickRepliesJson))
@@ -109,6 +135,123 @@ namespace Deveel.Messaging
             }
 
             return fbMessage;
+        }
+
+        private static FacebookTemplate BuildButtonTemplate(IButtonContent button)
+        {
+            return new FacebookTemplate
+            {
+                TemplateType = "button",
+                Payload = new Dictionary<string, object>
+                {
+                    ["template_type"] = "button",
+                    ["text"] = button.Text,
+                    ["buttons"] = new[]
+                    {
+                        MapButton(button)
+                    }
+                }
+            };
+        }
+
+        private static FacebookTemplate BuildCarouselTemplate(ICarouselContent carousel)
+        {
+            var elements = new List<object>();
+            foreach (var card in carousel.Cards)
+            {
+                var element = new Dictionary<string, object>
+                {
+                    ["title"] = card.Title ?? "",
+                };
+
+                if (!string.IsNullOrEmpty(card.Subtitle))
+                    element["subtitle"] = card.Subtitle;
+                if (!string.IsNullOrEmpty(card.ImageUrl))
+                    element["image_url"] = card.ImageUrl;
+                if (card.Buttons.Count > 0)
+                    element["buttons"] = card.Buttons.Select(MapButton).ToArray();
+
+                elements.Add(element);
+            }
+
+            return new FacebookTemplate
+            {
+                TemplateType = "generic",
+                Payload = new Dictionary<string, object>
+                {
+                    ["template_type"] = "generic",
+                    ["elements"] = elements
+                }
+            };
+        }
+
+        private static FacebookTemplate BuildListTemplate(IListPickerContent listPicker)
+        {
+            var elements = new List<object>();
+            foreach (var item in listPicker.Items)
+            {
+                var element = new Dictionary<string, object>
+                {
+                    ["title"] = item.Title
+                };
+
+                if (!string.IsNullOrEmpty(item.Description))
+                    element["subtitle"] = item.Description;
+                if (!string.IsNullOrEmpty(item.ImageUrl))
+                    element["image_url"] = item.ImageUrl;
+
+                elements.Add(element);
+            }
+
+            var payload = new Dictionary<string, object>
+            {
+                ["template_type"] = "list",
+                ["top_element_style"] = listPicker.Style switch
+                {
+                    ListPickerStyle.Inlined => "compact",
+                    ListPickerStyle.Compact => "compact",
+                    ListPickerStyle.Large => "large",
+                    _ => "large"
+                },
+                ["elements"] = elements
+            };
+
+            return new FacebookTemplate
+            {
+                TemplateType = "list",
+                Payload = payload
+            };
+        }
+
+        private static object MapButton(IButtonContent button)
+        {
+            return button.ButtonType switch
+            {
+                ButtonType.Url => new Dictionary<string, object>
+                {
+                    ["type"] = "web_url",
+                    ["title"] = button.Text,
+                    ["url"] = button.Value ?? ""
+                },
+                ButtonType.Postback => new Dictionary<string, object>
+                {
+                    ["type"] = "postback",
+                    ["title"] = button.Text,
+                    ["payload"] = button.Value ?? button.Text
+                },
+                ButtonType.PhoneNumber => new Dictionary<string, object>
+                {
+                    ["type"] = "phone_number",
+                    ["title"] = button.Text,
+                    ["payload"] = button.Value ?? ""
+                },
+                _ => new Dictionary<string, object>
+                {
+                    ["type"] = "postback",
+                    ["title"] = button.Text,
+                    ["payload"] = button.Value ?? button.Text
+                }
+            };
         }
 
         private static string GetAttachmentType(string mediaType)

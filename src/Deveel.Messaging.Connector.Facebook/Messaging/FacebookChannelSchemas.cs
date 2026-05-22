@@ -152,7 +152,8 @@ namespace Deveel.Messaging
                 ChannelCapability.SendMessages |
                 ChannelCapability.ReceiveMessages |
                 ChannelCapability.MediaAttachments |
-                ChannelCapability.HealthCheck)
+                ChannelCapability.HealthCheck |
+                ChannelCapability.InteractiveContent)
             .AddParameter(new ChannelParameter(FacebookConnectionParameters.PageAccessToken, DataType.String)
             {
                 IsRequired = true,
@@ -177,6 +178,10 @@ namespace Deveel.Messaging
             })
             .AddContentType(MessageContentType.PlainText)
             .AddContentType(MessageContentType.Media)
+            .AddContentType(MessageContentType.Button)
+            .AddContentType(MessageContentType.QuickReply)
+            .AddContentType(MessageContentType.Carousel)
+            .AddContentType(MessageContentType.ListPicker)
             .HandlesMessageEndpoint(EndpointType.UserId, e =>
             {
                 e.CanSend = true;

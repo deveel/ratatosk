@@ -379,6 +379,28 @@ namespace Deveel.Messaging
 				IJsonContent jsonContent when TelegramMessageBuilder.IsLocationMessage(jsonContent) => await SendLocationFromJson(
 					chatId, jsonContent, disableNotification, replyToMessageId, replyMarkup, cancellationToken),
 
+				IButtonContent btnContent => await _telegramService.SendTextMessageAsync(
+					chatId,
+					btnContent.Text,
+					parseMode: parseMode,
+					disableWebPagePreview: disableWebPagePreview,
+					disableNotification: disableNotification,
+					replyToMessageId: replyToMessageId,
+					replyMarkup: TelegramMessageBuilder.CreateInlineKeyboardMarkup(new[] { btnContent }),
+					cancellationToken: cancellationToken),
+
+				IQuickReplyContent qrContent => await _telegramService.SendTextMessageAsync(
+					chatId,
+					qrContent.Title,
+					parseMode: parseMode,
+					disableWebPagePreview: disableWebPagePreview,
+					disableNotification: disableNotification,
+					replyToMessageId: replyToMessageId,
+					replyMarkup: TelegramMessageBuilder.CreateReplyKeyboardMarkup(new[] { qrContent }),
+					cancellationToken: cancellationToken),
+
+				ICarouselContent _ => throw new NotSupportedException("Carousel content is not supported by the Telegram Bot API"),
+				IListPickerContent _ => throw new NotSupportedException("List picker content is not supported by the Telegram Bot API"),
 				_ => throw new NotSupportedException($"Content type {message.Content?.GetType().Name} is not supported")
 			};
 		}

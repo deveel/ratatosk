@@ -19,4 +19,8 @@
   <ItemGroup>
     <PackageReference Include="RestSharp" Version="112.1.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Deveel.Messaging.Connector.Facebook.XUnit" />
+  </ItemGroup>
 </Project>
