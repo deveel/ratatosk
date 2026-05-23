@@ -148,8 +148,8 @@ namespace Deveel.Messaging.XUnit
 			public TestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) { SetState(ConnectorState.Ready); return ValueTask.CompletedTask; }
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
-			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
-			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotSupportedException();
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 		}
 
 		[ChannelSchema(typeof(AnotherTestSchemaFactory))]
@@ -158,8 +158,8 @@ namespace Deveel.Messaging.XUnit
 			public AnotherTestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) { SetState(ConnectorState.Ready); return ValueTask.CompletedTask; }
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
-			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
-			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotSupportedException();
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 		}
 
 		[ChannelSchema(typeof(ThirdTestSchemaFactory))]
@@ -168,8 +168,8 @@ namespace Deveel.Messaging.XUnit
 			public ThirdTestConnector(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) { SetState(ConnectorState.Ready); return ValueTask.CompletedTask; }
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
-			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
-			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotSupportedException();
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 		}
 
 		private class ConnectorWithoutAttribute : ChannelConnectorBase
@@ -177,8 +177,8 @@ namespace Deveel.Messaging.XUnit
 			public ConnectorWithoutAttribute(IChannelSchema schema, ConnectionSettings? settings = null) : base(schema, settings) { }
 			protected override ValueTask InitializeConnectorAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 			protected override ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
-			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotImplementedException();
-			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+			protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken) => throw new NotSupportedException();
+			protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 		}
 
 		private class TestSchemaFactory : IChannelSchemaFactory

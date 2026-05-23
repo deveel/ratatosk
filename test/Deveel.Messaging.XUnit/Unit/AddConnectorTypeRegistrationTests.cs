@@ -227,26 +227,26 @@ namespace Deveel.Messaging.XUnit.Unit
 
         private class InvalidConnector : IChannelConnector
         {
-            public IChannelSchema Schema => throw new NotImplementedException();
+            public IChannelSchema Schema => throw new NotSupportedException();
             public ConnectorState State => ConnectorState.Uninitialized;
 
             public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
                 => new(OperationResult<bool>.Fail("X", "X", "X"));
 
             public ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             public ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             public ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             public ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             public ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             public async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
             {
@@ -255,13 +255,13 @@ namespace Deveel.Messaging.XUnit.Unit
             }
 
             public ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             public ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             public ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             public ValueTask ShutdownAsync(CancellationToken cancellationToken)
                 => default;

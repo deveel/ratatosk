@@ -40,7 +40,7 @@ namespace Deveel.Messaging
         {
             public NullSchemeProvider() : base(null!, "Test") { }
             public override Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace Deveel.Messaging
         {
             public NullDisplayNameProvider() : base(AuthenticationScheme.ApiKey, null!) { }
             public override Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
         }
 
         [Fact]
