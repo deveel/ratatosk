@@ -13,7 +13,7 @@ namespace Deveel.Messaging
     /// These error codes are used for messaging-level errors that occur
     /// outside the scope of channel connectors, such as message routing,
     /// serialization, and general configuration errors.
-    /// Use connector-specific error code classes (e.g., <see cref="TwilioErrorCodes"/>)
+    /// Use connector-specific error code classes (e.g., TwilioErrorCodes)
     /// for errors that originate from a specific provider.
     /// </remarks>
     public static class MessagingErrorCodes

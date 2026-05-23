@@ -10,7 +10,7 @@ using Google.Apis.Auth.OAuth2;
 
 namespace Deveel.Messaging
 {
-	/// <summary>
+    /// <summary>
 	/// Default implementation of <see cref="IFirebaseService"/> using the Firebase Admin SDK.
 	/// </summary>
 	public class FirebaseService : IFirebaseService
@@ -18,6 +18,9 @@ namespace Deveel.Messaging
         private FirebaseApp? _app;
         private IFirebaseMessagingClient? _messagingClient;
 
+        /// <summary>
+        /// Constructs a <see cref="FirebaseService"/> instance.
+        /// </summary>
         public FirebaseService()
         {
         }
@@ -203,6 +206,11 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Maps a Firebase Admin SDK <see cref="MessagingErrorCode"/> to an internal messaging error code.
+        /// </summary>
+        /// <param name="errorCode">The Firebase error code to map.</param>
+        /// <returns>The corresponding internal error code string.</returns>
         public static string MapFirebaseErrorCode(MessagingErrorCode? errorCode)
         {
             if (!errorCode.HasValue)

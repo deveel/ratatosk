@@ -12,10 +12,13 @@ namespace Deveel.Messaging;
 /// <summary>
 /// Default implementation of <see cref="ITwilioService"/> that wraps the actual Twilio SDK calls.
 /// </summary>
-public class TwilioService : ITwilioService
+    public class TwilioService : ITwilioService
 {
     private readonly ITwilioApiClient _client;
 
+    /// <summary>
+    /// Constructs a <see cref="TwilioService"/> using the default <see cref="TwilioApiClient"/>.
+    /// </summary>
     public TwilioService()
     {
         _client = new TwilioApiClient();
@@ -85,6 +88,11 @@ public class TwilioService : ITwilioService
         }
     }
 
+    /// <summary>
+    /// Maps a Twilio API error code to an internal messaging error code.
+    /// </summary>
+    /// <param name="twilioCode">The Twilio error code to map.</param>
+    /// <returns>The corresponding internal error code string.</returns>
     public static string MapTwilioErrorCode(int? twilioCode)
     {
         // Map common Twilio error codes to internal error codes

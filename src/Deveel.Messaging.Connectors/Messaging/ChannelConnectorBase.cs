@@ -11,6 +11,11 @@ using System.Runtime.CompilerServices;
 
 namespace Deveel.Messaging
 {
+    /// <summary>
+    /// Provides a base implementation for a channel connector that handles
+    /// authentication, initialization, message sending, receiving, and
+    /// health monitoring.
+    /// </summary>
     public abstract class ChannelConnectorBase : IChannelConnector
     {
         private ConnectorState _state = ConnectorState.Uninitialized;
@@ -20,6 +25,24 @@ namespace Deveel.Messaging
         private bool _autoAuthenticationAttempted;
         private readonly IMessageIdGenerator _idGenerator;
 
+        /// <summary>
+        /// Constructs the connector base with the given schema and optional settings.
+        /// </summary>
+        /// <param name="schema">
+        /// The channel schema that defines the capabilities and configuration of the connector.
+        /// </param>
+        /// <param name="connectionSettings">
+        /// An optional set of connection settings to use for the connector.
+        /// </param>
+        /// <param name="logger">
+        /// An optional logger instance used to log diagnostic information.
+        /// </param>
+        /// <param name="authenticationManager">
+        /// An optional authentication manager used to handle authentication operations.
+        /// </param>
+        /// <param name="idGenerator">
+        /// An optional message identifier generator used to generate unique message identifiers.
+        /// </param>
         protected ChannelConnectorBase(
             IChannelSchema schema,
             ConnectionSettings? connectionSettings = null,
@@ -34,18 +57,39 @@ namespace Deveel.Messaging
             _idGenerator = idGenerator ?? new DefaultMessageIdGenerator();
         }
 
+        /// <summary>
+        /// Gets the channel schema that defines the capabilities and configuration of the connector.
+        /// </summary>
         public IChannelSchema Schema { get; }
 
+        /// <summary>
+        /// Gets the connection settings used by the connector.
+        /// </summary>
         public ConnectionSettings ConnectionSettings { get; }
 
+        /// <summary>
+        /// Gets the logger used to log diagnostic information.
+        /// </summary>
         protected ILogger Logger { get; }
 
+        /// <summary>
+        /// Gets the authentication manager used to handle authentication operations.
+        /// </summary>
         protected IAuthenticationManager AuthenticationManager => _authenticationManager;
 
+        /// <summary>
+        /// Gets the current authentication credential, if authentication has been performed.
+        /// </summary>
         protected AuthenticationCredential? AuthenticationCredential => _authenticationCredential;
 
+        /// <summary>
+        /// Gets the message identifier generator used to generate unique message identifiers.
+        /// </summary>
         protected IMessageIdGenerator IdGenerator => _idGenerator;
 
+        /// <summary>
+        /// Gets the current state of the connector.
+        /// </summary>
         public ConnectorState State
         {
             get
@@ -57,6 +101,10 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Sets the state of the connector in a thread-safe manner.
+        /// </summary>
+        /// <param name="newState">The new state to set for the connector.</param>
         protected void SetState(ConnectorState newState)
         {
             lock (_stateLock)
@@ -65,6 +113,13 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Validates that the connector supports the given capability.
+        /// </summary>
+        /// <param name="capability">The capability to validate.</param>
+        /// <exception cref="MessagingException">
+        /// Thrown if the connector does not support the specified capability.
+        /// </exception>
         protected void ValidateCapability(ChannelCapability capability)
         {
             if (!Schema.Capabilities.HasFlag(capability))
@@ -73,6 +128,12 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Ensures the connector is initialized before performing any operation.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
         protected async Task EnsureInitializedAsync(CancellationToken cancellationToken)
         {
             if (State == ConnectorState.Uninitialized)
@@ -81,6 +142,12 @@ namespace Deveel.Messaging
             ValidateOperationalState();
         }
 
+        /// <summary>
+        /// Validates that the connector is in an operational state.
+        /// </summary>
+        /// <exception cref="MessagingException">
+        /// Thrown if the connector is not in an operational state.
+        /// </exception>
         protected void ValidateOperationalState()
         {
             var currentState = State;
@@ -93,6 +160,12 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Begins a logging scope that includes the channel type and version information.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="IDisposable"/> instance that ends the logging scope when disposed.
+        /// </returns>
         protected virtual IDisposable? BeginConnectorLoggerScope()
         {
             return Logger.BeginScope(
@@ -101,11 +174,27 @@ namespace Deveel.Messaging
                     Schema.Version);
         }
 
+        /// <summary>
+        /// Begins a logging scope that includes the message identifier.
+        /// </summary>
+        /// <param name="message">The message to create the logging scope for.</param>
+        /// <returns>
+        /// An <see cref="IDisposable"/> instance that ends the logging scope when disposed.
+        /// </returns>
         protected virtual IDisposable? BeginMessageLoggerScope(IMessage message)
         {
             return Logger.BeginScope("[MessageId:{MessageId}]", message.Id ?? "(unknown)");
         }
 
+        /// <summary>
+        /// Initializes the connector and attempts auto-authentication if required by the schema.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> indicating whether the initialization was successful.
+        /// </returns>
         public async ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
         {
             using var scope = BeginConnectorLoggerScope();
@@ -162,8 +251,24 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs connector-specific initialization logic when the connector is initialized.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
         protected abstract ValueTask InitializeConnectorAsync(CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Authenticates the connector using the first matching authentication configuration
+        /// found in the schema for the provided connection settings.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> indicating whether authentication succeeded.
+        /// </returns>
         protected async Task<OperationResult<bool>> AuthenticateAsync(CancellationToken cancellationToken = default)
         {
             using var scope = BeginConnectorLoggerScope();
@@ -220,6 +325,16 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Refreshes the current authentication credential, or performs a new
+        /// authentication if no credential exists.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> indicating whether the refresh succeeded.
+        /// </returns>
         protected async Task<OperationResult<bool>> RefreshAuthenticationAsync(CancellationToken cancellationToken = default)
         {
             using var scope = BeginConnectorLoggerScope();
@@ -275,6 +390,14 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Gets the authentication header value from the current credential,
+        /// based on the authentication scheme.
+        /// </summary>
+        /// <returns>
+        /// A string containing the authentication header value, or <c>null</c> if
+        /// no credential is available or the scheme is not supported.
+        /// </returns>
         protected virtual string? GetAuthenticationHeader()
         {
             if (_authenticationCredential == null)
@@ -295,6 +418,13 @@ namespace Deveel.Messaging
             return null;
         }
 
+        /// <summary>
+        /// Gets the API key from the current authentication credential,
+        /// if the scheme is <see cref="AuthenticationScheme.ApiKey"/>.
+        /// </summary>
+        /// <returns>
+        /// The API key string, or <c>null</c> if the credential is not an API key.
+        /// </returns>
         protected virtual string? GetApiKey()
         {
             return _authenticationCredential?.Scheme == AuthenticationScheme.ApiKey
@@ -302,12 +432,29 @@ namespace Deveel.Messaging
                 : null;
         }
 
+        /// <summary>
+        /// Determines whether the connector uses anonymous authentication
+        /// (no authentication configurations or all are set to <see cref="AuthenticationScheme.None"/>).
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> if the connector is anonymous; otherwise, <c>false</c>.
+        /// </returns>
         protected virtual bool IsAnonymousConnector()
         {
             return Schema.AuthenticationConfigurations.Count == 0 ||
                    Schema.AuthenticationConfigurations.All(c => c.Scheme == AuthenticationScheme.None);
         }
 
+        /// <summary>
+        /// Tests the connection to the remote service by performing a connector-specific
+        /// connection test.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> indicating whether the connection test succeeded.
+        /// </returns>
         public async ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken cancellationToken)
         {
             await EnsureInitializedAsync(cancellationToken);
@@ -340,8 +487,24 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs connector-specific connection testing logic.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
         protected abstract ValueTask TestConnectorConnectionAsync(CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Sends a message through the connector after validating it.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> containing the result of the send operation.
+        /// </returns>
         public async ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(message);
@@ -398,8 +561,28 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs the core logic of sending a message to the remote service.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// A <see cref="SendResult"/> containing the result of the send operation.
+        /// </returns>
         protected abstract Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Sends a batch of messages through the connector after validating each message.
+        /// </summary>
+        /// <param name="batch">The batch of messages to send.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> containing the result of the batch send operation.
+        /// </returns>
         public virtual async ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(batch);
@@ -465,11 +648,30 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs the core logic of sending a batch of messages.
+        /// </summary>
+        /// <param name="batch">The batch of messages to send.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// A <see cref="BatchSendResult"/> containing the result of the batch send operation.
+        /// </returns>
         protected virtual Task<BatchSendResult> SendBatchCoreAsync(IMessageBatch batch, CancellationToken cancellationToken)
         {
             throw new NotSupportedException("Batch sending is not supported by this connector.");
         }
 
+        /// <summary>
+        /// Gets the current status of the connector.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> containing the status information of the connector.
+        /// </returns>
         public async ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
         {
             using var scope = BeginConnectorLoggerScope();
@@ -496,8 +698,27 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs connector-specific logic to retrieve the current status.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// A <see cref="StatusInfo"/> containing the connector status.
+        /// </returns>
         protected abstract Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Gets the status updates for a specific message.
+        /// </summary>
+        /// <param name="messageId">The identifier of the message to query.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> containing the status updates for the message.
+        /// </returns>
         public async ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
@@ -528,11 +749,31 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs the core logic of retrieving message status from the remote service.
+        /// </summary>
+        /// <param name="messageId">The identifier of the message.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// A <see cref="StatusUpdatesResult"/> containing the status updates.
+        /// </returns>
         protected virtual Task<StatusUpdatesResult> GetMessageStatusCoreAsync(string messageId, CancellationToken cancellationToken)
         {
             throw new NotSupportedException("Message status querying is not supported by this connector.");
         }
 
+        /// <summary>
+        /// Validates the message against the channel schema and any additional connector rules.
+        /// </summary>
+        /// <param name="message">The message to validate.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// An asynchronous enumerable of <see cref="ValidationResult"/> objects describing validation errors.
+        /// </returns>
         public virtual async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(message);
@@ -543,6 +784,16 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs the core validation logic against the channel schema.
+        /// </summary>
+        /// <param name="message">The message to validate.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// An asynchronous enumerable of <see cref="ValidationResult"/> objects describing validation errors.
+        /// </returns>
         protected virtual async IAsyncEnumerable<ValidationResult> ValidateMessageCoreAsync(IMessage message, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var validationResults = Schema.ValidateMessage(message);
@@ -562,6 +813,13 @@ namespace Deveel.Messaging
             await Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Gets a string representation of the endpoint type for use in API calls.
+        /// </summary>
+        /// <param name="endpoint">The endpoint to get the type for.</param>
+        /// <returns>
+        /// A string representing the endpoint type, or <c>null</c> if the type is not recognized.
+        /// </returns>
         protected virtual string? GetEndpointType(IEndpoint endpoint)
         {
             return endpoint.Type switch
@@ -580,6 +838,16 @@ namespace Deveel.Messaging
             };
         }
 
+        /// <summary>
+        /// Determines whether the given endpoint type is supported by the connector
+        /// for the specified roles (sender and/or receiver).
+        /// </summary>
+        /// <param name="endpointType">The endpoint type to check.</param>
+        /// <param name="asSender">If <c>true</c>, checks if the type is supported as a sender.</param>
+        /// <param name="asReceiver">If <c>true</c>, checks if the type is supported as a receiver.</param>
+        /// <returns>
+        /// <c>true</c> if the endpoint type is supported; otherwise, <c>false</c>.
+        /// </returns>
         protected virtual bool IsEndpointTypeSupported(EndpointType endpointType, bool asSender = false, bool asReceiver = false)
         {
             return Schema.Endpoints.Any(e =>
@@ -588,6 +856,16 @@ namespace Deveel.Messaging
                 (!asReceiver || e.CanReceive));
         }
 
+        /// <summary>
+        /// Receives a status update for a message from the remote service.
+        /// </summary>
+        /// <param name="source">The source of the message status update.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> containing the status update result.
+        /// </returns>
         public async ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
         {
             ValidateCapability(ChannelCapability.HandleMessageState);
@@ -617,11 +895,31 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs the core logic of receiving a message status update from the remote service.
+        /// </summary>
+        /// <param name="source">The source of the message status update.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// A <see cref="StatusUpdateResult"/> containing the status update.
+        /// </returns>
         protected virtual Task<StatusUpdateResult> ReceiveMessageStatusCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             throw new NotSupportedException("Status receiving is not supported by this connector.");
         }
 
+        /// <summary>
+        /// Receives messages from the remote service.
+        /// </summary>
+        /// <param name="source">The source to receive messages from.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> containing the received messages.
+        /// </returns>
         public async ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
         {
             ValidateCapability(ChannelCapability.ReceiveMessages);
@@ -653,11 +951,30 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs the core logic of receiving messages from the remote service.
+        /// </summary>
+        /// <param name="source">The source to receive messages from.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// A <see cref="ReceiveResult"/> containing the received messages.
+        /// </returns>
         protected virtual Task<ReceiveResult> ReceiveMessagesCoreAsync(MessageSource source, CancellationToken cancellationToken)
         {
             throw new NotSupportedException("Message receiving is not supported by this connector.");
         }
 
+        /// <summary>
+        /// Gets the health status of the connector.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// Returns an <see cref="OperationResult{T}"/> containing the health information.
+        /// </returns>
         public virtual async ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
         {
             ValidateCapability(ChannelCapability.HealthCheck);
@@ -686,6 +1003,15 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs connector-specific logic to determine health status.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>
+        /// A <see cref="ConnectorHealth"/> containing the health information.
+        /// </returns>
         protected virtual Task<ConnectorHealth> GetConnectorHealthAsync(CancellationToken cancellationToken)
         {
             var health = new ConnectorHealth
@@ -704,6 +1030,12 @@ namespace Deveel.Messaging
             return Task.FromResult(health);
         }
 
+        /// <summary>
+        /// Shuts down the connector gracefully.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
         public async ValueTask ShutdownAsync(CancellationToken cancellationToken)
         {
             using var scope = BeginConnectorLoggerScope();
@@ -725,6 +1057,12 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Performs connector-specific shutdown logic.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
         protected virtual Task ShutdownConnectorAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
