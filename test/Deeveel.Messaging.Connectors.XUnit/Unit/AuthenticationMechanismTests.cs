@@ -403,6 +403,106 @@ namespace Deveel.Messaging
             Assert.Equal(ConnectorState.Ready, connector.State);
             Assert.Null(connector.TestAuthenticationCredential);
         }
+
+        [Fact]
+        public void Should_SetPropertiesCorrectly_When_AuthenticationCredentialCreateClientCredentials()
+        {
+            var token = "client-cred-token";
+            var expiresAt = DateTime.UtcNow.AddHours(2);
+
+            var credential = AuthenticationCredential.ForClientCredentials(token, expiresAt, "Bearer", "refresh-token-xyz");
+
+            Assert.Equal(AuthenticationScheme.Bearer, credential.Scheme);
+            Assert.Equal(token, credential.Value);
+            Assert.Equal(expiresAt, credential.ExpiresAt);
+            Assert.Equal("Bearer", credential.Properties["TokenType"]);
+            Assert.Equal("client_credentials", credential.Properties["GrantType"]);
+            Assert.Equal("refresh-token-xyz", credential.Properties["RefreshToken"]);
+        }
+
+        [Fact]
+        public void Should_SetPropertiesCorrectly_When_AuthenticationCredentialCreateClientCredentialsWithoutRefresh()
+        {
+            var token = "client-cred-token";
+
+            var credential = AuthenticationCredential.ForClientCredentials(token, null, "Bearer");
+
+            Assert.Equal(AuthenticationScheme.Bearer, credential.Scheme);
+            Assert.Equal(token, credential.Value);
+            Assert.Equal("Bearer", credential.Properties["TokenType"]);
+            Assert.Equal("client_credentials", credential.Properties["GrantType"]);
+            Assert.False(credential.Properties.ContainsKey("RefreshToken"));
+        }
+
+        [Fact]
+        public void Should_Throw_When_AuthenticationCredentialCreateClientCredentialsNullToken()
+        {
+            Assert.Throws<ArgumentNullException>(() => AuthenticationCredential.ForClientCredentials(null!));
+        }
+
+        [Fact]
+        public void Should_SetPropertiesCorrectly_When_AuthenticationCredentialCreateCertificate()
+        {
+            var certData = "cert-data-123";
+
+            var credential = AuthenticationCredential.ForCertificate(certData);
+
+            Assert.Equal(AuthenticationScheme.Certificate, credential.Scheme);
+            Assert.Equal(certData, credential.Value);
+            Assert.Equal("Certificate", credential.Properties["CredentialType"]);
+            Assert.False(credential.Properties.ContainsKey("CertificatePassword"));
+        }
+
+        [Fact]
+        public void Should_SetPropertiesCorrectly_When_AuthenticationCredentialCreateCertificateWithPassword()
+        {
+            var certData = "cert-data-123";
+
+            var credential = AuthenticationCredential.ForCertificate(certData, "p@ssw0rd");
+
+            Assert.Equal(AuthenticationScheme.Certificate, credential.Scheme);
+            Assert.Equal(certData, credential.Value);
+            Assert.Equal("Certificate", credential.Properties["CredentialType"]);
+            Assert.Equal("p@ssw0rd", credential.Properties["CertificatePassword"]);
+        }
+
+        [Fact]
+        public void Should_ReturnNull_When_AuthenticationCredentialGetTimeUntilExpirationNoExpiry()
+        {
+            var credential = AuthenticationCredential.ForApiKey("test-key");
+
+            var result = credential.GetTimeUntilExpiration();
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Should_ReturnPositive_When_AuthenticationCredentialGetTimeUntilExpirationFuture()
+        {
+            var credential = AuthenticationCredential.ForBearerToken("token", DateTime.UtcNow.AddHours(1));
+
+            var result = credential.GetTimeUntilExpiration();
+
+            Assert.NotNull(result);
+            Assert.True(result > TimeSpan.Zero);
+        }
+
+        [Fact]
+        public void Should_ReturnZero_When_AuthenticationCredentialGetTimeUntilExpirationPast()
+        {
+            var credential = AuthenticationCredential.ForBearerToken("token", DateTime.UtcNow.AddMinutes(-5));
+
+            var result = credential.GetTimeUntilExpiration();
+
+            Assert.NotNull(result);
+            Assert.Equal(TimeSpan.Zero, result);
+        }
+
+        [Fact]
+        public void Should_Throw_When_AuthenticationCredentialCreateCertificateNullData()
+        {
+            Assert.Throws<ArgumentNullException>(() => AuthenticationCredential.ForCertificate(null!));
+        }
     }
 
     /// <summary>

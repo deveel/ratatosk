@@ -16,7 +16,10 @@ namespace Deveel.Messaging.XUnit.Unit
 
             builder.AddConnectorType<MockConnector>("mock");
 
-            Assert.Contains(builder.ConnectorTypeRegistrations, r => r.Name == "mock" && r.ConnectorType == typeof(MockConnector));
+            var prop = typeof(MessagingBuilder).GetProperty("ConnectorTypeRegistrations",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var registrations = (List<(string Name, Type ConnectorType)>)prop!.GetValue(builder)!;
+            Assert.Contains(registrations, r => r.Name == "mock" && r.ConnectorType == typeof(MockConnector));
         }
 
         [Fact]
@@ -87,9 +90,12 @@ namespace Deveel.Messaging.XUnit.Unit
             builder.AddConnectorType<MockConnector>("first");
             builder.AddConnectorType<MockConnector>("second");
 
-            Assert.Equal(2, builder.ConnectorTypeRegistrations.Count);
-            Assert.Contains(builder.ConnectorTypeRegistrations, r => r.Name == "first");
-            Assert.Contains(builder.ConnectorTypeRegistrations, r => r.Name == "second");
+            var prop = typeof(MessagingBuilder).GetProperty("ConnectorTypeRegistrations",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var registrations = (List<(string Name, Type ConnectorType)>)prop!.GetValue(builder)!;
+            Assert.Equal(2, registrations.Count);
+            Assert.Contains(registrations, r => r.Name == "first");
+            Assert.Contains(registrations, r => r.Name == "second");
         }
 
         [Fact]
@@ -162,7 +168,10 @@ namespace Deveel.Messaging.XUnit.Unit
 
             builder.AddConnectorType<MockConnector>();
 
-            Assert.Contains(builder.ConnectorTypeRegistrations,
+            var prop = typeof(MessagingBuilder).GetProperty("ConnectorTypeRegistrations",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var registrations = (List<(string Name, Type ConnectorType)>)prop!.GetValue(builder)!;
+            Assert.Contains(registrations,
                 r => r.Name == "MockConnector" && r.ConnectorType == typeof(MockConnector));
         }
 

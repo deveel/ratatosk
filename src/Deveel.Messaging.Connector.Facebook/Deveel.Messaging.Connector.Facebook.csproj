@@ -20,7 +20,4 @@
     <PackageReference Include="Polly.Core" Version="8.5.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="Deveel.Messaging.Connector.Facebook.XUnit" />
-  </ItemGroup>
 </Project>

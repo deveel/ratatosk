@@ -140,5 +140,81 @@ namespace Deveel.Messaging.XUnit.Unit
             Assert.NotNull(connector);
             Assert.Equal("PublicTest", connector.Schema.ChannelProvider);
         }
+        [ChannelSchema(typeof(int))]
+        private class ConnectorWithInvalidSchemaType : IChannelConnector
+        {
+            public ConnectorWithInvalidSchemaType(IChannelSchema schema, ConnectionSettings? settings = null)
+            {
+                Schema = schema;
+                ConnectionSettings = settings ?? new ConnectionSettings();
+            }
+            public IChannelSchema Schema { get; }
+            public ConnectionSettings ConnectionSettings { get; }
+            public ConnectorState State => ConnectorState.Uninitialized;
+            public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
+            public ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
+            public ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken ct) => throw new NotImplementedException();
+            public async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [EnumeratorCancellation] CancellationToken ct) { await Task.CompletedTask; yield break; }
+            public ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask ShutdownAsync(CancellationToken ct) => default;
+        }
+
+        [Fact]
+        public void Should_ThrowArgumentException_When_SchemaTypeIsNotValid()
+        {
+            var services = new ServiceCollection();
+            services.AddMessaging().AddConnector<ConnectorWithInvalidSchemaType>();
+            var provider = services.BuildServiceProvider();
+
+            Assert.Throws<ArgumentException>(() => provider.GetRequiredService<ConnectorWithInvalidSchemaType>());
+        }
+
+        private class ThrowingSchemaFactory : IChannelSchemaFactory
+        {
+            public ThrowingSchemaFactory(string _)
+            {
+            }
+
+            public IChannelSchema CreateSchema() => throw new NotImplementedException();
+        }
+
+        [ChannelSchema(typeof(ThrowingSchemaFactory))]
+        private class ConnectorWithThrowingFactory : IChannelConnector
+        {
+            public ConnectorWithThrowingFactory(IChannelSchema schema, ConnectionSettings? settings = null)
+            {
+                Schema = schema;
+                ConnectionSettings = settings ?? new ConnectionSettings();
+            }
+            public IChannelSchema Schema { get; }
+            public ConnectionSettings ConnectionSettings { get; }
+            public ConnectorState State => ConnectorState.Uninitialized;
+            public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
+            public ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
+            public ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken ct) => throw new NotImplementedException();
+            public async IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, [EnumeratorCancellation] CancellationToken ct) { await Task.CompletedTask; yield break; }
+            public ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken ct) => throw new NotImplementedException();
+            public ValueTask ShutdownAsync(CancellationToken ct) => default;
+        }
+
+        [Fact]
+        public void Should_ThrowInvalidOperation_When_FactoryCannotBeCreated()
+        {
+            var services = new ServiceCollection();
+            services.AddMessaging().AddConnector<ConnectorWithThrowingFactory>();
+            var provider = services.BuildServiceProvider();
+
+            Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<ConnectorWithThrowingFactory>());
+        }
     }
 }

@@ -22,6 +22,13 @@ namespace Deveel.Messaging
 	{
 		private const string ValidToken = "123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
 
+		private static bool IsValidBotToken(string token)
+		{
+			var method = typeof(TelegramService).GetMethod("IsValidBotToken",
+				System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+			return (bool)method!.Invoke(null, new object[] { token })!;
+		}
+
 		#region Constructor Tests
 
 		[Fact]
@@ -1521,37 +1528,37 @@ namespace Deveel.Messaging
 		[InlineData(null)]
 		public void Should_ReturnFalse_When_IsValidBotTokenWithNullOrWhitespace(string? token)
 		{
-			Assert.False(TelegramService.IsValidBotToken(token!));
+			Assert.False(IsValidBotToken(token!));
 		}
 
 		[Fact]
 		public void Should_ReturnFalse_When_IsValidBotTokenWithoutColon()
 		{
-			Assert.False(TelegramService.IsValidBotToken("invalidtoken"));
+			Assert.False(IsValidBotToken("invalidtoken"));
 		}
 
 		[Fact]
 		public void Should_ReturnFalse_When_IsValidBotTokenWithNonNumericPrefix()
 		{
-			Assert.False(TelegramService.IsValidBotToken("abc:defghijklmnopqrstuvwxyz1234567890ab"));
+			Assert.False(IsValidBotToken("abc:defghijklmnopqrstuvwxyz1234567890ab"));
 		}
 
 		[Fact]
 		public void Should_ReturnFalse_When_IsValidBotTokenWithWrongLengthToken()
 		{
-			Assert.False(TelegramService.IsValidBotToken("12345:tooshort"));
+			Assert.False(IsValidBotToken("12345:tooshort"));
 		}
 
 		[Fact]
 		public void Should_ReturnFalse_When_IsValidBotTokenWithInvalidCharacters()
 		{
-			Assert.False(TelegramService.IsValidBotToken("12345:ABCDEFGHIJKLMNOPQRSTUVWXYZ12345!@#$%"));
+			Assert.False(IsValidBotToken("12345:ABCDEFGHIJKLMNOPQRSTUVWXYZ12345!@#$%"));
 		}
 
 		[Fact]
 		public void Should_ReturnTrue_When_IsValidBotTokenWithValidToken()
 		{
-			Assert.True(TelegramService.IsValidBotToken("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi"));
+			Assert.True(IsValidBotToken("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi"));
 		}
 
 		[Fact]

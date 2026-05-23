@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
-using Twilio;
 using Twilio.Exceptions;
 using Twilio.Rest.Api.V2010;
 using Twilio.Rest.Api.V2010.Account;
@@ -15,10 +14,22 @@ namespace Deveel.Messaging;
 /// </summary>
 public class TwilioService : ITwilioService
 {
+    private readonly ITwilioApiClient _client;
+
+    public TwilioService()
+    {
+        _client = new TwilioApiClient();
+    }
+
+    internal TwilioService(ITwilioApiClient client)
+    {
+        _client = client;
+    }
+
     /// <inheritdoc/>
     public void Initialize(string accountSid, string authToken)
     {
-        TwilioClient.Init(accountSid, authToken);
+        _client.Initialize(accountSid, authToken);
     }
 
     /// <inheritdoc/>
@@ -26,7 +37,7 @@ public class TwilioService : ITwilioService
     {
         try
         {
-            return await AccountResource.FetchAsync(accountSid);
+            return await _client.FetchAccountAsync(accountSid);
         }
         catch (ApiException ex)
         {
@@ -43,7 +54,7 @@ public class TwilioService : ITwilioService
     {
         try
         {
-            return await MessageResource.CreateAsync(options);
+            return await _client.CreateMessageAsync(options);
         }
         catch (ApiException ex)
         {
@@ -62,7 +73,7 @@ public class TwilioService : ITwilioService
     {
         try
         {
-            return await MessageResource.FetchAsync(messageSid);
+            return await _client.FetchMessageAsync(messageSid);
         }
         catch (ApiException ex)
         {
@@ -74,7 +85,7 @@ public class TwilioService : ITwilioService
         }
     }
 
-    private static string MapTwilioErrorCode(int? twilioCode)
+    public static string MapTwilioErrorCode(int? twilioCode)
     {
         // Map common Twilio error codes to internal error codes
         return twilioCode switch

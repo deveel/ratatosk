@@ -6,11 +6,37 @@ namespace Deveel.Messaging
     [Trait("Feature", "TelegramMessageParser")]
     public class TelegramMessageParserTests
     {
+        private static Type _parserType = typeof(TelegramService).Assembly.GetTypes().First(t => t.Name == "TelegramMessageParser");
+
+        private static object? InvokeStatic(string methodName, object[] args)
+        {
+            try
+            {
+                var method = _parserType.GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                return method!.Invoke(null, args);
+            }
+            catch (System.Reflection.TargetInvocationException ex)
+            {
+                throw ex.InnerException!;
+            }
+        }
+
+        private static List<Message> ParseWebhookJson(MessageSource source)
+        {
+            var result = InvokeStatic("ParseWebhookJson", new object[] { source });
+            return ((System.Collections.IEnumerable)result!).OfType<Message>().ToList();
+        }
+
+        private static Message? ParseMessage(JsonElement element)
+        {
+            return (Message?)InvokeStatic("ParseMessage", new object[] { element });
+        }
+
         [Fact]
         public void Should_ReturnEmpty_When_ParseWebhookJsonWithNoMessageOrEditedMessage()
         {
             var source = MessageSource.Json("""{"update_id": 123}""");
-            var messages = TelegramMessageParser.ParseWebhookJson(source);
+            var messages = ParseWebhookJson(source);
             Assert.Empty(messages);
         }
 
@@ -29,7 +55,7 @@ namespace Deveel.Messaging
                 }
             }
             """);
-            var messages = TelegramMessageParser.ParseWebhookJson(source);
+            var messages = ParseWebhookJson(source);
             Assert.Single(messages);
             var msg = messages[0];
             Assert.Equal("100", msg.Id);
@@ -52,7 +78,7 @@ namespace Deveel.Messaging
                 }
             }
             """);
-            var messages = TelegramMessageParser.ParseWebhookJson(source);
+            var messages = ParseWebhookJson(source);
             Assert.Single(messages);
         }
 
@@ -60,7 +86,7 @@ namespace Deveel.Messaging
         public void Should_ReturnEmpty_When_ParseWebhookJsonWithMalformedData()
         {
             var source = MessageSource.Json("{ invalid json }");
-            Assert.Throws<JsonException>(() => TelegramMessageParser.ParseWebhookJson(source));
+            Assert.Throws<JsonException>(() => ParseWebhookJson(source));
         }
 
         [Fact]
@@ -68,7 +94,7 @@ namespace Deveel.Messaging
         {
             var json = """{"from": {"id": 1}, "chat": {"id": 2}}""";
             var element = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
-            Assert.Null(TelegramMessageParser.ParseMessage(element));
+            Assert.Null(ParseMessage(element));
         }
 
         [Fact]
@@ -76,7 +102,7 @@ namespace Deveel.Messaging
         {
             var json = """{"message_id": 1, "from": {"id": 1}}""";
             var element = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
-            Assert.Null(TelegramMessageParser.ParseMessage(element));
+            Assert.Null(ParseMessage(element));
         }
 
         [Fact]
@@ -94,7 +120,7 @@ namespace Deveel.Messaging
                 }
             }
             """);
-            var messages = TelegramMessageParser.ParseWebhookJson(source);
+            var messages = ParseWebhookJson(source);
             Assert.Single(messages);
             Assert.IsType<MediaContent>(messages[0].Content);
             Assert.Equal(MediaType.Video, ((MediaContent)messages[0].Content).MediaType);
@@ -115,7 +141,7 @@ namespace Deveel.Messaging
                 }
             }
             """);
-            var messages = TelegramMessageParser.ParseWebhookJson(source);
+            var messages = ParseWebhookJson(source);
             Assert.Single(messages);
             Assert.IsType<MediaContent>(messages[0].Content);
             Assert.Equal(MediaType.Audio, ((MediaContent)messages[0].Content).MediaType);
@@ -136,7 +162,7 @@ namespace Deveel.Messaging
                 }
             }
             """);
-            var messages = TelegramMessageParser.ParseWebhookJson(source);
+            var messages = ParseWebhookJson(source);
             Assert.Single(messages);
             Assert.IsType<MediaContent>(messages[0].Content);
             Assert.Equal(MediaType.Document, ((MediaContent)messages[0].Content).MediaType);
@@ -164,7 +190,7 @@ namespace Deveel.Messaging
                 }
             }
             """);
-            var messages = TelegramMessageParser.ParseWebhookJson(source);
+            var messages = ParseWebhookJson(source);
             Assert.Single(messages);
             Assert.True(messages[0].Properties?.ContainsKey("ReplyToMessageId"));
         }
@@ -174,7 +200,7 @@ namespace Deveel.Messaging
         {
             var json = """{"message_id": 1, "from": {"id": 1}, "chat": {"id": 2}, "date": 1640995200}""";
             var element = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
-            var message = TelegramMessageParser.ParseMessage(element);
+            var message = ParseMessage(element);
             Assert.NotNull(message);
             Assert.IsType<TextContent>(message.Content);
         }

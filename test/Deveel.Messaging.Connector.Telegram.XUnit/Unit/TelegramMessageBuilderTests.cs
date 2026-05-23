@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Deveel.Messaging
@@ -7,31 +9,76 @@ namespace Deveel.Messaging
     [Trait("Feature", "TelegramMessageBuilder")]
     public class TelegramMessageBuilderTests
     {
+        private static Type _builderType = typeof(TelegramService).Assembly.GetTypes().First(t => t.Name == "TelegramMessageBuilder");
+
+        private static object? InvokeStatic(string methodName, object[] args)
+        {
+            try
+            {
+                var method = _builderType.GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                return method!.Invoke(null, args);
+            }
+            catch (System.Reflection.TargetInvocationException ex)
+            {
+                throw ex.InnerException!;
+            }
+        }
+
+        private static ChatId? ExtractChatId(Endpoint? endpoint)
+            => (ChatId?)InvokeStatic("ExtractChatId", new object?[] { endpoint });
+
+        private static int? GetMessageIntProperty(Message message, string propertyName)
+            => (int?)InvokeStatic("GetMessageIntProperty", new object[] { message, propertyName });
+
+        private static MessageProperty? GetMessageProperty(Message message, string propertyName)
+            => (MessageProperty?)InvokeStatic("GetMessageProperty", new object[] { message, propertyName });
+
+        private static ParseMode? GetMessageParseMode(Message message, string? defaultParseMode)
+            => (ParseMode?)InvokeStatic("GetMessageParseMode", new object?[] { message, defaultParseMode });
+
+        private static IReplyMarkup? CreateReplyMarkup(Message message)
+            => (IReplyMarkup?)InvokeStatic("CreateReplyMarkup", new object[] { message });
+
+        private static InlineKeyboardMarkup CreateInlineKeyboardMarkup(IEnumerable<IButtonContent> buttons)
+            => (InlineKeyboardMarkup)InvokeStatic("CreateInlineKeyboardMarkup", new object[] { buttons })!;
+
+        private static InputFile? CreateInputFile(MediaContent media)
+            => (InputFile?)InvokeStatic("CreateInputFile", new object[] { media });
+
+        private static bool IsLocationMessage(JsonContent jsonContent)
+            => (bool)InvokeStatic("IsLocationMessage", new object[] { jsonContent })!;
+
+        private static bool? GetMessageBoolProperty(Message message, string propertyName)
+            => (bool?)InvokeStatic("GetMessageBoolProperty", new object[] { message, propertyName, false });
+
+        private static ReplyKeyboardMarkup CreateReplyKeyboardMarkup(IEnumerable<IQuickReplyContent> quickReplies)
+            => (ReplyKeyboardMarkup)InvokeStatic("CreateReplyKeyboardMarkup", new object[] { quickReplies })!;
+
         [Fact]
         public void Should_ReturnNull_When_ExtractChatIdWithNonIdEndpoint()
         {
             var endpoint = new Endpoint(EndpointType.EmailAddress, "test@example.com");
-            Assert.Null(TelegramMessageBuilder.ExtractChatId(endpoint));
+            Assert.Null(ExtractChatId(endpoint));
         }
 
         [Fact]
         public void Should_ReturnNull_When_ExtractChatIdWithNullEndpoint()
         {
-            Assert.Null(TelegramMessageBuilder.ExtractChatId(null));
+            Assert.Null(ExtractChatId(null));
         }
 
         [Fact]
         public void Should_ReturnNull_When_ExtractChatIdWithEmptyAddress()
         {
             var endpoint = new Endpoint(EndpointType.Id, "");
-            Assert.Null(TelegramMessageBuilder.ExtractChatId(endpoint));
+            Assert.Null(ExtractChatId(endpoint));
         }
 
         [Fact]
         public void Should_ReturnNumericChatId_When_ExtractChatIdWithNumericAddress()
         {
             var endpoint = new Endpoint(EndpointType.Id, "123456789");
-            var chatId = TelegramMessageBuilder.ExtractChatId(endpoint);
+            var chatId = ExtractChatId(endpoint);
             Assert.NotNull(chatId);
             Assert.Equal(123456789, chatId.Identifier);
         }
@@ -40,7 +87,7 @@ namespace Deveel.Messaging
         public void Should_ReturnStringChatId_When_ExtractChatIdWithUsername()
         {
             var endpoint = new Endpoint(EndpointType.Id, "@testuser");
-            var chatId = TelegramMessageBuilder.ExtractChatId(endpoint);
+            var chatId = ExtractChatId(endpoint);
             Assert.NotNull(chatId);
             Assert.Equal("@testuser", chatId.Username);
         }
@@ -56,21 +103,21 @@ namespace Deveel.Messaging
                     { "Count", new MessageProperty("Count", "not-a-number") }
                 }
             };
-            Assert.Null(TelegramMessageBuilder.GetMessageIntProperty(message, "Count"));
+            Assert.Null(GetMessageIntProperty(message, "Count"));
         }
 
         [Fact]
         public void Should_ReturnNull_When_GetMessagePropertyWithMissingProperty()
         {
             var message = new Message { Id = "test" };
-            Assert.Null(TelegramMessageBuilder.GetMessageProperty(message, "Missing"));
+            Assert.Null(GetMessageProperty(message, "Missing"));
         }
 
         [Fact]
         public void Should_ReturnParseModeMarkdown_When_GetMessageParseModeWithUnrecognizedMode()
         {
             var message = new Message { Id = "test" };
-            var result = TelegramMessageBuilder.GetMessageParseMode(message, "unknown");
+            var result = GetMessageParseMode(message, "unknown");
             Assert.Equal(Telegram.Bot.Types.Enums.ParseMode.Markdown, result);
         }
 
@@ -85,7 +132,7 @@ namespace Deveel.Messaging
                     { "ParseMode", new MessageProperty("ParseMode", "None") }
                 }
             };
-            Assert.Null(TelegramMessageBuilder.GetMessageParseMode(message, null));
+            Assert.Null(GetMessageParseMode(message, null));
         }
 
         [Fact]
@@ -99,14 +146,14 @@ namespace Deveel.Messaging
                     { "InlineKeyboard", new MessageProperty("InlineKeyboard", "not valid json") }
                 }
             };
-            Assert.Null(TelegramMessageBuilder.CreateReplyMarkup(message));
+            Assert.Null(CreateReplyMarkup(message));
         }
 
         [Fact]
         public void Should_ReturnNull_When_CreateReplyMarkupWithNoKeyboard()
         {
             var message = new Message { Id = "test" };
-            Assert.Null(TelegramMessageBuilder.CreateReplyMarkup(message));
+            Assert.Null(CreateReplyMarkup(message));
         }
 
         [Fact]
@@ -114,7 +161,7 @@ namespace Deveel.Messaging
         {
             var button = new ButtonContent("Call", ButtonType.PhoneNumber, "+1234567890");
             Assert.Throws<NotSupportedException>(() =>
-                TelegramMessageBuilder.CreateInlineKeyboardMarkup(new[] { button }));
+                CreateInlineKeyboardMarkup(new[] { button }));
         }
 
         [Fact]
@@ -122,14 +169,14 @@ namespace Deveel.Messaging
         {
             var media = new MediaContent(MediaType.Image, "test.jpg", (byte[])null!);
             Assert.Throws<ArgumentException>(() =>
-                TelegramMessageBuilder.CreateInputFile(media));
+                CreateInputFile(media));
         }
 
         [Fact]
         public void Should_CreateInputFileFromData_When_MediaHasData()
         {
             var media = new MediaContent(MediaType.Image, "test.jpg", new byte[] { 0x01, 0x02 });
-            var inputFile = TelegramMessageBuilder.CreateInputFile(media);
+            var inputFile = CreateInputFile(media);
             Assert.NotNull(inputFile);
         }
 
@@ -137,21 +184,21 @@ namespace Deveel.Messaging
         public void Should_ReturnFalse_When_IsLocationMessageWithInvalidJson()
         {
             var jsonContent = new JsonContent("not valid json");
-            Assert.False(TelegramMessageBuilder.IsLocationMessage(jsonContent));
+            Assert.False(IsLocationMessage(jsonContent));
         }
 
         [Fact]
         public void Should_ReturnFalse_When_IsLocationMessageWithoutCoordinates()
         {
             var jsonContent = new JsonContent("""{"name": "test"}""");
-            Assert.False(TelegramMessageBuilder.IsLocationMessage(jsonContent));
+            Assert.False(IsLocationMessage(jsonContent));
         }
 
         [Fact]
         public void Should_ReturnTrue_When_IsLocationMessageWithCoordinates()
         {
             var jsonContent = new JsonContent("""{"latitude": 40.71, "longitude": -74.00}""");
-            Assert.True(TelegramMessageBuilder.IsLocationMessage(jsonContent));
+            Assert.True(IsLocationMessage(jsonContent));
         }
 
         [Fact]
@@ -165,7 +212,7 @@ namespace Deveel.Messaging
                     { "Flag", new MessageProperty("Flag", "not-a-bool") }
                 }
             };
-            Assert.False(TelegramMessageBuilder.GetMessageBoolProperty(message, "Flag"));
+            Assert.False(GetMessageBoolProperty(message, "Flag"));
         }
 
         [Fact]
@@ -179,7 +226,7 @@ namespace Deveel.Messaging
                     { "Flag", new MessageProperty("Flag", "true") }
                 }
             };
-            Assert.True(TelegramMessageBuilder.GetMessageBoolProperty(message, "Flag"));
+            Assert.True(GetMessageBoolProperty(message, "Flag"));
         }
 
         [Fact]
@@ -190,7 +237,7 @@ namespace Deveel.Messaging
                 new QuickReplyContent("Yes"),
                 new QuickReplyContent("No")
             };
-            var markup = TelegramMessageBuilder.CreateReplyKeyboardMarkup(quickReplies);
+            var markup = CreateReplyKeyboardMarkup(quickReplies);
             Assert.NotNull(markup);
             Assert.True(markup.OneTimeKeyboard);
             Assert.True(markup.ResizeKeyboard);
@@ -204,7 +251,7 @@ namespace Deveel.Messaging
                 new ButtonContent("Click", ButtonType.Postback, "payload"),
                 new ButtonContent("Visit", ButtonType.Url, "https://example.com")
             };
-            var markup = TelegramMessageBuilder.CreateInlineKeyboardMarkup(buttons);
+            var markup = CreateInlineKeyboardMarkup(buttons);
             Assert.NotNull(markup);
             Assert.Equal(2, markup.InlineKeyboard.Count());
         }
