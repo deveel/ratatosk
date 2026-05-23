@@ -513,29 +513,12 @@ public class FacebookServiceTests
 
     #region SendMessageAsync API Interaction Tests
 
-    private static (Mock<HttpMessageHandler> Handler, HttpClient Client) CreateMockHttpClient()
-    {
-        var handlerMock = new Mock<HttpMessageHandler>();
-        var httpClient = new HttpClient(handlerMock.Object)
-        {
-            BaseAddress = new Uri(FacebookConnectorConstants.GraphApiBaseUrl)
-        };
-        return (handlerMock, httpClient);
-    }
-
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_ValidTextOnly()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("""{"message_id":"m_mid.123456"}""")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, """{"message_id":"m_mid.123456"}""");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -551,21 +534,29 @@ public class FacebookServiceTests
         Assert.NotNull(response);
         Assert.Equal("m_mid.123456", response.MessageId);
         Assert.Equal("user-123", response.RecipientId);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
+        Assert.Equal("EAATest123456789|ValidPageAccessToken", Uri.UnescapeDataString(capture.Request.RequestUri.Query.TrimStart('?')
+            .Split('&').First(q => q.StartsWith("access_token=")).Split('=')[1]));
+
+        var body = capture.Body;
+        var json = JsonSerializer.Deserialize<JsonElement>(body);
+
+        Assert.Equal("user-123", json.GetProperty("recipient").GetProperty("id").GetString());
+        Assert.Equal("RESPONSE", json.GetProperty("messaging_type").GetString());
+        Assert.Equal("Hello!", json.GetProperty("message").GetProperty("text").GetString());
+        Assert.False(json.TryGetProperty("notification_type", out _));
+        Assert.False(json.TryGetProperty("tag", out _));
     }
 
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithAttachment()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("""{"message_id":"m_mid.789"}""")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, """{"message_id":"m_mid.789"}""");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -592,21 +583,26 @@ public class FacebookServiceTests
 
         Assert.NotNull(response);
         Assert.Equal("m_mid.789", response.MessageId);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
+
+        var body = capture.Body;
+        var json = JsonSerializer.Deserialize<JsonElement>(body);
+
+        Assert.Equal("user-456", json.GetProperty("recipient").GetProperty("id").GetString());
+        Assert.Equal("Check this!", json.GetProperty("message").GetProperty("text").GetString());
+        Assert.Equal("image", json.GetProperty("message").GetProperty("attachment").GetProperty("type").GetString());
+        Assert.Equal("https://example.com/img.png", json.GetProperty("message").GetProperty("attachment").GetProperty("payload").GetProperty("url").GetString());
     }
 
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithTemplate()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("""{"message_id":"m_mid.tpl"}""")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, """{"message_id":"m_mid.tpl"}""");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -641,21 +637,25 @@ public class FacebookServiceTests
 
         Assert.NotNull(response);
         Assert.Equal("m_mid.tpl", response.MessageId);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
+
+        var body = capture.Body;
+        var json = JsonSerializer.Deserialize<JsonElement>(body);
+
+        Assert.Equal("user-789", json.GetProperty("recipient").GetProperty("id").GetString());
+        Assert.Equal("template", json.GetProperty("message").GetProperty("attachment").GetProperty("type").GetString());
+        Assert.Equal("button", json.GetProperty("message").GetProperty("attachment").GetProperty("payload").GetProperty("template_type").GetString());
     }
 
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithQuickReplies()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("""{"message_id":"m_mid.qr"}""")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, """{"message_id":"m_mid.qr"}""");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -678,21 +678,29 @@ public class FacebookServiceTests
 
         Assert.NotNull(response);
         Assert.Equal("m_mid.qr", response.MessageId);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
+
+        var body = capture.Body;
+        var json = JsonSerializer.Deserialize<JsonElement>(body);
+
+        Assert.Equal("user-999", json.GetProperty("recipient").GetProperty("id").GetString());
+        Assert.Equal("Choose:", json.GetProperty("message").GetProperty("text").GetString());
+
+        var quickReplies = json.GetProperty("message").GetProperty("quick_replies");
+        Assert.Equal(2, quickReplies.GetArrayLength());
+        Assert.Equal("Yes", quickReplies[0].GetProperty("title").GetString());
+        Assert.Equal("No", quickReplies[1].GetProperty("title").GetString());
     }
 
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithNotificationTypeSilent()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("""{"message_id":"m_mid.silent"}""")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, """{"message_id":"m_mid.silent"}""");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -708,21 +716,23 @@ public class FacebookServiceTests
 
         Assert.NotNull(response);
         Assert.Equal("m_mid.silent", response.MessageId);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
+
+        var body = capture.Body;
+        var json = JsonSerializer.Deserialize<JsonElement>(body);
+
+        Assert.Equal("SILENT_PUSH", json.GetProperty("notification_type").GetString());
     }
 
     [Fact]
     public async Task Should_SendMessageSuccessfully_When_WithTag()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("""{"message_id":"m_mid.tag"}""")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, """{"message_id":"m_mid.tag"}""");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -738,29 +748,31 @@ public class FacebookServiceTests
 
         Assert.NotNull(response);
         Assert.Equal("m_mid.tag", response.MessageId);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
+
+        var body = capture.Body;
+        var json = JsonSerializer.Deserialize<JsonElement>(body);
+
+        Assert.Equal("CONFIRMED_EVENT_UPDATE", json.GetProperty("tag").GetString());
     }
 
     [Fact]
     public async Task Should_ThrowConnectorException_When_ApiReturnsError()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.BadRequest, """
             {
-                StatusCode = HttpStatusCode.BadRequest,
-                Content = new StringContent("""
-                    {
-                        "error": {
-                            "message": "(#100) Invalid parameter",
-                            "code": 100,
-                            "error_subcode": 1234
-                        }
-                    }
-                    """)
-            });
+                "error": {
+                    "message": "(#100) Invalid parameter",
+                    "code": 100,
+                    "error_subcode": 1234
+                }
+            }
+            """);
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -776,29 +788,28 @@ public class FacebookServiceTests
 
         Assert.Equal(FacebookErrorCodes.GraphApiError, ex.ErrorCode);
         Assert.Equal(FacebookErrorCodes.ErrorDomain, ex.ErrorDomain);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
+        Assert.Equal("EAATest123456789|ValidPageAccessToken", Uri.UnescapeDataString(capture.Request.RequestUri.Query.TrimStart('?')
+            .Split('&').First(q => q.StartsWith("access_token=")).Split('=')[1]));
     }
 
     [Fact]
     public async Task Should_ThrowConnectorExceptionWithInvalidAccessToken_When_ApiReturnsTokenError()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.Unauthorized, """
             {
-                StatusCode = HttpStatusCode.Unauthorized,
-                Content = new StringContent("""
-                    {
-                        "error": {
-                            "message": "Error validating access token",
-                            "code": 190,
-                            "error_subcode": 467
-                        }
-                    }
-                    """)
-            });
+                "error": {
+                    "message": "Error validating access token",
+                    "code": 190,
+                    "error_subcode": 467
+                }
+            }
+            """);
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -813,21 +824,18 @@ public class FacebookServiceTests
             service.SendMessageAsync(request, TestContext.Current.CancellationToken));
 
         Assert.Equal(FacebookErrorCodes.InvalidAccessToken, ex.ErrorCode);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
     }
 
     [Fact]
     public async Task Should_ThrowConnectorException_When_ApiReturnsEmptyResponse()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, "");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -842,21 +850,18 @@ public class FacebookServiceTests
             service.SendMessageAsync(request, TestContext.Current.CancellationToken));
 
         Assert.Equal(FacebookErrorCodes.GraphApiError, ex.ErrorCode);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
     }
 
     [Fact]
     public async Task Should_ThrowConnectorException_When_ApiReturnsMalformedJson()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("this is not json")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, "this is not json");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -874,6 +879,48 @@ public class FacebookServiceTests
         Assert.Equal(FacebookErrorCodes.ErrorDomain, ex.ErrorDomain);
         Assert.NotNull(ex.InnerException);
         Assert.IsType<JsonException>(ex.InnerException);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Post, capture.Request.Method);
+        Assert.Equal("/v21.0/me/messages", capture.Request.RequestUri!.AbsolutePath);
+
+        var body = capture.Body;
+        var json = JsonSerializer.Deserialize<JsonElement>(body);
+        Assert.Equal("Hello!", json.GetProperty("message").GetProperty("text").GetString());
+    }
+
+    private static (Mock<HttpMessageHandler> Handler, HttpClient Client) CreateMockHttpClient()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>();
+        var httpClient = new HttpClient(handlerMock.Object)
+        {
+            BaseAddress = new Uri(FacebookConnectorConstants.GraphApiBaseUrl)
+        };
+        return (handlerMock, httpClient);
+    }
+
+    private sealed class RequestCapture
+    {
+        public HttpRequestMessage? Request { get; set; }
+        public string? Body { get; set; }
+    }
+
+    private static void SetupSendAsync(Mock<HttpMessageHandler> handlerMock, RequestCapture capture, HttpStatusCode statusCode, string content)
+    {
+        handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Callback<HttpRequestMessage, CancellationToken>((req, _) =>
+            {
+                capture.Request = req;
+                capture.Body = req.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
+            })
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = statusCode,
+                Content = new StringContent(content)
+            });
     }
 
     #endregion
@@ -884,21 +931,14 @@ public class FacebookServiceTests
     public async Task Should_FetchPageSuccessfully_When_ValidResponse()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, """
             {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("""
-                    {
-                        "id": "123456789",
-                        "name": "Test Page",
-                        "category": "Business"
-                    }
-                    """)
-            });
+                "id": "123456789",
+                "name": "Test Page",
+                "category": "Business"
+            }
+            """);
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -909,26 +949,27 @@ public class FacebookServiceTests
         Assert.Equal("123456789", result.Id);
         Assert.Equal("Test Page", result.Name);
         Assert.Equal("Business", result.Category);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Get, capture.Request.Method);
+        Assert.Equal("/v21.0/123456789", capture.Request.RequestUri!.AbsolutePath);
+
+        var query = capture.Request.RequestUri.Query;
+        Assert.Contains("fields=id%2Cname%2Ccategory%2Caccess_token", query);
+        Assert.Contains("access_token=EAATest123456789%7CValidPageAccessToken", query);
     }
 
     [Fact]
     public async Task Should_FallbackToPageId_When_ResponseMissingId()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, """
             {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("""
-                    {
-                        "name": "Unnamed Page",
-                        "category": "Business"
-                    }
-                    """)
-            });
+                "name": "Unnamed Page",
+                "category": "Business"
+            }
+            """);
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -938,21 +979,18 @@ public class FacebookServiceTests
         Assert.NotNull(result);
         Assert.Equal("my-page-id", result.Id);
         Assert.Equal("Unnamed Page", result.Name);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Get, capture.Request.Method);
+        Assert.Equal("/v21.0/my-page-id", capture.Request.RequestUri!.AbsolutePath);
     }
 
     [Fact]
     public async Task Should_ReturnNull_When_FetchPageApiReturnsEmptyContent()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, "");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -960,29 +998,26 @@ public class FacebookServiceTests
         var result = await service.FetchPageAsync("123456789", TestContext.Current.CancellationToken);
 
         Assert.Null(result);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Get, capture.Request.Method);
+        Assert.Equal("/v21.0/123456789", capture.Request.RequestUri!.AbsolutePath);
     }
 
     [Fact]
     public async Task Should_ThrowConnectorException_When_FetchPageApiReturnsError()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.BadRequest, """
             {
-                StatusCode = HttpStatusCode.BadRequest,
-                Content = new StringContent("""
-                    {
-                        "error": {
-                            "message": "(#100) Invalid parameter",
-                            "code": 100,
-                            "error_subcode": 1234
-                        }
-                    }
-                    """)
-            });
+                "error": {
+                    "message": "(#100) Invalid parameter",
+                    "code": 100,
+                    "error_subcode": 1234
+                }
+            }
+            """);
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -992,29 +1027,26 @@ public class FacebookServiceTests
 
         Assert.Equal(FacebookErrorCodes.GraphApiError, ex.ErrorCode);
         Assert.Equal(FacebookErrorCodes.ErrorDomain, ex.ErrorDomain);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Get, capture.Request.Method);
+        Assert.Equal("/v21.0/123456789", capture.Request.RequestUri!.AbsolutePath);
     }
 
     [Fact]
     public async Task Should_ThrowConnectorExceptionWithInvalidAccessToken_When_FetchPageApiReturnsTokenError()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.Unauthorized, """
             {
-                StatusCode = HttpStatusCode.Unauthorized,
-                Content = new StringContent("""
-                    {
-                        "error": {
-                            "message": "Error validating access token",
-                            "code": 190,
-                            "error_subcode": 467
-                        }
-                    }
-                    """)
-            });
+                "error": {
+                    "message": "Error validating access token",
+                    "code": 190,
+                    "error_subcode": 467
+                }
+            }
+            """);
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -1023,21 +1055,18 @@ public class FacebookServiceTests
             service.FetchPageAsync("123456789", TestContext.Current.CancellationToken));
 
         Assert.Equal(FacebookErrorCodes.InvalidAccessToken, ex.ErrorCode);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Get, capture.Request.Method);
+        Assert.Equal("/v21.0/123456789", capture.Request.RequestUri!.AbsolutePath);
     }
 
     [Fact]
     public async Task Should_ThrowConnectorException_When_FetchPageApiReturnsMalformedJson()
     {
         var (handlerMock, httpClient) = CreateMockHttpClient();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("not json at all")
-            });
+        var capture = new RequestCapture();
+        SetupSendAsync(handlerMock, capture, HttpStatusCode.OK, "not json at all");
 
         var service = new FacebookService(httpClient);
         service.Initialize("EAATest123456789|ValidPageAccessToken");
@@ -1049,6 +1078,10 @@ public class FacebookServiceTests
         Assert.Equal(FacebookErrorCodes.ErrorDomain, ex.ErrorDomain);
         Assert.NotNull(ex.InnerException);
         Assert.IsType<JsonException>(ex.InnerException);
+
+        Assert.NotNull(capture.Request);
+        Assert.Equal(HttpMethod.Get, capture.Request.Method);
+        Assert.Equal("/v21.0/123456789", capture.Request.RequestUri!.AbsolutePath);
     }
 
     #endregion
