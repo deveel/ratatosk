@@ -3,32 +3,45 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
-using RestSharp;
+using Polly;
+using Polly.Retry;
 
+using System.Net;
+using System.Text;
 using System.Text.Json;
 
 namespace Deveel.Messaging
 {
-    /// <summary>
-    /// Implements Facebook Graph API operations for Messenger messaging using RestSharp.
-    /// This implementation follows Facebook Graph API best practices for authentication and validation.
-    /// </summary>
     public class FacebookService : IFacebookService
     {
-        private readonly RestClient _restClient;
+        private readonly HttpClient _httpClient;
+        private readonly ResiliencePipeline<HttpResponseMessage> _resiliencePipeline;
         private string? _pageAccessToken;
 
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FacebookService"/> class.
-        /// </summary>
-        /// <param name="restClient">Optional REST client for dependency injection. If null, a new one will be created.</param>
-        public FacebookService(RestClient? restClient = null)
+        public FacebookService(HttpClient? httpClient = null)
         {
-            _restClient = restClient ?? new RestClient(FacebookConnectorConstants.GraphApiBaseUrl);
+            _httpClient = httpClient ?? new HttpClient { BaseAddress = new Uri(FacebookConnectorConstants.GraphApiBaseUrl) };
+            _resiliencePipeline = CreateDefaultResiliencePipeline();
         }
 
-        /// <inheritdoc/>
+        private static ResiliencePipeline<HttpResponseMessage> CreateDefaultResiliencePipeline()
+        {
+            return new ResiliencePipelineBuilder<HttpResponseMessage>()
+                .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
+                {
+                    MaxRetryAttempts = 3,
+                    Delay = TimeSpan.FromSeconds(1),
+                    BackoffType = DelayBackoffType.Exponential,
+                    UseJitter = true,
+                    ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                        .Handle<HttpRequestException>()
+                        .Handle<TaskCanceledException>()
+                        .HandleResult(r => (int)r.StatusCode >= 500)
+                })
+                .AddTimeout(TimeSpan.FromSeconds(30))
+                .Build();
+        }
+
         public void Initialize(string pageAccessToken)
         {
             if (string.IsNullOrWhiteSpace(pageAccessToken))
@@ -39,7 +52,6 @@ namespace Deveel.Messaging
             _pageAccessToken = pageAccessToken;
         }
 
-        /// <inheritdoc/>
         public async Task<FacebookPageInfo?> FetchPageAsync(string pageId, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(_pageAccessToken))
@@ -50,18 +62,18 @@ namespace Deveel.Messaging
 
             try
             {
-                var request = new RestRequest($"/{FacebookConnectorConstants.GraphApiVersion}/{pageId}", Method.Get);
+                var url = $"/{FacebookConnectorConstants.GraphApiVersion}/{Uri.EscapeDataString(pageId)}?fields={Uri.EscapeDataString("id,name,category,access_token")}&access_token={Uri.EscapeDataString(_pageAccessToken)}";
 
-                // Facebook Graph API requires specific parameters for page information
-                request.AddParameter("fields", "id,name,category,access_token");
-                request.AddParameter("access_token", _pageAccessToken);
+                var response = await _resiliencePipeline.ExecuteAsync(
+                    async ct => await _httpClient.GetAsync(url, ct),
+                    cancellationToken);
 
-                var response = await _restClient.ExecuteAsync(request, cancellationToken);
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                if (!response.IsSuccessful)
+                if (!response.IsSuccessStatusCode)
                 {
-                    var errorDetails = ParseFacebookError(response);
-                    var (graphApiCode, _) = ParseFacebookErrorCode(response);
+                    var errorDetails = ParseFacebookError(content, response.StatusCode);
+                    var (graphApiCode, _) = ParseFacebookErrorCode(content);
                     var errorCode = MapGraphApiErrorCode(graphApiCode);
 
                     throw new ConnectorException(
@@ -70,10 +82,10 @@ namespace Deveel.Messaging
                         $"Facebook Graph API error: {errorDetails}");
                 }
 
-                if (string.IsNullOrEmpty(response.Content))
+                if (string.IsNullOrEmpty(content))
                     return null;
 
-                var pageData = JsonSerializer.Deserialize<JsonElement>(response.Content);
+                var pageData = JsonSerializer.Deserialize<JsonElement>(content);
 
                 return new FacebookPageInfo
                 {
@@ -88,7 +100,6 @@ namespace Deveel.Messaging
             }
         }
 
-        /// <inheritdoc/>
         public async Task<FacebookMessageResponse> SendMessageAsync(FacebookMessageRequest request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(_pageAccessToken))
@@ -98,26 +109,27 @@ namespace Deveel.Messaging
             ArgumentNullException.ThrowIfNullOrWhiteSpace(request.Recipient, nameof(request.Recipient));
             ArgumentNullException.ThrowIfNull(request.Message, nameof(request.Message));
 
-            // Validate Facebook Messenger Platform requirements
             ValidateMessageRequest(request);
 
             try
             {
-                var restRequest = new RestRequest($"/{FacebookConnectorConstants.GraphApiVersion}/me/messages", Method.Post);
+                var url = $"/{FacebookConnectorConstants.GraphApiVersion}/me/messages?access_token={Uri.EscapeDataString(_pageAccessToken)}";
 
-                // Facebook Graph API authentication
-                restRequest.AddParameter("access_token", _pageAccessToken);
-
-                // Build message payload according to Facebook Messenger Platform API specification
                 var messagePayload = BuildFacebookMessagePayload(request);
-                restRequest.AddJsonBody(messagePayload);
+                var json = JsonSerializer.Serialize(messagePayload);
 
-                var response = await _restClient.ExecuteAsync(restRequest, cancellationToken);
-
-                if (!response.IsSuccessful)
+                var response = await _resiliencePipeline.ExecuteAsync(async ct =>
                 {
-                    var errorDetails = ParseFacebookError(response);
-                    var (graphApiCode, _) = ParseFacebookErrorCode(response);
+                    using var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
+                    return await _httpClient.PostAsync(url, requestContent, ct);
+                }, cancellationToken);
+
+                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorDetails = ParseFacebookError(responseContent, response.StatusCode);
+                    var (graphApiCode, _) = ParseFacebookErrorCode(responseContent);
                     var errorCode = MapGraphApiErrorCode(graphApiCode);
 
                     throw new ConnectorException(
@@ -126,10 +138,10 @@ namespace Deveel.Messaging
                         $"Facebook Graph API error: {errorDetails}");
                 }
 
-                if (string.IsNullOrEmpty(response.Content))
+                if (string.IsNullOrEmpty(responseContent))
                     throw new ConnectorException(FacebookErrorCodes.GraphApiError, FacebookErrorCodes.ErrorDomain, "Facebook API returned empty response");
 
-                var responseData = JsonSerializer.Deserialize<JsonElement>(response.Content);
+                var responseData = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
                 return new FacebookMessageResponse
                 {
@@ -155,37 +167,26 @@ namespace Deveel.Messaging
                 throw new ArgumentException("Page Access Token contains spaces, which is not allowed", nameof(token));
         }
 
-        /// <summary>
-        /// Validates message request according to Facebook Messenger Platform requirements.
-        /// </summary>
         private static void ValidateMessageRequest(FacebookMessageRequest request)
         {
-            // Facebook Messenger Platform validation requirements
             if (string.IsNullOrWhiteSpace(request.Message.Text) && request.Message.Attachment == null)
                 throw new ArgumentException("Message must contain either text or attachment");
 
             if (!string.IsNullOrEmpty(request.Message.Text) && request.Message.Text.Length > 2000)
                 throw new ArgumentException("Message text cannot exceed 2000 characters (Facebook limit)");
 
-            // Check quick replies from the message object
             if (request.Message.QuickReplies?.Count > 13)
                 throw new ArgumentException("Maximum 13 quick replies allowed (Facebook limit)");
 
-
-            // Validate messaging type
             var validMessagingTypes = new[] { "RESPONSE", "UPDATE", "MESSAGE_TAG", "NON_PROMOTIONAL_SUBSCRIPTION" };
             if (!validMessagingTypes.Contains(request.MessagingType))
                 throw new ArgumentException($"Invalid messaging type. Must be one of: {string.Join(", ", validMessagingTypes)}");
 
-            // Validate notification type
             var validNotificationTypes = new[] { "REGULAR", "SILENT_PUSH", "NO_PUSH" };
             if (!string.IsNullOrEmpty(request.NotificationType) && !validNotificationTypes.Contains(request.NotificationType))
                 throw new ArgumentException($"Invalid notification type. Must be one of: {string.Join(", ", validNotificationTypes)}");
         }
 
-        /// <summary>
-        /// Builds Facebook Messenger Platform message payload according to API specification.
-        /// </summary>
         internal static object BuildFacebookMessagePayload(FacebookMessageRequest request)
         {
             var payload = new Dictionary<string, object>
@@ -195,7 +196,6 @@ namespace Deveel.Messaging
                 ["message"] = BuildMessageContent(request.Message)
             };
 
-            // Add optional parameters only if they have meaningful values
             if (!string.IsNullOrEmpty(request.NotificationType) && request.NotificationType != "REGULAR")
             {
                 payload["notification_type"] = request.NotificationType;
@@ -209,20 +209,15 @@ namespace Deveel.Messaging
             return payload;
         }
 
-        /// <summary>
-        /// Builds message content according to Facebook Messenger Platform specification.
-        /// </summary>
         internal static object BuildMessageContent(FacebookMessage message)
         {
             var content = new Dictionary<string, object>();
 
-            // Add text content
             if (!string.IsNullOrEmpty(message.Text))
             {
                 content["text"] = message.Text;
             }
 
-            // Add attachment (media or template — mutually exclusive in Facebook API)
             if (message.Attachment != null)
             {
                 content["attachment"] = new
@@ -244,7 +239,6 @@ namespace Deveel.Messaging
                 };
             }
 
-            // Add quick replies with Facebook specification compliance
             if (message.QuickReplies != null && message.QuickReplies.Count > 0)
             {
                 content["quick_replies"] = message.QuickReplies.Select(qr =>
@@ -268,17 +262,14 @@ namespace Deveel.Messaging
             return content;
         }
 
-        /// <summary>
-        /// Parses the Facebook Graph API error code from the response.
-        /// </summary>
-        internal static (int? code, int? subcode) ParseFacebookErrorCode(RestResponse response)
+        internal static (int? code, int? subcode) ParseFacebookErrorCode(string? content)
         {
             try
             {
-                if (string.IsNullOrEmpty(response.Content))
+                if (string.IsNullOrEmpty(content))
                     return (null, null);
 
-                var errorData = JsonSerializer.Deserialize<JsonElement>(response.Content);
+                var errorData = JsonSerializer.Deserialize<JsonElement>(content);
 
                 if (errorData.TryGetProperty("error", out var error))
                 {
@@ -296,9 +287,6 @@ namespace Deveel.Messaging
             }
         }
 
-        /// <summary>
-        /// Maps a Facebook Graph API error code to an internal error code.
-        /// </summary>
         internal static string MapGraphApiErrorCode(int? graphApiCode)
         {
             return graphApiCode switch
@@ -313,17 +301,14 @@ namespace Deveel.Messaging
             };
         }
 
-        /// <summary>
-        /// Parses Facebook API error response for detailed error information.
-        /// </summary>
-        internal static string ParseFacebookError(RestResponse response)
+        internal static string ParseFacebookError(string? content, HttpStatusCode statusCode)
         {
             try
             {
-                if (string.IsNullOrEmpty(response.Content))
-                    return $"HTTP {(int)response.StatusCode} {response.StatusCode}: {response.ErrorMessage}";
+                if (string.IsNullOrEmpty(content))
+                    return $"HTTP {(int)statusCode} {statusCode}: Unknown error";
 
-                var errorData = JsonSerializer.Deserialize<JsonElement>(response.Content);
+                var errorData = JsonSerializer.Deserialize<JsonElement>(content);
 
                 if (errorData.TryGetProperty("error", out var error))
                 {
@@ -336,20 +321,16 @@ namespace Deveel.Messaging
                         : $"Code {code}: {message}";
                 }
 
-                return response.Content;
+                return content;
             }
             catch
             {
-                // When JSON parsing fails, return the raw content if it's not empty
-                return !string.IsNullOrEmpty(response.Content)
-                    ? response.Content
-                    : $"HTTP {(int)response.StatusCode} {response.StatusCode}: {response.ErrorMessage}";
+                return !string.IsNullOrEmpty(content)
+                    ? content
+                    : $"HTTP {(int)statusCode} {statusCode}: Unknown error";
             }
         }
 
-        /// <summary>
-        /// Safely extracts string property from JSON element.
-        /// </summary>
         internal static string? GetJsonStringProperty(JsonElement element, string propertyName)
         {
             return element.TryGetProperty(propertyName, out var property) ? property.GetString() : null;
