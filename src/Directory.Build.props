@@ -24,5 +24,12 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Content Include="../../ratatosk-logo.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </Content>
+  </ItemGroup>
 
 </Project>
