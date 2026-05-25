@@ -3,9 +3,9 @@
 The framework is split into layers so you depend only on what you use. The model layer has zero external dependencies; the connector infrastructure depends only on Microsoft.Extensions abstractions; provider connectors bring in their respective SDKs.
 
 Choosing packages by layer:
-- **Model only** (library projects that define messages but never send them): `Deveel.Messaging.Abstractions`
-- **Host application** (sends or receives messages): `Deveel.Messaging` + the connector packages for your providers
-- **Custom connector authoring** (building a new provider integration): `Deveel.Messaging.Connector.Abstractions` + `Deveel.Messaging.Connectors`
+- **Model only** (library projects that define messages but never send them): `Ratatosk.Abstractions`
+- **Host application** (sends or receives messages): `Ratatosk` + the connector packages for your providers
+- **Custom connector authoring** (building a new provider integration): `Ratatosk.Connector.Abstractions` + `Ratatosk.Connectors`
 
 ## Package selection
 
@@ -14,24 +14,24 @@ Install only what your application needs:
 ```bash
 # Core messaging platform — DI registration, IMessagingClient facade, MessageBuilder, connector factory
 #  (pulls in Abstractions + Connectors transitively)
-dotnet add package Deveel.Messaging
+dotnet add package Ratatosk
 
 # Provider-specific connectors — install what you actually use
-dotnet add package Deveel.Messaging.Connector.Twilio
-dotnet add package Deveel.Messaging.Connector.Sendgrid
-dotnet add package Deveel.Messaging.Connector.Firebase
-dotnet add package Deveel.Messaging.Connector.Facebook
-dotnet add package Deveel.Messaging.Connector.Telegram
+dotnet add package Ratatosk.Twilio
+dotnet add package Ratatosk.Sendgrid
+dotnet add package Ratatosk.Firebase
+dotnet add package Ratatosk.Facebook
+dotnet add package Ratatosk.Telegram
 
 # Model only (no DI, no connectors) — needed only if you define messages in a library
-dotnet add package Deveel.Messaging.Abstractions
+dotnet add package Ratatosk.Abstractions
 
 # Custom connector authoring — needed only if you build your own connector
-dotnet add package Deveel.Messaging.Connector.Abstractions
-dotnet add package Deveel.Messaging.Connectors
+dotnet add package Ratatosk.Connector.Abstractions
+dotnet add package Ratatosk.Connectors
 ```
 
-`Deveel.Messaging` depends on `Deveel.Messaging.Abstractions` and `Deveel.Messaging.Connectors` (which bring in `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging.Abstractions`). The `Abstractions` and `Connector.Abstractions` packages have no external dependencies beyond the .NET BCL.
+`Ratatosk` depends on `Ratatosk.Abstractions` and `Ratatosk.Connectors` (which bring in `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging.Abstractions`). The `Abstractions` and `Connector.Abstractions` packages have no external dependencies beyond the .NET BCL.
 
 ## Framework targets
 
@@ -39,12 +39,12 @@ All packages target .NET 8, .NET 9, and .NET 10.
 
 ## Basic DI registration
 
-Once packages are installed, the next step is wiring them into the application's dependency injection container. The entry point is `AddMessaging()` (from the `Deveel.Messaging` package), which registers the infrastructure services (schema registry, authentication manager, `MessageBuilder` support) and returns a builder for registering connectors.
+Once packages are installed, the next step is wiring them into the application's dependency injection container. The entry point is `AddMessaging()` (from the `Ratatosk` package), which registers the infrastructure services (schema registry, authentication manager, `MessageBuilder` support) and returns a builder for registering connectors.
 
 Register messaging services and one or more connectors in your startup code:
 
 ```csharp
-using Deveel.Messaging;
+using Ratatosk;
 
 var builder = WebApplication.CreateBuilder(args);
 

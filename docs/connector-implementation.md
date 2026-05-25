@@ -19,7 +19,7 @@ Build custom connectors by extending `ChannelConnectorBase`. The base class prov
 Four abstract methods must be overridden:
 
 ```csharp
-using Deveel.Messaging;
+using Ratatosk;
 using Microsoft.Extensions.Logging;
 
 [ChannelSchema(typeof(MySchemaFactory))]

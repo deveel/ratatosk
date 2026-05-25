@@ -5,7 +5,7 @@ Send and receive messages through the Telegram Bot API.
 ## Package
 
 ```bash
-dotnet add package Deveel.Messaging.Connector.Telegram
+dotnet add package Ratatosk.Telegram
 ```
 
 ## Required settings

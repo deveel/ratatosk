@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Ratatosk\Ratatosk.csproj" />
+    <ProjectReference Include="..\..\src\Ratatosk.Connectors\Ratatosk.Connectors.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Deveel" />
+  </ItemGroup>
+</Project>

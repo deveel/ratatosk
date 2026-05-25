@@ -2,12 +2,12 @@
 
 | Channel | Provider | Package | Connector class |
 |---|---|---|---|
-| SMS | Twilio | `Deveel.Messaging.Connector.Twilio` | `TwilioSmsConnector` |
-| WhatsApp | Twilio | `Deveel.Messaging.Connector.Twilio` | `TwilioWhatsAppConnector` |
-| Email | SendGrid | `Deveel.Messaging.Connector.Sendgrid` | `SendGridEmailConnector` |
-| Push | Firebase FCM | `Deveel.Messaging.Connector.Firebase` | `FirebasePushConnector` |
-| Messenger | Facebook | `Deveel.Messaging.Connector.Facebook` | `FacebookMessengerConnector` |
-| Bot | Telegram | `Deveel.Messaging.Connector.Telegram` | `TelegramBotConnector` |
+| SMS | Twilio | `Ratatosk.Twilio` | `TwilioSmsConnector` |
+| WhatsApp | Twilio | `Ratatosk.Twilio` | `TwilioWhatsAppConnector` |
+| Email | SendGrid | `Ratatosk.Sendgrid` | `SendGridEmailConnector` |
+| Push | Firebase FCM | `Ratatosk.Firebase` | `FirebasePushConnector` |
+| Messenger | Facebook | `Ratatosk.Facebook` | `FacebookMessengerConnector` |
+| Bot | Telegram | `Ratatosk.Telegram` | `TelegramBotConnector` |
 
 - [Twilio SMS](twilio-sms.md)
 - [Twilio WhatsApp](twilio-whatsapp.md)

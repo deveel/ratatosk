@@ -2,7 +2,7 @@
 
 Every interaction with the framework follows the same lifecycle regardless of which channel provider you use:
 
-1. **Register** — add the `Deveel.Messaging` package and configure connectors in the DI container
+1. **Register** — add the `Ratatosk` package and configure connectors in the DI container
 2. **Build** — construct an `IMessage` using `MessageBuilder`
 3. **Send/Receive** — call `IMessagingClient.SendAsync()` or `IMessagingClient.ReceiveAsync()`
 4. **Handle** — check `.IsSuccess()`, read the result value, or inspect `.Error`
@@ -14,8 +14,8 @@ This guide walks through the `IMessagingClient` approach — the recommended pat
 ```bash
 dotnet new console -o MessagingDemo
 cd MessagingDemo
-dotnet add package Deveel.Messaging
-dotnet add package Deveel.Messaging.Connector.Twilio
+dotnet add package Ratatosk
+dotnet add package Ratatosk.Twilio
 ```
 
 ## 2. Send an SMS
@@ -24,7 +24,7 @@ Register the connector in DI, inject `IMessagingClient`, build a message, and se
 
 ```csharp
 // Program.cs
-using Deveel.Messaging;
+using Ratatosk;
 
 var builder = WebApplication.CreateBuilder(args);
 

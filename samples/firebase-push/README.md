@@ -1,6 +1,6 @@
 # Firebase Cloud Messaging Sample
 
-This sample demonstrates how to use the Deveel Messaging Firebase Push connector to send push notifications via Firebase Cloud Messaging (FCM).
+This sample demonstrates how to use the Ratatosk Firebase Push connector to send push notifications via Firebase Cloud Messaging (FCM).
 
 ## Prerequisites
 

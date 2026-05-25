@@ -1,0 +1,67 @@
+//
+// Copyright (c) Antonello Provenzano and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
+//
+
+using Microsoft.Extensions.Logging;
+
+namespace Ratatosk
+{
+    /// <summary>
+    /// Provides high-performance logging extensions for Facebook Messenger Connector operations using source-generated logging methods.
+    /// </summary>
+    internal static partial class LoggerExtensions
+    {
+        #region Connection Testing Logging
+
+        [LoggerMessage(
+            EventId = 5102,
+            Level = LogLevel.Debug,
+            Message = "Connection test successful. Page: {PageName} (Category: {Category})")]
+        internal static partial void LogConnectionTestSuccessful(this ILogger logger, string pageName, string category);
+
+        [LoggerMessage(
+            EventId = 5103,
+            Level = LogLevel.Error,
+            Message = "Facebook Graph API error during connection test: {ErrorMessage}")]
+        internal static partial void LogConnectionTestGraphApiError(this ILogger logger, string errorMessage, Exception exception);
+
+        #endregion
+
+        #region Message Sending Logging
+
+        [LoggerMessage(
+            EventId = 5202,
+            Level = LogLevel.Information,
+            Message = "Facebook Messenger message sent successfully via Graph API. MessageId: {MessageId}, FacebookMessageId: {FacebookMessageId}")]
+        internal static partial void LogMessageSent(this ILogger logger, string messageId, string facebookMessageId);
+
+        #endregion
+
+        #region Webhook Message Receiving Logging
+
+        [LoggerMessage(
+            EventId = 5301,
+            Level = LogLevel.Debug,
+            Message = "Receiving Facebook Messenger message from webhook")]
+        internal static partial void LogReceivingMessage(this ILogger logger);
+
+        [LoggerMessage(
+            EventId = 5302,
+            Level = LogLevel.Error,
+            Message = "Failed to receive Facebook Messenger message from webhook")]
+        internal static partial void LogReceiveMessageFailed(this ILogger logger, Exception exception);
+
+        #endregion
+
+        #region Quick Replies Logging
+
+        [LoggerMessage(
+            EventId = 5501,
+            Level = LogLevel.Warning,
+            Message = "Failed to parse quick replies JSON: {Json}")]
+        internal static partial void LogQuickRepliesParsingFailed(this ILogger logger, string json, Exception exception);
+
+        #endregion
+    }
+}

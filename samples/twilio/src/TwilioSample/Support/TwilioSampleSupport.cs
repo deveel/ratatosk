@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Deveel;
-using Deveel.Messaging;
+using Ratatosk;
+using Ratatosk;
 using Microsoft.Extensions.Logging;
 
 namespace TwilioSample;
@@ -165,7 +165,7 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessaging
             SampleConsolePrompts.RequiredText("Message ID", "twilio-sms-sample"),
             sender,
             recipient,
-            SampleConsolePrompts.MultiLineBody("SMS body", "Hello from the Deveel Twilio SMS sample."),
+            SampleConsolePrompts.MultiLineBody("SMS body", "Hello from the Ratatosk Twilio SMS sample."),
             SampleConsolePrompts.Confirm("Request status callback?", true),
             SampleConsolePrompts.Confirm("Enable smart encoding?", true));
         var result = await client.SendAsync("sms", message, CancellationToken.None);
@@ -199,14 +199,14 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessaging
                 SampleConsolePrompts.RequiredText("Message ID", "twilio-whatsapp-sample"),
                 from,
                 to,
-                SampleConsolePrompts.MultiLineBody("WhatsApp body", "Hello from the Deveel Twilio WhatsApp sample."),
+                SampleConsolePrompts.MultiLineBody("WhatsApp body", "Hello from the Ratatosk Twilio WhatsApp sample."),
                 SampleConsolePrompts.Confirm("Request status callback?", true))
             : CreateWhatsAppTemplateMessage(
                 SampleConsolePrompts.RequiredText("Message ID", "twilio-whatsapp-template-sample"),
                 from,
                 to,
                 SampleConsolePrompts.RequiredText("Template ID", GetValue("WhatsAppTemplateId", "TWILIO_WHATSAPP_TEMPLATE_ID")),
-                SampleConsolePrompts.RequiredText("Template parameter 1", "Deveel"),
+                SampleConsolePrompts.RequiredText("Template parameter 1", "Ratatosk"),
                 SampleConsolePrompts.RequiredText("Template parameter 2", "Twilio"));
 
         SampleOutputHelper.PrintSendResult($"twilio whatsapp send {kind.ToLowerInvariant()}", await client.SendAsync("whatsapp", message, CancellationToken.None));
@@ -289,7 +289,7 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessaging
     }
 
     private static Message CreateSmsMessage(string? sender, string recipient)
-        => CreateSmsMessage("twilio-sms-sample", sender, recipient, "Hello from the Deveel Twilio SMS sample.", true, true);
+        => CreateSmsMessage("twilio-sms-sample", sender, recipient, "Hello from the Ratatosk Twilio SMS sample.", true, true);
 
     private static Message CreateSmsMessage(
         string id,
@@ -314,7 +314,7 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessaging
     }
 
     private static Message CreateWhatsAppTextMessage(string sender, string recipient)
-        => CreateWhatsAppTextMessage("twilio-whatsapp-sample", sender, recipient, "Hello from the Deveel Twilio WhatsApp sample.", true);
+        => CreateWhatsAppTextMessage("twilio-whatsapp-sample", sender, recipient, "Hello from the Ratatosk Twilio WhatsApp sample.", true);
 
     private static Message CreateWhatsAppTextMessage(
         string id,
@@ -337,7 +337,7 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessaging
     }
 
     private static Message CreateWhatsAppTemplateMessage(string sender, string recipient, string templateId)
-        => CreateWhatsAppTemplateMessage("twilio-whatsapp-template-sample", sender, recipient, templateId, "Deveel", "Twilio");
+        => CreateWhatsAppTemplateMessage("twilio-whatsapp-template-sample", sender, recipient, templateId, "Ratatosk", "Twilio");
 
     private static Message CreateWhatsAppTemplateMessage(
         string id,
@@ -436,14 +436,14 @@ public sealed class TwilioSampleSupport(ILoggerFactory loggerFactory, IMessaging
         }
         """;
 
-    private const string DefaultWhatsAppStatusForm = "MessageSid=SM9001&MessageStatus=read&From=whatsapp%3A%2B14155238886&To=whatsapp%3A%2B15557654321&ProfileName=Deveel";
+    private const string DefaultWhatsAppStatusForm = "MessageSid=SM9001&MessageStatus=read&From=whatsapp%3A%2B14155238886&To=whatsapp%3A%2B15557654321&ProfileName=Ratatosk";
     private const string DefaultWhatsAppStatusJson = """
         {
           "MessageSid": "SM9001",
           "MessageStatus": "read",
           "From": "whatsapp:+14155238886",
           "To": "whatsapp:+15557654321",
-          "ProfileName": "Deveel"
+          "ProfileName": "Ratatosk"
         }
         """;
 }

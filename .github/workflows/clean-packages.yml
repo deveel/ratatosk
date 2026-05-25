@@ -14,58 +14,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Clean Old Deveel.Messaging.Abstractions Nuget Packages"
+      - name: "Clean Old Ratatosk.Abstractions Nuget Packages"
         uses: actions/delete-package-versions@v4
         with:
-          package-name: 'Deveel.Messaging.Abstractions'
+          package-name: 'Ratatosk.Abstractions'
           package-type: 'nuget'
           min-versions-to-keep: 15
           delete-only-pre-release-versions: "true"
 
-      - name: "Clean Old Deveel.Messaging.Connector.Abstractions Nuget Packages"
+      - name: "Clean Old Ratatosk.Connector.Abstractions Nuget Packages"
         uses: actions/delete-package-versions@v4
         with:
-          package-name: 'Deveel.Messaging.Connector.Abstractions'
+          package-name: 'Ratatosk.Connector.Abstractions'
           package-type: 'nuget'
           min-versions-to-keep: 15
           delete-only-pre-release-versions: "true"
 
-      - name: "Clean Old Deveel.Messaging.Connector.Telegram Nuget Packages"
+      - name: "Clean Old Ratatosk.Telegram Nuget Packages"
         uses: actions/delete-package-versions@v4
         with:
-          package-name: 'Deveel.Messaging.Connector.Telegram'
+          package-name: 'Ratatosk.Telegram'
           package-type: 'nuget'
           min-versions-to-keep: 15
           delete-only-pre-release-versions: true
 
-      - name: "Clean Old Deveel.Messaging.Connector.SendGrid Nuget Packages"
+      - name: "Clean Old Ratatosk.Sendgrid Nuget Packages"
         uses: actions/delete-package-versions@v4
         with:
-          package-name: 'Deveel.Messaging.Connector.Sendgrid'
+          package-name: 'Ratatosk.Sendgrid'
           package-type: 'nuget'
           min-versions-to-keep: 15
           delete-only-pre-release-versions: true
 
-      - name: "Clean Old Deveel.Messaging.Connector.Firebase Nuget Packages"
+      - name: "Clean Old Ratatosk.Firebase Nuget Packages"
         uses: actions/delete-package-versions@v4
         with:
-          package-name: 'Deveel.Messaging.Connector.Firebase'
+          package-name: 'Ratatosk.Firebase'
           package-type: 'nuget'
           min-versions-to-keep: 15
           delete-only-pre-release-versions: true
 
-      - name: "Clean Old Deveel.Messaging.Connector.Facebook Nuget Packages"
+      - name: "Clean Old Ratatosk.Facebook Nuget Packages"
         uses: actions/delete-package-versions@v4
         with:
-          package-name: 'Deveel.Messaging.Connector.Facebook'
+          package-name: 'Ratatosk.Facebook'
           package-type: 'nuget'
           min-versions-to-keep: 15
           delete-only-pre-release-versions: true
 
-      - name: "Clean Old Deveel.Messaging.Connector.Twilio Nuget Packages"
+      - name: "Clean Old Ratatosk.Twilio Nuget Packages"
         uses: actions/delete-package-versions@v4
         with:
-          package-name: 'Deveel.Messaging.Connector.Twilio'
+          package-name: 'Ratatosk.Twilio'
           package-type: 'nuget'
           min-versions-to-keep: 15
           delete-only-pre-release-versions: true

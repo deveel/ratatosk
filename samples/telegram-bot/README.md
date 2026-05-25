@@ -1,6 +1,6 @@
 # Telegram Bot Sample
 
-This sample demonstrates how to use the Deveel Messaging Telegram Bot connector to send messages via the Telegram Bot API.
+This sample demonstrates how to use the Ratatosk Telegram Bot connector to send messages via the Telegram Bot API.
 
 ## Prerequisites
 

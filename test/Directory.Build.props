@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <RootNamespace>Deveel</RootNamespace>
+    <RootNamespace>Ratatosk</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject Condition="'$(IsTestProject)' == ''">true</IsTestProject>
       <OutputType Condition="'$(IsTestProject)' == 'true'">Exe</OutputType>
@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-    <Using Include="Deveel"/>
+    <Using Include="Ratatosk"/>
   </ItemGroup>
 
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">

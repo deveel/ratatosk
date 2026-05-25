@@ -5,7 +5,7 @@ Send and receive SMS (and optional MMS with media attachments) via Twilio's Prog
 ## Package
 
 ```bash
-dotnet add package Deveel.Messaging.Connector.Twilio
+dotnet add package Ratatosk.Twilio
 ```
 
 ## Required settings

@@ -378,7 +378,7 @@ These codes are used for messaging-level errors outside the scope of channel con
 
 #### ConnectorErrorCodes (connector operations)
 
-These codes are defined in `Deveel.Messaging.Connectors` and used by `ChannelConnectorBase`.
+These codes are defined in `Ratatosk.Connectors` and used by `ChannelConnectorBase`.
 
 | Code | Description |
 |---|---|

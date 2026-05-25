@@ -5,7 +5,7 @@ Push notifications via Firebase Cloud Messaging (FCM) HTTP v1 API.
 ## Package
 
 ```bash
-dotnet add package Deveel.Messaging.Connector.Firebase
+dotnet add package Ratatosk.Firebase
 ```
 
 ## Required settings

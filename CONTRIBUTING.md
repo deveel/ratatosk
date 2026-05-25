@@ -1,6 +1,6 @@
-﻿# Contributing to Deveel Messaging Framework
+﻿# Contributing to Ratatosk Framework
 
-Thanks for helping improve Deveel Messaging.
+Thanks for helping improve Ratatosk.
 
 This guide keeps the contribution process simple: discuss changes early, keep pull requests focused, add tests for behavior changes, and let GitVersion handle package versions.
 

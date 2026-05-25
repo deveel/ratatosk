@@ -4,7 +4,7 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Deveel</RootNamespace>
+    <RootNamespace>Ratatosk</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!-- Package Metadata -->
@@ -15,7 +15,7 @@
     <Copyright>Copyright (C) 2025-2026 Antonello Provenzano</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://deveel.org</PackageProjectUrl>
-    <PackageIcon>deveel-logo.png</PackageIcon>
+    <PackageIcon>ratatosk-logo.png</PackageIcon>
     <RepositoryUrl>https://github.com/deveel/deveel.messaging</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
@@ -25,47 +25,4 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-  </PropertyGroup>
-
-  <!-- GitVersion 5.x Integration -->
-  <ItemGroup Condition="'$(UseGitVersion)' == 'true'">
-    <PackageReference Include="GitVersion.MsBuild" Version="5.12.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <!-- Version Properties for GitVersion 5.x -->
-  <PropertyGroup>
-    <!-- Use GitVersion 5.x variables if enabled and available, otherwise use explicit properties or fallbacks -->
-    <Version Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_SemVer)' != ''">$(GitVersion_SemVer)</Version>
-    <Version Condition="'$(Version)' == ''">1.0.0-dev</Version>
-
-    <PackageVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_NuGetVersionV2)' != ''">$(GitVersion_NuGetVersionV2)</PackageVersion>
-    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
-
-    <AssemblyVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_AssemblySemVer)' != ''">$(GitVersion_AssemblySemVer)</AssemblyVersion>
-    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">1.0.0.0</AssemblyVersion>
-
-    <FileVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_AssemblySemFileVer)' != ''">$(GitVersion_AssemblySemFileVer)</FileVersion>
-    <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyVersion)</FileVersion>
-
-    <InformationalVersion Condition="'$(UseGitVersion)' == 'true' And '$(GitVersion_InformationalVersion)' != ''">$(GitVersion_InformationalVersion)</InformationalVersion>
-    <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)</InformationalVersion>
-  </PropertyGroup>
-
-  <!-- SourceLink Integration -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\deveel-logo.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\mit.licenseheader" Link="mit.licenseheader"/>
-  </ItemGroup>
 </Project>

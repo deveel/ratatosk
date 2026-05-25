@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Ratatosk Connector Abstractions</Title>
+    <Description>The set of abstractions and base classes to implement the messaging connectors</Description>
+    <PackageTags>messaging;message;connector;connectors;schema;abstractions;validation</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ratatosk.Abstractions\Ratatosk.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net8.0'">
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net9.0'">
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net10.0'">
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Deveel.Results" Version="1.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Deveel" />
+  </ItemGroup>
+</Project>

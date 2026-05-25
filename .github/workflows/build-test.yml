@@ -169,11 +169,11 @@ jobs:
           dotnet-version: ${{ matrix.dotnet }}
 
       - name: Restore dependencies
-        run: dotnet restore Deveel.Messaging.Model.sln -p:TargetFramework=${{ matrix.dotnet-framework }}
+        run: dotnet restore Ratatosk.sln -p:TargetFramework=${{ matrix.dotnet-framework }}
 
       - name: Build
         run: >
-          dotnet build Deveel.Messaging.Model.sln
+          dotnet build Ratatosk.sln
           --no-restore
           --configuration "${{ inputs.configuration }}"
           --framework "${{ matrix.dotnet-framework }}"
@@ -188,7 +188,7 @@ jobs:
       - name: Test
         if: inputs.collect-coverage != true
         run: >
-          dotnet test Deveel.Messaging.Model.sln
+          dotnet test Ratatosk.sln
           --no-build
           --verbosity normal
           --configuration "${{ inputs.configuration }}"
@@ -197,7 +197,7 @@ jobs:
       - name: Test with coverage
         if: inputs.collect-coverage == true
         run: >
-          dotnet test Deveel.Messaging.Model.sln
+          dotnet test Ratatosk.sln
           --no-build
           --verbosity normal
           --configuration "${{ inputs.configuration }}"

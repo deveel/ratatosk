@@ -1,6 +1,6 @@
 # Facebook Messenger Sample
 
-This sample demonstrates how to use the Deveel Messaging Facebook Messenger connector to send and receive messages via the Facebook Messenger Platform.
+This sample demonstrates how to use the Ratatosk Facebook Messenger connector to send and receive messages via the Facebook Messenger Platform.
 
 ## Prerequisites
 

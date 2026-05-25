@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Abstractions\Deveel.Messaging.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Abstractions\Deveel.Messaging.Connector.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connectors\Deveel.Messaging.Connectors.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging\Deveel.Messaging.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Deveel.Messaging.Connector.Twilio\Deveel.Messaging.Connector.Twilio.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Abstractions\Ratatosk.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Connector.Abstractions\Ratatosk.Connector.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Connectors\Ratatosk.Connectors.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk\Ratatosk.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Twilio\Ratatosk.Twilio.csproj" />
     <PackageReference Include="Spectre.Console" Version="0.49.1" />
   </ItemGroup>
 

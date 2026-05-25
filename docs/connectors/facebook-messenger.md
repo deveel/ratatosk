@@ -5,7 +5,7 @@ Send and receive messages through the Facebook Messenger Platform API using a Fa
 ## Package
 
 ```bash
-dotnet add package Deveel.Messaging.Connector.Facebook
+dotnet add package Ratatosk.Facebook
 ```
 
 ## Required settings

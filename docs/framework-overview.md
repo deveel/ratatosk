@@ -142,11 +142,11 @@ var message = new MessageBuilder()
 
 | Package | Role | Dependencies |
 |---|---|---|---|
-| `Deveel.Messaging.Abstractions` | Message model, `MessageBuilder`, endpoints, content types. Pure model — no infrastructure. | None |
-| `Deveel.Messaging` | `AddMessaging()` DI entry point, `MessagingBuilder`, `IMessagingClient` facade (disposable), `ChannelConnectorFactory`. | `Connector.Abstractions` |
-| `Deveel.Messaging.Connector.Abstractions` | Interfaces for connectors, schemas, auth, and result types. Contracts only. | `Abstractions` |
-| `Deveel.Messaging.Connectors` | `ChannelConnectorBase`, `ChannelSchema` builder, `ChannelSchemaRegistry`, authentication manager, `ChannelConnectorBuilder`. | `Connector.Abstractions` |
-| `Deveel.Messaging.Connector.*` | Provider-specific implementations. Each references `Connectors` or `Connector.Abstractions`. | Provider SDK + `Connectors` |
+| `Ratatosk.Abstractions` | Message model, `MessageBuilder`, endpoints, content types. Pure model — no infrastructure. | None |
+| `Ratatosk` | `AddMessaging()` DI entry point, `MessagingBuilder`, `IMessagingClient` facade (disposable), `ChannelConnectorFactory`. | `Connector.Abstractions` |
+| `Ratatosk.Connector.Abstractions` | Interfaces for connectors, schemas, auth, and result types. Contracts only. | `Abstractions` |
+| `Ratatosk.Connectors` | `ChannelConnectorBase`, `ChannelSchema` builder, `ChannelSchemaRegistry`, authentication manager, `ChannelConnectorBuilder`. | `Connector.Abstractions` |
+| `Ratatosk.Connector.*` | Provider-specific implementations. Each references `Connectors` or `Connector.Abstractions`. | Provider SDK + `Connectors` |
 
 ## What the framework does not do
 

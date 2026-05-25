@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Deveel;
-using Deveel.Messaging;
+using Ratatosk;
+using Ratatosk;
 using Spectre.Console;
 
 using AnnotationsValidationResult = System.ComponentModel.DataAnnotations.ValidationResult;
