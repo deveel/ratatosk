@@ -5,6 +5,10 @@
 
 namespace Deveel.Messaging
 {
+    /// <summary>
+    /// Provides a builder pattern for constructing <see cref="ChannelSchema"/> instances
+    /// with parameters, message properties, authentication configurations, and endpoint configurations.
+    /// </summary>
     public class ChannelSchemaBuilder
     {
         private string _channelProvider;
@@ -19,6 +23,12 @@ namespace Deveel.Messaging
         private readonly List<AuthenticationConfiguration> _authenticationConfigurations = new();
         private readonly List<ChannelEndpointConfiguration> _endpoints = new();
 
+        /// <summary>
+        /// Constructs a new builder for a channel schema with the given provider, type, and version.
+        /// </summary>
+        /// <param name="channelProvider">The name of the channel provider (e.g., "Twilio", "SendGrid").</param>
+        /// <param name="channelType">The type of the channel (e.g., "sms", "email").</param>
+        /// <param name="version">The version of the channel schema.</param>
         public ChannelSchemaBuilder(string channelProvider, string channelType, string version)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(channelProvider, nameof(channelProvider));
@@ -95,6 +105,15 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Creates a new <see cref="ChannelSchemaBuilder"/> from an existing schema,
+        /// copying all its configuration.
+        /// </summary>
+        /// <param name="source">The source schema to copy from.</param>
+        /// <param name="derivedDisplayName">
+        /// An optional display name for the derived schema; defaults to the source name with "(Copy)" suffix.
+        /// </param>
+        /// <returns>A new builder pre-populated with the source schema's configuration.</returns>
         public static ChannelSchemaBuilder From(IChannelSchema source, string? derivedDisplayName = null)
         {
             var builder = new ChannelSchemaBuilder(source);
@@ -102,42 +121,80 @@ namespace Deveel.Messaging
             return builder;
         }
 
+        /// <summary>
+        /// Sets the identifier of the schema (currently a no-op placeholder).
+        /// </summary>
+        /// <param name="id">The identifier to set.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder WithId(string id) => this;
 
+        /// <summary>
+        /// Sets the display name of the schema.
+        /// </summary>
+        /// <param name="displayName">The display name to set.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder WithDisplayName(string? displayName)
         {
             _displayName = displayName;
             return this;
         }
 
+        /// <summary>
+        /// Replaces the capabilities of the schema with the given value.
+        /// </summary>
+        /// <param name="capabilities">The capabilities to set.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder WithCapabilities(ChannelCapability capabilities)
         {
             _capabilities = capabilities;
             return this;
         }
 
+        /// <summary>
+        /// Adds a capability to the schema.
+        /// </summary>
+        /// <param name="capability">The capability to add.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder WithCapability(ChannelCapability capability)
         {
             _capabilities |= capability;
             return this;
         }
 
+        /// <summary>
+        /// Sets whether the schema should use strict mode validation.
+        /// </summary>
+        /// <param name="isStrict"><c>true</c> for strict mode; <c>false</c> for flexible mode.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder WithStrictMode(bool isStrict)
         {
             _isStrict = isStrict;
             return this;
         }
 
+        /// <summary>
+        /// Enables strict mode validation for the schema.
+        /// </summary>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder WithStrictMode()
         {
             return WithStrictMode(true);
         }
 
+        /// <summary>
+        /// Enables flexible mode validation for the schema.
+        /// </summary>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder WithFlexibleMode()
         {
             return WithStrictMode(false);
         }
 
+        /// <summary>
+        /// Adds a pre-built parameter to the schema.
+        /// </summary>
+        /// <param name="parameter">The parameter to add.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AddParameter(ChannelParameter parameter)
         {
             ArgumentNullException.ThrowIfNull(parameter, nameof(parameter));
@@ -145,6 +202,13 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Creates and adds a parameter with the given name and type, optionally configuring it.
+        /// </summary>
+        /// <param name="parameterName">The name of the parameter.</param>
+        /// <param name="parameterType">The data type of the parameter.</param>
+        /// <param name="configure">An optional action to configure the parameter.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AddParameter(string parameterName, DataType parameterType, Action<ChannelParameter>? configure = null)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameterName, nameof(parameterName));
@@ -153,9 +217,21 @@ namespace Deveel.Messaging
             return AddParameter(parameter);
         }
 
+        /// <summary>
+        /// Creates and adds a required parameter, optionally marking it as sensitive.
+        /// </summary>
+        /// <param name="parameterName">The name of the parameter.</param>
+        /// <param name="parameterType">The data type of the parameter.</param>
+        /// <param name="sensitive">If <c>true</c>, marks the parameter as sensitive.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AddRequiredParameter(string parameterName, DataType parameterType, bool sensitive = false)
             => AddParameter(parameterName, parameterType, param => { param.IsRequired = true; param.IsSensitive = sensitive; });
 
+        /// <summary>
+        /// Adds a pre-built message property configuration to the schema.
+        /// </summary>
+        /// <param name="property">The message property configuration to add.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AddMessageProperty(MessagePropertyConfiguration property)
         {
             ArgumentNullException.ThrowIfNull(property, nameof(property));
@@ -167,6 +243,13 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Creates and adds a message property configuration with the given name and type.
+        /// </summary>
+        /// <param name="propertyName">The name of the message property.</param>
+        /// <param name="propertyType">The data type of the message property.</param>
+        /// <param name="configure">An optional action to configure the property.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AddMessageProperty(string propertyName, DataType propertyType, Action<MessagePropertyConfiguration>? configure = null)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
@@ -175,6 +258,11 @@ namespace Deveel.Messaging
             return AddMessageProperty(property);
         }
 
+        /// <summary>
+        /// Adds a content type to the list of supported content types for the schema.
+        /// </summary>
+        /// <param name="contentType">The content type to add.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AddContentType(MessageContentType contentType)
         {
             _contentTypes.Add(contentType);
@@ -208,6 +296,12 @@ namespace Deveel.Messaging
             return AddAuthenticationScheme(authenticationType);
         }
 
+        /// <summary>
+        /// Adds a pre-built authentication configuration to the schema, automatically
+        /// creating corresponding channel parameters for principal fields.
+        /// </summary>
+        /// <param name="authenticationConfiguration">The authentication configuration to add.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AddAuthenticationConfiguration(AuthenticationConfiguration authenticationConfiguration)
         {
             ArgumentNullException.ThrowIfNull(authenticationConfiguration, nameof(authenticationConfiguration));
@@ -237,6 +331,11 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Creates and adds an authentication configuration using the provided factory function.
+        /// </summary>
+        /// <param name="configurationFactory">A function that creates the authentication configuration.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AddAuthenticationConfiguration(Func<AuthenticationConfiguration> configurationFactory)
         {
             ArgumentNullException.ThrowIfNull(configurationFactory, nameof(configurationFactory));
@@ -244,6 +343,11 @@ namespace Deveel.Messaging
             return AddAuthenticationConfiguration(config);
         }
 
+        /// <summary>
+        /// Adds a pre-built endpoint configuration to the schema.
+        /// </summary>
+        /// <param name="endpoint">The endpoint configuration to add.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder HandlesMessageEndpoint(ChannelEndpointConfiguration endpoint)
         {
             ArgumentNullException.ThrowIfNull(endpoint, nameof(endpoint));
@@ -255,6 +359,12 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Creates and adds an endpoint configuration for the given endpoint type.
+        /// </summary>
+        /// <param name="endpointType">The type of the endpoint.</param>
+        /// <param name="configure">An optional action to configure the endpoint.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder HandlesMessageEndpoint(EndpointType endpointType, Action<ChannelEndpointConfiguration>? configure = null)
         {
             var endpoint = new ChannelEndpointConfiguration(endpointType);
@@ -262,6 +372,10 @@ namespace Deveel.Messaging
             return HandlesMessageEndpoint(endpoint);
         }
 
+        /// <summary>
+        /// Configures the schema to allow any endpoint type (both sending and receiving).
+        /// </summary>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder AllowsAnyMessageEndpoint()
         {
             if (_endpoints.Any(e => e.Type == EndpointType.Any))
@@ -275,6 +389,11 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Removes a parameter from the schema by name.
+        /// </summary>
+        /// <param name="parameterName">The name of the parameter to remove.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RemoveParameter(string parameterName)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameterName, nameof(parameterName));
@@ -284,6 +403,11 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Removes a message property configuration from the schema by name.
+        /// </summary>
+        /// <param name="propertyName">The name of the message property to remove.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RemoveMessageProperty(string propertyName)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
@@ -293,6 +417,11 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Removes a content type from the list of supported content types.
+        /// </summary>
+        /// <param name="contentType">The content type to remove.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RemoveContentType(MessageContentType contentType)
         {
             _contentTypes.Remove(contentType);
@@ -365,12 +494,22 @@ namespace Deveel.Messaging
                 .WithField("CertificatePassword", DataType.String, f => { f.AuthenticationRole = "credential"; f.IsSensitive = true; });
         }
 
+        /// <summary>
+        /// Removes a capability from the schema.
+        /// </summary>
+        /// <param name="capability">The capability to remove.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RemoveCapability(ChannelCapability capability)
         {
             _capabilities &= ~capability;
             return this;
         }
 
+        /// <summary>
+        /// Removes an endpoint configuration from the schema by type.
+        /// </summary>
+        /// <param name="endpointType">The endpoint type to remove.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RemoveEndpoint(EndpointType endpointType)
         {
             var endpoint = _endpoints.FirstOrDefault(e => e.Type == endpointType);
@@ -379,12 +518,22 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Restricts the capabilities of the schema to only those that match the given mask.
+        /// </summary>
+        /// <param name="allowedCapabilities">The capabilities mask to restrict to.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RestrictCapabilities(ChannelCapability allowedCapabilities)
         {
             _capabilities &= allowedCapabilities;
             return this;
         }
 
+        /// <summary>
+        /// Restricts the supported content types to only the specified ones.
+        /// </summary>
+        /// <param name="allowedContentTypes">The content types to allow.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RestrictContentTypes(params MessageContentType[] allowedContentTypes)
         {
             _contentTypes.Clear();
@@ -393,6 +542,11 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Restricts the authentication schemes to only the specified ones.
+        /// </summary>
+        /// <param name="allowedSchemes">The authentication schemes to allow.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RestrictAuthenticationSchemes(params AuthenticationScheme[] allowedSchemes)
         {
             var configurationsToRemove = _authenticationConfigurations
@@ -403,6 +557,11 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Replaces all authentication configurations with only the specified ones.
+        /// </summary>
+        /// <param name="allowedConfigurations">The authentication configurations to allow.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder RestrictAuthenticationConfigurations(params AuthenticationConfiguration[] allowedConfigurations)
         {
             _authenticationConfigurations.Clear();
@@ -411,6 +570,12 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Updates a parameter in the schema by name using the provided action.
+        /// </summary>
+        /// <param name="parameterName">The name of the parameter to update.</param>
+        /// <param name="updateAction">The action to apply to the parameter.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder UpdateParameter(string parameterName, Action<ChannelParameter> updateAction)
         {
             var parameter = _parameters.FirstOrDefault(p => string.Equals(p.Name, parameterName, StringComparison.OrdinalIgnoreCase));
@@ -420,6 +585,12 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Updates a message property configuration in the schema by name using the provided action.
+        /// </summary>
+        /// <param name="propertyName">The name of the message property to update.</param>
+        /// <param name="updateAction">The action to apply to the message property.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder UpdateMessageProperty(string propertyName, Action<MessagePropertyConfiguration> updateAction)
         {
             var property = _messageProperties.FirstOrDefault(p => string.Equals(p.Name, propertyName, StringComparison.OrdinalIgnoreCase));
@@ -429,6 +600,12 @@ namespace Deveel.Messaging
             return this;
         }
 
+        /// <summary>
+        /// Updates an endpoint configuration in the schema by type using the provided action.
+        /// </summary>
+        /// <param name="endpointType">The endpoint type to update.</param>
+        /// <param name="updateAction">The action to apply to the endpoint configuration.</param>
+        /// <returns>This builder for chaining.</returns>
         public ChannelSchemaBuilder UpdateEndpoint(EndpointType endpointType, Action<ChannelEndpointConfiguration> updateAction)
         {
             var endpoint = _endpoints.FirstOrDefault(e => e.Type == endpointType);

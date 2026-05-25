@@ -44,6 +44,28 @@ dotnet test
 
 Keep changes small, readable, and easy to review.
 
+### Use of Automated Agents
+
+Automated agents (AI coding tools, LLM-generated code, etc.) may be used only in **accessory contexts**:
+
+- writing or updating **documentation**
+- writing or updating **tests**
+- generating **samples and scaffolding**
+- minor **refactoring** that does not alter behaviour (e.g. renaming, formatting)
+
+The **core source code** of the framework — including but not limited to the public API surface, connector implementations, message and content models, validation logic, configuration and DI registration, and any logic that runs in production — **must be written by humans**.
+
+#### Rationale
+
+Core messaging infrastructure handles routing, delivery, authentication, error handling, and sensitive data. Every line has implications for reliability, security, and correctness. Human-authored code in these areas benefits from:
+
+- deliberate consideration of edge cases that agents typically miss (timeouts, resource leaks, concurrent access, null states)
+- consistent architectural decisions aligned with the framework's design philosophy
+- accountability — a person owns every production path
+- lower review burden — reviewers trust human judgement in complex domains
+
+Agent-generated contributions to core code will be rejected during review, regardless of whether the agent output was subsequently edited. If you are unsure whether a change falls under core or accessory, ask in an issue or discussion first.
+
 ### Code
 
 - follow the existing coding style and `.editorconfig`

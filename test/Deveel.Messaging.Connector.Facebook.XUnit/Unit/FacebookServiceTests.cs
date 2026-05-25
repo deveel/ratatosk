@@ -329,8 +329,9 @@ public class FacebookServiceTests
         var dict = AsDict(content);
 
         Assert.Contains("attachment", dict.Keys);
-        var attachment = (dynamic)dict["attachment"]!;
-        Assert.Equal("image", attachment.type);
+        var attachment = dict["attachment"]!;
+        var attachmentType = attachment.GetType().GetProperty("type")!.GetValue(attachment);
+        Assert.Equal("image", attachmentType);
     }
 
     [Fact]
@@ -350,8 +351,9 @@ public class FacebookServiceTests
         var dict = AsDict(content);
 
         Assert.Contains("attachment", dict.Keys);
-        var attachment = (dynamic)dict["attachment"]!;
-        Assert.Equal("template", attachment.type);
+        var attachment = dict["attachment"]!;
+        var attachmentType = attachment.GetType().GetProperty("type")!.GetValue(attachment);
+        Assert.Equal("template", attachmentType);
     }
 
     [Fact]
@@ -376,10 +378,11 @@ public class FacebookServiceTests
 
         var content = BuildMessageContent(message);
         var dict = AsDict(content);
-        var attachment = (dynamic)dict["attachment"]!;
+        var attachment = dict["attachment"]!;
 
         // Should be the media attachment, not the template
-        Assert.Equal("image", attachment.type);
+        var attachmentType = attachment.GetType().GetProperty("type")!.GetValue(attachment);
+        Assert.Equal("image", attachmentType);
     }
 
     [Fact]
@@ -441,8 +444,11 @@ public class FacebookServiceTests
 
     #region BuildFacebookMessagePayload Tests
 
-    private static object BuildFacebookMessagePayload(FacebookMessageRequest request) =>
-        FacebookService.BuildFacebookMessagePayload(request);
+    private static object BuildFacebookMessagePayload(FacebookMessageRequest request) {
+        var method = typeof(FacebookService).GetMethod("BuildFacebookMessagePayload",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        return method!.Invoke(null, new object[] { request })!;
+    }
 
     [Fact]
     public void Should_IncludeNotificationType_When_NotRegular()

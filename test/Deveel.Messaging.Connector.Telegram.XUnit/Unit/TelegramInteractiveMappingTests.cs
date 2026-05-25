@@ -4,6 +4,7 @@
 //
 
 using Deveel.Messaging.Testing;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Deveel.Messaging;
 
@@ -12,12 +13,33 @@ namespace Deveel.Messaging;
 [Trait("Feature", "TelegramInteractiveMapping")]
 public class TelegramInteractiveMappingTests
 {
+    private static Type _builderType = typeof(TelegramService).Assembly.GetTypes().First(t => t.Name == "TelegramMessageBuilder");
+
+    private static object? InvokeStatic(string methodName, object[] args)
+    {
+        try
+        {
+            var method = _builderType.GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            return method!.Invoke(null, args);
+        }
+        catch (System.Reflection.TargetInvocationException ex)
+        {
+            throw ex.InnerException!;
+        }
+    }
+
+    private static InlineKeyboardMarkup CreateInlineKeyboardMarkup(IEnumerable<IButtonContent> buttons)
+        => (InlineKeyboardMarkup)InvokeStatic("CreateInlineKeyboardMarkup", new object[] { buttons })!;
+
+    private static ReplyKeyboardMarkup CreateReplyKeyboardMarkup(IEnumerable<IQuickReplyContent> quickReplies)
+        => (ReplyKeyboardMarkup)InvokeStatic("CreateReplyKeyboardMarkup", new object[] { quickReplies })!;
+
     [Fact]
     public void Should_MapButtonContent_When_CreateInlineKeyboardMarkup()
     {
         var buttons = InteractiveContentBuilder.CreateButtons(2);
 
-        var markup = TelegramMessageBuilder.CreateInlineKeyboardMarkup(buttons);
+        var markup = CreateInlineKeyboardMarkup(buttons);
 
         TelegramInteractiveMappingAssertions.AssertMapsToInlineKeyboard(buttons, markup);
     }
@@ -28,7 +50,7 @@ public class TelegramInteractiveMappingTests
         var button = new ButtonContent("Call", ButtonType.PhoneNumber, "+1234567890");
 
         Assert.Throws<NotSupportedException>(() =>
-            TelegramMessageBuilder.CreateInlineKeyboardMarkup(new[] { button }));
+            CreateInlineKeyboardMarkup(new[] { button }));
     }
 
     [Fact]
@@ -37,7 +59,7 @@ public class TelegramInteractiveMappingTests
         var button = new ButtonContent("Visit", ButtonType.Url, null);
 
         Assert.Throws<ArgumentException>(() =>
-            TelegramMessageBuilder.CreateInlineKeyboardMarkup(new[] { button }));
+            CreateInlineKeyboardMarkup(new[] { button }));
     }
 
     [Fact]
@@ -46,7 +68,7 @@ public class TelegramInteractiveMappingTests
         var button = new ButtonContent("Visit", ButtonType.Url, "");
 
         Assert.Throws<ArgumentException>(() =>
-            TelegramMessageBuilder.CreateInlineKeyboardMarkup(new[] { button }));
+            CreateInlineKeyboardMarkup(new[] { button }));
     }
 
     [Fact]
@@ -54,7 +76,7 @@ public class TelegramInteractiveMappingTests
     {
         var quickReplies = InteractiveContentBuilder.CreateQuickReplies(3);
 
-        var markup = TelegramMessageBuilder.CreateReplyKeyboardMarkup(quickReplies);
+        var markup = CreateReplyKeyboardMarkup(quickReplies);
 
         TelegramInteractiveMappingAssertions.AssertMapsToReplyKeyboard(quickReplies, markup);
     }

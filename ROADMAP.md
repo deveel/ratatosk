@@ -12,17 +12,17 @@ This document describes the planned evolution of the **Deveel Messaging Framewor
 
 | Milestone | Version | Features |
 |-----------|---------|----------|
-| [Framework Foundations](#v040--framework-foundations) | v0.4.0 | [Test Coverage Target](#v041--test-coverage-target--80) · [CI/CD Pipeline Hardening](#v042--cicd-pipeline-hardening) · [Structured Logging Improvements](#v043--structured-logging-improvements) · [Documentation](#v044--documentation) |
-| [Inbound Messaging](#v050--inbound-messaging) | v0.5.0 | [Twilio Inbound Messages](#v051--twilio-inbound-messages-sms--whatsapp) · [SendGrid Inbound Messages](#v052--sendgrid-inbound-messages-inbound-parse) · [Firebase Inbound Messages](#v053--firebase-inbound-messages-data--notification-messages) |
-| [First Stable Release](#v100--first-stable-release) | v1.0.0 | [API Freeze](#v101--api-freeze) · [NuGet GA Release](#v102--nuget-ga-release) · [Interactive Content](#v103--interactive-content) · [Sender Identity Model](#v104--sender-identity-model) |
-| [Resilience & Observability](#v110--resilience--observability) | v1.1.0 | [Retry Policies](#v111--retry-policies) · [OpenTelemetry Tracing & Metrics](#v112--opentelemetry-tracing--metrics) · [Health Checks](#v113--health-checks) · [Connector-Level Timeout Configuration](#v114--connector-level-timeout-configuration) |
-| [New SaaS Connectors](#v120--new-saas-connectors) | v1.2.0 | [Slack](#v121--slack-connector) · [Microsoft Teams](#v122--microsoft-teams-connector) · [WhatsApp Business API](#v123--whatsapp-business-api-connector-direct-cloud-api) · [Viber Business](#v124--viber-business-connector) · [LINE](#v125--line-connector) |
-| [Protocol Connectors](#v130--protocol-connectors) | v1.3.0 | [Base Classes](#v131--protocol-connector-base-classes) · [SMPP](#v132--smpp-connector) · [SMTP](#v133--smtp-connector) · [RCS](#v134--rcs-connector) · [APNs](#v135--apns-connector-direct) |
-| [Content Adaptation & Transcoding](#v140--content-adaptation--transcoding) | v1.4.0 | [IContentTranscoder Abstraction](#v141--icontenttrancoder-abstraction) · [Built-In Transcoders](#v142--built-in-transcoders) · [Channel-Aware Fallback](#v143--channel-aware-content-fallback) · [SMS Segmentation](#v144--sms-segmentation) · [Character Encoding Detection](#v145--character-encoding-detection) |
-| [Address & Number Validation](#v150--address--number-validation) | v1.5.0 | [E.164 Normalization](#v151--e164-normalization) · [HLR Lookup](#v152--hlr-home-location-register-lookup) · [Number Portability](#v153--number-portability-awareness) · [Email Validation](#v154--email-address-validation) · [IAddressValidator Abstraction](#v155--iaddressvalidator-abstraction) |
-| [Tooling & Instrumentation](#v160--tooling--instrumentation) | v1.6.0 | [dotnet new Connector Scaffold](#v161--dotnet-new-connector-scaffold) · [ASP.NET Core Diagnostic Middleware](#v162--aspnet-core-diagnostic-middleware) |
-| [Conversations](#v200--conversations) | v2.0.0 | [IConversation Abstraction](#v201--iconversation-abstraction) · [Conversation State Model](#v202--conversation-state-model) · [Conversation Correlation](#v203--conversation-correlation) · [Multi-Channel Conversations](#v204--multi-channel-conversations) · [Multi-Tenant Channel Registry](#v205--multi-tenant-channel-registry) · [xUnit Test Helpers](#v206--xunit-test-helpers-for-conversation-flows) |
-| [Message Templates](#v210--message-templates) | v2.1.0 | [IMessageTemplate Abstraction](#v211--imessagetemplate-abstraction) · [Variable Substitution Engine](#v212--variable-substitution-engine) · [Per-Connector Template Rendering](#v213--per-connector-template-rendering) · [Template Registry](#v214--template-registry) |
+| [Framework Foundations](#v040--framework-foundations) | v0.4.0 | [Test Coverage Target](#test-coverage-target--80) · [CI/CD Pipeline Hardening](#cicd-pipeline-hardening) · [Structured Logging Improvements](#structured-logging-improvements) · [Documentation](#documentation) |
+| [Inbound Messaging](#v050--inbound-messaging) | v0.5.0 | [Twilio Inbound Messages](#twilio-inbound-messages-sms--whatsapp) · [SendGrid Inbound Messages](#sendgrid-inbound-messages-inbound-parse) · [Firebase Inbound Messages](#firebase-inbound-messages-data--notification-messages) |
+| [First Stable Release](#v100--first-stable-release) | v1.0.0 | [API Freeze](#api-freeze) · [NuGet GA Release](#nuget-ga-release) · [Interactive Content](#interactive-content) · [Sender Identity Model](#sender-identity-model) |
+| [Resilience & Observability](#v110--resilience--observability) | v1.1.0 | [Retry Policies](#retry-policies) · [OpenTelemetry Tracing & Metrics](#opentelemetry-tracing--metrics) · [Health Checks](#health-checks) · [Connector-Level Timeout Configuration](#connector-level-timeout-configuration) |
+| [New SaaS Connectors](#v120--new-saas-connectors) | v1.2.0 | [Slack](#slack-connector) · [Microsoft Teams](#microsoft-teams-connector) · [WhatsApp Business API](#whatsapp-business-api-connector-direct-cloud-api) · [Viber Business](#viber-business-connector) · [LINE](#line-connector) |
+| [Protocol Connectors](#v130--protocol-connectors) | v1.3.0 | [Base Classes](#protocol-connector-base-classes) · [SMPP](#smpp-connector) · [SMTP](#smtp-connector) · [RCS](#rcs-connector) · [APNs](#apns-connector-direct) |
+| [Content Adaptation & Transcoding](#v140--content-adaptation--transcoding) | v1.4.0 | [IContentTranscoder Abstraction](#icontenttrancoder-abstraction) · [Built-In Transcoders](#built-in-transcoders) · [Channel-Aware Fallback](#channel-aware-content-fallback) · [SMS Segmentation](#sms-segmentation) · [Character Encoding Detection](#character-encoding-detection) |
+| [Address & Number Validation](#v150--address--number-validation) | v1.5.0 | [E.164 Normalization](#e164-normalization) · [HLR Lookup](#hlr-home-location-register-lookup) · [Number Portability](#number-portability-awareness) · [Email Validation](#email-address-validation) · [IAddressValidator Abstraction](#iaddressvalidator-abstraction) |
+| [Tooling & Instrumentation](#v160--tooling--instrumentation) | v1.6.0 | [dotnet new Connector Scaffold](#dotnet-new-connector-scaffold) · [ASP.NET Core Diagnostic Middleware](#aspnet-core-diagnostic-middleware) |
+| [Conversations](#v200--conversations) | v2.0.0 | [IConversation Abstraction](#iconversation-abstraction) · [Conversation State Model](#conversation-state-model) · [Conversation Correlation](#conversation-correlation) · [Multi-Channel Conversations](#multi-channel-conversations) · [Multi-Tenant Channel Registry](#multi-tenant-channel-registry) · [xUnit Test Helpers](#xunit-test-helpers-for-conversation-flows) |
+| [Message Templates](#v210--message-templates) | v2.1.0 | [IMessageTemplate Abstraction](#imessagetemplate-abstraction) · [Variable Substitution Engine](#variable-substitution-engine) · [Per-Connector Template Rendering](#per-connector-template-rendering) · [Template Registry](#template-registry) |
 
 ---
 
@@ -32,7 +32,7 @@ Today the framework has a working outbound message model and five connector pack
 
 ---
 
-### v0.4.1 — Test Coverage Target (≥ 80%)
+### Test Coverage Target (≥ 80%)
 
 > *"Untested code is a liability disguised as a feature."*
 
@@ -51,7 +51,7 @@ A coverage measurement step in the CI pipeline (Coverlet + ReportGenerator) that
 
 ---
 
-### v0.4.2 — CI/CD Pipeline Hardening
+### CI/CD Pipeline Hardening
 
 > *"A release process that requires manual steps is a release process waiting to fail."*
 
@@ -70,7 +70,7 @@ A fully automated release pipeline: build → test → coverage check → API co
 
 ---
 
-### v0.4.3 — Structured Logging Improvements
+### Structured Logging Improvements
 
 > *"A log message that cannot be queried might as well not exist."*
 
@@ -90,7 +90,7 @@ A standardised logging contract for all connectors: shared event ID ranges per o
 
 ---
 
-### v0.4.4 — Documentation
+### Documentation
 
 > *"Public API without documentation is an API nobody can use; a connector that works but cannot be explained might as well not exist."*
 
@@ -120,7 +120,7 @@ Each feature in this milestone ships with its corresponding xUnit test helper ex
 
 ---
 
-### v0.5.1 — Twilio Inbound Messages (SMS & WhatsApp)
+### Twilio Inbound Messages (SMS & WhatsApp)
 
 > *"A message sent is only half the conversation — we need to hear back."*
 
@@ -140,7 +140,7 @@ A `ReceiveMessagesCoreAsync` implementation for the Twilio SMS and WhatsApp conn
 
 ---
 
-### v0.5.2 — SendGrid Inbound Messages (Inbound Parse)
+### SendGrid Inbound Messages (Inbound Parse)
 
 > *"Email replies carry intent — the framework should surface them, not discard them."*
 
@@ -160,7 +160,7 @@ A `ReceiveMessagesCoreAsync` implementation for the SendGrid connector that pars
 
 ---
 
-### v0.5.3 — Firebase Inbound Messages (Data & Notification Messages)
+### Firebase Inbound Messages (Data & Notification Messages)
 
 > *"A push notification is not a monologue — devices can and do respond."*
 
@@ -186,7 +186,7 @@ All preceding milestones establish the framework's core capabilities: a complete
 
 ---
 
-### v1.0.1 — API Freeze
+### API Freeze
 
 > *"A library that changes its public API unpredictably cannot be trusted as a dependency."*
 
@@ -205,7 +205,7 @@ A formal commitment that no breaking changes will be introduced to any public AP
 
 ---
 
-### v1.0.2 — NuGet GA Release
+### NuGet GA Release
 
 > *"A pre-release suffix is a warning label — version 1.0.0 removes it."*
 
@@ -222,7 +222,7 @@ Stable NuGet releases (no pre-release suffix) for all framework packages, publis
 - Packages are available to all NuGet consumers by default
 - Stable versioning signals production readiness to the community
 
-### v1.0.3 — Interactive Content
+### Interactive Content
 
 > *"Buttons, carousels, and quick replies should be described once and rendered everywhere."*
 
@@ -242,7 +242,7 @@ A new `IInteractiveContent` interface and concrete content types covering the mo
 - New connectors declare interactive support by implementing a mapping, not by introducing new content types
 
 
-### v1.0.4 — Sender Identity Model
+### Sender Identity Model
 
 > *"Who a message comes from is as important as what it says."*
 
@@ -270,7 +270,7 @@ A messaging connector that fails silently, cannot be monitored, or brings down d
 
 ---
 
-### v1.1.1 — Retry Policies
+### Retry Policies
 
 > *"A transient failure from a provider should never be the caller's problem."*
 
@@ -290,7 +290,7 @@ Polly-based retry and circuit-breaker policies integrated at the connector base 
 
 ---
 
-### v1.1.2 — OpenTelemetry Tracing & Metrics
+### OpenTelemetry Tracing & Metrics
 
 > *"You cannot improve what you cannot observe."*
 
@@ -310,7 +310,7 @@ Activity sources and metric instruments built into the connector base: an `Activ
 
 ---
 
-### v1.1.3 — Health Checks
+### Health Checks
 
 > *"If a connector cannot reach its provider, the application should know before a message fails."*
 
@@ -330,7 +330,7 @@ There is no standard way to check whether a connector is operational. The `Healt
 
 ---
 
-### v1.1.4 — Connector-Level Timeout Configuration
+### Connector-Level Timeout Configuration
 
 > *"An unanswered API call should never block indefinitely."*
 
@@ -355,7 +355,7 @@ With a stable, well-documented framework in place, this milestone extends the co
 
 ---
 
-### v1.2.1 — Slack Connector
+### Slack Connector
 
 > *"Slack is where teams live — A2P messages belong there too."*
 
@@ -378,7 +378,7 @@ A `Deveel.Messaging.Connector.Slack` package implementing `IChannelConnector` fo
 
 ---
 
-### v1.2.2 — Microsoft Teams Connector
+### Microsoft Teams Connector
 
 > *"Teams is the enterprise Slack — the framework should speak both languages."*
 
@@ -401,7 +401,7 @@ A `Deveel.Messaging.Connector.Teams` package supporting Incoming Webhooks (for c
 
 ---
 
-### v1.2.3 — WhatsApp Business API Connector (Direct Cloud API)
+### WhatsApp Business API Connector (Direct Cloud API)
 
 > *"Not every team wants Twilio in the middle of their WhatsApp integration."*
 
@@ -429,7 +429,7 @@ The connector is compatible with any BSP that exposes the standard WhatsApp Clou
 
 ---
 
-### v1.2.4 — Viber Business Connector
+### Viber Business Connector
 
 > *"Viber is the dominant messaging platform across Eastern Europe and Southeast Asia — it should not be an afterthought."*
 
@@ -452,7 +452,7 @@ A `Deveel.Messaging.Connector.Viber` package implementing the Viber Business Mes
 
 ---
 
-### v1.2.5 — LINE Connector
+### LINE Connector
 
 > *"LINE dominates messaging in Japan, Thailand, and Taiwan — regional coverage matters."*
 
@@ -481,7 +481,7 @@ SaaS messaging providers abstract away the underlying transport protocol, but th
 
 ---
 
-### v1.3.1 — Protocol Connector Base Classes
+### Protocol Connector Base Classes
 
 > *"Protocol connectors share enough structure that their base should be built once."*
 
@@ -501,7 +501,7 @@ A `Deveel.Messaging.Connector.Protocol` library (or extensions to `Deveel.Messag
 
 ---
 
-### v1.3.2 — SMPP Connector
+### SMPP Connector
 
 > *"Sending SMS through a SaaS provider is convenient — sending through a direct SMSC connection is sovereign."*
 
@@ -527,7 +527,7 @@ A `Deveel.Messaging.Connector.Smpp` package implementing an SMPP v3.4 session cl
 
 ---
 
-### v1.3.3 — SMTP Connector
+### SMTP Connector
 
 > *"Email at its most direct is just SMTP — the framework should support that."*
 
@@ -551,7 +551,7 @@ A `Deveel.Messaging.Connector.Smtp` package using MailKit to deliver messages ov
 
 ---
 
-### v1.3.4 — RCS Connector
+### RCS Connector
 
 > *"RCS is SMS with the richness of a chat app — the next generation of A2P messaging."*
 
@@ -576,7 +576,7 @@ A `Deveel.Messaging.Connector.Rcs` package implementing the RCS Business Messagi
 
 ---
 
-### v1.3.5 — APNs Connector (Direct)
+### APNs Connector (Direct)
 
 > *"Firebase is not the only path to an iPhone — teams with Apple developer accounts should have a direct route."*
 
@@ -606,7 +606,7 @@ A message model that works across channels must acknowledge that channels are no
 
 ---
 
-### v1.4.1 — `IContentTranscoder` Abstraction
+### `IContentTranscoder` Abstraction
 
 > *"Convert once, send anywhere."*
 
@@ -626,7 +626,7 @@ An `IContentTranscoder<TSource, TTarget>` abstraction that converts a content ob
 
 ---
 
-### v1.4.2 — Built-In Transcoders
+### Built-In Transcoders
 
 > *"The most common conversions should not require custom code."*
 
@@ -649,7 +649,7 @@ A set of built-in transcoders registered by default: HTML → plain text (using 
 
 ---
 
-### v1.4.3 — Channel-Aware Content Fallback
+### Channel-Aware Content Fallback
 
 > *"A message that cannot be delivered as-is should be delivered in the best available form, not dropped."*
 
@@ -674,7 +674,7 @@ An automatic fallback mechanism in the connector base that, when a content type 
 
 ---
 
-### v1.4.4 — SMS Segmentation
+### SMS Segmentation
 
 > *"An SMS that is longer than 160 characters is not one message — it is several."*
 
@@ -697,7 +697,7 @@ A `SmsSegmenter` utility that counts characters according to GSM-7 (160 chars / 
 
 ---
 
-### v1.4.5 — Character Encoding Detection
+### Character Encoding Detection
 
 > *"Sending a GSM-7 message with a single emoji doubles its segment count — the framework should warn you."*
 
@@ -722,7 +722,7 @@ Sending a message to an invalid or unreachable address wastes resources, generat
 
 ---
 
-### v1.5.1 — E.164 Normalization
+### E.164 Normalization
 
 > *"A phone number is only unambiguous when it carries its country code."*
 
@@ -742,7 +742,7 @@ An E.164 normalization step applied to `PhoneNumber` endpoints before they are p
 
 ---
 
-### v1.5.2 — HLR (Home Location Register) Lookup
+### HLR (Home Location Register) Lookup
 
 > *"Knowing a number exists is not the same as knowing it can receive a message."*
 
@@ -761,7 +761,7 @@ An optional `INumberReachabilityChecker` abstraction with provider-specific impl
 
 ---
 
-### v1.5.3 — Number Portability Awareness
+### Number Portability Awareness
 
 > *"A number that moved to a new network should still find its way to the right SMSC."*
 
@@ -785,7 +785,7 @@ Integration of number portability data (where available from the HLR lookup resu
 
 ---
 
-### v1.5.4 — Email Address Validation
+### Email Address Validation
 
 > *"An email address that cannot receive mail should not be sent to."*
 
@@ -804,7 +804,7 @@ An `IEmailAddressValidator` that performs: (1) RFC 5321 syntax validation, (2) M
 
 ---
 
-### v1.5.5 — `IAddressValidator` Abstraction
+### `IAddressValidator` Abstraction
 
 > *"Address validation should be as pluggable as the connectors themselves."*
 
@@ -830,7 +830,7 @@ A framework is only as productive as the tools built around it. This milestone i
 
 ---
 
-### v1.6.1 — `dotnet new` Connector Scaffold
+### `dotnet new` Connector Scaffold
 
 > *"The fastest path to a correct connector is starting from one that already compiles."*
 
@@ -850,7 +850,7 @@ A `dotnet new` template package (`Deveel.Messaging.Connector.Templates`) that ge
 
 ---
 
-### v1.6.2 — ASP.NET Core Diagnostic Middleware
+### ASP.NET Core Diagnostic Middleware
 
 > *"An operator should never need a debugger to answer 'is the Twilio connector healthy?'"*
 
@@ -876,7 +876,7 @@ A conversation is more than a sequence of messages. It has participants, a histo
 
 ---
 
-### v2.0.1 — `IConversation` Abstraction
+### `IConversation` Abstraction
 
 > *"A conversation is the unit of meaning — a message is just its atom."*
 
@@ -899,7 +899,7 @@ An `IConversation` interface representing a thread of messages between an applic
 
 ---
 
-### v2.0.2 — Conversation State Model
+### Conversation State Model
 
 > *"A conversation that cannot remember what was said is not a conversation."*
 
@@ -923,7 +923,7 @@ A conversation state model that tracks participants, channel, status transitions
 
 ---
 
-### v2.0.3 — Conversation Correlation
+### Conversation Correlation
 
 > *"When someone replies, the framework should know what they are replying to."*
 
@@ -949,7 +949,7 @@ A correlation mechanism that links inbound messages to the outgoing conversation
 
 ---
 
-### v2.0.4 — Multi-Channel Conversations
+### Multi-Channel Conversations
 
 > *"A conversation that started on SMS should be able to continue on WhatsApp."*
 
@@ -974,7 +974,7 @@ An extension to the conversation model that allows a conversation to be associat
 
 ---
 
-### v2.0.5 — Multi-Tenant Channel Registry
+### Multi-Tenant Channel Registry
 
 > *"Different tenants have different channels — the registry should know the difference."*
 
@@ -998,7 +998,7 @@ A tenant-aware channel registry that resolves connector instances and channel sc
 
 ---
 
-### v2.0.6 — xUnit Test Helpers for Conversation Flows
+### xUnit Test Helpers for Conversation Flows
 
 > *"A conversation that cannot be tested in isolation is a conversation waiting to break."*
 
@@ -1028,7 +1028,7 @@ Templates are how organisations send consistent, personalised messages at scale.
 
 ---
 
-### v2.1.1 — `IMessageTemplate` Abstraction
+### `IMessageTemplate` Abstraction
 
 > *"A template is a promise about the shape of a message — define it once, honour it everywhere."*
 
@@ -1048,7 +1048,7 @@ An `IMessageTemplate` interface that defines a template by name, locale, content
 
 ---
 
-### v2.1.2 — Variable Substitution Engine
+### Variable Substitution Engine
 
 > *"Every personalised message is a template with names filled in."*
 
@@ -1072,7 +1072,7 @@ A local rendering engine that resolves an `IMessageTemplate` with a set of varia
 
 ---
 
-### v2.1.3 — Per-Connector Template Rendering
+### Per-Connector Template Rendering
 
 > *"WhatsApp wants a template name and parameters. SendGrid wants a template ID. The framework should speak both."*
 
@@ -1097,7 +1097,7 @@ Per-connector template adapters that, when a connector detects that a message re
 
 ---
 
-### v2.1.4 — Template Registry
+### Template Registry
 
 > *"A template that cannot be found at send time is a template that cannot be trusted."*
 
@@ -1124,3 +1124,5 @@ An `ITemplateRegistry` that stores and retrieves `IMessageTemplate` instances by
 ## Contributing
 
 If you have feature ideas, bug reports, or want to work on any of the items listed above, please open an issue or pull request on [GitHub](https://github.com/deveel/deveel.messaging). See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on setting up the development environment, coding standards, and the pull request process.
+
+Automated agents (AI) may be used only in accessory contexts such as documentation and tests. The core body of source code must be written by humans to ensure code quality and maintainability.

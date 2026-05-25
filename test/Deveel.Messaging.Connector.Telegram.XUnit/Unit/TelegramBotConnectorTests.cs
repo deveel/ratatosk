@@ -547,7 +547,324 @@ namespace Deveel.Messaging
 
 		#endregion
 
-		#region Helper Methods
+		#region Additional Content Type Tests
+
+	[Fact]
+	public async Task Should_SendLocationFromJson_When_SendMessageAsyncWithJsonLocationContent()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var json = """{"latitude":40.7128,"longitude":-74.0060,"livePeriod":3600,"heading":45,"proximityAlertRadius":500}""";
+		var message = new Message
+		{
+			Id = "test-json-loc",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new JsonContent(json)
+		};
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+	}
+
+	[Fact]
+	public async Task Should_SendButtonContent_When_SendMessageAsyncWithButtonContent()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var message = new Message
+		{
+			Id = "test-button",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new ButtonContent("Click me", ButtonType.Postback, "payload")
+		};
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+	}
+
+	[Fact]
+	public async Task Should_SendQuickReply_When_SendMessageAsyncWithQuickReplyContent()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var message = new Message
+		{
+			Id = "test-qr",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new QuickReplyContent("Option 1")
+		};
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+	}
+
+	[Fact]
+	public async Task Should_Fail_When_SendMessageAsyncWithCarouselContent()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var message = new Message
+		{
+			Id = "test-carousel",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new CarouselContent(new List<ICarouselCard>())
+		};
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+		Assert.False(result.IsSuccess());
+	}
+
+	#endregion
+
+	#region Webhook Setup Failure Tests
+
+	[Fact]
+	public async Task Should_FailInitialization_When_WebhookSetupThrows()
+	{
+		var schema = TelegramChannelSchemas.WebhookBot;
+		var connectionSettings = TelegramMockFactory.CreateWebhookConnectionSettings();
+		var mockService = TelegramMockFactory.CreateMockTelegramService();
+		mockService.Setup(x => x.SetWebhookAsync(
+			It.IsAny<string>(), It.IsAny<InputFile?>(), It.IsAny<string?>(),
+			It.IsAny<int?>(), It.IsAny<IEnumerable<UpdateType>?>(),
+			It.IsAny<bool?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("webhook failed"));
+		var connector = new TelegramBotConnector(schema, connectionSettings, mockService.Object);
+		var result = await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		Assert.False(result.IsSuccess());
+	}
+
+	#endregion
+
+	#region Validation Edge Case Tests
+
+	[Fact]
+	public async Task Should_ReturnValidationError_When_ValidateWithInvalidMediaUrl()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var message = new Message
+		{
+			Id = "test-bad-url",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new MediaContent(MediaType.Image, "img.jpg", "not-a-valid-url")
+		};
+		var results = new List<ValidationResult>();
+		await foreach (var r in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
+			if (r != null && !string.IsNullOrEmpty(r.ErrorMessage))
+				results.Add(r);
+		Assert.Contains(results, r => r.MemberNames.Contains("Content"));
+	}
+
+	[Fact]
+	public async Task Should_ReturnValidationError_When_ValidateWithTooLongCaption()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var longCaption = new string('x', TelegramConnectorConstants.MaxCaptionLength + 1);
+		var message = new Message
+		{
+			Id = "test-long-cap",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new MediaContent(MediaType.Image, "img.jpg", "https://example.com/img.jpg"),
+			Properties = new Dictionary<string, MessageProperty>
+			{
+				{ "Caption", new MessageProperty("Caption", longCaption) }
+			}
+		};
+		var results = new List<ValidationResult>();
+		await foreach (var r in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
+			if (r != null && !string.IsNullOrEmpty(r.ErrorMessage))
+				results.Add(r);
+		Assert.NotEmpty(results);
+	}
+
+	[Fact]
+	public async Task Should_ReturnValidationError_When_ValidateWithInvalidInlineKeyboardJson()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var message = new Message
+		{
+			Id = "test-bad-keyboard",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new TextContent("test"),
+			Properties = new Dictionary<string, MessageProperty>
+			{
+				{ "InlineKeyboard", new MessageProperty("InlineKeyboard", "not valid json") }
+			}
+		};
+		var results = new List<ValidationResult>();
+		await foreach (var r in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
+			if (r != null && !string.IsNullOrEmpty(r.ErrorMessage))
+				results.Add(r);
+		Assert.NotEmpty(results);
+	}
+
+	[Fact]
+	public async Task Should_ReturnNoError_When_ValidateWithEmptyTextContent()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var message = new Message
+		{
+			Id = "test-empty-text",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new TextContent("")
+		};
+		var results = new List<ValidationResult>();
+		await foreach (var r in connector.ValidateMessageAsync(message, TestContext.Current.CancellationToken))
+			if (r != null && !string.IsNullOrEmpty(r.ErrorMessage))
+				results.Add(r);
+		Assert.Empty(results);
+	}
+
+	#endregion
+
+	#region Status With Webhook Tests
+
+	[Fact]
+	public async Task Should_IncludeWebhookError_When_GetStatusAsyncWithWebhookFailure()
+	{
+		var schema = TelegramChannelSchemas.WebhookBot;
+		var connectionSettings = TelegramMockFactory.CreateWebhookConnectionSettings();
+		var mockService = TelegramMockFactory.CreateMockTelegramService();
+		mockService.Setup(x => x.GetWebhookInfoAsync(It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("webhook info error"));
+		var connector = new TelegramBotConnector(schema, connectionSettings, mockService.Object);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		var result = await connector.GetStatusAsync(TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+		Assert.True(result.Value.AdditionalData.ContainsKey("WebhookError"));
+	}
+
+	#endregion
+
+	#region Connection Test Failure Tests
+
+	[Fact]
+	public async Task Should_Fail_When_TestConnectionAsyncWithNullBotInfo()
+	{
+		var schema = TelegramChannelSchemas.TelegramBot;
+		var connectionSettings = TelegramMockFactory.CreateTestConnectionSettings();
+		var mockService = TelegramMockFactory.CreateMockTelegramService();
+		mockService.Setup(x => x.GetMeAsync(It.IsAny<CancellationToken>()))
+			.ReturnsAsync((User)null!);
+		var connector = new TelegramBotConnector(schema, connectionSettings, mockService.Object);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
+		Assert.False(result.IsSuccess());
+	}
+
+	#endregion
+
+	#region Health Check With Webhook Tests
+
+	[Fact]
+	public async Task Should_IncludeWebhookIssues_When_GetHealthAsyncWithWebhookErrors()
+	{
+		var schema = TelegramChannelSchemas.WebhookBot;
+		var connectionSettings = TelegramMockFactory.CreateWebhookConnectionSettings();
+		var mockService = TelegramMockFactory.CreateMockTelegramService();
+		var webhookInfo = new WebhookInfo
+		{
+			Url = "https://example.com/webhook",
+			LastErrorMessage = "connection failed",
+			PendingUpdateCount = 0
+		};
+		mockService.Setup(x => x.GetWebhookInfoAsync(It.IsAny<CancellationToken>()))
+			.ReturnsAsync(webhookInfo);
+		var connector = new TelegramBotConnector(schema, connectionSettings, mockService.Object);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+		Assert.Contains(result.Value.Issues, i => i.Contains("Webhook error"));
+	}
+
+	[Fact]
+	public async Task Should_IncludePendingUpdateIssue_When_GetHealthAsyncWithHighPendingUpdates()
+	{
+		var schema = TelegramChannelSchemas.WebhookBot;
+		var connectionSettings = TelegramMockFactory.CreateWebhookConnectionSettings();
+		var mockService = TelegramMockFactory.CreateMockTelegramService();
+		var webhookInfo = new WebhookInfo
+		{
+			Url = "https://example.com/webhook",
+			PendingUpdateCount = 200,
+			LastErrorMessage = null
+		};
+		mockService.Setup(x => x.GetWebhookInfoAsync(It.IsAny<CancellationToken>()))
+			.ReturnsAsync(webhookInfo);
+		var connector = new TelegramBotConnector(schema, connectionSettings, mockService.Object);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+		Assert.Contains(result.Value.Issues, i => i.Contains("pending update count"));
+	}
+
+	[Fact]
+	public async Task Should_HandleWebhookCheckFailure_When_GetHealthAsyncWithWebhookException()
+	{
+		var schema = TelegramChannelSchemas.WebhookBot;
+		var connectionSettings = TelegramMockFactory.CreateWebhookConnectionSettings();
+		var mockService = TelegramMockFactory.CreateMockTelegramService();
+		mockService.Setup(x => x.GetWebhookInfoAsync(It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("webhook check failed"));
+		var connector = new TelegramBotConnector(schema, connectionSettings, mockService.Object);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+		Assert.Contains(result.Value.Issues, i => i.Contains("Webhook check failed"));
+	}
+
+	[Fact]
+	public async Task Should_MarkUnhealthy_When_GetHealthAsyncWithConnectionFailure()
+	{
+		var schema = TelegramChannelSchemas.WebhookBot;
+		var connectionSettings = TelegramMockFactory.CreateWebhookConnectionSettings();
+		var mockService = TelegramMockFactory.CreateMockTelegramService();
+		var connector = new TelegramBotConnector(schema, connectionSettings, mockService.Object);
+
+		var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		Assert.True(initResult.IsSuccess(), $"Init failed: {initResult.Error?.Message}");
+
+		mockService.Setup(x => x.GetMeAsync(It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("health check connection failed"));
+
+		var result = await connector.GetHealthAsync(TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+		Assert.False(result.Value.IsHealthy);
+		Assert.Contains(result.Value.Issues, i => i.Contains("Health check failed"));
+	}
+
+	#endregion
+
+	#region Shutdown Webhook Failure Tests
+
+	[Fact]
+	public async Task Should_HandleWebhookRemovalFailure_When_ShutdownAsyncWithWebhook()
+	{
+		var schema = TelegramChannelSchemas.WebhookBot;
+		var connectionSettings = TelegramMockFactory.CreateWebhookConnectionSettings();
+		var mockService = TelegramMockFactory.CreateMockTelegramService();
+		mockService.Setup(x => x.DeleteWebhookAsync(
+			It.IsAny<bool?>(), It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("delete failed"));
+		var connector = new TelegramBotConnector(schema, connectionSettings, mockService.Object);
+		await connector.InitializeAsync(TestContext.Current.CancellationToken);
+		await connector.ShutdownAsync(TestContext.Current.CancellationToken);
+		Assert.Equal(ConnectorState.Shutdown, connector.State);
+	}
+
+	#endregion
+
+	#region Send Media With Data Tests
+
+	[Fact]
+	public async Task Should_SendMediaFromData_When_SendMessageAsyncWithMediaData()
+	{
+		var connector = await CreateInitializedConnectorAsync();
+		var message = new Message
+		{
+			Id = "test-media-data",
+			Receiver = new Endpoint(EndpointType.Id, "123456789"),
+			Content = new MediaContent(MediaType.Image, "test.jpg", new byte[] { 0x01, 0x02, 0x03 })
+		};
+		var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+		Assert.True(result.IsSuccess());
+	}
+
+	#endregion
+
+	#region Helper Methods
 
 		private async Task<TelegramBotConnector> CreateInitializedConnectorAsync()
 		{

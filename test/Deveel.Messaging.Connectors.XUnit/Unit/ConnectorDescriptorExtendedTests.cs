@@ -292,28 +292,28 @@ namespace Deveel.Messaging.XUnit
 				=> new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
 
 			public ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask ShutdownAsync(CancellationToken cancellationToken)
 				=> default;
@@ -331,28 +331,28 @@ namespace Deveel.Messaging.XUnit
 				=> new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
 
 			public ValueTask<OperationResult<SendResult>> SendMessageAsync(IMessage message, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<BatchSendResult>> SendBatchAsync(IMessageBatch batch, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<StatusUpdatesResult>> GetMessageStatusAsync(string messageId, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(MessageSource source, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<ReceiveResult>> ReceiveMessagesAsync(MessageSource source, CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask<OperationResult<ConnectorHealth>> GetHealthAsync(CancellationToken cancellationToken)
-				=> throw new NotImplementedException();
+				=> throw new NotSupportedException();
 
 			public ValueTask ShutdownAsync(CancellationToken cancellationToken)
 				=> default;

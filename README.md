@@ -123,7 +123,7 @@ Locks the public API and ships stable package releases with production-ready gua
 
 - [x] **API freeze and compatibility enforcement** - Prevent breaking API changes without a major version bump.
 - [x] **NuGet GA release** - Publish stable `Deveel.Messaging.*` packages without prerelease suffixes.
-- [ ] **Interactive content model** - Add cross-channel abstractions for buttons, quick replies, carousels, and lists.
+- [x] **Interactive content model** - Add cross-channel abstractions for buttons, quick replies, carousels, and lists.
 - [ ] **Sender identity model** - Provide typed sender identities for phone, email, and bot-based channels.
 
 ### v1.1.0 and beyond - Platform Expansion

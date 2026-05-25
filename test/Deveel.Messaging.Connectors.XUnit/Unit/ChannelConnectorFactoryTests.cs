@@ -231,10 +231,10 @@ namespace Deveel.Messaging.XUnit
                 => ValueTask.CompletedTask;
 
             protected override Task<SendResult> SendMessageCoreAsync(IMessage message, CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
 
             protected override Task<StatusInfo> GetConnectorStatusAsync(CancellationToken cancellationToken)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
         }
 
         private class PoolTestSchemaFactory : IChannelSchemaFactory
