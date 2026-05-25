@@ -5,6 +5,7 @@
 
 using Moq;
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -20,6 +21,13 @@ namespace Deveel.Messaging
 	public class TelegramServiceTests
 	{
 		private const string ValidToken = "123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
+
+		private static bool IsValidBotToken(string token)
+		{
+			var method = typeof(TelegramService).GetMethod("IsValidBotToken",
+				System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+			return (bool)method!.Invoke(null, new object[] { token })!;
+		}
 
 		#region Constructor Tests
 
@@ -117,6 +125,20 @@ namespace Deveel.Messaging
 
 			// Assert
 			Assert.True(true);
+		}
+
+		[Theory]
+		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567!")]
+		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567@")]
+		[InlineData("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567#")]
+		public void Should_ThrowArgumentException_When_InitializeWithTokenContainingInvalidCharacters(string token)
+		{
+			// Arrange
+			var service = new TelegramService();
+
+			// Act
+			// Assert
+			Assert.Throws<ArgumentException>(() => service.Initialize(token));
 		}
 
 		#endregion
@@ -322,6 +344,49 @@ namespace Deveel.Messaging
 			Assert.NotNull(result);
 			mockBotClient.Verify(x => x.SendRequest<Telegram.Bot.Types.Message>(
 				It.Is<SendMessageRequest>(req => req.ParseMode == Telegram.Bot.Types.Enums.ParseMode.Markdown),
+				It.IsAny<CancellationToken>()), Times.Once);
+		}
+
+		[Fact]
+		public async Task Should_CallBotClientWithAllParameters_When_SendTextMessageAsyncWithAllParameters()
+		{
+			// Arrange
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var expectedMessage = TelegramMockFactory.CreateTestTelegramMessage();
+			var service = new TelegramService(mockBotClient.Object);
+			var replyMarkup = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("Test", "test"));
+
+			mockBotClient.Setup(x => x.SendRequest<Telegram.Bot.Types.Message>(
+				It.IsAny<SendMessageRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ReturnsAsync(expectedMessage);
+
+			service.Initialize(ValidToken);
+
+			// Act
+			var result = await service.SendTextMessageAsync(
+				123456,
+				"Test message with **bold** text",
+				parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+				disableWebPagePreview: true,
+				disableNotification: true,
+				replyToMessageId: 999,
+				replyMarkup: replyMarkup,
+				cancellationToken: TestContext.Current.CancellationToken);
+
+			// Assert
+			Assert.NotNull(result);
+			mockBotClient.Verify(x => x.SendRequest<Telegram.Bot.Types.Message>(
+				It.Is<SendMessageRequest>(req =>
+					req.ChatId.Identifier == 123456 &&
+					req.Text == "Test message with **bold** text" &&
+					req.ParseMode == Telegram.Bot.Types.Enums.ParseMode.Markdown &&
+					req.LinkPreviewOptions != null &&
+					req.LinkPreviewOptions.IsDisabled == true &&
+					req.DisableNotification == true &&
+					req.ReplyParameters != null &&
+					req.ReplyParameters.MessageId == 999 &&
+					req.ReplyMarkup == replyMarkup),
 				It.IsAny<CancellationToken>()), Times.Once);
 		}
 
@@ -1168,6 +1233,29 @@ namespace Deveel.Messaging
 		}
 
 		[Fact]
+		public async Task Should_CallBotClient_When_DeleteWebhookAsyncWithDefaultParameters()
+		{
+			// Arrange
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var service = new TelegramService(mockBotClient.Object);
+
+			mockBotClient.Setup(x => x.SendRequest<bool>(
+				It.IsAny<DeleteWebhookRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ReturnsAsync(true);
+
+			service.Initialize(ValidToken);
+
+			// Act
+			await service.DeleteWebhookAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+			// Assert
+			mockBotClient.Verify(x => x.SendRequest<bool>(
+				It.Is<DeleteWebhookRequest>(req => req.DropPendingUpdates == false),
+				It.IsAny<CancellationToken>()), Times.Once);
+		}
+
+		[Fact]
 		public async Task Should_CallBotClientWithParameter_When_DeleteWebhookAsyncWithDropPendingUpdates()
 		{
 			// Arrange
@@ -1257,6 +1345,160 @@ namespace Deveel.Messaging
 
 		#endregion
 
+		#region Api Error Mapping Tests
+
+		[Theory]
+		[InlineData(400, MessagingErrorCodes.InvalidCredentials)]
+		[InlineData(401, TelegramErrorCodes.Unauthorized)]
+		[InlineData(403, TelegramErrorCodes.BotBlocked)]
+		[InlineData(404, TelegramErrorCodes.ChatNotFound)]
+		[InlineData(429, MessagingErrorCodes.UnsupportedContentType)]
+		[InlineData(500, TelegramErrorCodes.Unauthorized)]
+		public async Task Should_MapTelegramErrorCode_When_GetMeAsyncThrowsApiException(int errorCode, string expectedErrorCode)
+		{
+			// Arrange
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var service = new TelegramService(mockBotClient.Object);
+
+			mockBotClient.Setup(x => x.SendRequest<User>(
+				It.IsAny<GetMeRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ThrowsAsync(new ApiRequestException($"Error {errorCode}", errorCode));
+
+			service.Initialize(ValidToken);
+
+			// Act
+			var exception = await Assert.ThrowsAsync<ConnectorException>(
+				() => service.GetMeAsync(TestContext.Current.CancellationToken));
+
+			// Assert
+			Assert.Equal(expectedErrorCode, exception.ErrorCode);
+			Assert.Equal(TelegramErrorCodes.ErrorDomain, exception.ErrorDomain);
+		}
+
+		[Theory]
+		[InlineData(400, TelegramErrorCodes.InvalidChatId)]
+		[InlineData(403, TelegramErrorCodes.BotBlocked)]
+		[InlineData(404, TelegramErrorCodes.ChatNotFound)]
+		[InlineData(429, MessagingErrorCodes.UnsupportedContentType)]
+		[InlineData(500, MessagingErrorCodes.UnsupportedContentType)]
+		public async Task Should_MapTelegramSendErrorCode_When_SendTextMessageAsyncThrowsApiException(int errorCode, string expectedErrorCode)
+		{
+			// Arrange
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var service = new TelegramService(mockBotClient.Object);
+
+			mockBotClient.Setup(x => x.SendRequest<Telegram.Bot.Types.Message>(
+				It.IsAny<SendMessageRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ThrowsAsync(new ApiRequestException($"Error {errorCode}", errorCode));
+
+			service.Initialize(ValidToken);
+
+			// Act
+			var exception = await Assert.ThrowsAsync<ConnectorException>(
+				() => service.SendTextMessageAsync(123456, "test", cancellationToken: TestContext.Current.CancellationToken));
+
+			// Assert
+			Assert.Equal(expectedErrorCode, exception.ErrorCode);
+			Assert.Equal(TelegramErrorCodes.ErrorDomain, exception.ErrorDomain);
+		}
+
+		[Fact]
+		public async Task Should_ThrowConnectorException_When_SendPhotoAsyncThrowsApiException()
+		{
+			// Arrange
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var service = new TelegramService(mockBotClient.Object);
+			var photoFile = InputFile.FromUri("https://example.com/photo.jpg");
+
+			mockBotClient.Setup(x => x.SendRequest<Telegram.Bot.Types.Message>(
+				It.IsAny<SendPhotoRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ThrowsAsync(new ApiRequestException("Forbidden", 403));
+
+			service.Initialize(ValidToken);
+
+			// Act
+			var exception = await Assert.ThrowsAsync<ConnectorException>(
+				() => service.SendPhotoAsync(123456, photoFile, cancellationToken: TestContext.Current.CancellationToken));
+
+			// Assert
+			Assert.Equal(TelegramErrorCodes.BotBlocked, exception.ErrorCode);
+			Assert.Equal(TelegramErrorCodes.ErrorDomain, exception.ErrorDomain);
+		}
+
+		[Fact]
+		public async Task Should_ThrowConnectorException_When_SetWebhookAsyncThrowsApiException()
+		{
+			// Arrange
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var service = new TelegramService(mockBotClient.Object);
+
+			mockBotClient.Setup(x => x.SendRequest<bool>(
+				It.IsAny<SetWebhookRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ThrowsAsync(new ApiRequestException("Bad Request", 400));
+
+			service.Initialize(ValidToken);
+
+			// Act
+			var exception = await Assert.ThrowsAsync<ConnectorException>(
+				() => service.SetWebhookAsync("https://example.com/webhook", cancellationToken: TestContext.Current.CancellationToken));
+
+			// Assert
+			Assert.Equal(MessagingErrorCodes.UnsupportedContentType, exception.ErrorCode);
+			Assert.Equal(TelegramErrorCodes.ErrorDomain, exception.ErrorDomain);
+		}
+
+		[Fact]
+		public async Task Should_ThrowConnectorException_When_GetWebhookInfoAsyncThrowsApiException()
+		{
+			// Arrange
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var service = new TelegramService(mockBotClient.Object);
+
+			mockBotClient.Setup(x => x.SendRequest<WebhookInfo>(
+				It.IsAny<GetWebhookInfoRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ThrowsAsync(new ApiRequestException("Not Found", 404));
+
+			service.Initialize(ValidToken);
+
+			// Act
+			var exception = await Assert.ThrowsAsync<ConnectorException>(
+				() => service.GetWebhookInfoAsync(TestContext.Current.CancellationToken));
+
+			// Assert
+			Assert.Equal(MessagingErrorCodes.UnsupportedContentType, exception.ErrorCode);
+			Assert.Equal(TelegramErrorCodes.ErrorDomain, exception.ErrorDomain);
+		}
+
+		[Fact]
+		public async Task Should_ThrowConnectorException_When_GetUpdatesAsyncThrowsApiException()
+		{
+			// Arrange
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var service = new TelegramService(mockBotClient.Object);
+
+			mockBotClient.Setup(x => x.SendRequest<Update[]>(
+				It.IsAny<GetUpdatesRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ThrowsAsync(new ApiRequestException("Conflict", 409));
+
+			service.Initialize(ValidToken);
+
+			// Act
+			var exception = await Assert.ThrowsAsync<ConnectorException>(
+				() => service.GetUpdatesAsync(cancellationToken: TestContext.Current.CancellationToken));
+
+			// Assert
+			Assert.Equal(MessagingErrorCodes.UnsupportedContentType, exception.ErrorCode);
+			Assert.Equal(TelegramErrorCodes.ErrorDomain, exception.ErrorDomain);
+		}
+
+		#endregion
+
 		#region Additional Coverage Tests
 
 		[Fact]
@@ -1280,6 +1522,66 @@ namespace Deveel.Messaging
 			Assert.Contains("not been initialized", exception.InnerException!.Message);
 		}
 
+		[Theory]
+		[InlineData("")]
+		[InlineData(" ")]
+		[InlineData(null)]
+		public void Should_ReturnFalse_When_IsValidBotTokenWithNullOrWhitespace(string? token)
+		{
+			Assert.False(IsValidBotToken(token!));
+		}
+
+		[Fact]
+		public void Should_ReturnFalse_When_IsValidBotTokenWithoutColon()
+		{
+			Assert.False(IsValidBotToken("invalidtoken"));
+		}
+
+		[Fact]
+		public void Should_ReturnFalse_When_IsValidBotTokenWithNonNumericPrefix()
+		{
+			Assert.False(IsValidBotToken("abc:defghijklmnopqrstuvwxyz1234567890ab"));
+		}
+
+		[Fact]
+		public void Should_ReturnFalse_When_IsValidBotTokenWithWrongLengthToken()
+		{
+			Assert.False(IsValidBotToken("12345:tooshort"));
+		}
+
+		[Fact]
+		public void Should_ReturnFalse_When_IsValidBotTokenWithInvalidCharacters()
+		{
+			Assert.False(IsValidBotToken("12345:ABCDEFGHIJKLMNOPQRSTUVWXYZ12345!@#$%"));
+		}
+
+		[Fact]
+		public void Should_ReturnTrue_When_IsValidBotTokenWithValidToken()
+		{
+			Assert.True(IsValidBotToken("123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi"));
+		}
+
+		[Fact]
+		public async Task Should_ThrowConnectorException_When_DeleteWebhookAsyncThrowsApiException()
+		{
+			var mockBotClient = new Mock<ITelegramBotClient>();
+			var service = new TelegramService(mockBotClient.Object);
+
+			mockBotClient.Setup(x => x.SendRequest<bool>(
+				It.IsAny<DeleteWebhookRequest>(),
+				It.IsAny<CancellationToken>()))
+				.ThrowsAsync(new ApiRequestException("Bad Request", 400));
+
+			service.Initialize(ValidToken);
+
+			var exception = await Assert.ThrowsAsync<ConnectorException>(
+				() => service.DeleteWebhookAsync(cancellationToken: TestContext.Current.CancellationToken));
+
+			Assert.Equal(MessagingErrorCodes.UnsupportedContentType, exception.ErrorCode);
+			Assert.Equal(TelegramErrorCodes.ErrorDomain, exception.ErrorDomain);
+		}
+
 		#endregion
 	}
 }
+

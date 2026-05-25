@@ -82,5 +82,17 @@ namespace Deveel.Messaging
                 d.ServiceType == typeof(IChannelConnector) &&
                 d.ServiceKey?.Equals("bot") == true);
         }
+
+        [Fact]
+        public void Should_RegisterNamedConnector_When_NamedConnectionStringShortcutIsUsed()
+        {
+            var services = CreateServices();
+            services.AddMessaging()
+                .AddTelegramBot("bot", "BotToken=test-token");
+
+            Assert.Contains(services, d =>
+                d.ServiceType == typeof(IChannelConnector) &&
+                d.ServiceKey?.Equals("bot") == true);
+        }
     }
 }

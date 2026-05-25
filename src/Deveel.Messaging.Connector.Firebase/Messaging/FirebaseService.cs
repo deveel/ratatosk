@@ -10,20 +10,31 @@ using Google.Apis.Auth.OAuth2;
 
 namespace Deveel.Messaging
 {
-	/// <summary>
+    /// <summary>
 	/// Default implementation of <see cref="IFirebaseService"/> using the Firebase Admin SDK.
 	/// </summary>
 	public class FirebaseService : IFirebaseService
     {
         private FirebaseApp? _app;
-        private FirebaseMessaging? _messaging;
+        private IFirebaseMessagingClient? _messagingClient;
 
+        /// <summary>
+        /// Constructs a <see cref="FirebaseService"/> instance.
+        /// </summary>
+        public FirebaseService()
+        {
+        }
+
+        internal FirebaseService(IFirebaseMessagingClient messagingClient)
+        {
+            _messagingClient = messagingClient;
+        }
 
         /// <inheritdoc/>
         public FirebaseApp? App => _app;
 
         /// <inheritdoc/>
-        public bool IsInitialized => _app != null && _messaging != null;
+        public bool IsInitialized => _messagingClient != null;
 
         /// <inheritdoc/>
         public async Task InitializeAsync(string serviceAccountKey, string projectId)
@@ -38,7 +49,7 @@ namespace Deveel.Messaging
                 {
                     _app.Delete();
                     _app = null;
-                    _messaging = null;
+                    _messagingClient = null;
                 }
 
                 // Create credential from service account key
@@ -52,7 +63,8 @@ namespace Deveel.Messaging
                 });
 
                 // Initialize messaging service
-                _messaging = FirebaseMessaging.GetMessaging(_app);
+                var messaging = FirebaseMessaging.GetMessaging(_app);
+                _messagingClient = new FirebaseMessagingClient(messaging);
 
                 await Task.CompletedTask;
             }
@@ -82,7 +94,7 @@ namespace Deveel.Messaging
 
             try
             {
-                return await _messaging!.SendAsync(message, dryRun, cancellationToken);
+                return await _messagingClient!.SendAsync(message, dryRun, cancellationToken);
             }
             catch (FirebaseMessagingException ex)
             {
@@ -110,7 +122,7 @@ namespace Deveel.Messaging
 
             try
             {
-                return await _messaging!.SendEachAsync(messages, dryRun, cancellationToken);
+                return await _messagingClient!.SendEachAsync(messages, dryRun, cancellationToken);
             }
             catch (FirebaseMessagingException ex)
             {
@@ -138,7 +150,7 @@ namespace Deveel.Messaging
 
             try
             {
-                return await _messaging!.SendMulticastAsync(message, dryRun, cancellationToken);
+                return await _messagingClient!.SendMulticastAsync(message, dryRun, cancellationToken);
             }
             catch (FirebaseMessagingException ex)
             {
@@ -179,7 +191,7 @@ namespace Deveel.Messaging
                 };
 
                 // This will validate credentials and connectivity without sending
-                await _messaging!.SendAsync(testMessage, dryRun: true, cancellationToken);
+                await _messagingClient!.SendAsync(testMessage, dryRun: true, cancellationToken);
                 return true;
             }
             catch (FirebaseMessagingException ex) when (ex.MessagingErrorCode == MessagingErrorCode.InvalidArgument)
@@ -194,7 +206,12 @@ namespace Deveel.Messaging
             }
         }
 
-        private static string MapFirebaseErrorCode(MessagingErrorCode? errorCode)
+        /// <summary>
+        /// Maps a Firebase Admin SDK <see cref="MessagingErrorCode"/> to an internal messaging error code.
+        /// </summary>
+        /// <param name="errorCode">The Firebase error code to map.</param>
+        /// <returns>The corresponding internal error code string.</returns>
+        public static string MapFirebaseErrorCode(MessagingErrorCode? errorCode)
         {
             if (!errorCode.HasValue)
                 return MessagingErrorCodes.SendMessageFailed;

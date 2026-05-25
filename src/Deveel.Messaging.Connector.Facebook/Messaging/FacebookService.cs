@@ -12,12 +12,23 @@ using System.Text.Json;
 
 namespace Deveel.Messaging
 {
+    /// <summary>
+    /// Default implementation of <see cref="IFacebookService"/> that communicates
+    /// with the Facebook Graph API to send messages and fetch page information.
+    /// </summary>
     public class FacebookService : IFacebookService
     {
         private readonly HttpClient _httpClient;
         private readonly ResiliencePipeline<HttpResponseMessage> _resiliencePipeline;
         private string? _pageAccessToken;
 
+        /// <summary>
+        /// Constructs the service with an optional HTTP client.
+        /// </summary>
+        /// <param name="httpClient">
+        /// An optional HTTP client used to communicate with the Facebook Graph API.
+        /// If not provided, a new instance is created with the base URL set to the Graph API.
+        /// </param>
         public FacebookService(HttpClient? httpClient = null)
         {
             _httpClient = httpClient ?? new HttpClient { BaseAddress = new Uri(FacebookConnectorConstants.GraphApiBaseUrl) };
@@ -42,6 +53,10 @@ namespace Deveel.Messaging
                 .Build();
         }
 
+        /// <summary>
+        /// Initializes the service with a Facebook Page Access Token.
+        /// </summary>
+        /// <param name="pageAccessToken">The page access token to use for API requests.</param>
         public void Initialize(string pageAccessToken)
         {
             if (string.IsNullOrWhiteSpace(pageAccessToken))
@@ -52,6 +67,14 @@ namespace Deveel.Messaging
             _pageAccessToken = pageAccessToken;
         }
 
+        /// <summary>
+        /// Fetches information about a Facebook page using the Graph API.
+        /// </summary>
+        /// <param name="pageId">The identifier of the Facebook page.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>A <see cref="FacebookPageInfo"/> containing page details, or <c>null</c> if not found.</returns>
         public async Task<FacebookPageInfo?> FetchPageAsync(string pageId, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(_pageAccessToken))
@@ -100,6 +123,14 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Sends a message to a Facebook recipient using the Graph API.
+        /// </summary>
+        /// <param name="request">The message request containing recipient, content, and options.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>A <see cref="FacebookMessageResponse"/> containing the result of the send operation.</returns>
         public async Task<FacebookMessageResponse> SendMessageAsync(FacebookMessageRequest request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(_pageAccessToken))

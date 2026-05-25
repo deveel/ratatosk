@@ -1,8 +1,3 @@
-//
-// Copyright (c) Antonello Provenzano and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
-
 using Deveel.Messaging.Testing;
 
 namespace Deveel.Messaging;
@@ -23,13 +18,22 @@ public class FacebookInteractiveMappingTests
         };
     }
 
+    private static FacebookMessage BuildFacebookMessage(Message message)
+    {
+        var type = typeof(FacebookService).Assembly.GetTypes()
+            .First(t => t.Name == "FacebookMessageBuilder");
+        var method = type.GetMethod("BuildFacebookMessage",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+        return (FacebookMessage)method!.Invoke(null, new object?[] { message, null })!;
+    }
+
     [Fact]
     public void Should_MapButtonContent_When_BuildFacebookMessage()
     {
         var content = InteractiveContentBuilder.CreateButton();
         var message = CreateMessage(content);
 
-        var fbMessage = FacebookMessageBuilder.BuildFacebookMessage(message);
+        var fbMessage = BuildFacebookMessage(message);
 
         FacebookInteractiveMappingAssertions.AssertMapsToButton(content, fbMessage);
     }
@@ -40,7 +44,7 @@ public class FacebookInteractiveMappingTests
         var content = InteractiveContentBuilder.CreateQuickReply();
         var message = CreateMessage(content);
 
-        var fbMessage = FacebookMessageBuilder.BuildFacebookMessage(message);
+        var fbMessage = BuildFacebookMessage(message);
 
         Assert.NotNull(fbMessage.QuickReplies);
         var qr = Assert.Single(fbMessage.QuickReplies);
@@ -53,7 +57,7 @@ public class FacebookInteractiveMappingTests
         var content = InteractiveContentBuilder.CreateCarousel(3);
         var message = CreateMessage(content);
 
-        var fbMessage = FacebookMessageBuilder.BuildFacebookMessage(message);
+        var fbMessage = BuildFacebookMessage(message);
 
         FacebookInteractiveMappingAssertions.AssertMapsToCarousel(content, fbMessage);
     }
@@ -64,7 +68,7 @@ public class FacebookInteractiveMappingTests
         var content = InteractiveContentBuilder.CreateListPicker(3);
         var message = CreateMessage(content);
 
-        var fbMessage = FacebookMessageBuilder.BuildFacebookMessage(message);
+        var fbMessage = BuildFacebookMessage(message);
 
         FacebookInteractiveMappingAssertions.AssertMapsToListPicker(content, fbMessage);
     }

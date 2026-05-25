@@ -11,7 +11,9 @@ namespace Deveel.Messaging.XUnit.Unit
         public void Should_RegisterEntry_And_LookupByName()
         {
             var catalog = new ConnectorTypeCatalog();
-            catalog.Register("mock", typeof(MockConnector));
+            typeof(ConnectorTypeCatalog).GetMethod("Register", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(catalog, new object[] { "mock", typeof(MockConnector) });
 
             var found = catalog.TryGetEntry("mock", out var entry);
 
@@ -25,7 +27,9 @@ namespace Deveel.Messaging.XUnit.Unit
         public void Should_LookupByName_CaseInsensitive()
         {
             var catalog = new ConnectorTypeCatalog();
-            catalog.Register("MockChannel", typeof(MockConnector));
+            typeof(ConnectorTypeCatalog).GetMethod("Register", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(catalog, new object[] { "MockChannel", typeof(MockConnector) });
 
             var found = catalog.TryGetEntry("mockchannel", out var entry);
 
@@ -49,8 +53,12 @@ namespace Deveel.Messaging.XUnit.Unit
         public void Should_Overwrite_When_SameNameRegisteredTwice()
         {
             var catalog = new ConnectorTypeCatalog();
-            catalog.Register("dup", typeof(MockConnector));
-            catalog.Register("dup", typeof(MockConnector));
+            typeof(ConnectorTypeCatalog).GetMethod("Register", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(catalog, new object[] { "dup", typeof(MockConnector) });
+            typeof(ConnectorTypeCatalog).GetMethod("Register", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(catalog, new object[] { "dup", typeof(MockConnector) });
 
             var found = catalog.TryGetEntry("dup", out var entry);
             Assert.True(found);
@@ -61,7 +69,9 @@ namespace Deveel.Messaging.XUnit.Unit
         public void Should_ReturnSchema_FromServiceProvider()
         {
             var catalog = new ConnectorTypeCatalog();
-            catalog.Register("mock", typeof(MockConnector));
+            typeof(ConnectorTypeCatalog).GetMethod("Register", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(catalog, new object[] { "mock", typeof(MockConnector) });
 
             var services = new ServiceCollection();
             var provider = services.BuildServiceProvider();
@@ -80,7 +90,9 @@ namespace Deveel.Messaging.XUnit.Unit
         public void Should_CacheSchema_AfterFirstAccess()
         {
             var catalog = new ConnectorTypeCatalog();
-            catalog.Register("mock", typeof(MockConnector));
+            typeof(ConnectorTypeCatalog).GetMethod("Register", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(catalog, new object[] { "mock", typeof(MockConnector) });
 
             var services = new ServiceCollection();
             var provider = services.BuildServiceProvider();
@@ -98,7 +110,9 @@ namespace Deveel.Messaging.XUnit.Unit
         public void Should_LookupByType()
         {
             var catalog = new ConnectorTypeCatalog();
-            catalog.Register("mock", typeof(MockConnector));
+            typeof(ConnectorTypeCatalog).GetMethod("Register", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(catalog, new object[] { "mock", typeof(MockConnector) });
 
             var found = catalog.TryGetEntry(typeof(MockConnector), out var entry);
 
@@ -122,7 +136,9 @@ namespace Deveel.Messaging.XUnit.Unit
         public void Should_BeThreadSafe_When_AccessingSchemaConcurrently()
         {
             var catalog = new ConnectorTypeCatalog();
-            catalog.Register("mock", typeof(MockConnector));
+            typeof(ConnectorTypeCatalog).GetMethod("Register", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(catalog, new object[] { "mock", typeof(MockConnector) });
 
             var services = new ServiceCollection();
             var provider = services.BuildServiceProvider();

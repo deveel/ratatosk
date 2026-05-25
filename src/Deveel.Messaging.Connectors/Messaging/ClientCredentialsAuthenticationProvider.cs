@@ -11,11 +11,24 @@ using System.Text.Json;
 
 namespace Deveel.Messaging
 {
+    /// <summary>
+    /// Implements the OAuth 2.0 Client Credentials authentication flow,
+    /// obtaining access tokens from a token endpoint using client credentials.
+    /// </summary>
     public class ClientCredentialsAuthenticationProvider : AuthenticationProviderBase
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<ClientCredentialsAuthenticationProvider> _logger;
 
+        /// <summary>
+        /// Constructs the provider with an optional HTTP client and logger.
+        /// </summary>
+        /// <param name="httpClient">
+        /// An optional HTTP client used to communicate with the token endpoint.
+        /// </param>
+        /// <param name="logger">
+        /// An optional logger instance for diagnostic information.
+        /// </param>
         public ClientCredentialsAuthenticationProvider(HttpClient? httpClient = null, ILogger<ClientCredentialsAuthenticationProvider>? logger = null)
             : base(AuthenticationScheme.OAuthClientCredentials, "OAuth 2.0 Client Credentials")
         {
@@ -23,6 +36,15 @@ namespace Deveel.Messaging
             _logger = logger ?? NullLogger<ClientCredentialsAuthenticationProvider>.Instance;
         }
 
+        /// <summary>
+        /// Obtains an OAuth 2.0 access token using the client credentials grant type.
+        /// </summary>
+        /// <param name="connectionSettings">The connection settings containing client credentials and token endpoint.</param>
+        /// <param name="configuration">The authentication configuration describing the expected fields.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>An <see cref="AuthenticationResult"/> containing the obtained credential.</returns>
         public override async Task<AuthenticationResult> ObtainCredentialAsync(ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
         {
             try
@@ -141,6 +163,16 @@ namespace Deveel.Messaging
             }
         }
 
+        /// <summary>
+        /// Refreshes an existing OAuth 2.0 access token, using a refresh token if available.
+        /// </summary>
+        /// <param name="existingCredential">The existing credential to refresh.</param>
+        /// <param name="connectionSettings">The connection settings containing client credentials and token endpoint.</param>
+        /// <param name="configuration">The authentication configuration describing the expected fields.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        /// <returns>An <see cref="AuthenticationResult"/> containing the refreshed credential.</returns>
         public override async Task<AuthenticationResult> RefreshCredentialAsync(AuthenticationCredential existingCredential, ConnectionSettings connectionSettings, AuthenticationConfiguration configuration, CancellationToken cancellationToken = default)
         {
             try
@@ -241,6 +273,9 @@ namespace Deveel.Messaging
             return Success(credential);
         }
 
+        /// <summary>
+        /// Disposes the HTTP client used by this provider.
+        /// </summary>
         public void Dispose()
         {
             _httpClient?.Dispose();
