@@ -1,5 +1,5 @@
-using Deveel;
-using Deveel.Messaging;
+using Ratatosk;
+using Ratatosk;
 using MultiConnector.Dtos;
 using MultiConnector.Mappers;
 
@@ -35,7 +35,7 @@ var supportedChannels = new[] { "facebook", "firebase", "sendgrid", "telegram", 
 
 app.MapGet("/", () => Results.Ok(new
 {
-    Message = "Deveel.Messaging Multi-Connector Sample",
+    Message = "Ratatosk Multi-Connector Sample",
     Channels = supportedChannels,
     Endpoints = new
     {

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Deveel;
-using Deveel.Messaging;
+using Ratatosk;
+using Ratatosk;
 using Microsoft.Extensions.Logging;
 
 namespace Firebase;
@@ -156,7 +156,7 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory, IMessagi
         => CreateDeviceMessage(
             "firebase-device-sample",
             deviceToken,
-            "Hello from the Deveel Firebase sample.",
+            "Hello from the Ratatosk Firebase sample.",
             "Firebase sample",
             "high",
             "https://example.com/fcm.png",
@@ -241,7 +241,7 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory, IMessagi
             return CreateDeviceMessage(
                 SampleConsolePrompts.RequiredText("Message ID", "firebase-device-sample"),
                 deviceToken,
-                SampleConsolePrompts.MultiLineBody("Notification body", "Hello from the Deveel Firebase sample."),
+                SampleConsolePrompts.MultiLineBody("Notification body", "Hello from the Ratatosk Firebase sample."),
                 SampleConsolePrompts.RequiredText("Notification title", "Firebase sample"),
                 SampleConsolePrompts.Select("Priority", ["high", "normal"], "high"),
                 SampleConsolePrompts.OptionalText("Image URL", "https://example.com/fcm.png"),
@@ -294,7 +294,7 @@ public sealed class FirebaseSampleSupport(ILoggerFactory loggerFactory, IMessagi
                 {
                     Id = "firebase-device-sample-2",
                     Receiver = Endpoint.Device(deviceToken),
-                    Content = new TextContent("Second push notification from the Deveel Firebase batch sample."),
+                    Content = new TextContent("Second push notification from the Ratatosk Firebase batch sample."),
                     Properties = new Dictionary<string, MessageProperty>
                     {
                         ["Title"] = new("Title", "Firebase batch"),

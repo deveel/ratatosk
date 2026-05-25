@@ -1,6 +1,6 @@
 # Twilio SMS & WhatsApp Sample
 
-This sample demonstrates how to use the Deveel Messaging Twilio connectors to send SMS and WhatsApp messages via the Twilio API.
+This sample demonstrates how to use the Ratatosk Twilio connectors to send SMS and WhatsApp messages via the Twilio API.
 
 ## Prerequisites
 

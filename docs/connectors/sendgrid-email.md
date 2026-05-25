@@ -5,7 +5,7 @@ Transactional and bulk email via the SendGrid v3 API.
 ## Package
 
 ```bash
-dotnet add package Deveel.Messaging.Connector.Sendgrid
+dotnet add package Ratatosk.Sendgrid
 ```
 
 ## Required settings

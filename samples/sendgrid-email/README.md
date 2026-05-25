@@ -1,6 +1,6 @@
 # SendGrid Email Sample
 
-This sample demonstrates how to use the Deveel Messaging SendGrid connector to send emails via the SendGrid API.
+This sample demonstrates how to use the Ratatosk SendGrid connector to send emails via the SendGrid API.
 
 ## Prerequisites
 

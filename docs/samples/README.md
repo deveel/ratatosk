@@ -1,6 +1,6 @@
 # Samples
 
-These sample applications demonstrate how to use the Deveel Messaging framework with each supported channel provider. Each sample is a standalone project with its own solution file and README.
+These sample applications demonstrate how to use the Ratatosk framework with each supported channel provider. Each sample is a standalone project with its own solution file and README.
 
 ## Available samples
 

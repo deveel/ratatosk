@@ -1,5 +1,5 @@
-using Deveel;
-using Deveel.Messaging;
+using Ratatosk;
+using Ratatosk;
 using MultiConnector.Dtos;
 
 namespace MultiConnector.Mappers;
@@ -24,18 +24,18 @@ public static class MessageMapper
         return message;
     }
 
-    public static Deveel.Messaging.Endpoint MapEndpoint(EndpointDto dto)
+    public static Ratatosk.Endpoint MapEndpoint(EndpointDto dto)
     {
         if (!string.IsNullOrWhiteSpace(dto.Type))
-            return new Deveel.Messaging.Endpoint(dto.Type, dto.Address);
+            return new Ratatosk.Endpoint(dto.Type, dto.Address);
 
-        return new Deveel.Messaging.Endpoint(EndpointType.Id, dto.Address);
+        return new Ratatosk.Endpoint(EndpointType.Id, dto.Address);
     }
 
-    public static Deveel.Messaging.Endpoint MapChannelEndpoint(EndpointDto dto, string channel)
+    public static Ratatosk.Endpoint MapChannelEndpoint(EndpointDto dto, string channel)
     {
         if (!string.IsNullOrWhiteSpace(dto.Type))
-            return new Deveel.Messaging.Endpoint(dto.Type, dto.Address);
+            return new Ratatosk.Endpoint(dto.Type, dto.Address);
 
         var endpointType = channel.ToLowerInvariant() switch
         {
@@ -48,7 +48,7 @@ public static class MessageMapper
             _ => EndpointType.Id
         };
 
-        return new Deveel.Messaging.Endpoint(endpointType, dto.Address);
+        return new Ratatosk.Endpoint(endpointType, dto.Address);
     }
 
     public static MessageContent? MapContent(MessageContentDto? dto)

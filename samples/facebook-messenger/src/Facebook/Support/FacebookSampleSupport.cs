@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Deveel;
-using Deveel.Messaging;
+using Ratatosk;
+using Ratatosk;
 using Microsoft.Extensions.Logging;
 
 namespace Facebook;
@@ -189,7 +189,7 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagi
         return CreateTextMessage(
             recipientId,
             SampleConsolePrompts.RequiredText("Message ID", "facebook-text-sample"),
-            SampleConsolePrompts.MultiLineBody("Message text", "Hello from the Deveel Facebook Messenger sample."),
+            SampleConsolePrompts.MultiLineBody("Message text", "Hello from the Ratatosk Facebook Messenger sample."),
             SampleConsolePrompts.Select("Messaging type", ["RESPONSE", "UPDATE", "MESSAGE_TAG"], "RESPONSE"),
             SampleConsolePrompts.Select("Notification type", ["REGULAR", "SILENT_PUSH", "NO_PUSH"], "REGULAR"),
             quickReplies);
@@ -303,7 +303,7 @@ public sealed class FacebookSampleSupport(ILoggerFactory loggerFactory, IMessagi
         => CreateTextMessage(
             recipientId,
             "facebook-text-sample",
-            "Hello from the Deveel Facebook Messenger sample.",
+            "Hello from the Ratatosk Facebook Messenger sample.",
             "RESPONSE",
             "REGULAR",
             """

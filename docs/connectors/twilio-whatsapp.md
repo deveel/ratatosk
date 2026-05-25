@@ -5,7 +5,7 @@ WhatsApp Business messaging through Twilio's API for WhatsApp.
 ## Package
 
 ```bash
-dotnet add package Deveel.Messaging.Connector.Twilio
+dotnet add package Ratatosk.Twilio
 ```
 
 ## Required settings

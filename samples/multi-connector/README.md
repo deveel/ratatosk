@@ -1,6 +1,6 @@
 # Multi-Connector Sample
 
-This sample demonstrates how to use multiple Deveel Messaging connectors together in a single ASP.NET Core web application, exposing them through REST API endpoints.
+This sample demonstrates how to use multiple Ratatosk connectors together in a single ASP.NET Core web application, exposing them through REST API endpoints.
 
 ## Prerequisites
 
@@ -11,12 +11,12 @@ This sample demonstrates how to use multiple Deveel Messaging connectors togethe
 
 | Channel | Key | Connector |
 |---------|-----|-----------|
-| Facebook Messenger | `facebook` | Deveel.Messaging.Connector.Facebook |
-| Firebase Cloud Messaging | `firebase` | Deveel.Messaging.Connector.Firebase |
-| SendGrid Email | `sendgrid` | Deveel.Messaging.Connector.Sendgrid |
-| Telegram Bot | `telegram` | Deveel.Messaging.Connector.Telegram |
-| Twilio SMS | `sms` | Deveel.Messaging.Connector.Twilio |
-| Twilio WhatsApp | `whatsapp` | Deveel.Messaging.Connector.Twilio |
+| Facebook Messenger | `facebook` | Ratatosk.Facebook |
+| Firebase Cloud Messaging | `firebase` | Ratatosk.Firebase |
+| SendGrid Email | `sendgrid` | Ratatosk.Sendgrid |
+| Telegram Bot | `telegram` | Ratatosk.Telegram |
+| Twilio SMS | `sms` | Ratatosk.Twilio |
+| Twilio WhatsApp | `whatsapp` | Ratatosk.Twilio |
 
 ## Connector Setup
 

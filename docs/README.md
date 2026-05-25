@@ -1,4 +1,17 @@
-# Deveel Messaging
+[![NuGet](https://img.shields.io/nuget/v/Ratatosk.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Abstractions/)
+[![codecov](https://codecov.io/gh/deveel/deveel.messaging/graph/badge.svg)](https://codecov.io/gh/deveel/deveel.messaging)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-512BD4)](https://dotnet.microsoft.com/)
+[![Documentation](https://img.shields.io/badge/docs-available-blue)](https://messaging.deveel.org)
+
+<p align="center">
+  <img src="ratatosk-full-logo.png" alt="Ratatosk" width="400"/>
+</p>
+
+# Ratatosk
+
+> **Note:**
+> This project was originally named **Deveel Messaging**: on the day _25.05.2026_ it has been rebranded as **Ratatosk**, after the mythological squirrel that runs up and down Yggdrasil, the World Tree, carrying messages between the eagle at the top and the dragon at the roots — a fitting symbol for a messaging framework.
 
 A .NET framework for multi-channel messaging. It provides a single, provider-agnostic programming model for sending and receiving messages through different channel backends — SMS, email, push notifications, and instant messaging.
 
@@ -26,7 +39,7 @@ Modern applications need to reach users across multiple channels — SMS for tra
 - **Inconsistent developer experience** — each SDK has different conventions, error handling, and configuration models
 - **Difficult cross-channel routing** — sending the same notification through SMS and email requires building separate message objects and calling separate APIs
 
-Deveel Messaging solves these problems by defining a **unified message model** (`IMessage`), a **contract-driven connector interface** (`IChannelConnector`), and a **schema system** (`IChannelSchema`) that lets each connector declare its capabilities and constraints. Business code depends only on the abstractions; channel-specific details are encapsulated behind the connector boundary.
+Ratatosk solves these problems by defining a **unified message model** (`IMessage`), a **contract-driven connector interface** (`IChannelConnector`), and a **schema system** (`IChannelSchema`) that lets each connector declare its capabilities and constraints. Business code depends only on the abstractions; channel-specific details are encapsulated behind the connector boundary.
 
 The framework is deliberately focused on the messaging contract and connector consistency. It does not include queueing, scheduling, persistence, or retries — those concerns belong to your application layer, where you can choose the tools that fit your architecture.
 
@@ -45,15 +58,15 @@ The framework is deliberately focused on the messaging contract and connector co
 
 | Package | Description | NuGet |
 |---|---|---|
-| `Deveel.Messaging.Abstractions` | Message model with fluent builder, dedicated `MessageBuilder`, typed endpoints, eight content types, properties, and batch support. No external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Abstractions) |
-| `Deveel.Messaging` | DI registration (`AddMessaging`), `IMessagingClient` facade (disposable), connector factory, and service collection extensions. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging)](https://nuget.org/packages/Deveel.Messaging) |
-| `Deveel.Messaging.Connector.Abstractions` | Contracts for connectors, schemas, authentication, validation, and result types. Reference when building custom connector libraries. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Abstractions)](https://nuget.org/packages/Deveel.Messaging.Connector.Abstractions) |
-| `Deveel.Messaging.Connectors` | Abstract connector base class (`ChannelConnectorBase`) with state management and error wrapping, fluent schema builder (`ChannelSchema`), schema registry, auth manager, and connector builder API. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connectors)](https://nuget.org/packages/Deveel.Messaging.Connectors) |
-| `Deveel.Messaging.Connector.Twilio` | Twilio SMS, MMS, and WhatsApp messaging with status callbacks and template support. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Twilio)](https://nuget.org/packages/Deveel.Messaging.Connector.Twilio) |
-| `Deveel.Messaging.Connector.Sendgrid` | SendGrid transactional and bulk email with HTML, multipart, templates, attachments, and event webhook processing. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Sendgrid)](https://nuget.org/packages/Deveel.Messaging.Connector.Sendgrid) |
-| `Deveel.Messaging.Connector.Firebase` | Firebase Cloud Messaging push notifications for device tokens and topics, with batch sends and dry-run mode. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Firebase)](https://nuget.org/packages/Deveel.Messaging.Connector.Firebase) |
-| `Deveel.Messaging.Connector.Facebook` | Facebook Messenger Page-based messaging with text, media, quick replies, and webhook inbound processing. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Facebook)](https://nuget.org/packages/Deveel.Messaging.Connector.Facebook) |
-| `Deveel.Messaging.Connector.Telegram` | Telegram bot messaging with rich text, media, locations, and webhook-based update processing. | [![NuGet](https://img.shields.io/nuget/v/Deveel.Messaging.Connector.Telegram)](https://nuget.org/packages/Deveel.Messaging.Connector.Telegram) |
+| `Ratatosk.Abstractions` | Message model with fluent builder, dedicated `MessageBuilder`, typed endpoints, eight content types, properties, and batch support. No external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Abstractions)](https://nuget.org/packages/Ratatosk.Abstractions) |
+| `Ratatosk` | DI registration (`AddMessaging`), `IMessagingClient` facade (disposable), connector factory, and service collection extensions. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk)](https://nuget.org/packages/Ratatosk) |
+| `Ratatosk.Connector.Abstractions` | Contracts for connectors, schemas, authentication, validation, and result types. Reference when building custom connector libraries. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Connector.Abstractions)](https://nuget.org/packages/Ratatosk.Connector.Abstractions) |
+| `Ratatosk.Connectors` | Abstract connector base class (`ChannelConnectorBase`) with state management and error wrapping, fluent schema builder (`ChannelSchema`), schema registry, auth manager, and connector builder API. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Connectors)](https://nuget.org/packages/Ratatosk.Connectors) |
+| `Ratatosk.Twilio` | Twilio SMS, MMS, and WhatsApp messaging with status callbacks and template support. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Twilio)](https://nuget.org/packages/Ratatosk.Twilio) |
+| `Ratatosk.Sendgrid` | SendGrid transactional and bulk email with HTML, multipart, templates, attachments, and event webhook processing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Sendgrid)](https://nuget.org/packages/Ratatosk.Sendgrid) |
+| `Ratatosk.Firebase` | Firebase Cloud Messaging push notifications for device tokens and topics, with batch sends and dry-run mode. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Firebase)](https://nuget.org/packages/Ratatosk.Firebase) |
+| `Ratatosk.Facebook` | Facebook Messenger Page-based messaging with text, media, quick replies, and webhook inbound processing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Facebook)](https://nuget.org/packages/Ratatosk.Facebook) |
+| `Ratatosk.Telegram` | Telegram bot messaging with rich text, media, locations, and webhook-based update processing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Telegram)](https://nuget.org/packages/Ratatosk.Telegram) |
 
 ## Reading path
 

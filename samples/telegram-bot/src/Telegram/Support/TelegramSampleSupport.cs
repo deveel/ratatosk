@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Deveel;
-using Deveel.Messaging;
+using Ratatosk;
+using Ratatosk;
 using Microsoft.Extensions.Logging;
 
 namespace Telegram;
@@ -159,7 +159,7 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory, IMessagi
         => CreateTextMessage(
             SampleConsolePrompts.RequiredText("Message ID", "telegram-text-sample"),
             chatId,
-            SampleConsolePrompts.MultiLineBody("Message text", "Hello from the <b>Deveel Telegram</b> sample."),
+            SampleConsolePrompts.MultiLineBody("Message text", "Hello from the <b>Ratatosk Telegram</b> sample."),
             SampleConsolePrompts.Select("Parse mode", ["Html", "Markdown"], "Html"),
             SampleConsolePrompts.Confirm("Disable web page preview?", true));
 
@@ -181,7 +181,7 @@ public sealed class TelegramSampleSupport(ILoggerFactory loggerFactory, IMessagi
             SampleConsolePrompts.RequiredInt("Live period seconds", 300));
 
     private static Message CreateTextMessage(string chatId)
-        => CreateTextMessage("telegram-text-sample", chatId, "Hello from the <b>Deveel Telegram</b> sample.", "Html", true);
+        => CreateTextMessage("telegram-text-sample", chatId, "Hello from the <b>Ratatosk Telegram</b> sample.", "Html", true);
 
     private static Message CreateTextMessage(
         string id,

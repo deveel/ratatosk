@@ -1,6 +1,6 @@
-# Deveel Messaging Framework — Roadmap
+# Ratatosk Framework — Roadmap
 
-This document describes the planned evolution of the **Deveel Messaging Framework** — a .NET library that provides a unified, provider-agnostic model for sending and receiving messages across multiple channels and connectors. Each milestone below includes a summary of its intent, detailed descriptions of every planned feature, and the rationale behind each decision.
+This document describes the planned evolution of the **Ratatosk Framework** — a .NET library that provides a unified, provider-agnostic model for sending and receiving messages across multiple channels and connectors. Each milestone below includes a summary of its intent, detailed descriptions of every planned feature, and the rationale behind each decision.
 
 > **Current stable release:** `v0.4.0`  
 > Connectors available: Facebook Messenger, Firebase Push, SendGrid Email, Telegram Bot, Twilio SMS/WhatsApp  
@@ -80,7 +80,7 @@ Log messages across connectors are inconsistent in level, scope, and event ID. S
 
 #### What We Are Building
 
-A standardised logging contract for all connectors: shared event ID ranges per operation type (send, receive, status query, health check), consistent log scopes (connector name, channel ID, message ID), and `LoggerMessage`-based implementations across all existing connectors. A base class in `Deveel.Messaging.Connector.Abstractions` enforces the contract for new connectors.
+A standardised logging contract for all connectors: shared event ID ranges per operation type (send, receive, status query, health check), consistent log scopes (connector name, channel ID, message ID), and `LoggerMessage`-based implementations across all existing connectors. A base class in `Ratatosk.Connector.Abstractions` enforces the contract for new connectors.
 
 #### Benefits
 
@@ -215,7 +215,7 @@ All packages are published with pre-release NuGet suffixes. Many package manager
 
 #### What We Are Building
 
-Stable NuGet releases (no pre-release suffix) for all framework packages, published to NuGet.org under the `Deveel.Messaging.*` package ID namespace. Release notes are included for every package. The CD pipeline is verified to produce reproducible, deterministic builds.
+Stable NuGet releases (no pre-release suffix) for all framework packages, published to NuGet.org under the `Ratatosk.*` package ID namespace. Release notes are included for every package. The CD pipeline is verified to produce reproducible, deterministic builds.
 
 #### Benefits
 
@@ -365,7 +365,7 @@ There is no Slack connector. Developers who want to send structured messages or 
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Slack` package implementing `IChannelConnector` for Slack, supporting Incoming Webhooks for simple channel posting and the Slack Bot API for direct messages and interactive responses. Content mapping covers text, HTML-to-Block-Kit conversion, and interactive content (buttons, sections).
+A `Ratatosk.Connector.Slack` package implementing `IChannelConnector` for Slack, supporting Incoming Webhooks for simple channel posting and the Slack Bot API for direct messages and interactive responses. Content mapping covers text, HTML-to-Block-Kit conversion, and interactive content (buttons, sections).
 
 #### Benefits
 
@@ -388,7 +388,7 @@ There is no Microsoft Teams connector. Enterprise applications that need to deli
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Teams` package supporting Incoming Webhooks (for channel messages) and the Bot Framework API (for direct messages and adaptive card delivery). Content mapping covers text, HTML-to-Adaptive-Card conversion, and interactive content.
+A `Ratatosk.Connector.Teams` package supporting Incoming Webhooks (for channel messages) and the Bot Framework API (for direct messages and adaptive card delivery). Content mapping covers text, HTML-to-Adaptive-Card conversion, and interactive content.
 
 #### Benefits
 
@@ -411,9 +411,9 @@ WhatsApp messaging is currently only available through the Twilio connector. Tea
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.WhatsApp` package that connects directly to Meta's WhatsApp Business Cloud API. It supports text, media, interactive, and template messages, and implements both send and receive (inbound message webhooks handled at the model level, not via a webhook framework).
+A `Ratatosk.Connector.WhatsApp` package that connects directly to Meta's WhatsApp Business Cloud API. It supports text, media, interactive, and template messages, and implements both send and receive (inbound message webhooks handled at the model level, not via a webhook framework).
 
-The connector is compatible with any BSP that exposes the standard WhatsApp Cloud API, including self-hosted platforms like [OpenBSP](https://github.com/matiasbattocchia/open-bsp-api) — an open-source, multi-tenant WhatsApp Business platform built with Deno and Supabase. OpenBSP provides the server-side BSP infrastructure (message storage, webhook management, AI agent orchestration, MCP server, multi-tenant isolation) while the Deveel connector provides the .NET client-side abstraction, giving teams a complete end-to-end WhatsApp messaging stack without proprietary SaaS dependencies.
+The connector is compatible with any BSP that exposes the standard WhatsApp Cloud API, including self-hosted platforms like [OpenBSP](https://github.com/matiasbattocchia/open-bsp-api) — an open-source, multi-tenant WhatsApp Business platform built with Deno and Supabase. OpenBSP provides the server-side BSP infrastructure (message storage, webhook management, AI agent orchestration, MCP server, multi-tenant isolation) while the Ratatosk connector provides the .NET client-side abstraction, giving teams a complete end-to-end WhatsApp messaging stack without proprietary SaaS dependencies.
 
 #### Benefits
 
@@ -439,7 +439,7 @@ There is no Viber Business connector. Applications targeting markets where Viber
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Viber` package implementing the Viber Business Messages API, supporting text, image, rich media, and keyboard (interactive) messages to Viber users and channels.
+A `Ratatosk.Connector.Viber` package implementing the Viber Business Messages API, supporting text, image, rich media, and keyboard (interactive) messages to Viber users and channels.
 
 #### Benefits
 
@@ -462,7 +462,7 @@ There is no LINE connector. Applications that need to reach users in LINE-domina
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Line` package implementing the LINE Messaging API, supporting text, image, video, audio, and Flex Message (interactive template) content types.
+A `Ratatosk.Connector.Line` package implementing the LINE Messaging API, supporting text, image, video, audio, and Flex Message (interactive template) content types.
 
 #### Benefits
 
@@ -491,7 +491,7 @@ Protocol-level connectors (SMPP, SMTP, APNs) have concerns that SaaS connectors 
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Protocol` library (or extensions to `Deveel.Messaging.Connector.Abstractions`) providing base classes for session-oriented connectors, connection lifecycle hooks, and reconnection policies. A corresponding xUnit test helper package provides fake session simulators for testing protocol connectors without a live server.
+A `Ratatosk.Connector.Protocol` library (or extensions to `Ratatosk.Connector.Abstractions`) providing base classes for session-oriented connectors, connection lifecycle hooks, and reconnection policies. A corresponding xUnit test helper package provides fake session simulators for testing protocol connectors without a live server.
 
 #### Benefits
 
@@ -511,7 +511,7 @@ All SMS messaging in the framework goes through Twilio. Teams that have a direct
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Smpp` package implementing an SMPP v3.4 session client. The connector manages the SMPP session lifecycle (bind, keepalive, unbind), maps `IMessage` to `submit_sm` PDUs, and handles `deliver_sm` for inbound messages and `deliver_sm_resp`/`submit_sm_resp` for delivery receipts.
+A `Ratatosk.Connector.Smpp` package implementing an SMPP v3.4 session client. The connector manages the SMPP session lifecycle (bind, keepalive, unbind), maps `IMessage` to `submit_sm` PDUs, and handles `deliver_sm` for inbound messages and `deliver_sm_resp`/`submit_sm_resp` for delivery receipts.
 
 #### Benefits
 
@@ -537,7 +537,7 @@ All email messaging goes through SendGrid. Teams that want to send email through
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Smtp` package using MailKit to deliver messages over SMTP. It maps `IMessage` content (text, HTML, attachments) to RFC 5321-compliant MIME messages, handles authentication (plain, OAuth2, NTLM), and supports TLS/STARTTLS.
+A `Ratatosk.Connector.Smtp` package using MailKit to deliver messages over SMTP. It maps `IMessage` content (text, HTML, attachments) to RFC 5321-compliant MIME messages, handles authentication (plain, OAuth2, NTLM), and supports TLS/STARTTLS.
 
 #### Benefits
 
@@ -561,7 +561,7 @@ Rich Communication Services (RCS) is the industry-standard successor to SMS, sup
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Rcs` package implementing the RCS Business Messaging API (via a compatible aggregator or direct GSMA connection). It maps interactive content (carousels, suggested replies, rich cards) from the framework's `IInteractiveContent` model to RCS message objects.
+A `Ratatosk.Connector.Rcs` package implementing the RCS Business Messaging API (via a compatible aggregator or direct GSMA connection). It maps interactive content (carousels, suggested replies, rich cards) from the framework's `IInteractiveContent` model to RCS message objects.
 
 #### Benefits
 
@@ -586,7 +586,7 @@ Apple Push Notifications are currently only addressable through the Firebase con
 
 #### What We Are Building
 
-A `Deveel.Messaging.Connector.Apns` package using the APNs HTTP/2 API directly. It maps `IMessage` content to APNs payloads (alert, background, VoIP), handles provider certificate and token-based authentication (JWT), and manages connection pooling to the APNs endpoint.
+A `Ratatosk.Connector.Apns` package using the APNs HTTP/2 API directly. It maps `IMessage` content to APNs payloads (alert, background, VoIP), handles provider certificate and token-based authentication (JWT), and manages connection pooling to the APNs endpoint.
 
 #### Benefits
 
@@ -840,7 +840,7 @@ There is no formal starting point for implementing a new connector. Contributors
 
 #### What We Are Building
 
-A `dotnet new` template package (`Deveel.Messaging.Connector.Templates`) that generates a fully wired connector solution: the connector project with correct base class overrides and a `IChannelSchema` factory, a companion xUnit test helper package, and a minimal usage sample — all pre-configured and immediately buildable.
+A `dotnet new` template package (`Ratatosk.Connector.Templates`) that generates a fully wired connector solution: the connector project with correct base class overrides and a `IChannelSchema` factory, a companion xUnit test helper package, and a minimal usage sample — all pre-configured and immediately buildable.
 
 #### Benefits
 

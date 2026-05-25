@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Deveel;
-using Deveel.Messaging;
+using Ratatosk;
+using Ratatosk;
 using Microsoft.Extensions.Logging;
 
 namespace SendGridSample;
@@ -164,8 +164,8 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory, IMessagi
             "sendgrid-html-sample",
             sender,
             recipient,
-            "Deveel SendGrid sample",
-            "<p>Hello from the <strong>Deveel SendGrid</strong> sample.</p>",
+            "Ratatosk SendGrid sample",
+            "<p>Hello from the <strong>Ratatosk SendGrid</strong> sample.</p>",
             "high",
             "samples,demo",
             """{"source":"sample","connector":"sendgrid"}""");
@@ -208,7 +208,7 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory, IMessagi
             recipient,
             templateId,
             "Template sample",
-            "Deveel",
+            "Ratatosk",
             "SendGrid",
             "templates,samples");
 
@@ -265,8 +265,8 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory, IMessagi
                 SampleConsolePrompts.RequiredText("Message ID", "sendgrid-html-sample"),
                 sender,
                 recipient,
-                SampleConsolePrompts.RequiredText("Subject", "Deveel SendGrid sample"),
-                SampleConsolePrompts.MultiLineBody("HTML body", "<p>Hello from the <strong>Deveel SendGrid</strong> sample.</p>"),
+                SampleConsolePrompts.RequiredText("Subject", "Ratatosk SendGrid sample"),
+                SampleConsolePrompts.MultiLineBody("HTML body", "<p>Hello from the <strong>Ratatosk SendGrid</strong> sample.</p>"),
                 SampleConsolePrompts.Select("Priority", ["high", "normal", "low"], "high"),
                 SampleConsolePrompts.OptionalText("Categories", "samples,demo"),
                 SampleConsolePrompts.OptionalText("Custom args JSON", """{"source":"sample","connector":"sendgrid"}"""))
@@ -276,7 +276,7 @@ public sealed class SendGridSampleSupport(ILoggerFactory loggerFactory, IMessagi
                 recipient,
                 SampleConsolePrompts.RequiredText("Template ID", GetValue("TemplateId", "SENDGRID_TEMPLATE_ID")),
                 SampleConsolePrompts.RequiredText("Subject", "Template sample"),
-                SampleConsolePrompts.RequiredText("Template variable 'firstName'", "Deveel"),
+                SampleConsolePrompts.RequiredText("Template variable 'firstName'", "Ratatosk"),
                 SampleConsolePrompts.RequiredText("Template variable 'connector'", "SendGrid"),
                 SampleConsolePrompts.OptionalText("Categories", "templates,samples"));
     }

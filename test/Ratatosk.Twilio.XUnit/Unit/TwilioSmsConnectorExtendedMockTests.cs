@@ -1,0 +1,321 @@
+using Microsoft.Extensions.Logging;
+using Moq;
+using Twilio.Rest.Api.V2010.Account;
+
+namespace Ratatosk;
+
+/// <summary>
+/// Extended tests for the <see cref="TwilioSmsConnector"/> class demonstrating 
+/// various scenarios using the TwilioMockFactory for comprehensive testing.
+/// </summary>
+[Trait("Category", "Unit")]
+[Trait("Layer", "Infrastructure")]
+[Trait("Feature", "TwilioSmsConnectorExtendedMock")]
+public class TwilioSmsConnectorExtendedMockTests
+{
+    [Fact]
+    public async Task Should_SendSuccessfully_When_SendMessageAsyncUsingMockFactory()
+    {
+        // Arrange
+        var mockTwilioService = TwilioMockFactory.CreateMockTwilioServiceForSending();
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            CreateValidConnectionSettings(),
+            mockTwilioService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+        var message = CreateTestMessage();
+
+        // Act
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess());
+        Assert.Equal("SM123456789", result.Value?.RemoteMessageId);
+        mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Should_ReturnCorrectStatus_When_SendMessageAsyncWithDeliveredStatus()
+    {
+        // Arrange
+        var mockTwilioService = TwilioMockFactory.CreateMockTwilioServiceForSending("SM987654321", MessageResource.StatusEnum.Delivered);
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            CreateValidConnectionSettings(),
+            mockTwilioService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+        var message = CreateTestMessage();
+
+        // Act
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess());
+        Assert.Equal(MessageStatus.Delivered, result.Value?.Status);
+        Assert.Equal("SM987654321", result.Value?.RemoteMessageId);
+    }
+
+    [Fact]
+    public async Task Should_ReturnStatus_When_GetMessageStatusAsyncUsingMockFactory()
+    {
+        // Arrange
+        var mockTwilioService = TwilioMockFactory.CreateMockTwilioServiceForStatusQuery("SM555666777", MessageResource.StatusEnum.Sent);
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            CreateValidConnectionSettings(),
+            mockTwilioService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await connector.GetMessageStatusAsync("SM555666777", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess());
+        Assert.Equal(MessageStatus.Sent, result.Value?.Updates.First().Status);
+        mockTwilioService.Verify(x => x.FetchMessageAsync("SM555666777", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Should_ReturnSuccess_When_TestConnectionAsyncUsingMockFactory()
+    {
+        // Arrange
+        var mockTwilioService = TwilioMockFactory.CreateMockTwilioServiceForConnectionTest("AC9999888877776666555544443333222211", "Production Account");
+        var connectionSettings = new ConnectionSettings()
+            .SetParameter("AccountSid", "AC9999888877776666555544443333222211")
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
+
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            connectionSettings,
+            mockTwilioService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess());
+        mockTwilioService.Verify(x => x.FetchAccountAsync("AC9999888877776666555544443333222211", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Should_WorksEndToEnd_When_FullWorkflowUsingFullyConfiguredMock()
+    {
+        // Arrange
+        var mockTwilioService = TwilioMockFactory.CreateFullyConfiguredMockTwilioService();
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            CreateValidConnectionSettings(),
+            mockTwilioService.Object);
+
+        var message = CreateTestMessage();
+
+        // Act
+        // Assert
+        var initResult = await connector.InitializeAsync(TestContext.Current.CancellationToken);
+        Assert.True(initResult.IsSuccess());
+
+        // Act
+        // Assert
+        var connectionResult = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
+        Assert.True(connectionResult.IsSuccess());
+
+        // Act
+        // Assert
+        var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+        Assert.True(sendResult.IsSuccess());
+
+        // Act
+        // Assert
+        var statusResult = await connector.GetMessageStatusAsync(sendResult.Value!.RemoteMessageId, TestContext.Current.CancellationToken);
+        Assert.True(statusResult.IsSuccess());
+
+        // Verify all expected calls were made
+        mockTwilioService.Verify(x => x.Initialize(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        mockTwilioService.Verify(x => x.FetchAccountAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockTwilioService.Verify(x => x.FetchMessageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Should_ReturnFailedStatus_When_SendMessageAsyncWithFailedMessage()
+    {
+        // Arrange
+        var mockTwilioService = new Mock<ITwilioService>();
+        mockTwilioService.Setup(x => x.Initialize(It.IsAny<string>(), It.IsAny<string>()));
+        
+        var failedMessage = TwilioMockFactory.CreateMockFailedMessageResource("SM111222333", 30008, "Unknown destination handset");
+        mockTwilioService.Setup(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(failedMessage);
+
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            CreateValidConnectionSettings(),
+            mockTwilioService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+        var message = CreateTestMessage();
+
+        // Act
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess()); // Message was sent, but has failed status
+        Assert.Equal(MessageStatus.DeliveryFailed, result.Value?.Status);
+        
+        // Check if the error information is available in additional data
+        if (result.Value?.AdditionalData?.ContainsKey("ErrorCode") == true)
+        {
+            Assert.Equal("30008", result.Value.AdditionalData["ErrorCode"]);
+        }
+        
+        if (result.Value?.AdditionalData?.ContainsKey("ErrorMessage") == true)
+        {
+            Assert.Equal("Unknown destination handset", result.Value.AdditionalData["ErrorMessage"]);
+        }
+    }
+
+    [Fact]
+    public async Task Should_WorkCorrectly_When_MultipleOperationsWithDifferentMockSetups()
+    {
+        // Arrange
+        var mockTwilioService = new Mock<ITwilioService>();
+        mockTwilioService.Setup(x => x.Initialize(It.IsAny<string>(), It.IsAny<string>()));
+
+        // Setup different responses for different message SIDs
+        var message1 = TwilioMockFactory.CreateMockMessageResource("SM111", MessageResource.StatusEnum.Queued);
+        var message2 = TwilioMockFactory.CreateMockMessageResource("SM222", MessageResource.StatusEnum.Sent);
+
+        mockTwilioService.SetupSequence(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(message1)
+            .ReturnsAsync(message2);
+
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            CreateValidConnectionSettings(),
+            mockTwilioService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result1 = await connector.SendMessageAsync(CreateTestMessage("msg1"), TestContext.Current.CancellationToken);
+        var result2 = await connector.SendMessageAsync(CreateTestMessage("msg2"), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result1.IsSuccess());
+        Assert.True(result2.IsSuccess());
+        Assert.Equal("SM111", result1.Value?.RemoteMessageId);
+        Assert.Equal("SM222", result2.Value?.RemoteMessageId);
+        Assert.Equal(MessageStatus.Queued, result1.Value?.Status);
+        Assert.Equal(MessageStatus.Sent, result2.Value?.Status);
+
+        mockTwilioService.Verify(x => x.CreateMessageAsync(It.IsAny<CreateMessageOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task Should_HandleGracefully_When_ErrorScenariosUsingMockFactory()
+    {
+        // Arrange
+        var mockTwilioService = TwilioMockFactory.CreateMockTwilioService();
+        TwilioMockFactory.ConfigureForException(mockTwilioService, new InvalidOperationException("Network error"));
+
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            CreateValidConnectionSettings(),
+            mockTwilioService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+        var message = CreateTestMessage();
+
+        // Act
+        // Assert
+        var sendResult = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+        Assert.False(sendResult.IsSuccess());
+        Assert.Contains("Network error", sendResult.Error?.Message);
+
+        // Act
+        // Assert
+        var statusResult = await connector.GetMessageStatusAsync("SM123", TestContext.Current.CancellationToken);
+        Assert.False(statusResult.IsSuccess());
+        Assert.Contains("Network error", statusResult.Error?.Message);
+
+        // Act
+        // Assert
+        var connectionResult = await connector.TestConnectionAsync(TestContext.Current.CancellationToken);
+        Assert.False(connectionResult.IsSuccess());
+        Assert.Contains("Network error", connectionResult.Error?.Message);
+    }
+
+    [Theory]
+    [InlineData("Queued", "Queued")]
+    [InlineData("Sending", "Sent")]
+    [InlineData("Sent", "Sent")]
+    [InlineData("Delivered", "Delivered")]
+    [InlineData("Undelivered", "DeliveryFailed")]
+    [InlineData("Failed", "DeliveryFailed")]
+    [InlineData("Received", "Received")]
+    public async Task Should_CorrectlyMapsAllTwilioStatuses_When_StatusMappingIsInvoked(string twilioStatusString, string expectedStatusString)
+    {
+        // Map string values to enum values manually to avoid parsing issues
+        var twilioStatus = twilioStatusString switch
+        {
+            "Queued" => MessageResource.StatusEnum.Queued,
+            "Sending" => MessageResource.StatusEnum.Sending,
+            "Sent" => MessageResource.StatusEnum.Sent,
+            "Delivered" => MessageResource.StatusEnum.Delivered,
+            "Undelivered" => MessageResource.StatusEnum.Undelivered,
+            "Failed" => MessageResource.StatusEnum.Failed,
+            "Received" => MessageResource.StatusEnum.Received,
+            _ => throw new ArgumentException($"Unknown Twilio status: {twilioStatusString}")
+        };
+
+        var expectedStatus = expectedStatusString switch
+        {
+            "Queued" => MessageStatus.Queued,
+            "Sent" => MessageStatus.Sent,
+            "Delivered" => MessageStatus.Delivered,
+            "DeliveryFailed" => MessageStatus.DeliveryFailed,
+            "Received" => MessageStatus.Received,
+            _ => throw new ArgumentException($"Unknown expected status: {expectedStatusString}")
+        };
+
+        // Arrange
+        var mockTwilioService = TwilioMockFactory.CreateMockTwilioServiceForSending("SM123", twilioStatus);
+        var connector = new TwilioSmsConnector(
+            TwilioChannelSchemas.SimpleSms,
+            CreateValidConnectionSettings(),
+            mockTwilioService.Object);
+
+        await connector.InitializeAsync(TestContext.Current.CancellationToken);
+        var message = CreateTestMessage();
+
+        // Act
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess());
+        Assert.Equal(expectedStatus, result.Value?.Status);
+    }
+
+    private static ConnectionSettings CreateValidConnectionSettings()
+    {
+        return new ConnectionSettings()
+            .SetParameter("AccountSid", "AC1234567890123456789012345678901234")
+            .SetParameter("AuthToken", "auth_token_1234567890123456789012345678");
+    }
+
+    private static Message CreateTestMessage(string? id = null)
+    {
+        return new Message
+        {
+            Id = id ?? "test-message-id",
+            Sender = new Endpoint(EndpointType.PhoneNumber, "+1234567890"),
+            Receiver = new Endpoint(EndpointType.PhoneNumber, "+1987654321"),
+            Content = new TextContent("Hello World")
+        };
+    }
+}
