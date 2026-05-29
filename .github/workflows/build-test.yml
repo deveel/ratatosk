@@ -74,8 +74,15 @@ jobs:
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@v4.5.0
-
+        shell: bash
+        run: |
+          echo "version=${{ steps.gitversion.outputs.semVer }}" >> "$GITHUB_OUTPUT"
+          echo "nuget-version=${{ steps.gitversion.outputs.nuGetVersionV2 }}" >> "$GITHUB_OUTPUT"
+          echo "assembly-version=${{ steps.gitversion.outputs.assemblySemVer }}" >> "$GITHUB_OUTPUT"
+          echo "file-version=${{ steps.gitversion.outputs.assemblySemFileVer }}" >> "$GITHUB_OUTPUT"
+          echo "informational-version=${{ steps.gitversion.outputs.informationalVersion }}" >> "$GITHUB_OUTPUT"
+          echo "version-source=gitversion" >> "$GITHUB_OUTPUT"
+  
       - name: Calculate Version Metadata
         id: calculate
         run: |
