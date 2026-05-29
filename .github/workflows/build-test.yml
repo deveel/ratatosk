@@ -75,12 +75,15 @@ jobs:
         id: gitversion
         shell: bash
         run: |
-          dotnet gitversion /output json > gitversion.json
-          echo "semVer=$(jq -r '.SemVer' gitversion.json)" >> "$GITHUB_OUTPUT"
-          echo "nuGetVersionV2=$(jq -r '.SemVer' gitversion.json)" >> "$GITHUB_OUTPUT"
-          echo "assemblySemVer=$(jq -r '.AssemblySemVer' gitversion.json)" >> "$GITHUB_OUTPUT"
-          echo "assemblySemFileVer=$(jq -r '.AssemblySemFileVer' gitversion.json)" >> "$GITHUB_OUTPUT"
-          echo "informationalVersion=$(jq -r '.InformationalVersion' gitversion.json)" >> "$GITHUB_OUTPUT"
+          GV=$(dotnet gitversion /output json)
+          echo "semVer=$(echo "$GV" | jq -r '.SemVer')" >> "$GITHUB_OUTPUT"
+          echo "nuGetVersionV2=$(echo "$GV" | jq -r '.SemVer')" >> "$GITHUB_OUTPUT"
+          echo "assemblySemVer=$(echo "$GV" | jq -r '.AssemblySemVer')" >> "$GITHUB_OUTPUT"
+          echo "assemblySemFileVer=$(echo "$GV" | jq -r '.AssemblySemFileVer')" >> "$GITHUB_OUTPUT"
+          echo "informationalVersion=$(echo "$GV" | jq -r '.InformationalVersion')" >> "$GITHUB_OUTPUT"
+          echo "semVer=$(echo "$GV" | jq -r '.SemVer')"
+          echo "assemblySemVer=$(echo "$GV" | jq -r '.AssemblySemVer')"
+          echo "informationalVersion=$(echo "$GV" | jq -r '.InformationalVersion')"
   
       - name: Calculate Version Metadata
         id: calculate
