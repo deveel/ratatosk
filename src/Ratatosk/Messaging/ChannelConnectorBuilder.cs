@@ -170,6 +170,34 @@ namespace Ratatosk
             return this;
         }
 
+        // ── Sender configuration ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Configures sender resolution for this connector, including
+        /// a default sender and selection strategy.
+        /// </summary>
+        /// <param name="configure">
+        /// An action to configure the sender connector builder.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="configure"/> is <c>null</c>.
+        /// </exception>
+        public ChannelConnectorBuilder<TConnector> WithSenders(
+            Action<SenderConnectorBuilder<TConnector>> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure, nameof(configure));
+
+            var senderBuilder = new SenderConnectorBuilder<TConnector>();
+            configure(senderBuilder);
+
+            MessagingBuilder.AddSenders();
+
+            return this;
+        }
+
         // ── Factory override ───────────────────────────────────────────────────
 
         /// <summary>

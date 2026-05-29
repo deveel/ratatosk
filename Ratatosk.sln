@@ -52,6 +52,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.XUnit", "test\Rata
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Testing", "test\Ratatosk.Testing\Ratatosk.Testing.csproj", "{6F694C65-9580-422A-ADC4-85C5566599D4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Senders.XUnit", "test\Ratatosk.Senders.XUnit\Ratatosk.Senders.XUnit.csproj", "{DF8372EE-1A68-4A0F-A92E-FC76478712FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -290,6 +292,18 @@ Global
 		{6F694C65-9580-422A-ADC4-85C5566599D4}.Release|x64.Build.0 = Release|Any CPU
 		{6F694C65-9580-422A-ADC4-85C5566599D4}.Release|x86.ActiveCfg = Release|Any CPU
 		{6F694C65-9580-422A-ADC4-85C5566599D4}.Release|x86.Build.0 = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|x64.Build.0 = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|x86.Build.0 = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|x64.ActiveCfg = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|x64.Build.0 = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|x86.ActiveCfg = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -314,6 +328,7 @@ Global
 		{E89DB6F7-29B2-455D-B0AE-FB9E41F90B46} = {0F91077D-AC47-4319-96FF-09CA6EE50CC6}
 		{8838304E-3F66-41D0-95C2-CEAE20859BDF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{6F694C65-9580-422A-ADC4-85C5566599D4} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {64BF9420-C7A8-4D2B-804F-41EB2E83437F}

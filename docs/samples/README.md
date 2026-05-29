@@ -12,6 +12,7 @@ These sample applications demonstrate how to use the Ratatosk framework with eac
 | [Firebase Push](firebase-push.md) | Firebase FCM | Console | Send push notifications |
 | [Twilio SMS & WhatsApp](twilio.md) | Twilio | Console | Send SMS and WhatsApp messages |
 | [Multi-Connector](multi-connector.md) | All channels | ASP.NET Core API | REST API exposing all connectors |
+| [Sender Manager](sender-manager.md) | SendGrid | ASP.NET Core API | CRUD sender identities + message send with polymorphic sender resolution |
 
 ## Prerequisites
 

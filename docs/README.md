@@ -82,6 +82,7 @@ The framework is deliberately focused on the messaging contract and connector co
 - [Channel schema](channel-schema.md) — defining connector contracts and validation rules
 - [Schema derivation](schema-derivation.md) — creating restricted schemas from master schemas
 - [Message validation](message-validation.md) — pre-flight validation before connector calls
+- [Sender management](sender-management.md) — sender identity model, registry, resolution, caching, and selectors
 - [IMessagingClient facade](quickstart.md#6-imessagingclient-facade) — high-level client with lazy initialization and named channel routing
 
 **Building and wiring:**

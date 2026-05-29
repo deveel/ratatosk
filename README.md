@@ -31,6 +31,7 @@ Current stable release: **v1.0.1** (pre-release packages available from `main` b
 - **IMessagingClient facade** — disposable high-level client with lazy initialization and named channel routing
 - **Extensible** — implement `ChannelConnectorBase` to add any provider; built-in logging scopes, state management, and error wrapping
 - **5 ready-made connectors** — Twilio (SMS/WhatsApp), SendGrid (email), Firebase (push), Facebook Messenger, Telegram Bot
+- **Sender identity management** — registry-backed senders with resolution, caching, and per-channel selector strategies
 
 ## What this project does not do
 
@@ -53,6 +54,8 @@ Those are application-level concerns, so you can choose your own architecture.
 | `Ratatosk.Firebase` | Firebase Cloud Messaging push for device tokens and topics, with batch sends and dry-run mode. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Firebase.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Firebase/) |
 | `Ratatosk.Facebook` | Facebook Messenger Page-based messaging with text, media, quick replies, and webhook inbound. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Facebook.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Facebook/) |
 | `Ratatosk.Telegram` | Telegram bot messaging with rich text, media, locations, and webhook-based updates. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Telegram.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Telegram/) |
+| `Ratatosk.Senders` | Sender identity infrastructure: `ISenderRegistry` → `SenderManager`, `ISenderResolver`, cache, selector strategies, `MessageBuilder.FromSender()` extension. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders/) |
+| `Ratatosk.Senders.InMemory` | In-memory `IRepository<SenderEntity>` for development and testing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.InMemory.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders.InMemory/) |
 
 ## Quick example
 
@@ -101,6 +104,8 @@ Start from the docs home and follow the path that best matches what you are buil
   ([Channel schema](docs/channel-schema.md) -> [Connector implementation](docs/connector-implementation.md) -> [Installation](docs/installation.md))
 - **Validation-first integration** - Model endpoints, apply validation rules, and extend validation when channel-specific constraints grow.
   ([Message model](docs/messaging-model.md) -> [Message validation](docs/message-validation.md) -> [Channel schema](docs/channel-schema.md))
+- **Sender identity management** - Set up sender registries, resolution, and caching for decoupled sender configuration.
+  ([Sender management](docs/sender-management.md) -> [Message model](docs/messaging-model.md#sender-identities) -> [Sender Manager sample](docs/samples/sender-manager.md))
 
 
 ## Roadmap

@@ -23,8 +23,12 @@ namespace Ratatosk {
 		/// </param>
 		public Message(IMessage message) {
 			Id = message.Id;
-			Sender = message.Sender != null ? new Endpoint(message.Sender) : null;
-			Receiver = message.Receiver != null ? new Endpoint(message.Receiver) : null;
+			Sender = message.Sender != null
+				? (message.Sender is ISender sender ? sender : new Endpoint(message.Sender))
+				: null;
+			Receiver = message.Receiver != null
+				? (message.Receiver is ISender isender ? isender : new Endpoint(message.Receiver))
+				: null;
 			Content = MessageContent.Create(message.Content);
 			Properties = message.Properties?.ToDictionary(x => x.Key, x => new MessageProperty(x.Value));
 		}
@@ -32,11 +36,15 @@ namespace Ratatosk {
 		/// <inheritdoc/>
 		public string? Id { get; set; }
 
-		/// <inheritdoc/>
-		public Endpoint? Sender { get; set; }
+		/// <summary>
+		/// Gets or sets the endpoint that is the sender of the message.
+		/// </summary>
+		public IEndpoint? Sender { get; set; }
 
-		/// <inheritdoc/>
-		public Endpoint? Receiver { get; set; }
+		/// <summary>
+		/// Gets or sets the endpoint that is the receiver of the message.
+		/// </summary>
+		public IEndpoint? Receiver { get; set; }
 
 		IEndpoint? IMessage.Sender => Sender;
 

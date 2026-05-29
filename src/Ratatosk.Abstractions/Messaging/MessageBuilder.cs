@@ -260,20 +260,24 @@ namespace Ratatosk
             return WithContent(builder.Build());
         }
 
-        /// <summary>
-        /// Builds the <see cref="Message"/> instance with the configured values.
-        /// </summary>
-        /// <returns>The constructed <see cref="Message"/>.</returns>
-        public Message Build()
-        {
-            return new Message
-            {
-                Id = _id,
-                Sender = _sender != null ? new Endpoint(_sender.Type, _sender.Address) : null,
-                Receiver = _receiver != null ? new Endpoint(_receiver.Type, _receiver.Address) : null,
-                Content = _content != null ? MessageContent.Create(_content) : null,
-                Properties = _properties?.ToDictionary(x => x.Key, x => x.Value)
-            };
-        }
+		/// <summary>
+		/// Builds the <see cref="Message"/> instance with the configured values.
+		/// </summary>
+		/// <returns>The constructed <see cref="Message"/>.</returns>
+		public Message Build()
+		{
+			return new Message
+			{
+				Id = _id,
+				Sender = _sender != null
+					? (_sender is ISender s ? s : new Endpoint(_sender.Type, _sender.Address))
+					: null,
+				Receiver = _receiver != null
+					? (_receiver is ISender r ? r : new Endpoint(_receiver.Type, _receiver.Address))
+					: null,
+				Content = _content != null ? MessageContent.Create(_content) : null,
+				Properties = _properties?.ToDictionary(x => x.Key, x => x.Value)
+			};
+		}
     }
 }

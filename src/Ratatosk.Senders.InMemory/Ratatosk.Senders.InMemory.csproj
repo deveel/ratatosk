@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Ratatosk Senders In-Memory Store</Title>
+    <Description>In-memory store for sender identities in the Ratatosk messaging framework, useful for testing and development.</Description>
+    <PackageTags>messaging;sender;inmemory;store;test</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ratatosk.Abstractions\Ratatosk.Abstractions.csproj" />
+    <ProjectReference Include="..\Ratatosk.Senders\Ratatosk.Senders.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Deveel.Repository.InMemory" Version="1.4.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Deveel" />
+    <Using Include="Deveel.Data" />
+  </ItemGroup>
+</Project>

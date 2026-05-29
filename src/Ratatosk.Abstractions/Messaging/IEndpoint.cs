@@ -8,18 +8,12 @@ namespace Ratatosk {
 	/// An endpoint is a node in a network that is able 
 	/// to send or receive messages
 	/// </summary>
-	/// <remarks>
-	/// <para>
-	/// A endpoint is specialized to a specific protocol
-	/// for sending and receiving messages: this can be
-	/// an HTTP endpoint (eg. a URL), an e-mail address,
-	/// a TCP/IP address, etc.
-	/// </para>
-	/// <para>
-	/// A type of endpoint can be used by more than one
-	/// protocol.
-	/// </para>
-	/// </remarks>
+	[System.Text.Json.Serialization.JsonDerivedType(typeof(Endpoint), typeDiscriminator: "endpoint")]
+	[System.Text.Json.Serialization.JsonDerivedType(typeof(SenderRef), typeDiscriminator: "senderref")]
+	[System.Text.Json.Serialization.JsonDerivedType(typeof(PhoneSender), typeDiscriminator: "phone")]
+	[System.Text.Json.Serialization.JsonDerivedType(typeof(AlphaNumericSender), typeDiscriminator: "alphanumeric")]
+	[System.Text.Json.Serialization.JsonDerivedType(typeof(EmailSender), typeDiscriminator: "email")]
+	[System.Text.Json.Serialization.JsonDerivedType(typeof(BotSender), typeDiscriminator: "bot")]
 	public interface IEndpoint {
 		/// <summary>
 		/// Gets the type of the endpoint that is used.

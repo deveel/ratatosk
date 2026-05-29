@@ -24,6 +24,7 @@ namespace Ratatosk
         private readonly IAuthenticationManager _authenticationManager;
         private bool _autoAuthenticationAttempted;
         private readonly IMessageIdGenerator _idGenerator;
+        private readonly ISenderResolver? _senderResolver;
 
         /// <summary>
         /// Constructs the connector base with the given schema and optional settings.
@@ -43,18 +44,24 @@ namespace Ratatosk
         /// <param name="idGenerator">
         /// An optional message identifier generator used to generate unique message identifiers.
         /// </param>
+        /// <param name="senderResolver">
+        /// An optional sender resolver used to resolve sender identities
+        /// before messages are validated and sent.
+        /// </param>
         protected ChannelConnectorBase(
             IChannelSchema schema,
             ConnectionSettings? connectionSettings = null,
             ILogger? logger = null,
             IAuthenticationManager? authenticationManager = null,
-            IMessageIdGenerator? idGenerator = null)
+            IMessageIdGenerator? idGenerator = null,
+            ISenderResolver? senderResolver = null)
         {
             Schema = schema ?? throw new ArgumentNullException(nameof(schema));
             ConnectionSettings = connectionSettings ?? new ConnectionSettings();
             Logger = logger ?? NullLogger.Instance;
             _authenticationManager = authenticationManager ?? new AuthenticationManager(logger: NullLogger<AuthenticationManager>.Instance);
             _idGenerator = idGenerator ?? new DefaultMessageIdGenerator();
+            _senderResolver = senderResolver;
         }
 
         /// <summary>
@@ -86,6 +93,16 @@ namespace Ratatosk
         /// Gets the message identifier generator used to generate unique message identifiers.
         /// </summary>
         protected IMessageIdGenerator IdGenerator => _idGenerator;
+
+        /// <summary>
+        /// Gets the logical name of this connector instance.
+        /// </summary>
+        /// <remarks>
+        /// The default implementation returns <see cref="IChannelSchema.ChannelType"/>.
+        /// Override to provide a scoped name when multiple connectors share the same
+        /// channel type (e.g. <c>sms-twilio</c> vs <c>sms-vonage</c>).
+        /// </remarks>
+        public virtual string ConnectorName => Schema.ChannelType;
 
         /// <summary>
         /// Gets the current state of the connector.
@@ -513,6 +530,8 @@ namespace Ratatosk
 
             _idGenerator.EnsureMessageId(message);
 
+            await ResolveSenderAsync(message, cancellationToken);
+
             using var scope = BeginConnectorLoggerScope();
             using var messageScope = BeginMessageLoggerScope(message);
 
@@ -601,6 +620,8 @@ namespace Ratatosk
                 foreach (var message in batch.Messages)
                 {
                     _idGenerator.EnsureMessageId(message);
+
+                    await ResolveSenderAsync(message, cancellationToken);
 
                     var messageErrors = new List<ValidationResult>();
                     await foreach (var validationResult in ValidateMessageAsync(message, cancellationToken))
@@ -1066,6 +1087,26 @@ namespace Ratatosk
         protected virtual Task ShutdownConnectorAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Resolves the sender identity on the message if a sender resolver is registered.
+        /// </summary>
+        /// <param name="message">The message whose sender to resolve.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token used to propagate notification that the operation should be canceled.
+        /// </param>
+        private async ValueTask ResolveSenderAsync(IMessage message, CancellationToken cancellationToken)
+        {
+            if (_senderResolver == null)
+                return;
+
+            var resolved = await _senderResolver.ResolveSenderAsync(message, cancellationToken);
+
+            if (resolved != null && message is Message msg)
+            {
+                msg.Sender = resolved;
+            }
         }
     }
 }

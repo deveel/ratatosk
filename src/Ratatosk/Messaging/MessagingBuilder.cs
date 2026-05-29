@@ -294,6 +294,22 @@ namespace Ratatosk
             return AddConnectorType<TConnector>(typeof(TConnector).Name);
         }
 
+        // ── Sender identity services ──────────────────────────────────────────
+
+        /// <summary>
+        /// Registers the sender identity services (cache, registry, resolver,
+        /// selector, and validator) into the messaging infrastructure.
+        /// </summary>
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        public MessagingBuilder AddSenders()
+        {
+            Services.AddSenders();
+            return this;
+        }
+
         // ── Message ID generator registration ─────────────────────────────────
 
         /// <summary>

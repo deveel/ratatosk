@@ -1,0 +1,94 @@
+namespace Ratatosk;
+
+[Trait("Category", "Unit")]
+[Trait("Layer", "Domain")]
+[Trait("Feature", "InMemorySenderCache")]
+public class InMemorySenderCacheTests
+{
+    private static SenderEntity CreateEntity(string name = "test-sender") => new()
+    {
+        Id = Guid.NewGuid().ToString(),
+        Name = name,
+        DisplayName = "Test Sender",
+        Address = "+1234567890",
+        EndpointType = "phone",
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    [Fact]
+    public async Task Should_ReturnNull_When_GetByNameForMissingKey()
+    {
+        var cache = new InMemorySenderCache();
+
+        var result = await cache.GetByNameAsync("nonexistent");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task Should_ReturnEntity_When_SetThenGetByName()
+    {
+        var cache = new InMemorySenderCache();
+        var entity = CreateEntity();
+
+        await cache.SetByNameAsync("test-sender", entity);
+        var result = await cache.GetByNameAsync("test-sender");
+
+        Assert.NotNull(result);
+        Assert.Equal(entity.Id, result.Id);
+        Assert.Equal(entity.Name, result.Name);
+    }
+
+    [Fact]
+    public async Task Should_ReturnNull_When_EntryExpired()
+    {
+        var cache = new InMemorySenderCache(TimeSpan.FromMilliseconds(50));
+        var entity = CreateEntity();
+
+        await cache.SetByNameAsync("test-sender", entity, TimeSpan.FromMilliseconds(10));
+        await Task.Delay(100);
+
+        var result = await cache.GetByNameAsync("test-sender");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task Should_ReturnNull_When_Removed()
+    {
+        var cache = new InMemorySenderCache();
+        var entity = CreateEntity();
+
+        await cache.SetByNameAsync("test-sender", entity);
+        await cache.RemoveByNameAsync("test-sender");
+
+        var result = await cache.GetByNameAsync("test-sender");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task Should_RespectCustomTtl_When_SetWithTtl()
+    {
+        var cache = new InMemorySenderCache(TimeSpan.FromHours(1));
+        var entity = CreateEntity();
+
+        await cache.SetByNameAsync("test-sender", entity, TimeSpan.FromMilliseconds(50));
+        await Task.Delay(100);
+
+        var result = await cache.GetByNameAsync("test-sender");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task Should_BeCaseInsensitive_When_GetByName()
+    {
+        var cache = new InMemorySenderCache();
+        var entity = CreateEntity("Test-Sender");
+
+        await cache.SetByNameAsync("Test-Sender", entity);
+
+        var result = await cache.GetByNameAsync("test-sender");
+        Assert.NotNull(result);
+    }
+}

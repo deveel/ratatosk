@@ -51,7 +51,10 @@ namespace Ratatosk {
 		/// </summary>
 		/// <param name="endpoint">
 		/// The source instance of <see cref="IEndpoint"/> that is used
-		/// to initialize the properties of this instance.
+		/// to initialize the properties of this instance. If the instance
+		/// is also an <see cref="ISender"/>, the result will preserve
+		/// the full sender identity rather than degrading to a plain
+		/// endpoint.
 		/// </param>
 		public Endpoint(IEndpoint endpoint) 
 			: this(endpoint.Type, endpoint.Address) {
@@ -243,7 +246,7 @@ namespace Ratatosk {
 		/// <exception cref="ArgumentException">
 		/// Thrown when the type string is not a valid endpoint type.
 		/// </exception>
-		private static EndpointType ParseEndpointType(string type)
+		public static EndpointType ParseEndpointType(string type)
 		{
 			ArgumentNullException.ThrowIfNull(type, nameof(type));
 
