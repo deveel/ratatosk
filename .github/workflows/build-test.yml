@@ -76,12 +76,12 @@ jobs:
         id: gitversion
         shell: bash
         run: |
-          echo "version=${{ steps.gitversion.outputs.semVer }}" >> "$GITHUB_OUTPUT"
-          echo "nuget-version=${{ steps.gitversion.outputs.nuGetVersionV2 }}" >> "$GITHUB_OUTPUT"
-          echo "assembly-version=${{ steps.gitversion.outputs.assemblySemVer }}" >> "$GITHUB_OUTPUT"
-          echo "file-version=${{ steps.gitversion.outputs.assemblySemFileVer }}" >> "$GITHUB_OUTPUT"
-          echo "informational-version=${{ steps.gitversion.outputs.informationalVersion }}" >> "$GITHUB_OUTPUT"
-          echo "version-source=gitversion" >> "$GITHUB_OUTPUT"
+          dotnet gitversion /output json > gitversion.json
+          echo "semVer=$(jq -r '.SemVer' gitversion.json)" >> "$GITHUB_OUTPUT"
+          echo "nuGetVersionV2=$(jq -r '.SemVer' gitversion.json)" >> "$GITHUB_OUTPUT"
+          echo "assemblySemVer=$(jq -r '.AssemblySemVer' gitversion.json)" >> "$GITHUB_OUTPUT"
+          echo "assemblySemFileVer=$(jq -r '.AssemblySemFileVer' gitversion.json)" >> "$GITHUB_OUTPUT"
+          echo "informationalVersion=$(jq -r '.InformationalVersion' gitversion.json)" >> "$GITHUB_OUTPUT"
   
       - name: Calculate Version Metadata
         id: calculate
