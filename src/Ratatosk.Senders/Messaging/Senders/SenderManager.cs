@@ -62,6 +62,12 @@ namespace Ratatosk
         }
 
         /// <inheritdoc />
+        public async Task<SenderEntity?> FindByEndpointAsync(string address, string endpointType, CancellationToken cancellationToken = default)
+        {
+            return await FindFirstAsync(e => e.Address == address && e.EndpointType == endpointType, cancellationToken);
+        }
+
+        /// <inheritdoc />
         public async Task<IList<SenderEntity>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return (await FindAllAsync(cancellationToken: cancellationToken)).ToList();

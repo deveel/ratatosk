@@ -6,35 +6,39 @@
 namespace Ratatosk
 {
     /// <summary>
-    /// Resolves the sender identity for a message at send time.
+    /// Resolves a sender identity at send time.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Implementations resolve <see cref="IMessage.Sender"/> to a concrete
-    /// <see cref="ISender"/> before the message is validated and sent.
+    /// Resolution transforms a sender reference or concrete sender into
+    /// the canonical identity stored in the registry:
     /// </para>
+    /// <list type="bullet">
+    ///   <item><see cref="SenderRef"/> — resolved by logical name.</item>
+    ///   <item>Concrete <see cref="ISender"/> — resolved by endpoint type and address.</item>
+    /// </list>
     /// <para>
-    /// Resolution is opt-in: if no resolver is registered, the connector
-    /// passes the sender through as-is. A resolver may return <c>null</c>
-    /// to signal that no sender identity could be determined, in which
-    /// case the connector may use a default or reject the message.
+    /// If no matching entity is found in the registry, the resolver returns
+    /// <c>null</c> and the caller keeps the original sender.
     /// </para>
     /// </remarks>
     public interface ISenderResolver
     {
         /// <summary>
-        /// Resolves the sender identity for the given message.
+        /// Resolves the given sender to its canonical registry identity.
         /// </summary>
-        /// <param name="message">
-        /// The message for which to resolve the sender identity.
+        /// <param name="sender">
+        /// The sender to resolve. If it is a <see cref="SenderRef"/>,
+        /// resolution is by logical name; otherwise by endpoint type
+        /// and address.
         /// </param>
         /// <param name="cancellationToken">
         /// A token that can be used to cancel the operation.
         /// </param>
         /// <returns>
         /// The resolved <see cref="ISender"/> instance, or <c>null</c>
-        /// if no sender identity could be determined.
+        /// if no matching identity was found in the registry.
         /// </returns>
-        ValueTask<ISender?> ResolveSenderAsync(IMessage message, CancellationToken cancellationToken = default);
+        ValueTask<ISender?> ResolveSenderAsync(ISender sender, CancellationToken cancellationToken = default);
     }
 }

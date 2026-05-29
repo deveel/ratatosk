@@ -18,8 +18,7 @@ namespace Ratatosk
     /// </summary>
     public abstract class ChannelConnectorBase : IChannelConnector
     {
-        private ConnectorState _state = ConnectorState.Uninitialized;
-        private readonly object _stateLock = new object();
+        private readonly IConnectorStateManager _stateManager;
         private AuthenticationCredential? _authenticationCredential;
         private readonly IAuthenticationManager _authenticationManager;
         private bool _autoAuthenticationAttempted;
@@ -48,13 +47,18 @@ namespace Ratatosk
         /// An optional sender resolver used to resolve sender identities
         /// before messages are validated and sent.
         /// </param>
+        /// <param name="stateManager">
+        /// An optional state manager used to track and transition the connector state.
+        /// When <c>null</c>, a default <see cref="ConnectorStateManager"/> is used.
+        /// </param>
         protected ChannelConnectorBase(
             IChannelSchema schema,
             ConnectionSettings? connectionSettings = null,
             ILogger? logger = null,
             IAuthenticationManager? authenticationManager = null,
             IMessageIdGenerator? idGenerator = null,
-            ISenderResolver? senderResolver = null)
+            ISenderResolver? senderResolver = null,
+            IConnectorStateManager? stateManager = null)
         {
             Schema = schema ?? throw new ArgumentNullException(nameof(schema));
             ConnectionSettings = connectionSettings ?? new ConnectionSettings();
@@ -62,6 +66,7 @@ namespace Ratatosk
             _authenticationManager = authenticationManager ?? new AuthenticationManager(logger: NullLogger<AuthenticationManager>.Instance);
             _idGenerator = idGenerator ?? new DefaultMessageIdGenerator();
             _senderResolver = senderResolver;
+            _stateManager = stateManager ?? new ConnectorStateManager();
         }
 
         /// <summary>
@@ -78,6 +83,11 @@ namespace Ratatosk
         /// Gets the logger used to log diagnostic information.
         /// </summary>
         protected ILogger Logger { get; }
+
+        /// <summary>
+        /// Gets the state manager that controls connector lifecycle state transitions.
+        /// </summary>
+        protected IConnectorStateManager StateManager => _stateManager;
 
         /// <summary>
         /// Gets the authentication manager used to handle authentication operations.
@@ -105,30 +115,39 @@ namespace Ratatosk
         public virtual string ConnectorName => Schema.ChannelType;
 
         /// <summary>
-        /// Gets the current state of the connector.
+        /// Gets a value indicating whether this connector instance can be safely reused
+        /// across multiple concurrent callers from the connector pool.
         /// </summary>
-        public ConnectorState State
-        {
-            get
-            {
-                lock (_stateLock)
-                {
-                    return _state;
-                }
-            }
-        }
+        /// <remarks>
+        /// <para>
+        /// When <c>true</c> (the default), <see cref="ChannelConnectorFactory{TConnector}"/>
+        /// will pool and return the same instance for identical
+        /// <see cref="ConnectionSettings"/> + <see cref="IChannelSchema"/> combinations.
+        /// Pooled connectors <strong>must</strong> be fully re-entrant:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item>No mutable instance state that is not protected by a lock or is inherently thread-safe.</item>
+        ///   <item>No per-call resources (e.g. open streams) stored as instance fields.</item>
+        ///   <item>All public and protected methods safe to call from multiple threads simultaneously.</item>
+        /// </list>
+        /// <para>
+        /// Override and return <c>false</c> if your connector holds per-call state or wraps
+        /// a non-thread-safe third-party client. The factory will then create a fresh instance
+        /// on every call instead of pooling.
+        /// </para>
+        /// </remarks>
+        public virtual bool IsReusable => true;
 
         /// <summary>
-        /// Sets the state of the connector in a thread-safe manner.
+        /// Gets the current state of the connector.
+        /// </summary>
+        public ConnectorState State => _stateManager.Current;
+
+        /// <summary>
+        /// Transitions the connector to <paramref name="newState"/> in a thread-safe manner.
         /// </summary>
         /// <param name="newState">The new state to set for the connector.</param>
-        protected void SetState(ConnectorState newState)
-        {
-            lock (_stateLock)
-            {
-                _state = newState;
-            }
-        }
+        protected void SetState(ConnectorState newState) => _stateManager.TransitionTo(newState);
 
         /// <summary>
         /// Validates that the connector supports the given capability.
@@ -165,17 +184,7 @@ namespace Ratatosk
         /// <exception cref="MessagingException">
         /// Thrown if the connector is not in an operational state.
         /// </exception>
-        protected void ValidateOperationalState()
-        {
-            var currentState = State;
-            if (currentState == ConnectorState.Uninitialized ||
-                currentState == ConnectorState.Initializing ||
-                currentState == ConnectorState.ShuttingDown ||
-                currentState == ConnectorState.Shutdown)
-            {
-                throw new MessagingException(MessagingErrorCodes.MessagingError, MessagingErrorCodes.ErrorDomain, $"The connector is not in an operational state. Current state: {currentState}");
-            }
-        }
+        protected void ValidateOperationalState() => _stateManager.EnsureOperational();
 
         /// <summary>
         /// Begins a logging scope that includes the channel type and version information.
@@ -1101,7 +1110,10 @@ namespace Ratatosk
             if (_senderResolver == null)
                 return;
 
-            var resolved = await _senderResolver.ResolveSenderAsync(message, cancellationToken);
+            if (message.Sender is not ISender sender)
+                return;
+
+            var resolved = await _senderResolver.ResolveSenderAsync(sender, cancellationToken);
 
             if (resolved != null && message is Message msg)
             {

@@ -19,6 +19,7 @@ namespace Ratatosk.XUnit.Fixtures
         public ConnectionSettings ConnectionSettings { get; }
         public ConnectorState State => _state;
         public int InitCount => _initCount;
+        public bool IsReusable => true;
         public bool FailOnInitialize { get; set; }
         public bool FailOnTestConnection { get; set; }
         public Func<IMessage, SendResult>? OnSend { get; set; }

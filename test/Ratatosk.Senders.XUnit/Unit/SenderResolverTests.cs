@@ -19,17 +19,17 @@ public class SenderResolverTests
         UpdatedAt = DateTime.UtcNow
     };
 
-    private static Mock<ISenderRegistry> CreateRegistryMock(SenderEntity? entity = null, IList<SenderEntity>? all = null)
+    private static Mock<ISenderRegistry> CreateRegistryMock(SenderEntity? byName = null, SenderEntity? byEndpoint = null)
     {
         var mock = new Mock<ISenderRegistry>(MockBehavior.Strict);
 
         mock.Setup(x => x.FindByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string name, CancellationToken _) =>
-                entity != null && name == entity.Name ? entity : null);
+                byName != null && name == byName.Name ? byName : null);
 
-        if (all != null)
-            mock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(all);
+        mock.Setup(x => x.FindByEndpointAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string address, string type, CancellationToken _) =>
+                byEndpoint != null && address == byEndpoint.Address && type == byEndpoint.EndpointType ? byEndpoint : null);
 
         return mock;
     }
@@ -54,12 +54,9 @@ public class SenderResolverTests
         return mock;
     }
 
-    private static Mock<ISenderSelector> CreateSelectorMock(SenderEntity? selected = null)
+    private static Mock<ISenderSelector> CreateSelectorMock()
     {
-        var mock = new Mock<ISenderSelector>(MockBehavior.Strict);
-        mock.Setup(x => x.SelectAsync(It.IsAny<IReadOnlyList<SenderEntity>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(selected);
-        return mock;
+        return new Mock<ISenderSelector>(MockBehavior.Strict);
     }
 
     [Fact]
@@ -71,11 +68,7 @@ public class SenderResolverTests
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("my-sender")
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new SenderRef("my-sender"));
 
         Assert.NotNull(result);
         Assert.Equal("my-sender", result.Name);
@@ -86,16 +79,12 @@ public class SenderResolverTests
     public async Task Should_ResolveByNameFromRegistry_When_NotCached()
     {
         var entity = CreateEntity("my-sender");
-        var registryMock = CreateRegistryMock(entity);
+        var registryMock = CreateRegistryMock(byName: entity);
         var cacheMock = CreateCacheMock();
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("my-sender")
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new SenderRef("my-sender"));
 
         Assert.NotNull(result);
         Assert.Equal("my-sender", result.Name);
@@ -103,19 +92,15 @@ public class SenderResolverTests
     }
 
     [Fact]
-    public async Task Should_CacheResult_When_ResolvedFromRegistry()
+    public async Task Should_CacheResult_When_ResolvedByNameFromRegistry()
     {
         var entity = CreateEntity("my-sender");
-        var registryMock = CreateRegistryMock(entity);
+        var registryMock = CreateRegistryMock(byName: entity);
         var cacheMock = CreateCacheMock();
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("my-sender")
-            .Build();
-
-        await resolver.ResolveSenderAsync(message);
+        await resolver.ResolveSenderAsync(new SenderRef("my-sender"));
 
         cacheMock.Verify(x => x.SetByNameAsync("my-sender", entity, It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -128,85 +113,50 @@ public class SenderResolverTests
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("unknown-sender")
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new SenderRef("unknown-sender"));
 
         Assert.Null(result);
     }
 
     [Fact]
-    public async Task Should_PassThroughISender_When_NotSenderRef()
+    public async Task Should_ResolveByEndpoint_When_ConcreteSender()
     {
-        var sender = new PhoneSender("+1234567890", name: "direct-sender");
+        var entity = CreateEntity("email-sender", endpointType: "email", address: "test@example.com");
+        var registryMock = CreateRegistryMock(byEndpoint: entity);
+        var cacheMock = CreateCacheMock();
+        var selectorMock = CreateSelectorMock();
+        var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
+
+        var result = await resolver.ResolveSenderAsync(new EmailSender("test@example.com"));
+
+        Assert.NotNull(result);
+        Assert.Equal("email-sender", result.Name);
+        registryMock.Verify(x => x.FindByEndpointAsync("test@example.com", "email", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Should_ReturnNull_When_ConcreteSenderNotInRegistry()
+    {
         var registryMock = CreateRegistryMock();
         var cacheMock = CreateCacheMock();
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .From(sender)
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
-
-        Assert.NotNull(result);
-        Assert.Same(sender, result);
-    }
-
-    [Fact]
-    public async Task Should_ResolveDefault_When_SenderIsNull()
-    {
-        var entity = CreateEntity("default-sender");
-        var registryMock = CreateRegistryMock(all: new List<SenderEntity> { entity });
-        var cacheMock = CreateCacheMock();
-        var selectorMock = CreateSelectorMock(entity);
-        var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
-
-        var message = new Message();
-
-        var result = await resolver.ResolveSenderAsync(message);
-
-        Assert.NotNull(result);
-        Assert.Equal("default-sender", result.Name);
-    }
-
-    [Fact]
-    public async Task Should_ReturnNull_When_DefaultResolutionWithNoSenders()
-    {
-        var registryMock = CreateRegistryMock(all: new List<SenderEntity>());
-        var cacheMock = new Mock<ISenderCache>(MockBehavior.Strict);
-        cacheMock.Setup(x => x.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((SenderEntity?)null);
-        cacheMock.Setup(x => x.SetByNameAsync(It.IsAny<string>(), It.IsAny<SenderEntity>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
-            .Returns(ValueTask.CompletedTask);
-        cacheMock.Setup(x => x.RemoveByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(ValueTask.CompletedTask);
-
-        var selectorMock = CreateSelectorMock();
-        var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
-
-        var message = new Message();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new EmailSender("unknown@example.com"));
 
         Assert.Null(result);
     }
 
     [Fact]
-    public async Task Should_PassThroughNull_When_SelectorReturnsNull()
+    public async Task Should_ReturnNull_When_ConcreteSenderIsInactive()
     {
-        var entity = CreateEntity("default-sender");
-        var registryMock = CreateRegistryMock(all: new List<SenderEntity> { entity });
+        var entity = CreateEntity("inactive-sender", endpointType: "email", address: "inactive@example.com", isActive: false);
+        var registryMock = CreateRegistryMock(byEndpoint: entity);
         var cacheMock = CreateCacheMock();
-        var selectorMock = CreateSelectorMock(null);
+        var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new Message();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new EmailSender("inactive@example.com"));
 
         Assert.Null(result);
     }
@@ -215,16 +165,12 @@ public class SenderResolverTests
     public async Task Should_MapToPhoneSender_When_EndpointTypeIsPhone()
     {
         var entity = CreateEntity("phone-sender", endpointType: "phone", address: "+1234567890");
-        var registryMock = CreateRegistryMock(entity);
+        var registryMock = CreateRegistryMock(byName: entity);
         var cacheMock = CreateCacheMock();
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("phone-sender")
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new SenderRef("phone-sender"));
 
         Assert.NotNull(result);
         Assert.IsType<PhoneSender>(result);
@@ -236,16 +182,12 @@ public class SenderResolverTests
     public async Task Should_MapToAlphaNumericSender_When_EndpointTypeIsLabel()
     {
         var entity = CreateEntity("brand-sender", endpointType: "label", address: "MyBrand");
-        var registryMock = CreateRegistryMock(entity);
+        var registryMock = CreateRegistryMock(byName: entity);
         var cacheMock = CreateCacheMock();
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("brand-sender")
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new SenderRef("brand-sender"));
 
         Assert.NotNull(result);
         Assert.IsType<AlphaNumericSender>(result);
@@ -257,16 +199,12 @@ public class SenderResolverTests
     public async Task Should_MapToEmailSender_When_EndpointTypeIsEmail()
     {
         var entity = CreateEntity("email-sender", endpointType: "email", address: "test@example.com");
-        var registryMock = CreateRegistryMock(entity);
+        var registryMock = CreateRegistryMock(byName: entity);
         var cacheMock = CreateCacheMock();
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("email-sender")
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new SenderRef("email-sender"));
 
         Assert.NotNull(result);
         Assert.IsType<EmailSender>(result);
@@ -275,19 +213,15 @@ public class SenderResolverTests
     }
 
     [Fact]
-    public async Task Should_MapToBotSender_When_UnknownEndpointType()
+    public async Task Should_MapToBotSender_When_EndpointTypeIsId()
     {
         var entity = CreateEntity("bot-sender", endpointType: "id", address: "bot-123");
-        var registryMock = CreateRegistryMock(entity);
+        var registryMock = CreateRegistryMock(byName: entity);
         var cacheMock = CreateCacheMock();
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("bot-sender")
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new SenderRef("bot-sender"));
 
         Assert.NotNull(result);
         Assert.IsType<BotSender>(result);
@@ -303,11 +237,7 @@ public class SenderResolverTests
         var selectorMock = CreateSelectorMock();
         var resolver = new SenderResolver(registryMock.Object, cacheMock.Object, selectorMock.Object);
 
-        var message = new MessageBuilder()
-            .FromSender("missing")
-            .Build();
-
-        var result = await resolver.ResolveSenderAsync(message);
+        var result = await resolver.ResolveSenderAsync(new SenderRef("missing"));
 
         Assert.Null(result);
     }

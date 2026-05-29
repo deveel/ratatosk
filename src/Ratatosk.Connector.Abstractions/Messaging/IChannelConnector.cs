@@ -196,5 +196,16 @@ namespace Ratatosk
 		/// Returns a <see cref="Task"/> that represents the asynchronous operation.
 		/// </returns>
 		ValueTask ShutdownAsync(CancellationToken cancellationToken);
+
+		/// <summary>
+		/// Gets a value indicating whether this connector instance is safe to pool
+		/// and reuse across concurrent callers.
+		/// </summary>
+		/// <remarks>
+		/// When <c>true</c> (the default), the connector factory may return the same instance for
+		/// identical connection settings. The implementation must be fully re-entrant.
+		/// When <c>false</c>, a fresh instance is created for every call.
+		/// </remarks>
+		bool IsReusable => true;
 	}
 }

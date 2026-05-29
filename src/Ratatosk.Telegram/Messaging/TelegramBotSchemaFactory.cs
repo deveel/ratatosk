@@ -76,42 +76,6 @@ namespace Ratatosk
                 DefaultValue = TelegramConnectionSettingsDefaults.TimeoutSeconds,
                 Description = "Request timeout in seconds"
             })
-				.AddParameter(new ChannelParameter("SecretToken", DataType.String)
-				{
-					IsRequired = false,
-					IsSensitive = true,
-					Description = "Secret token for webhook validation (optional but recommended)"
-				})
-				.AddParameter(new ChannelParameter("DisableWebPagePreview", DataType.Boolean)
-				{
-					IsRequired = false,
-					DefaultValue = false,
-					Description = "Disable web page previews in messages"
-				})
-				.AddParameter(new ChannelParameter("DisableNotification", DataType.Boolean)
-				{
-					IsRequired = false,
-					DefaultValue = false,
-					Description = "Send messages silently (users will receive notification with no sound)"
-				})
-				.AddParameter(new ChannelParameter("ParseMode", DataType.String)
-				{
-					IsRequired = false,
-					DefaultValue = "Markdown",
-					Description = "Message parsing mode (Markdown, MarkdownV2, HTML, or None)"
-				})
-				.AddParameter(new ChannelParameter("MaxRetries", DataType.Integer)
-				{
-					IsRequired = false,
-					DefaultValue = 3,
-					Description = "Maximum number of retry attempts for failed operations"
-				})
-				.AddParameter(new ChannelParameter("TimeoutSeconds", DataType.Integer)
-				{
-					IsRequired = false,
-					DefaultValue = 30,
-					Description = "Request timeout in seconds"
-				})
 				.AddContentType(MessageContentType.PlainText)
 				.AddContentType(MessageContentType.Media)
 				.AddContentType(MessageContentType.Location)

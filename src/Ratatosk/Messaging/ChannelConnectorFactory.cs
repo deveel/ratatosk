@@ -78,8 +78,17 @@ namespace Ratatosk
             var effectiveSchema = schema ?? DiscoverSchema();
             var key = new ConnectorPoolKey(settings, effectiveSchema);
 
-            return _pool.GetOrAdd(key, _ =>
-                ActivatorUtilities.CreateInstance<TConnector>(_serviceProvider, effectiveSchema, settings));
+            // Probe the pool first (cheap path).
+            if (_pool.TryGetValue(key, out var pooled) && pooled.IsReusable)
+                return pooled;
+
+            // Create a new instance, then conditionally store it.
+            var instance = ActivatorUtilities.CreateInstance<TConnector>(_serviceProvider, effectiveSchema, settings);
+
+            if (instance.IsReusable)
+                return _pool.GetOrAdd(key, instance);
+
+            return instance;
         }
 
         private IChannelSchema DiscoverSchema()

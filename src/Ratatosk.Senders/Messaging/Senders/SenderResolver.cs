@@ -8,10 +8,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Ratatosk
 {
-    /// <summary>
-    /// Resolves sender identities for messages by delegating to the
-    /// sender registry and caching results.
-    /// </summary>
     public class SenderResolver : ISenderResolver
     {
         private readonly ISenderRegistry _registry;
@@ -19,13 +15,6 @@ namespace Ratatosk
         private readonly ISenderSelector _selector;
         private readonly ILogger _logger;
 
-        /// <summary>
-        /// Constructs the resolver with the given dependencies.
-        /// </summary>
-        /// <param name="registry">The sender registry to query.</param>
-        /// <param name="cache">The sender cache for caching resolution results.</param>
-        /// <param name="selector">The selector for choosing a default sender.</param>
-        /// <param name="logger">An optional logger.</param>
         public SenderResolver(
             ISenderRegistry registry,
             ISenderCache cache,
@@ -38,19 +27,12 @@ namespace Ratatosk
             _logger = logger ?? NullLogger<SenderResolver>.Instance;
         }
 
-        /// <inheritdoc />
-        public async ValueTask<ISender?> ResolveSenderAsync(IMessage message, CancellationToken cancellationToken = default)
+        public async ValueTask<ISender?> ResolveSenderAsync(ISender sender, CancellationToken cancellationToken = default)
         {
-            if (message.Sender is SenderRef senderRef)
+            if (sender is SenderRef senderRef)
                 return await ResolveByNameAsync(senderRef.SenderName, cancellationToken);
 
-            if (message.Sender is ISender sender && sender is not SenderRef)
-                return sender;
-
-            if (message.Sender == null)
-                return await ResolveDefaultAsync(cancellationToken);
-
-            return null;
+            return await ResolveByEndpointAsync(sender, cancellationToken);
         }
 
         private async ValueTask<ISender?> ResolveByNameAsync(string senderName, CancellationToken cancellationToken)
@@ -58,14 +40,14 @@ namespace Ratatosk
             var cached = await _cache.GetByNameAsync(senderName, cancellationToken);
             if (cached != null)
             {
-                _logger.LogDebug("Sender '{SenderName}' resolved from cache.", senderName);
+                _logger.LogSenderResolvedFromCache(senderName);
                 return MapToSender(cached);
             }
 
             var entity = await _registry.FindByNameAsync(senderName, cancellationToken);
             if (entity == null)
             {
-                _logger.LogWarning("Sender '{SenderName}' not found in registry.", senderName);
+                _logger.LogSenderNotFoundInRegistry(senderName);
                 return null;
             }
 
@@ -74,25 +56,24 @@ namespace Ratatosk
             return MapToSender(entity);
         }
 
-        private async ValueTask<ISender?> ResolveDefaultAsync(CancellationToken cancellationToken)
+        private async ValueTask<ISender?> ResolveByEndpointAsync(ISender sender, CancellationToken cancellationToken)
         {
-            var all = await _registry.GetAllAsync(cancellationToken);
+            var endpointType = GetEndpointTypeString(sender.Type);
 
-            if (all.Count == 0)
+            var entity = await _registry.FindByEndpointAsync(sender.Address, endpointType, cancellationToken);
+            if (entity == null)
             {
-                _logger.LogDebug("No senders registered for default resolution.");
+                _logger.LogNoSenderFoundForEndpoint(sender.Address, endpointType);
                 return null;
             }
 
-            var selected = await _selector.SelectAsync(all.AsReadOnly(), cancellationToken);
-
-            if (selected == null)
+            if (!entity.IsActive)
             {
-                _logger.LogDebug("Default sender selector returned no candidate.");
+                _logger.LogSenderFoundButInactive(entity.Name);
                 return null;
             }
 
-            return MapToSender(selected);
+            return MapToSender(entity);
         }
 
         private static ISender MapToSender(SenderEntity entity)
@@ -104,7 +85,27 @@ namespace Ratatosk
                 EndpointType.PhoneNumber => new PhoneSender(entity.Address, entity.Name, entity.IsActive, entity.DisplayName),
                 EndpointType.Label => new AlphaNumericSender(entity.Address, entity.Name, entity.IsActive, entity.DisplayName),
                 EndpointType.EmailAddress => new EmailSender(entity.Address, entity.DisplayName, entity.Name, entity.IsActive),
-                _ => new BotSender(entity.Address, entity.Name, entity.IsActive, entity.DisplayName),
+                EndpointType.Id => new BotSender(entity.Address, entity.Name, entity.IsActive, entity.DisplayName),
+                EndpointType.ApplicationId => new BotSender(entity.Address, entity.Name, entity.IsActive, entity.DisplayName),
+                _ => throw new NotSupportedException($"Unsupported endpoint type '{entity.EndpointType}' for sender '{entity.Name}'.")
+            };
+        }
+
+        private static string GetEndpointTypeString(EndpointType type)
+        {
+            return type switch
+            {
+                EndpointType.EmailAddress => "email",
+                EndpointType.PhoneNumber => "phone",
+                EndpointType.Label => "label",
+                EndpointType.Id => "id",
+                EndpointType.Url => "url",
+                EndpointType.Topic => "topic",
+                EndpointType.UserId => "userid",
+                EndpointType.ApplicationId => "applicationid",
+                EndpointType.DeviceId => "deviceid",
+                EndpointType.Any => "any",
+                _ => type.ToString().ToLowerInvariant()
             };
         }
     }

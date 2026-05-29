@@ -61,7 +61,7 @@ public class ChannelConnectorBaseSenderTests
 
         public int CallCount { get; private set; }
 
-        public ValueTask<ISender?> ResolveSenderAsync(IMessage message, CancellationToken cancellationToken = default)
+        public ValueTask<ISender?> ResolveSenderAsync(ISender sender, CancellationToken cancellationToken = default)
         {
             CallCount++;
             return ValueTask.FromResult(_result);

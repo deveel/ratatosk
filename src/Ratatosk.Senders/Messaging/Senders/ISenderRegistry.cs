@@ -75,6 +75,21 @@ namespace Ratatosk
         Task<OperationResult<SenderEntity>> UpdateAsync(SenderEntity sender, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Finds a sender entity by its endpoint address and type.
+        /// </summary>
+        /// <param name="address">The endpoint address to match.</param>
+        /// <param name="endpointType">
+        /// The endpoint type string (e.g. <c>"email"</c>, <c>"phone"</c>).
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A token that can be used to cancel the operation.
+        /// </param>
+        /// <returns>
+        /// The <see cref="SenderEntity"/> if found; otherwise <c>null</c>.
+        /// </returns>
+        Task<SenderEntity?> FindByEndpointAsync(string address, string endpointType, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Deletes a sender entity from the registry.
         /// </summary>
         /// <param name="sender">The sender entity to delete.</param>
