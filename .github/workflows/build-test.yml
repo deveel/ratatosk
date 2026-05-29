@@ -68,9 +68,8 @@ jobs:
           fetch-depth: 0
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v4.5.0
-        with:
-          versionSpec: '6.1.0'
+        shell: bash
+        run: dotnet tool install --global GitVersion.Tool --version 6.1.0
 
       - name: Determine Version
         id: gitversion
