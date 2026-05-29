@@ -6,6 +6,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
 
+using Kista;
+
 namespace Ratatosk
 {
     /// <summary>

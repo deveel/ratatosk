@@ -3,6 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
+using Kista;
+using Kista.Caching;
+
 using Microsoft.Extensions.Logging;
 
 namespace Ratatosk
