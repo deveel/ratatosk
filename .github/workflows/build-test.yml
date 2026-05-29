@@ -55,12 +55,12 @@ jobs:
     name: Calculate Version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.calculate.outputs.semVer }}
-      nuget-version: ${{ steps.calculate.outputs.nuGetVersionV2 }}
-      assembly-version: ${{ steps.calculate.outputs.assemblySemVer }}
-      file-version: ${{ steps.calculate.outputs.assemblySemFileVer }}
-      informational-version: ${{ steps.calculate.outputs.informationalVersion }}
-      version-source: ${{ steps.calculate.outputs.versionSourceSha }}
+      version: ${{ steps.calculate.outputs.version }}
+      nuget-version: ${{ steps.calculate.outputs.nuget-version }}
+      assembly-version: ${{ steps.calculate.outputs.assembly-version }}
+      file-version: ${{ steps.calculate.outputs.file-version }}
+      informational-version: ${{ steps.calculate.outputs.informational-version }}
+      version-source: ${{ steps.calculate.outputs.version-source }}
 
     steps:
       - uses: actions/checkout@v6
@@ -83,7 +83,9 @@ jobs:
           echo "informationalVersion=$(echo "$GV" | jq -r '.InformationalVersion')" >> "$GITHUB_OUTPUT"
           echo "semVer=$(echo "$GV" | jq -r '.SemVer')"
           echo "assemblySemVer=$(echo "$GV" | jq -r '.AssemblySemVer')"
+          echo "assemblySemFileVer=$(echo "$GV" | jq -r '.AssemblySemFileVer')" 
           echo "informationalVersion=$(echo "$GV" | jq -r '.InformationalVersion')"
+          echo "nuGetVersionV2=$(echo "$GV" | jq -r '.SemVer')"
   
       - name: Calculate Version Metadata
         id: calculate
