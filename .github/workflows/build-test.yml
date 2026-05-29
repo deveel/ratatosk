@@ -55,26 +55,26 @@ jobs:
     name: Calculate Version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.calculate.outputs.version }}
-      nuget-version: ${{ steps.calculate.outputs.nuget-version }}
-      assembly-version: ${{ steps.calculate.outputs.assembly-version }}
-      file-version: ${{ steps.calculate.outputs.file-version }}
-      informational-version: ${{ steps.calculate.outputs.informational-version }}
-      version-source: ${{ steps.calculate.outputs.version-source }}
+      version: ${{ steps.calculate.outputs.semVer }}
+      nuget-version: ${{ steps.calculate.outputs.nuGetVersionV2 }}
+      assembly-version: ${{ steps.calculate.outputs.assemblySemVer }}
+      file-version: ${{ steps.calculate.outputs.assemblySemFileVer }}
+      informational-version: ${{ steps.calculate.outputs.informationalVersion }}
+      version-source: ${{ steps.calculate.outputs.versionSourceSha }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v1.1.1
+        uses: gittools/actions/gitversion/setup@v4.5.0
         with:
           versionSpec: '5.12.0'
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@v1.1.1
+        uses: gittools/actions/gitversion/execute@v4.5.0
 
       - name: Calculate Version Metadata
         id: calculate
@@ -121,11 +121,11 @@ jobs:
             echo "informational-version=$version" >> "$GITHUB_OUTPUT"
             echo "version-source=tag" >> "$GITHUB_OUTPUT"
           else
-            echo "version=${{ steps.gitversion.outputs.SemVer }}" >> "$GITHUB_OUTPUT"
-            echo "nuget-version=${{ steps.gitversion.outputs.NuGetVersionV2 }}" >> "$GITHUB_OUTPUT"
-            echo "assembly-version=${{ steps.gitversion.outputs.AssemblySemVer }}" >> "$GITHUB_OUTPUT"
-            echo "file-version=${{ steps.gitversion.outputs.AssemblySemFileVer }}" >> "$GITHUB_OUTPUT"
-            echo "informational-version=${{ steps.gitversion.outputs.InformationalVersion }}" >> "$GITHUB_OUTPUT"
+            echo "version=${{ steps.gitversion.outputs.semVer }}" >> "$GITHUB_OUTPUT"
+            echo "nuget-version=${{ steps.gitversion.outputs.nuGetVersionV2 }}" >> "$GITHUB_OUTPUT"
+            echo "assembly-version=${{ steps.gitversion.outputs.assemblySemVer }}" >> "$GITHUB_OUTPUT"
+            echo "file-version=${{ steps.gitversion.outputs.assemblySemFileVer }}" >> "$GITHUB_OUTPUT"
+            echo "informational-version=${{ steps.gitversion.outputs.informationalVersion }}" >> "$GITHUB_OUTPUT"
             echo "version-source=gitversion" >> "$GITHUB_OUTPUT"
           fi
         shell: bash
