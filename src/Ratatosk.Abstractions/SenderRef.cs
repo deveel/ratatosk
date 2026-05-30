@@ -22,7 +22,7 @@ namespace Ratatosk
     /// due to an unknown endpoint type.
     /// </para>
     /// </remarks>
-    public class SenderRef : ISender
+    public class SenderRef : IUnresolvedSender
     {
         /// <summary>
         /// Constructs a new sender reference with the given name.
@@ -59,15 +59,6 @@ namespace Ratatosk
         /// Gets the logical name of the sender to resolve.
         /// </summary>
         public string SenderName { get; }
-
-        /// <inheritdoc />
-        public string Name => SenderName;
-
-        /// <inheritdoc />
-        public string DisplayName => SenderName;
-
-        /// <inheritdoc />
-        public bool IsActive => true;
 
         /// <inheritdoc />
         public EndpointType Type => EndpointType.Any;

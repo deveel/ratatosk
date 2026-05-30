@@ -9,6 +9,7 @@ namespace Ratatosk {
 	/// to send or receive messages
 	/// </summary>
 	[System.Text.Json.Serialization.JsonDerivedType(typeof(Endpoint), typeDiscriminator: "endpoint")]
+	[System.Text.Json.Serialization.JsonDerivedType(typeof(Sender), typeDiscriminator: "sender")]
 	[System.Text.Json.Serialization.JsonDerivedType(typeof(SenderRef), typeDiscriminator: "senderref")]
 	[System.Text.Json.Serialization.JsonDerivedType(typeof(PhoneSender), typeDiscriminator: "phone")]
 	[System.Text.Json.Serialization.JsonDerivedType(typeof(AlphaNumericSender), typeDiscriminator: "alphanumeric")]

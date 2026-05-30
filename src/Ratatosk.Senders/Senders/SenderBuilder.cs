@@ -6,14 +6,14 @@
 namespace Ratatosk
 {
     /// <summary>
-    /// Builds a <see cref="SenderEntity"/> instance using a fluent API.
+    /// Builds a <see cref="Sender"/> instance using a fluent API.
     /// </summary>
     public class SenderBuilder
     {
         private string? _name;
         private string? _displayName;
         private string? _address;
-        private string? _endpointType;
+        private EndpointType? _endpointType;
         private bool _isActive = true;
 
         /// <summary>
@@ -50,24 +50,13 @@ namespace Ratatosk
         }
 
         /// <summary>
-        /// Sets the endpoint type of the sender from an <see cref="EndpointType"/> enum.
+        /// Sets the endpoint type of the sender.
         /// </summary>
         /// <param name="type">The endpoint type.</param>
         /// <returns>This builder instance.</returns>
         public SenderBuilder WithEndpointType(EndpointType type)
         {
-            _endpointType = type.ToString();
-            return this;
-        }
-
-        /// <summary>
-        /// Sets the endpoint type of the sender from a string.
-        /// </summary>
-        /// <param name="endpointType">The endpoint type string.</param>
-        /// <returns>This builder instance.</returns>
-        public SenderBuilder WithEndpointType(string endpointType)
-        {
-            _endpointType = endpointType;
+            _endpointType = type;
             return this;
         }
 
@@ -78,30 +67,27 @@ namespace Ratatosk
         /// <c>true</c> if the sender is active; otherwise <c>false</c>.
         /// </param>
         /// <returns>This builder instance.</returns>
-        public SenderBuilder AsActive(bool isActive)
+        public SenderBuilder AsActive(bool isActive = true)
         {
             _isActive = isActive;
             return this;
         }
 
         /// <summary>
-        /// Builds the <see cref="SenderEntity"/> with the configured values.
+        /// Builds the <see cref="Sender"/> with the configured values.
         /// </summary>
         /// <returns>
-        /// A new <see cref="SenderEntity"/> instance.
+        /// A new <see cref="Sender"/> instance.
         /// </returns>
-        public SenderEntity Build()
+        public Sender Build()
         {
-            return new SenderEntity
+            return new Sender
             {
-                Id = Guid.NewGuid().ToString(),
                 Name = _name ?? throw new InvalidOperationException("The sender name is required."),
                 DisplayName = _displayName ?? _name ?? "Unknown",
                 Address = _address ?? throw new InvalidOperationException("The address is required."),
                 EndpointType = _endpointType ?? throw new InvalidOperationException("The endpoint type is required."),
-                IsActive = _isActive,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsActive = _isActive
             };
         }
     }

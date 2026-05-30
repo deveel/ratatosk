@@ -270,10 +270,10 @@ namespace Ratatosk
 			{
 				Id = _id,
 				Sender = _sender != null
-					? (_sender is ISender s ? s : new Endpoint(_sender.Type, _sender.Address))
+					? (_sender is ISender s ? s : _sender is IUnresolvedSender u ? u : new Endpoint(_sender.Type, _sender.Address))
 					: null,
 				Receiver = _receiver != null
-					? (_receiver is ISender r ? r : new Endpoint(_receiver.Type, _receiver.Address))
+					? (_receiver is ISender r ? r : _receiver is IUnresolvedSender v ? v : new Endpoint(_receiver.Type, _receiver.Address))
 					: null,
 				Content = _content != null ? MessageContent.Create(_content) : null,
 				Properties = _properties?.ToDictionary(x => x.Key, x => x.Value)

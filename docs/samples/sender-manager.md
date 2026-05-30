@@ -1,6 +1,6 @@
 # Sender Manager Sample
 
-Demonstrates sender identity management via an ASP.NET Core Web API. The sample uses `ISenderRegistry` backed by `SenderManager` and an in-memory store to provide full CRUD over sender identities, and shows how those identities integrate with the messaging pipeline.
+Demonstrates sender identity management via an ASP.NET Core Web API. The sample uses `ISenderRepository<Sender>` backed by `SenderManager<Sender>` and an in-memory store to provide full CRUD over sender identities, and shows how those identities integrate with the messaging pipeline.
 
 ## What it shows
 
@@ -41,7 +41,7 @@ Content-Type: application/json
   "name": "marketing",
   "displayName": "Marketing Team",
   "address": "marketing@example.com",
-  "endpointType": "email",
+  "endpointType": "EmailAddress",
   "isActive": true
 }
 ```
@@ -60,7 +60,7 @@ Content-Type: application/json
 }
 ```
 
-The `SenderRef` is resolved by the connector at send time — the API never queries the registry manually.
+The `SenderRef` is resolved by the connector at send time — the API never queries the repository manually.
 
 ### Send a message using an inline endpoint
 
@@ -70,13 +70,13 @@ Content-Type: application/json
 
 {
   "channel": "sendgrid",
-  "sender": { "$type": "email", "emailAddress": "direct@example.com", "displayName": "Direct" },
+  "sender": { "$type": "email", "address": "direct@example.com", "name": "Direct", "displayName": "Direct", "isActive": true },
   "receiverAddress": "user@example.com",
   "text": "Hello from an inline sender!"
 }
 ```
 
-Available `$type` values: `endpoint`, `senderref`, `email`, `phone`, `alphanumeric`, `bot`.
+Available `$type` values: `endpoint`, `sender`, `senderref`, `email`, `phone`, `alphanumeric`, `bot`.
 
 ## How resolution works
 
@@ -85,7 +85,7 @@ The sample never resolves the sender in the API handler. It passes a `SenderRef`
 1. `MessageBuilder.From(sender)` sets `Message.Sender` to the `SenderRef`
 2. `IMessagingClient.SendAsync("sendgrid", message)` delegates to the connector
 3. `ChannelConnectorBase.SendMessageAsync` calls `ResolveSenderAsync`
-4. `SenderResolver` looks up the name in the registry (via cache → `SenderManager` → `InMemorySenderStore`)
+4. `SenderResolver` looks up the name in the repository (via cache → `ISenderRepository<Sender>` → `InMemorySenderStore`)
 5. The resolved sender replaces the `SenderRef` on the message before validation and dispatch
 
 ## Configuration

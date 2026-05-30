@@ -19,19 +19,19 @@ namespace Ratatosk
         /// An optional logical name for the sender. If not provided,
         /// the phone number is used as the name.
         /// </param>
-        /// <param name="isActive">Whether the sender is initially active.</param>
         /// <param name="displayName">
         /// An optional human-readable display name. If not provided,
         /// the logical name is used.
         /// </param>
-        public PhoneSender(string phoneNumber, string? name = null, bool isActive = true, string? displayName = null)
+        /// <param name="isActive">Whether the sender is initially active.</param>
+        public PhoneSender(string phoneNumber, string? name = null, string? displayName = null, bool isActive = true)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(phoneNumber, nameof(phoneNumber));
 
             PhoneNumber = phoneNumber;
             Name = name ?? phoneNumber;
-            IsActive = isActive;
             DisplayName = displayName ?? Name;
+            IsActive = isActive;
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ static partial class LoggerExtensions
     public static partial void LogSenderNotFoundInRegistry(this ILogger logger, string senderName);
 
     [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "No sender found for endpoint '{Address}' (type: {EndpointType}).")]
-    public static partial void LogNoSenderFoundForEndpoint(this ILogger logger, string address, string endpointType);
+    public static partial void LogNoSenderFoundForEndpoint(this ILogger logger, string address, EndpointType endpointType);
 
     [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "Sender '{SenderName}' found but is inactive.")]
     public static partial void LogSenderFoundButInactive(this ILogger logger, string senderName);

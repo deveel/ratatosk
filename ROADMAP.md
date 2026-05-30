@@ -246,13 +246,16 @@ A new `IInteractiveContent` interface and concrete content types covering the mo
 
 > *"Who a message comes from is as important as what it says."*
 
-#### The Problem Today
+#### What We Built
 
-Every provider has a different answer to the question "who is this message from?" — a phone number, a short code, an alphanumeric sender ID, an email address, a bot identity. There is no shared model for sender identity in the framework: each connector encodes its sender configuration differently within its `ConnectionSettings`, with no common interface, no shared validation, and no way for application code to reason about senders independently of a specific provider.
+A generic sender identity system that decouples message composition from sender configuration:
 
-#### What We Are Building
-
-An `ISenderIdentity` interface covering all sender identity types used across A2P messaging: `PhoneNumberSenderIdentity` (long code, short code, toll-free), `AlphanumericSenderIdentity` (branded sender names), `EmailSenderIdentity` (address + display name), and `BotSenderIdentity` (page/bot identifier for chat platforms). One or more identities are registered in the channel schema; the connector resolves and validates the correct sender at send time, supporting pools of sender identities (e.g. multiple virtual numbers per connector) with a configurable selection strategy.
+- **`ISender`** — common interface for all sender types (`PhoneSender`, `EmailSender`, `AlphaNumericSender`, `BotSender`, `Sender`)
+- **`IUnresolvedSender`** — marker interface for `SenderRef`, which carries a logical name resolved at send time
+- **`ISenderRepository<TSender>`** — generic repository extending Kista's `IRepository<TSender>`, allowing custom storage-bound entity types
+- **`ISenderResolver`** — resolves `IUnresolvedSender` references to concrete `ISender` instances via the repository, with caching
+- **`ISenderConfigurationRegistry`** — per-connector sender configuration (default senders, cache settings)
+- **`SenderBuilder`** — fluent API for constructing `Sender` instances, decoupled from persistence metadata
 
 #### Benefits
 
@@ -260,6 +263,7 @@ An `ISenderIdentity` interface covering all sender identity types used across A2
 - Applications can configure and validate sender identity independently of provider-specific settings
 - Sender pools (regional numbers, multiple virtual numbers) are managed by the framework, not by the application
 - Invalid or unsupported identity types are caught at configuration time, not at first send
+- Per-connector sender configuration allows different defaults and cache settings per channel
 
 
 ---

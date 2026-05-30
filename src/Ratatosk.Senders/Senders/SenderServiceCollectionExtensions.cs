@@ -3,8 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
-using Kista;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -17,38 +15,38 @@ namespace Ratatosk
     public static class SenderServiceCollectionExtensions
     {
         /// <summary>
-        /// Registers the sender identity services (cache, registry, resolver,
-        /// selector, and validator) in the service collection.
+        /// Registers the sender identity services (cache, registry, resolver)
+        /// in the service collection.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <returns>The service collection for chaining.</returns>
         public static IServiceCollection AddSenders(this IServiceCollection services)
         {
             services.TryAddSingleton<ISenderCache>(sp => new InMemorySenderCache(TimeSpan.FromMinutes(5)));
-            services.TryAddSingleton<ISenderSelector, FirstMatchSenderSelector>();
-            services.TryAddScoped<IEntityValidator<SenderEntity>, SenderValidator>();
 
-            services.TryAddScoped<ISenderRegistry, SenderManager>();
-            services.TryAddScoped<SenderManager>();
-
+            services.TryAddScoped<ISenderRepository<ISender>, SenderManager<ISender>>();
             services.TryAddScoped<ISenderResolver, SenderResolver>();
 
             return services;
         }
 
         /// <summary>
-        /// Registers a custom store for sender entities.
+        /// Registers a custom repository for sender entities.
         /// </summary>
-        /// <typeparam name="TStore">
-        /// The type of the repository that implements <see cref="IRepository{T}"/>
-        /// for <see cref="SenderEntity"/>.
+        /// <typeparam name="TRepository">
+        /// The type of the repository that implements <see cref="ISenderRepository{TSender}"/>
+        /// for the specified sender type.
+        /// </typeparam>
+        /// <typeparam name="TSender">
+        /// The type of sender entity.
         /// </typeparam>
         /// <param name="services">The service collection.</param>
         /// <returns>The service collection for chaining.</returns>
-        public static IServiceCollection AddSenderStore<TStore>(this IServiceCollection services)
-            where TStore : class, IRepository<SenderEntity>
+        public static IServiceCollection AddSenderRepository<TRepository, TSender>(this IServiceCollection services)
+            where TRepository : class, ISenderRepository<TSender>
+            where TSender : class, ISender
         {
-            services.TryAddScoped<IRepository<SenderEntity>, TStore>();
+            services.TryAddScoped<ISenderRepository<TSender>, TRepository>();
             return services;
         }
     }

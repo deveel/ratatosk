@@ -9,7 +9,7 @@ namespace Ratatosk
 {
     /// <summary>
     /// An in-memory implementation of <see cref="ISenderCache"/> that
-    /// stores sender entities in a concurrent dictionary.
+    /// stores senders in a concurrent dictionary.
     /// </summary>
     public class InMemorySenderCache : ISenderCache
     {
@@ -28,23 +28,23 @@ namespace Ratatosk
         }
 
         /// <inheritdoc />
-        public ValueTask<SenderEntity?> GetByNameAsync(string senderName, CancellationToken cancellationToken = default)
+        public ValueTask<ISender?> GetByNameAsync(string senderName, CancellationToken cancellationToken = default)
         {
             if (_cache.TryGetValue(senderName, out var entry))
             {
                 if (entry.ExpiresAt > DateTime.UtcNow)
                 {
-                    return ValueTask.FromResult<SenderEntity?>(entry.Entity);
+                    return ValueTask.FromResult<ISender?>(entry.Sender);
                 }
 
                 _cache.TryRemove(senderName, out _);
             }
 
-            return ValueTask.FromResult<SenderEntity?>(null);
+            return ValueTask.FromResult<ISender?>(null);
         }
 
         /// <inheritdoc />
-        public ValueTask SetByNameAsync(string senderName, SenderEntity sender, TimeSpan? ttl = null, CancellationToken cancellationToken = default)
+        public ValueTask SetByNameAsync(string senderName, ISender sender, TimeSpan? ttl = null, CancellationToken cancellationToken = default)
         {
             var expiresAt = ttl.HasValue
                 ? DateTime.UtcNow.Add(ttl.Value)
@@ -65,12 +65,12 @@ namespace Ratatosk
 
         private class CacheEntry
         {
-            public SenderEntity Entity { get; }
+            public ISender Sender { get; }
             public DateTime ExpiresAt { get; }
 
-            public CacheEntry(SenderEntity entity, DateTime expiresAt)
+            public CacheEntry(ISender sender, DateTime expiresAt)
             {
-                Entity = entity;
+                Sender = sender;
                 ExpiresAt = expiresAt;
             }
         }

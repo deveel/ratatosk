@@ -24,10 +24,10 @@ namespace Ratatosk {
 		public Message(IMessage message) {
 			Id = message.Id;
 			Sender = message.Sender != null
-				? (message.Sender is ISender sender ? sender : new Endpoint(message.Sender))
+				? (message.Sender is ISender sender ? sender : message.Sender is IUnresolvedSender unresolved ? unresolved : new Endpoint(message.Sender))
 				: null;
 			Receiver = message.Receiver != null
-				? (message.Receiver is ISender isender ? isender : new Endpoint(message.Receiver))
+				? (message.Receiver is ISender isender ? isender : message.Receiver is IUnresolvedSender unres ? unres : new Endpoint(message.Receiver))
 				: null;
 			Content = MessageContent.Create(message.Content);
 			Properties = message.Properties?.ToDictionary(x => x.Key, x => new MessageProperty(x.Value));

@@ -105,7 +105,7 @@ Beyond `Endpoint`, the framework provides specialised sender types that implemen
 
 #### SenderRef — identity reference
 
-`SenderRef` carries a logical name that the connector resolves at send time. The resolution flows through `ISenderResolver` → `ISenderRegistry` → `SenderManager` → repository, letting you decouple message composition from sender configuration.
+`SenderRef` carries a logical name that the connector resolves at send time. The resolution flows through `ISenderResolver` → `ISenderRepository<Sender>` → repository, letting you decouple message composition from sender configuration.
 
 ```csharp
 // Creates a SenderRef that will be resolved when the message is sent

@@ -19,19 +19,19 @@ namespace Ratatosk
         /// An optional logical name for the sender. If not provided,
         /// the brand name is used.
         /// </param>
-        /// <param name="isActive">Whether the sender is initially active.</param>
         /// <param name="displayName">
         /// An optional human-readable display name. If not provided,
         /// the logical name is used.
         /// </param>
-        public AlphaNumericSender(string brandName, string? name = null, bool isActive = true, string? displayName = null)
+        /// <param name="isActive">Whether the sender is initially active.</param>
+        public AlphaNumericSender(string brandName, string? name = null, string? displayName = null, bool isActive = true)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(brandName, nameof(brandName));
 
             BrandName = brandName;
             Name = name ?? brandName;
-            IsActive = isActive;
             DisplayName = displayName ?? Name;
+            IsActive = isActive;
         }
 
         /// <summary>

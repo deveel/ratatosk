@@ -16,7 +16,7 @@ public class SenderSerializationTests
     [Fact]
     public void Should_RoundTripPhoneSender_When_SerializedAsIEndpoint()
     {
-        var sender = new PhoneSender("+1234567890", name: "my-phone", isActive: true, displayName: "My Phone");
+        var sender = new PhoneSender("+1234567890", name: "my-phone", displayName: "My Phone", isActive: true);
 
         var json = JsonSerializer.Serialize<IEndpoint>(sender, _jsonOptions);
         var deserialized = JsonSerializer.Deserialize<IEndpoint>(json, _jsonOptions);
@@ -47,7 +47,7 @@ public class SenderSerializationTests
     [Fact]
     public void Should_RoundTripAlphaNumericSender_When_SerializedAsIEndpoint()
     {
-        var sender = new AlphaNumericSender("MyBrand", name: "brand", isActive: false, displayName: "My Brand");
+        var sender = new AlphaNumericSender("MyBrand", name: "brand", displayName: "My Brand", isActive: false);
 
         var json = JsonSerializer.Serialize<IEndpoint>(sender, _jsonOptions);
         var deserialized = JsonSerializer.Deserialize<IEndpoint>(json, _jsonOptions);
@@ -65,7 +65,7 @@ public class SenderSerializationTests
     [Fact]
     public void Should_RoundTripEmailSender_When_SerializedAsIEndpoint()
     {
-        var sender = new EmailSender("test@example.com", displayName: "Test User", name: "my-email", isActive: false);
+        var sender = new EmailSender("test@example.com", name: "my-email", displayName: "Test User", isActive: false);
 
         var json = JsonSerializer.Serialize<IEndpoint>(sender, _jsonOptions);
         var deserialized = JsonSerializer.Deserialize<IEndpoint>(json, _jsonOptions);
@@ -82,7 +82,7 @@ public class SenderSerializationTests
     [Fact]
     public void Should_RoundTripBotSender_When_SerializedAsIEndpoint()
     {
-        var sender = new BotSender("bot-123", name: "my-bot", isActive: true, displayName: "My Bot");
+        var sender = new BotSender("bot-123", name: "my-bot", displayName: "My Bot", isActive: true);
 
         var json = JsonSerializer.Serialize<IEndpoint>(sender, _jsonOptions);
         var deserialized = JsonSerializer.Deserialize<IEndpoint>(json, _jsonOptions);
@@ -108,8 +108,6 @@ public class SenderSerializationTests
         Assert.IsType<SenderRef>(deserialized);
         var senderRef = (SenderRef)deserialized!;
         Assert.Equal("my-sender", senderRef.SenderName);
-        Assert.Equal("my-sender", senderRef.Name);
-        Assert.True(senderRef.IsActive);
         Assert.Equal(EndpointType.Any, senderRef.Type);
     }
 
@@ -228,7 +226,7 @@ public class SenderSerializationTests
     [Fact]
     public void Should_DeserializeEmailSender_When_KnownJson()
     {
-        var json = """{"$type":"email","address":"test@example.com","displayName":"Test User","name":"my-email","isActive":false}""";
+        var json = """{"$type":"email","address":"test@example.com","name":"my-email","displayName":"Test User","isActive":false}""";
 
         var result = JsonSerializer.Deserialize<IEndpoint>(json, _jsonOptions);
 

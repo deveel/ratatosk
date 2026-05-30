@@ -4,94 +4,100 @@
 //
 
 using Kista;
-using Kista.Caching;
-
-using Microsoft.Extensions.Logging;
 
 namespace Ratatosk
 {
     /// <summary>
     /// Manages sender identities using an underlying repository and
-    /// implements <see cref="ISenderRegistry"/>.
+    /// implements <see cref="ISenderRepository{TSender}"/>.
     /// </summary>
-    public class SenderManager : EntityManager<SenderEntity>, ISenderRegistry
+    /// <typeparam name="TSender">
+    /// The type of sender entity, which must implement <see cref="ISender"/>.
+    /// </typeparam>
+    public class SenderManager<TSender> : ISenderRepository<TSender>
+        where TSender : class, ISender
     {
+        private readonly IRepository<TSender> _repository;
+
         /// <summary>
-        /// Constructs the manager with the given dependencies.
+        /// Constructs the manager with the given repository.
         /// </summary>
         /// <param name="repository">
         /// The repository used to persist sender entities.
         /// </param>
-        /// <param name="validator">
-        /// An optional validator for sender entities.
-        /// </param>
-        /// <param name="cache">
-        /// An optional entity cache.
-        /// </param>
-        /// <param name="systemTime">
-        /// An optional system time provider.
-        /// </param>
-        /// <param name="errorFactory">
-        /// An optional operation error factory.
-        /// </param>
-        /// <param name="serviceProvider">
-        /// An optional service provider.
-        /// </param>
-        /// <param name="loggerFactory">
-        /// An optional logger factory.
-        /// </param>
-        public SenderManager(
-            IRepository<SenderEntity> repository,
-            IEntityValidator<SenderEntity>? validator = null,
-            IEntityCache<SenderEntity>? cache = null,
-            ISystemTime? systemTime = null,
-            IOperationErrorFactory<SenderEntity>? errorFactory = null,
-            IServiceProvider? serviceProvider = null,
-            ILoggerFactory? loggerFactory = null)
-            : base(repository, validator, cache, systemTime, errorFactory, serviceProvider, loggerFactory)
+        public SenderManager(IRepository<TSender> repository)
         {
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         /// <inheritdoc />
-        public async Task<SenderEntity?> FindByNameAsync(string name, CancellationToken cancellationToken = default)
+        public object? GetEntityKey(TSender entity) => _repository.GetEntityKey(entity);
+
+        /// <inheritdoc />
+        public async ValueTask AddAsync(TSender entity, CancellationToken cancellationToken = default)
+            => await _repository.AddAsync(entity, cancellationToken);
+
+        /// <inheritdoc />
+        public async ValueTask AddRangeAsync(IEnumerable<TSender> entities, CancellationToken cancellationToken = default)
+            => await _repository.AddRangeAsync(entities, cancellationToken);
+
+        /// <inheritdoc />
+        public async ValueTask<bool> UpdateAsync(TSender entity, CancellationToken cancellationToken = default)
+            => await _repository.UpdateAsync(entity, cancellationToken);
+
+        /// <inheritdoc />
+        public async ValueTask<bool> RemoveAsync(TSender entity, CancellationToken cancellationToken = default)
+            => await _repository.RemoveAsync(entity, cancellationToken);
+
+        /// <inheritdoc />
+        public async ValueTask RemoveRangeAsync(IEnumerable<TSender> entities, CancellationToken cancellationToken = default)
+            => await _repository.RemoveRangeAsync(entities, cancellationToken);
+
+        /// <inheritdoc />
+        public async ValueTask<TSender?> FindAsync(object key, CancellationToken cancellationToken = default)
+            => await _repository.FindAsync(key, cancellationToken);
+
+        /// <inheritdoc />
+        public async Task<TSender?> FindByNameAsync(string name, CancellationToken cancellationToken = default)
         {
-            return await FindFirstAsync(e => e.Name == name, cancellationToken);
+            if (_repository is IQueryableRepository<TSender> queryable)
+            {
+                return queryable.AsQueryable()
+                    .FirstOrDefault(s => s.Name == name);
+            }
+
+            throw new InvalidOperationException(
+                $"The underlying repository must implement {nameof(IQueryableRepository<TSender>)} " +
+                $"to support {nameof(FindByNameAsync)}.");
         }
 
         /// <inheritdoc />
-        public async Task<SenderEntity?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<TSender?> FindByEndpointAsync(string address, EndpointType endpointType, CancellationToken cancellationToken = default)
         {
-            return await FindAsync(id, cancellationToken);
+            if (_repository is IQueryableRepository<TSender> queryable)
+            {
+                return queryable.AsQueryable()
+                    .FirstOrDefault(s => s.Address == address && s.Type == endpointType);
+            }
+
+            throw new InvalidOperationException(
+                $"The underlying repository must implement {nameof(IQueryableRepository<TSender>)} " +
+                $"to support {nameof(FindByEndpointAsync)}.");
         }
 
         /// <inheritdoc />
-        public async Task<SenderEntity?> FindByEndpointAsync(string address, string endpointType, CancellationToken cancellationToken = default)
+        public async Task<IList<TSender>> GetAllActiveAsync(CancellationToken cancellationToken = default)
         {
-            return await FindFirstAsync(e => e.Address == address && e.EndpointType == endpointType, cancellationToken);
-        }
+            if (_repository is IQueryableRepository<TSender> queryable)
+            {
+                return queryable.AsQueryable()
+                    .Where(s => s.IsActive)
+                    .ToList();
+            }
 
-        /// <inheritdoc />
-        public async Task<IList<SenderEntity>> GetAllAsync(CancellationToken cancellationToken = default)
-        {
-            return (await FindAllAsync(cancellationToken: cancellationToken)).ToList();
-        }
-
-        /// <inheritdoc />
-        public async Task<OperationResult<SenderEntity>> CreateAsync(SenderEntity sender, CancellationToken cancellationToken = default)
-        {
-            return await AddAsync(sender, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public async Task<OperationResult<SenderEntity>> UpdateAsync(SenderEntity sender, CancellationToken cancellationToken = default)
-        {
-            return await UpdateAsync(sender, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public async Task<OperationResult<bool>> DeleteAsync(SenderEntity sender, CancellationToken cancellationToken = default)
-        {
-            return await RemoveAsync(sender, cancellationToken);
+            throw new InvalidOperationException(
+                $"The underlying repository must implement {nameof(IQueryableRepository<TSender>)} " +
+                $"to support {nameof(GetAllActiveAsync)}.");
         }
     }
 }

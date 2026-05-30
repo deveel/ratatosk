@@ -54,8 +54,8 @@ Those are application-level concerns, so you can choose your own architecture.
 | `Ratatosk.Firebase` | Firebase Cloud Messaging push for device tokens and topics, with batch sends and dry-run mode. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Firebase.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Firebase/) |
 | `Ratatosk.Facebook` | Facebook Messenger Page-based messaging with text, media, quick replies, and webhook inbound. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Facebook.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Facebook/) |
 | `Ratatosk.Telegram` | Telegram bot messaging with rich text, media, locations, and webhook-based updates. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Telegram.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Telegram/) |
-| `Ratatosk.Senders` | Sender identity infrastructure: `ISenderRegistry` → `SenderManager`, `ISenderResolver`, cache, selector strategies, `MessageBuilder.FromSender()` extension. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders/) |
-| `Ratatosk.Senders.InMemory` | In-memory `IRepository<SenderEntity>` for development and testing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.InMemory.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders.InMemory/) |
+| `Ratatosk.Senders` | Sender identity infrastructure: `ISenderRepository<TSender>`, `ISenderResolver`, cache, per-connector configuration, `MessageBuilder.FromSender()` extension. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders/) |
+| `Ratatosk.Senders.InMemory` | In-memory `IRepository<Sender>` for development and testing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.InMemory.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders.InMemory/) |
 
 ## Quick example
 

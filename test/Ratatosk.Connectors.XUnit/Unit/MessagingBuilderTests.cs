@@ -5,6 +5,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Ratatosk.XUnit
 {
@@ -218,6 +219,135 @@ namespace Ratatosk.XUnit
 
 			Assert.NotNull(connector);
 			Assert.Equal("CustomFactory", connector.CreatedBy);
+		}
+
+		// ── WithSenders configuration ─────────────────────────────────────────
+
+		[Fact]
+		public void Should_ThrowArgumentNullException_When_WithSendersWithNullConfigure()
+		{
+			var services = CreateServices();
+
+			Assert.Throws<ArgumentNullException>(() =>
+				services.AddMessaging()
+					.AddConnector<TestConnector>(cfg => cfg
+						.WithSenders(null!)));
+		}
+
+		[Fact]
+		public void Should_ReturnBuilder_When_WithSendersIsCalled()
+		{
+			var services = CreateServices();
+			var messagingBuilder = services.AddMessaging();
+
+			var result = messagingBuilder.AddConnector<TestConnector>(cfg => cfg
+				.WithSenders(_ => { }));
+
+			Assert.Same(messagingBuilder, result);
+		}
+
+		[Fact]
+		public void Should_RegisterSenderInfrastructure_When_WithSendersIsCalled()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(_ => { }));
+
+			Assert.Contains(services, d => d.ServiceType == typeof(ISenderCache));
+			Assert.Contains(services, d => d.ServiceType == typeof(ISenderRepository<ISender>));
+			Assert.Contains(services, d => d.ServiceType == typeof(ISenderResolver));
+		}
+
+		[Fact]
+		public void Should_RegisterConnectorConfiguration_When_WithSendersIsCalled()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(s => s
+						.WithDefault(d => d
+							.WithName("default-sender")
+							.WithAddress("default@example.com")
+							.WithEndpointType(EndpointType.EmailAddress))));
+
+			var provider = services.BuildServiceProvider();
+			var optionsMonitor = provider.GetRequiredService<IOptionsMonitor<SenderConnectorOptions>>();
+			var options = optionsMonitor.Get(typeof(TestConnector).FullName!);
+
+			Assert.NotNull(options);
+			Assert.NotNull(options.DefaultSender);
+			Assert.Equal("default-sender", options.DefaultSender.Name);
+			Assert.Equal("default@example.com", options.DefaultSender.Address);
+			Assert.Equal(EndpointType.EmailAddress, options.DefaultSender.Type);
+		}
+
+		[Fact]
+		public void Should_RegisterNullConfiguration_When_WithSendersWithEmptyConfigure()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(_ => { }));
+
+			var provider = services.BuildServiceProvider();
+			var optionsMonitor = provider.GetRequiredService<IOptionsMonitor<SenderConnectorOptions>>();
+			var options = optionsMonitor.Get(typeof(TestConnector).FullName!);
+
+			Assert.NotNull(options);
+			Assert.Null(options.DefaultSender);
+			Assert.Null(options.Cache);
+			Assert.Null(options.CacheTtl);
+		}
+
+		[Fact]
+		public void Should_RegisterCustomCache_When_WithSendersWithCache()
+		{
+			var customCache = new InMemorySenderCache(TimeSpan.FromMinutes(15));
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(s => s
+						.WithCache(customCache)
+						.WithCacheTtl(TimeSpan.FromMinutes(30))));
+
+			var provider = services.BuildServiceProvider();
+			var optionsMonitor = provider.GetRequiredService<IOptionsMonitor<SenderConnectorOptions>>();
+			var options = optionsMonitor.Get(typeof(TestConnector).FullName!);
+
+			Assert.NotNull(options);
+			Assert.Same(customCache, options.Cache);
+			Assert.Equal(TimeSpan.FromMinutes(30), options.CacheTtl);
+		}
+
+		[Fact]
+		public void Should_RegisterDifferentConfigurations_When_WithSendersCalledOnMultipleConnectors()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(s => s
+						.WithDefault(d => d
+							.WithName("test-sender")
+							.WithAddress("test@example.com")
+							.WithEndpointType(EndpointType.EmailAddress))))
+				.AddConnector<AnotherTestConnector>(cfg => cfg
+					.WithSenders(s => s
+						.WithDefault(d => d
+							.WithName("another-sender")
+							.WithAddress("+15551234567")
+							.WithEndpointType(EndpointType.PhoneNumber))));
+
+			var provider = services.BuildServiceProvider();
+			var optionsMonitor = provider.GetRequiredService<IOptionsMonitor<SenderConnectorOptions>>();
+
+			var testOptions = optionsMonitor.Get(typeof(TestConnector).FullName!);
+			var anotherOptions = optionsMonitor.Get(typeof(AnotherTestConnector).FullName!);
+
+			Assert.NotNull(testOptions);
+			Assert.NotNull(anotherOptions);
+			Assert.Equal("test-sender", testOptions.DefaultSender!.Name);
+			Assert.Equal("another-sender", anotherOptions.DefaultSender!.Name);
 		}
 
 		// ── Test connector types ──────────────────────────────────────────────

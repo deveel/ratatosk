@@ -173,11 +173,11 @@ namespace Ratatosk
         // ── Sender configuration ──────────────────────────────────────────────
 
         /// <summary>
-        /// Configures sender resolution for this connector, including
-        /// a default sender and selection strategy.
+        /// Configures sender resolution for this connector using a delegate,
+        /// then returns to this builder for continued configuration.
         /// </summary>
         /// <param name="configure">
-        /// An action to configure the sender connector builder.
+        /// An action to configure the sender registration builder.
         /// </param>
         /// <returns>
         /// Returns the current builder instance to allow chaining.
@@ -186,16 +186,28 @@ namespace Ratatosk
         /// Thrown if <paramref name="configure"/> is <c>null</c>.
         /// </exception>
         public ChannelConnectorBuilder<TConnector> WithSenders(
-            Action<SenderConnectorBuilder<TConnector>> configure)
+            Action<SenderRegistrationBuilder<TConnector>> configure)
         {
             ArgumentNullException.ThrowIfNull(configure, nameof(configure));
 
-            var senderBuilder = new SenderConnectorBuilder<TConnector>();
+            var senderBuilder = new SenderRegistrationBuilder<TConnector>(this, MessagingBuilder);
             configure(senderBuilder);
-
-            MessagingBuilder.AddSenders();
+            senderBuilder.Done();
 
             return this;
+        }
+
+        /// <summary>
+        /// Begins configuring sender resolution for this connector.
+        /// Call <see cref="SenderRegistrationBuilder{TConnector}.Done"/> to
+        /// return to this builder for continued configuration.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="SenderRegistrationBuilder{TConnector}"/> for configuring senders.
+        /// </returns>
+        public SenderRegistrationBuilder<TConnector> WithSenders()
+        {
+            return new SenderRegistrationBuilder<TConnector>(this, MessagingBuilder);
         }
 
         // ── Factory override ───────────────────────────────────────────────────

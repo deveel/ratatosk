@@ -1,4 +1,4 @@
-namespace Ratatosk;
+namespace Ratatosk.Senders;
 
 [Trait("Category", "Unit")]
 [Trait("Layer", "Domain")]
@@ -6,9 +6,9 @@ namespace Ratatosk;
 public class SenderBuilderTests
 {
     [Fact]
-    public void Should_BuildEntity_When_AllPropertiesSet()
+    public void Should_BuildSender_When_AllPropertiesSet()
     {
-        var entity = new SenderBuilder()
+        var sender = new SenderBuilder()
             .WithName("test-sender")
             .WithDisplayName("Test Sender")
             .WithAddress("+1234567890")
@@ -16,14 +16,11 @@ public class SenderBuilderTests
             .AsActive(true)
             .Build();
 
-        Assert.Equal("test-sender", entity.Name);
-        Assert.Equal("Test Sender", entity.DisplayName);
-        Assert.Equal("+1234567890", entity.Address);
-        Assert.Equal("PhoneNumber", entity.EndpointType);
-        Assert.True(entity.IsActive);
-        Assert.NotNull(entity.Id);
-        Assert.NotNull(entity.CreatedAt);
-        Assert.NotNull(entity.UpdatedAt);
+        Assert.Equal("test-sender", sender.Name);
+        Assert.Equal("Test Sender", sender.DisplayName);
+        Assert.Equal("+1234567890", sender.Address);
+        Assert.Equal(EndpointType.PhoneNumber, sender.EndpointType);
+        Assert.True(sender.IsActive);
     }
 
     [Fact]
@@ -59,43 +56,31 @@ public class SenderBuilderTests
     [Fact]
     public void Should_DefaultDisplayNameToName_When_NotSet()
     {
-        var entity = new SenderBuilder()
+        var sender = new SenderBuilder()
             .WithName("test-sender")
             .WithAddress("+1234567890")
             .WithEndpointType(EndpointType.PhoneNumber)
             .Build();
 
-        Assert.Equal("test-sender", entity.DisplayName);
+        Assert.Equal("test-sender", sender.DisplayName);
     }
 
     [Fact]
     public void Should_BeActiveByDefault()
     {
-        var entity = new SenderBuilder()
+        var sender = new SenderBuilder()
             .WithName("test-sender")
             .WithAddress("+1234567890")
             .WithEndpointType(EndpointType.PhoneNumber)
             .Build();
 
-        Assert.True(entity.IsActive);
-    }
-
-    [Fact]
-    public void Should_SupportEndpointTypeAsString()
-    {
-        var entity = new SenderBuilder()
-            .WithName("test-sender")
-            .WithAddress("test@example.com")
-            .WithEndpointType("email")
-            .Build();
-
-        Assert.Equal("email", entity.EndpointType);
+        Assert.True(sender.IsActive);
     }
 
     [Fact]
     public void Should_SupportChaining()
     {
-        var entity = new SenderBuilder()
+        var sender = new SenderBuilder()
             .WithName("test")
             .WithDisplayName("Test")
             .WithAddress("addr")
@@ -103,6 +88,31 @@ public class SenderBuilderTests
             .AsActive(false)
             .Build();
 
-        Assert.False(entity.IsActive);
+        Assert.False(sender.IsActive);
+    }
+
+    [Fact]
+    public void Should_NotSetId_When_Built()
+    {
+        var sender = new SenderBuilder()
+            .WithName("test-sender")
+            .WithAddress("+1234567890")
+            .WithEndpointType(EndpointType.PhoneNumber)
+            .Build();
+
+        Assert.Equal(string.Empty, sender.Id);
+    }
+
+    [Fact]
+    public void Should_NotSetTimestamps_When_Built()
+    {
+        var sender = new SenderBuilder()
+            .WithName("test-sender")
+            .WithAddress("+1234567890")
+            .WithEndpointType(EndpointType.PhoneNumber)
+            .Build();
+
+        Assert.Null(sender.CreatedAt);
+        Assert.Null(sender.UpdatedAt);
     }
 }

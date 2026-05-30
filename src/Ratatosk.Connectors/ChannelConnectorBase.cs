@@ -1110,10 +1110,10 @@ namespace Ratatosk
             if (_senderResolver == null)
                 return;
 
-            if (message.Sender is not ISender sender)
+            if (message.Sender is not IEndpoint endpoint)
                 return;
 
-            var resolved = await _senderResolver.ResolveSenderAsync(sender, cancellationToken);
+            var resolved = await _senderResolver.ResolveSenderAsync(endpoint, cancellationToken);
 
             if (resolved != null && message is Message msg)
             {

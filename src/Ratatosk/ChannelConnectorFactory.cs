@@ -4,6 +4,7 @@
 //
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using System.Collections.Concurrent;
 using System.Reflection;
@@ -82,13 +83,59 @@ namespace Ratatosk
             if (_pool.TryGetValue(key, out var pooled) && pooled.IsReusable)
                 return pooled;
 
+            // Create a per-connector sender resolver if sender services are registered.
+            var senderResolver = CreateSenderResolver(settings);
+
             // Create a new instance, then conditionally store it.
-            var instance = ActivatorUtilities.CreateInstance<TConnector>(_serviceProvider, effectiveSchema, settings);
+            var instance = senderResolver != null
+                ? ActivatorUtilities.CreateInstance<TConnector>(_serviceProvider, effectiveSchema, settings, senderResolver)
+                : ActivatorUtilities.CreateInstance<TConnector>(_serviceProvider, effectiveSchema, settings);
 
             if (instance.IsReusable)
                 return _pool.GetOrAdd(key, instance);
 
             return instance;
+        }
+
+        private ISenderResolver? CreateSenderResolver(ConnectionSettings settings)
+        {
+            var repository = _serviceProvider.GetService<ISenderRepository<ISender>>();
+            if (repository == null)
+                return null;
+
+            var defaultCache = _serviceProvider.GetService<ISenderCache>();
+            if (defaultCache == null)
+                return null;
+
+            var optionsMonitor = _serviceProvider.GetService<IOptionsMonitor<SenderConnectorOptions>>();
+            var connectorOptions = optionsMonitor?.Get(typeof(TConnector).FullName!);
+            var cache = connectorOptions?.Cache ?? defaultCache;
+
+            // ConnectionSettings (per operation/session) overrides SenderConnectorOptions (build-time default).
+            var defaultSender = BuildDefaultSenderFromSettings(settings)
+                ?? connectorOptions?.DefaultSender;
+
+            return new SenderResolver(repository, cache, defaultSender);
+        }
+
+        private static ISender? BuildDefaultSenderFromSettings(ConnectionSettings settings)
+        {
+            var name = settings.GetParameter<string>("DefaultSenderName");
+            var address = settings.GetParameter<string>("DefaultSenderAddress");
+            var typeStr = settings.GetParameter<string>("DefaultSenderType");
+
+            if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(address))
+                return null;
+
+            var type = Enum.TryParse<EndpointType>(typeStr, ignoreCase: true, out var parsed)
+                ? parsed
+                : EndpointType.Any;
+
+            return new SenderBuilder()
+                .WithName(name ?? "default")
+                .WithAddress(address ?? string.Empty)
+                .WithEndpointType(type)
+                .Build();
         }
 
         private IChannelSchema DiscoverSchema()

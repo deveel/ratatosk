@@ -1,13 +1,13 @@
 # Sender Manager Sample
 
-Demonstrates sender identity management in Ratatosk via an ASP.NET Core Web API. The sample uses `ISenderRegistry` backed by `SenderManager` and an in-memory store (`InMemorySenderStore`) to provide full CRUD over sender identities, and shows how those identities integrate with the messaging pipeline.
+Demonstrates sender identity management in Ratatosk via an ASP.NET Core Web API. The sample uses `ISenderRepository<Sender>` backed by `SenderManager<Sender>` and an in-memory store (`InMemorySenderStore`) to provide full CRUD over sender identities, and shows how those identities integrate with the messaging pipeline.
 
 ## Features Demonstrated
 
 - **Sender CRUD** — create, read, update, and delete sender identities via REST endpoints
 - **Polymorphic sender resolution** — the `POST /api/messages` endpoint accepts both inline endpoints and sender identity references through the `IEndpoint` interface's `[JsonDerivedType]` support
-- **Sender identity resolution** — when a `SenderRef` (`$type: "senderref"`) is used, the connector resolves it at send time via `ISenderResolver` → `SenderManager` → `InMemorySenderStore`
-- **Messaging pipeline integration** — messages built with `MessageBuilder.From(IEndpoint)` preserve `ISender` instances through `Build()`, and the connector calls `ResolveSenderAsync` before sending
+- **Sender identity resolution** — when a `SenderRef` (`$type: "senderref"`) is used, the connector resolves it at send time via `ISenderResolver` → `ISenderRepository<Sender>` → `InMemorySenderStore`
+- **Messaging pipeline integration** — messages built with `MessageBuilder.From(IEndpoint)` preserve `ISender` and `IUnresolvedSender` instances through `Build()`, and the connector calls `ResolveSenderAsync` before sending
 
 ## Prerequisites
 
@@ -20,12 +20,12 @@ The sample references the following Ratatosk packages:
 
 | Package | Purpose |
 |---------|---------|
-| `Ratatosk.Abstractions` | Core types (`IEndpoint`, `Message`, `MessageBuilder`, `ISender` et al.) |
-| `Ratatosk.Connector.Abstractions` | Connector interfaces (`IChannelConnector`, `IMessageIdGenerator`) |
+| `Ratatosk.Abstractions` | Core types (`IEndpoint`, `IUnresolvedSender`, `Message`, `MessageBuilder`, `ISender`, `Sender` et al.) |
+| `Ratatosk.Connector.Abstractions` | Connector interfaces (`IChannelConnector`, `IMessageIdGenerator`, `ISenderResolver`) |
 | `Ratatosk.Connectors` | `ChannelConnectorBase` — base class that handles sender resolution in `SendMessageAsync` |
 | `Ratatosk` | `MessagingBuilder`, `IMessagingClient`, `MessagingClient` — DI registration and client API |
-| `Ratatosk.Senders` | `SenderManager`, `ISenderRegistry`, `SenderResolver`, `MessageBuilderExtensions.FromSender()` |
-| `Ratatosk.Senders.InMemory` | `InMemorySenderStore` + `AddSenderInMemoryStore()` — in-memory `IRepository<SenderEntity>` |
+| `Ratatosk.Senders` | `ISenderRepository<TSender>`, `SenderManager<TSender>`, `SenderResolver`, `MessageBuilderExtensions.FromSender()` |
+| `Ratatosk.Senders.InMemory` | `InMemorySenderStore` + `AddSenderInMemoryStore()` — in-memory `IRepository<Sender>` |
 | `Ratatosk.Sendgrid` | SendGrid email connector used as the sample channel |
 
 NuGet dependencies: `Deveel.Results` (operation result types), `Microsoft.Extensions.Http`, `Microsoft.Extensions.Logging.Console`.
@@ -85,7 +85,7 @@ Content-Type: application/json
   "name": "marketing",
   "displayName": "Marketing Team",
   "address": "marketing@example.com",
-  "endpointType": "email",
+  "endpointType": "EmailAddress",
   "isActive": true
 }
 ```
@@ -126,7 +126,7 @@ Content-Type: application/json
 }
 ```
 
-The `SenderRef` is resolved by the connector via `ISenderResolver` → `ISenderRegistry` before the message is sent.
+The `SenderRef` is resolved by the connector via `ISenderResolver` → `ISenderRepository<Sender>` before the message is sent.
 
 #### Using an Inline Endpoint
 
@@ -150,20 +150,20 @@ Content-Type: application/json
 
 {
   "channel": "sendgrid",
-  "sender": { "$type": "email", "emailAddress": "noreply@example.com", "displayName": "No Reply" },
+  "sender": { "$type": "email", "address": "noreply@example.com", "name": "No Reply", "displayName": "No Reply", "isActive": true },
   "receiverAddress": "user@example.com",
   "text": "Hello!"
 }
 ```
 
-Available `$type` values: `endpoint`, `senderref`, `email`, `phone`, `alphanumeric`, `bot`.
+Available `$type` values: `endpoint`, `sender`, `senderref`, `email`, `phone`, `alphanumeric`, `bot`.
 
 ## How It Works
 
-1. `AddMessaging().AddClient().AddSenders()` registers all sender infrastructure including `ISenderRegistry` → `SenderManager`, `ISenderResolver` → `SenderResolver`, and the sender cache/selector/validator
-2. `AddSenderInMemoryStore()` provides an in-memory `IRepository<SenderEntity>` seeded with sample senders
+1. `AddMessaging().AddClient().AddSenders()` registers all sender infrastructure including `ISenderRepository<Sender>` → `SenderManager<Sender>`, `ISenderResolver` → `SenderResolver`, and the sender cache
+2. `AddSenderInMemoryStore()` provides an in-memory `IRepository<Sender>` seeded with sample senders
 3. `MessageBuilder.From(request.Sender!)` sets the sender on the message. If `Sender` is a `SenderRef`, it carries a logical name instead of a concrete address
 4. `IMessagingClient.SendAsync("sendgrid", message)` delegates to the SendGrid connector
-5. `ChannelConnectorBase.SendMessageAsync` calls `ResolveSenderAsync` which uses `ISenderResolver` to resolve `SenderRef` instances from the registry. The resolved sender replaces the `SenderRef` on the message before validation and dispatch
+5. `ChannelConnectorBase.SendMessageAsync` calls `ResolveSenderAsync` which uses `ISenderResolver` to resolve `SenderRef` instances from the repository. The resolved sender replaces the `SenderRef` on the message before validation and dispatch
 
 This means the API never needs to resolve the sender itself — it passes a reference and lets the connector pipeline handle it naturally.

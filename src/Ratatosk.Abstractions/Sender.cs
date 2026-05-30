@@ -6,12 +6,18 @@
 namespace Ratatosk
 {
     /// <summary>
-    /// Represents a persisted sender identity entity stored in the registry.
+    /// Represents a concrete sender identity that can be persisted and resolved
+    /// by the sender registry.
     /// </summary>
-    public class SenderEntity
+    /// <remarks>
+    /// This is the default concrete implementation of <see cref="ISender"/> used
+    /// by the in-memory sender repository. Custom repository implementations may
+    /// use their own entity types that implement <see cref="ISender"/>.
+    /// </remarks>
+    public class Sender : ISender
     {
         /// <summary>
-        /// Gets or sets the unique identifier of the sender entity.
+        /// Gets or sets the unique identifier of the sender.
         /// </summary>
         public string Id { get; set; } = string.Empty;
 
@@ -31,25 +37,26 @@ namespace Ratatosk
         public string Address { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the endpoint type of the sender as a string
-        /// (e.g. <c>email</c>, <c>phone</c>, <c>label</c>).
+        /// Gets or sets the endpoint type of the sender.
         /// </summary>
-        public string EndpointType { get; set; } = string.Empty;
+        public EndpointType EndpointType { get; set; } = EndpointType.Any;
 
         /// <summary>
-        /// Gets or sets whether the sender is active and can be
-        /// used to send messages.
+        /// Gets or sets whether the sender is active and can be used to send messages.
         /// </summary>
         public bool IsActive { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the date and time when the entity was created.
+        /// Gets or sets the date and time when the sender was created.
         /// </summary>
         public DateTime? CreatedAt { get; set; }
 
         /// <summary>
-        /// Gets or sets the date and time when the entity was last updated.
+        /// Gets or sets the date and time when the sender was last updated.
         /// </summary>
         public DateTime? UpdatedAt { get; set; }
+
+        /// <inheritdoc />
+        EndpointType IEndpoint.Type => EndpointType;
     }
 }

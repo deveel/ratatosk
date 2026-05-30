@@ -9,7 +9,8 @@ The sender identity system solves a common problem: **message composition should
 A sender is an `IEndpoint` that also carries identity semantics — it represents *who* the message is from, not just an address. The framework distinguishes between:
 
 - **Inline senders** — concrete sender details used directly on the message (`EmailSender`, `PhoneSender`, etc.). No resolution needed; the connector uses them as-is.
-- **Identity references** — a logical name (`SenderRef`) that the connector resolves at send time. The actual sender (address, display name, endpoint type) is looked up from a registry.
+- **Unresolved references** — a logical name (`SenderRef`) that the connector resolves at send time. The actual sender (address, display name, endpoint type) is looked up from a registry. `SenderRef` implements the `IUnresolvedSender` marker interface to signal that resolution is required.
+- **Plain endpoints** — an `Endpoint` with a type and address. These are not resolved; they pass through as-is.
 
 This separation lets you build and dispatch messages with a logical name like `"support"`, while the concrete "support@example.com" endpoint lives in the registry — changeable at runtime without touching message code.
 
@@ -20,26 +21,23 @@ When a message carrying a `SenderRef` reaches the connector, the framework resol
 ```
 SenderRef("support")
   → cache check (avoid repeated lookups)
-  → registry lookup by name
-  → selector picks best match (when multiple senders share a name)
-  → replace SenderRef with concrete sender on the message
+  → repository lookup by name
+  → replace SenderRef with concrete ISender on the message
   → validate against schema
   → send
 ```
 
 Resolution is automatic — the connector handles it. The API or service that builds the message never needs to query the registry.
 
-### Registry as the source of truth
+### Repository as the source of truth
 
-The registry persists sender entities (name, address, endpoint type, active flag). It decouples *who can send* from *how messages are built* — operations teams manage senders through CRUD, while developers reference them by name.
+The repository persists sender entities (name, address, endpoint type, active flag). It decouples *who can send* from *how messages are built* — operations teams manage senders through CRUD, while developers reference them by name.
+
+The repository interface `ISenderRepository<TSender>` extends Kista's `IRepository<TSender>`, inheriting all standard CRUD, pagination, and query capabilities. Custom implementations can use their own storage-bound entity types (e.g., `DbSender`, `MongoSender`) that implement `ISender`.
 
 ### Cache for performance
 
-Resolution results are cached by sender name with a configurable TTL (default 5 minutes). Frequent messages using the same `SenderRef` skip the registry lookup, reducing latency and load on the store.
-
-### Selector for disambiguation
-
-When multiple sender entities share the same logical name (e.g. different `EmailSender` entries for different channels), the selector picks one based on the message context — the channel, content type, and receiver endpoint.
+Resolution results are cached by sender name with a configurable TTL (default 5 minutes). Frequent messages using the same `SenderRef` skip the repository lookup, reducing latency and load on the store.
 
 ## Sender identity model
 
@@ -54,12 +52,13 @@ All sender types implement a common interface and carry an `EndpointType` tag th
 | `PhoneSender` | Phone number + optional display name | SMS from a branded phone number |
 | `AlphaNumericSender` | Alphanumeric ID (e.g. brand name) | SMS sender ID in regions that allow alphanumeric |
 | `BotSender` | Bot identifier | Chat bot (Telegram, Facebook) |
+| `Sender` | Concrete sender entity for the registry | Default entity type stored in the sender repository |
 
-**Identity references** — logical name, resolved at runtime:
+**Unresolved references** — logical name, resolved at runtime:
 
 | Type | Meaning | Typical use case |
 |------|---------|-----------------|
-| `SenderRef` | Logical name resolved via registry | Decoupled message composition |
+| `SenderRef` | Logical name resolved via repository | Decoupled message composition |
 
 ## Package and registration
 
@@ -97,62 +96,66 @@ builder.Services.AddSenderInMemoryStore(seedSenders);
 builder.Services.AddSenderEntityFrameworkStore<MyDbContext>();
 
 // Custom:
-builder.Services.AddSenderStore<MySenderStore>();
+builder.Services.AddSenderRepository<MySenderStore, MySender>();
 ```
 
 ## Managing senders
 
-### Creating sender entities
+### Creating senders
 
-`SenderBuilder` provides a fluent API for constructing sender entities:
+`SenderBuilder` provides a fluent API for constructing `Sender` instances:
 
 ```csharp
 var sender = new SenderBuilder()
     .WithName("support")
     .WithDisplayName("Customer Support")
     .WithAddress("support@example.com")
-    .WithEndpointType("email")
+    .WithEndpointType(EndpointType.EmailAddress)
     .AsActive(true)
     .Build();
 
-await registry.CreateAsync(sender);
+await repository.AddAsync(sender);
 ```
 
-Each entity carries: `Id` (auto-generated), `Name` (logical name used in `SenderRef`), `DisplayName`, `Address`, `EndpointType`, `IsActive`, `CreatedAt`, `UpdatedAt`.
+Each sender carries: `Name` (logical name used in `SenderRef`), `DisplayName`, `Address`, `EndpointType`, and `IsActive`. Persistence metadata (`Id`, `CreatedAt`, `UpdatedAt`) is set by the repository on save.
 
-### Registry CRUD
+### Repository CRUD
+
+The sender repository extends `IRepository<Sender>`, providing `FindAsync`, `AddAsync`, `UpdateAsync`, `RemoveAsync`, plus sender-specific methods:
 
 ```csharp
 public class SenderService
 {
-    private readonly ISenderRegistry _registry;
+    private readonly ISenderRepository<Sender> _repository;
 
-    public SenderService(ISenderRegistry registry) => _registry = registry;
+    public SenderService(ISenderRepository<Sender> repository) => _repository = repository;
 
-    public Task<IList<SenderEntity>> GetAll() => _registry.GetAllAsync();
+    public async Task<IList<Sender>> GetAll()
+        => (await _repository.FindAllAsync()).ToList();
 
-    public Task<SenderEntity?> FindByName(string name)
-        => _registry.FindByNameAsync(name);
+    public Task<Sender?> FindByName(string name)
+        => _repository.FindByNameAsync(name);
 
-    public async Task<SenderEntity> Create(string name, string address, string type)
+    public async Task<Sender> Create(string name, string address, EndpointType type)
     {
-        var result = await _registry.CreateAsync(
-            new SenderBuilder()
-                .WithName(name)
-                .WithAddress(address)
-                .WithEndpointType(type)
-                .Build());
-        return result.Value!;
+        var sender = new SenderBuilder()
+            .WithName(name)
+            .WithAddress(address)
+            .WithEndpointType(type)
+            .Build();
+
+        await _repository.AddAsync(sender);
+        return sender;
     }
 
-    public async Task Update(SenderEntity entity)
+    public async Task Update(Sender sender)
     {
-        entity.UpdatedAt = DateTime.UtcNow;
-        await _registry.UpdateAsync(entity);
+        sender.UpdatedAt = DateTime.UtcNow;
+        await _repository.UpdateAsync(sender);
     }
 
-    public Task Delete(SenderEntity entity)
-        => _registry.DeleteAsync(entity);
+    public Task Delete(Sender sender)
+        => _repository.RemoveAsync(sender);
 }
 ```
 
@@ -161,19 +164,27 @@ public class SenderService
 ```csharp
 builder.Services.AddSenderInMemoryStore(new[]
 {
-    new SenderBuilder()
-        .WithName("support")
-        .WithDisplayName("Customer Support")
-        .WithAddress("support@example.com")
-        .WithEndpointType("email")
-        .Build(),
+    new Sender
+    {
+        Id = "seed-support",
+        Name = "support",
+        DisplayName = "Customer Support",
+        Address = "support@example.com",
+        EndpointType = EndpointType.EmailAddress,
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    },
 
-    new SenderBuilder()
-        .WithName("sms-alerts")
-        .WithDisplayName("SMS Alert System")
-        .WithAddress("+15551234567")
-        .WithEndpointType("phone")
-        .Build()
+    new Sender
+    {
+        Id = "seed-sms-alerts",
+        Name = "sms-alerts",
+        DisplayName = "SMS Alert System",
+        Address = "+15551234567",
+        EndpointType = EndpointType.PhoneNumber,
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    }
 });
 ```
 
@@ -201,7 +212,7 @@ When the sender is known at message-construction time:
 
 ```csharp
 var message = new MessageBuilder()
-    .From(new EmailSender("noreply@example.com", "No Reply"))
+    .From(new EmailSender("noreply@example.com", name: "No Reply"))
     .ToEmail("user@example.com")
     .WithText("Hello!")
     .Build();
@@ -224,20 +235,6 @@ Content-Type: application/json
 The `$type` discriminator tells `System.Text.Json` which concrete endpoint type to deserialize. See the [message model](messaging-model.md#polymorphic-json-serialization) for the full list.
 
 ## Configuring resolution
-
-### Selector strategy
-
-Controls which sender is chosen when the registry returns multiple entities with the same name:
-
-| Strategy | Behaviour |
-|----------|-----------|
-| `FirstMatchSenderSelector` (default) | Returns the first active sender matching channel and endpoint type |
-| `RoundRobinSenderSelector` | Cycles through matching senders in round-robin order |
-| `ExplicitSenderSelector` | Requires an explicit sender name; fails if absent |
-
-```csharp
-builder.Services.AddSingleton<ISenderSelector, RoundRobinSenderSelector>();
-```
 
 ### Cache TTL
 
@@ -263,12 +260,14 @@ builder.Services.AddMessaging()
                 .WithName("default-sender")
                 .WithDisplayName("Default")
                 .WithAddress("default@example.com")
-                .WithEndpointType("email"))));
+                .WithEndpointType(EndpointType.EmailAddress))));
 ```
+
+Each connector type can have its own sender configuration, stored in `ISenderConfigurationRegistry`. The factory creates a per-connector `SenderResolver` instance that uses the connector-specific cache and default sender settings.
 
 ## End-to-end summary
 
 1. **Register** — `services.AddSenders()` + storage backend
-2. **Manage** — create/update/delete senders in the registry via `ISenderRegistry`
+2. **Manage** — create/update/delete senders via `ISenderRepository<Sender>`
 3. **Reference** — build messages with `MessageBuilder.FromSender(name)`
 4. **Send** — the connector resolves the name, validates, and dispatches

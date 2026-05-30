@@ -11,13 +11,14 @@ using Kista;
 namespace Ratatosk
 {
     /// <summary>
-    /// Validates <see cref="SenderEntity"/> instances before they are
-    /// persisted by the <see cref="SenderManager"/>.
+    /// Validates <see cref="ISender"/> instances before they are
+    /// persisted by the <see cref="SenderManager{TSender}"/>.
     /// </summary>
-    public class SenderValidator : IEntityValidator<SenderEntity>
+    public class SenderValidator<TSender> : IEntityValidator<TSender>
+        where TSender : class, ISender
     {
         /// <inheritdoc />
-        public async IAsyncEnumerable<ValidationResult> ValidateAsync(EntityManager<SenderEntity> manager, SenderEntity entity, [EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<ValidationResult> ValidateAsync(EntityManager<TSender> manager, TSender entity, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(entity.Name))
                 yield return new ValidationResult("The sender name is required.", new[] { nameof(entity.Name) });
@@ -25,8 +26,8 @@ namespace Ratatosk
             if (string.IsNullOrWhiteSpace(entity.DisplayName))
                 yield return new ValidationResult("The display name is required.", new[] { nameof(entity.DisplayName) });
 
-            if (string.IsNullOrWhiteSpace(entity.EndpointType))
-                yield return new ValidationResult("The endpoint type is required.", new[] { nameof(entity.EndpointType) });
+            if (entity.Type == EndpointType.Any)
+                yield return new ValidationResult("The endpoint type is required.", new[] { "EndpointType" });
 
             if (string.IsNullOrWhiteSpace(entity.Address))
                 yield return new ValidationResult("The address is required.", new[] { nameof(entity.Address) });

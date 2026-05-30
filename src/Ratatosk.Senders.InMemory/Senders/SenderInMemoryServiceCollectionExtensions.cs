@@ -18,14 +18,14 @@ namespace Ratatosk
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <param name="seedSenders">
-        /// An optional list of sender entities to seed the store.
+        /// An optional list of senders to seed the store.
         /// </param>
         /// <returns>The service collection for chaining.</returns>
         public static IServiceCollection AddSenderInMemoryStore(
             this IServiceCollection services,
-            IEnumerable<SenderEntity>? seedSenders = null)
+            IEnumerable<Sender>? seedSenders = null)
         {
-            services.AddSingleton<IRepository<SenderEntity>>(
+            services.AddSingleton<IRepository<Sender>>(
                 sp => new InMemorySenderStore(seedSenders));
 
             return services;

@@ -9,18 +9,18 @@ namespace Ratatosk
 {
     /// <summary>
     /// An in-memory implementation of <see cref="IRepository{T}"/>
-    /// for <see cref="SenderEntity"/>, useful for testing and development.
+    /// for <see cref="Sender"/>, useful for testing and development.
     /// </summary>
-    public class InMemorySenderStore : InMemoryRepository<SenderEntity>
+    public class InMemorySenderStore : InMemoryRepository<Sender>
     {
         /// <summary>
         /// Constructs the store with an optional initial set of senders.
         /// </summary>
         /// <param name="senders">
-        /// An optional initial set of sender entities to seed the store.
+        /// An optional initial set of senders to seed the store.
         /// </param>
-        public InMemorySenderStore(IEnumerable<SenderEntity>? senders = null)
-            : base(senders ?? Array.Empty<SenderEntity>(), new ReflectionFieldMapper<SenderEntity>())
+        public InMemorySenderStore(IEnumerable<Sender>? senders = null)
+            : base(senders ?? Array.Empty<Sender>(), new ReflectionFieldMapper<Sender>())
         {
         }
 
@@ -30,10 +30,10 @@ namespace Ratatosk
         /// </summary>
         /// <param name="fieldMapper">The field mapper for querying.</param>
         /// <param name="senders">
-        /// An optional initial set of sender entities to seed the store.
+        /// An optional initial set of senders to seed the store.
         /// </param>
-        public InMemorySenderStore(IFieldMapper<SenderEntity> fieldMapper, IEnumerable<SenderEntity>? senders = null)
-            : base(senders ?? Array.Empty<SenderEntity>(), fieldMapper)
+        public InMemorySenderStore(IFieldMapper<Sender> fieldMapper, IEnumerable<Sender>? senders = null)
+            : base(senders ?? Array.Empty<Sender>(), fieldMapper)
         {
         }
     }

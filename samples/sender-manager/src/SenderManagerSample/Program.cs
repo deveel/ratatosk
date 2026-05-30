@@ -20,33 +20,33 @@ builder.Services.AddMessaging()
 
 builder.Services.AddSenderInMemoryStore(new[]
 {
-    new SenderEntity
+    new Sender
     {
         Id = "seed-support",
         Name = "support",
         DisplayName = "Customer Support",
         Address = "support@example.com",
-        EndpointType = "email",
+        EndpointType = EndpointType.EmailAddress,
         IsActive = true,
         CreatedAt = DateTime.UtcNow
     },
-    new SenderEntity
+    new Sender
     {
         Id = "seed-notifications",
         Name = "notifications",
         DisplayName = "Notification Service",
         Address = "noreply@example.com",
-        EndpointType = "email",
+        EndpointType = EndpointType.EmailAddress,
         IsActive = true,
         CreatedAt = DateTime.UtcNow
     },
-    new SenderEntity
+    new Sender
     {
         Id = "seed-sms-alerts",
         Name = "sms-alerts",
         DisplayName = "SMS Alert System",
         Address = "+15551234567",
-        EndpointType = "phone",
+        EndpointType = EndpointType.PhoneNumber,
         IsActive = true,
         CreatedAt = DateTime.UtcNow
     }
@@ -56,68 +56,62 @@ var app = builder.Build();
 
 var senderGroup = app.MapGroup("/api/senders");
 
-senderGroup.MapGet("/", async (ISenderRegistry registry) =>
+senderGroup.MapGet("/", async (ISenderRepository<Sender> repository) =>
 {
-    var senders = await registry.GetAllAsync();
+    var senders = await repository.FindAllAsync();
     return Results.Ok(senders.Select(MapToResponse));
 });
 
-senderGroup.MapGet("/{id}", async (string id, ISenderRegistry registry) =>
+senderGroup.MapGet("/{id}", async (string id, ISenderRepository<Sender> repository) =>
 {
-    var sender = await registry.FindByIdAsync(id);
+    var sender = await repository.FindAsync(id);
     return sender is not null
         ? Results.Ok(MapToResponse(sender))
         : Results.NotFound(new { Error = $"Sender '{id}' not found" });
 });
 
-senderGroup.MapPost("/", async (CreateSenderRequest request, ISenderRegistry registry) =>
+senderGroup.MapPost("/", async (CreateSenderRequest request, ISenderRepository<Sender> repository) =>
 {
-    var entity = new SenderEntity
+    var sender = new Sender
     {
         Id = Guid.NewGuid().ToString("N"),
         Name = request.Name,
         DisplayName = request.DisplayName,
         Address = request.Address,
-        EndpointType = request.EndpointType,
+        EndpointType = Endpoint.ParseEndpointType(request.EndpointType),
         IsActive = request.IsActive,
         CreatedAt = DateTime.UtcNow
     };
 
-    var result = await registry.CreateAsync(entity);
-    if (!result.IsSuccess())
-        return Results.Problem(result.Error?.Message, statusCode: 400);
+    await repository.AddAsync(sender);
 
-    return Results.Created($"/api/senders/{result.Value!.Id}", MapToResponse(result.Value));
+    return Results.Created($"/api/senders/{sender.Id}", MapToResponse(sender));
 });
 
-senderGroup.MapPut("/{id}", async (string id, UpdateSenderRequest request, ISenderRegistry registry) =>
+senderGroup.MapPut("/{id}", async (string id, UpdateSenderRequest request, ISenderRepository<Sender> repository) =>
 {
-    var existing = await registry.FindByIdAsync(id);
+    var existing = await repository.FindAsync(id);
     if (existing is null)
         return Results.NotFound(new { Error = $"Sender '{id}' not found" });
 
     if (request.DisplayName is not null) existing.DisplayName = request.DisplayName;
     if (request.Address is not null) existing.Address = request.Address;
-    if (request.EndpointType is not null) existing.EndpointType = request.EndpointType;
+    if (request.EndpointType is not null) existing.EndpointType = Endpoint.ParseEndpointType(request.EndpointType);
     if (request.IsActive.HasValue) existing.IsActive = request.IsActive.Value;
     existing.UpdatedAt = DateTime.UtcNow;
 
-    var result = await registry.UpdateAsync(existing);
-    if (!result.IsSuccess())
-        return Results.Problem(result.Error?.Message, statusCode: 400);
+    await repository.UpdateAsync(existing);
 
-    return Results.Ok(MapToResponse(result.Value!));
+    return Results.Ok(MapToResponse(existing));
 });
 
-senderGroup.MapDelete("/{id}", async (string id, ISenderRegistry registry) =>
+senderGroup.MapDelete("/{id}", async (string id, ISenderRepository<Sender> repository) =>
 {
-    var existing = await registry.FindByIdAsync(id);
+    var existing = await repository.FindAsync(id);
     if (existing is null)
         return Results.NotFound(new { Error = $"Sender '{id}' not found" });
 
-    var result = await registry.DeleteAsync(existing);
-    if (!result.IsSuccess())
-        return Results.Problem(result.Error?.Message, statusCode: 400);
+    await repository.RemoveAsync(existing);
 
     return Results.NoContent();
 });
@@ -160,17 +154,17 @@ app.MapGet("/", () => Results.Ok(new
 app.Run();
 
 /// <summary>
-/// Maps a <see cref="SenderEntity"/> to a <see cref="SenderResponse"/> DTO.
+/// Maps a <see cref="Sender"/> to a <see cref="SenderResponse"/> DTO.
 /// </summary>
-/// <param name="entity">The sender entity to map.</param>
-/// <returns>A <see cref="SenderResponse"/> representing the entity.</returns>
-static SenderResponse MapToResponse(SenderEntity entity) => new(
-    entity.Id,
-    entity.Name,
-    entity.DisplayName,
-    entity.Address,
-    entity.EndpointType,
-    entity.IsActive,
-    entity.CreatedAt,
-    entity.UpdatedAt
+/// <param name="sender">The sender to map.</param>
+/// <returns>A <see cref="SenderResponse"/> representing the sender.</returns>
+static SenderResponse MapToResponse(Sender sender) => new(
+    sender.Id,
+    sender.Name,
+    sender.DisplayName,
+    sender.Address,
+    sender.EndpointType.ToString(),
+    sender.IsActive,
+    sender.CreatedAt,
+    sender.UpdatedAt
 );

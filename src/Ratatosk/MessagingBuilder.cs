@@ -6,8 +6,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using System.Reflection;
-
 namespace Ratatosk
 {
     /// <summary>
@@ -18,7 +16,7 @@ namespace Ratatosk
     {
         internal MessagingBuilder(IServiceCollection services)
         {
-            ArgumentNullException.ThrowIfNull(services, nameof(services));
+            ArgumentNullException.ThrowIfNull(services);
             Services = services;
             services.TryAddSingleton<IChannelSchemaRegistry, ChannelSchemaRegistry>();
             services.TryAddSingleton<IMessageIdGenerator, DefaultMessageIdGenerator>();
@@ -29,14 +27,6 @@ namespace Ratatosk
         /// the messaging components.
         /// </summary>
         public IServiceCollection Services { get; }
-
-        /// <summary>
-        /// Gets the list of connector type registrations added via
-        /// <see cref="AddConnectorType{TConnector}(string)"/>, used at
-        /// resolution time to populate <see cref="ConnectorTypeCatalog"/>.
-        /// </summary>
-        internal List<(string Name, Type ConnectorType)> ConnectorTypeRegistrations { get; }
-            = new();
 
         // ── Unnamed connector registration ────────────────────────────────────
 
@@ -71,7 +61,7 @@ namespace Ratatosk
         /// </exception>
         public MessagingBuilder AddConnector(Type connectorType)
         {
-            ArgumentNullException.ThrowIfNull(connectorType, nameof(connectorType));
+            ArgumentNullException.ThrowIfNull(connectorType);
             EnsureValidConnectorType(connectorType);
 
             RegisterDefaultFactory(connectorType);
@@ -131,8 +121,8 @@ namespace Ratatosk
         public MessagingBuilder AddConnector<TConnector>(string connectorName, string connectionString)
             where TConnector : class, IChannelConnector
         {
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(connectorName, nameof(connectorName));
-            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString, nameof(connectionString));
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectorName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
             return AddConnector<TConnector>(connectorName, c => c.WithConnectionString(connectionString));
         }
 
@@ -272,7 +262,9 @@ namespace Ratatosk
             EnsureValidConnectorType(connectorType);
             RegisterDefaultFactory(connectorType);
 
-            ConnectorTypeRegistrations.Add((name, connectorType));
+            Services.AddSingleton(new ConnectorTypeRegistration(name, connectorType));
+            Services.AddKeyedSingleton<ConnectorTypeEntry>(name, new ConnectorTypeEntry(name, connectorType));
+            Services.TryAddSingleton<ConnectorTypeCatalog, ServiceProviderConnectorTypeCatalog>();
 
             return this;
         }
@@ -297,8 +289,8 @@ namespace Ratatosk
         // ── Sender identity services ──────────────────────────────────────────
 
         /// <summary>
-        /// Registers the sender identity services (cache, registry, resolver,
-        /// selector, and validator) into the messaging infrastructure.
+        /// Registers the sender identity services (configuration registry,
+        /// cache, repository, resolver) into the messaging infrastructure.
         /// </summary>
         /// <returns>
         /// Returns the current <see cref="MessagingBuilder"/> instance
@@ -306,8 +298,30 @@ namespace Ratatosk
         /// </returns>
         public MessagingBuilder AddSenders()
         {
-            Services.AddSenders();
+            Services.TryAddSingleton<ISenderCache>(sp => new InMemorySenderCache(TimeSpan.FromMinutes(5)));
+            Services.TryAddScoped<ISenderRepository<ISender>, SenderManager<ISender>>();
+            Services.TryAddScoped<ISenderResolver, SenderResolver>();
             return this;
+        }
+
+        /// <summary>
+        /// Registers a sender configuration for a specific connector type
+        /// using the named options pattern.
+        /// </summary>
+        /// <typeparam name="TConnector">
+        /// The connector type to associate the configuration with.
+        /// </typeparam>
+        /// <param name="options">The sender connector options.</param>
+        internal void RegisterSenderConfiguration<TConnector>(SenderConnectorOptions options)
+            where TConnector : IChannelConnector
+        {
+            Services.Configure<SenderConnectorOptions>(typeof(TConnector).FullName!, _ => { });
+            Services.PostConfigure<SenderConnectorOptions>(typeof(TConnector).FullName!, o =>
+            {
+                o.DefaultSender = options.DefaultSender;
+                o.Cache = options.Cache;
+                o.CacheTtl = options.CacheTtl;
+            });
         }
 
         // ── Message ID generator registration ─────────────────────────────────

@@ -7,78 +7,78 @@ namespace Ratatosk;
 [Trait("Feature", "SenderValidator")]
 public class SenderValidatorTests
 {
-    private static SenderEntity CreateValidEntity() => new()
+    private static Sender CreateValidSender() => new()
     {
         Id = Guid.NewGuid().ToString(),
         Name = "test-sender",
         DisplayName = "Test Sender",
         Address = "+1234567890",
-        EndpointType = "phone",
+        EndpointType = EndpointType.PhoneNumber,
         IsActive = true
     };
 
-    private static async Task<List<ValidationResult>> CollectResults(SenderEntity entity)
+    private static async Task<List<ValidationResult>> CollectResults(Sender sender)
     {
-        var validator = new SenderValidator();
+        var validator = new SenderValidator<Sender>();
         var results = new List<ValidationResult>();
-        await foreach (var r in validator.ValidateAsync(null!, entity, default))
+        await foreach (var r in validator.ValidateAsync(null!, sender, default))
             results.Add(r);
         return results;
     }
 
     [Fact]
-    public async Task Should_Pass_When_EntityIsValid()
+    public async Task Should_Pass_When_SenderIsValid()
     {
-        var results = await CollectResults(CreateValidEntity());
+        var results = await CollectResults(CreateValidSender());
         Assert.Empty(results);
     }
 
     [Fact]
     public async Task Should_Fail_When_NameIsEmpty()
     {
-        var entity = CreateValidEntity();
-        entity.Name = "";
+        var sender = CreateValidSender();
+        sender.Name = "";
 
-        var results = await CollectResults(entity);
+        var results = await CollectResults(sender);
         Assert.Contains(results, r => r.MemberNames.Contains("Name"));
     }
 
     [Fact]
     public async Task Should_Fail_When_DisplayNameIsEmpty()
     {
-        var entity = CreateValidEntity();
-        entity.DisplayName = "";
+        var sender = CreateValidSender();
+        sender.DisplayName = "";
 
-        var results = await CollectResults(entity);
+        var results = await CollectResults(sender);
         Assert.Contains(results, r => r.MemberNames.Contains("DisplayName"));
     }
 
     [Fact]
-    public async Task Should_Fail_When_EndpointTypeIsEmpty()
+    public async Task Should_Fail_When_EndpointTypeIsAny()
     {
-        var entity = CreateValidEntity();
-        entity.EndpointType = "";
+        var sender = CreateValidSender();
+        sender.EndpointType = EndpointType.Any;
 
-        var results = await CollectResults(entity);
+        var results = await CollectResults(sender);
         Assert.Contains(results, r => r.MemberNames.Contains("EndpointType"));
     }
 
     [Fact]
     public async Task Should_Fail_When_AddressIsEmpty()
     {
-        var entity = CreateValidEntity();
-        entity.Address = "";
+        var sender = CreateValidSender();
+        sender.Address = "";
 
-        var results = await CollectResults(entity);
+        var results = await CollectResults(sender);
         Assert.Contains(results, r => r.MemberNames.Contains("Address"));
     }
 
     [Fact]
     public async Task Should_ReturnMultipleErrors_When_MultipleFieldsInvalid()
     {
-        var entity = new SenderEntity();
+        var sender = new Sender();
 
-        var results = await CollectResults(entity);
+        var results = await CollectResults(sender);
         Assert.Contains(results, r => r.MemberNames.Contains("Name"));
         Assert.Contains(results, r => r.MemberNames.Contains("DisplayName"));
         Assert.Contains(results, r => r.MemberNames.Contains("EndpointType"));

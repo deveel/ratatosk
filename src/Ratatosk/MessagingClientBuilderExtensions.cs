@@ -12,18 +12,6 @@ namespace Ratatosk
     {
         private static void RegisterClientServices(MessagingBuilder builder)
         {
-            var registrations = builder.ConnectorTypeRegistrations.ToList();
-            if (registrations.Count > 0)
-            {
-                builder.Services.TryAddSingleton<ConnectorTypeCatalog>(sp =>
-                {
-                    var catalog = new ConnectorTypeCatalog();
-                    foreach (var (name, type) in registrations)
-                        catalog.Register(name, type);
-                    return catalog;
-                });
-            }
-
             builder.Services.TryAddSingleton<IChannelConnectorResolver, ServiceProviderConnectorResolver>();
         }
 
