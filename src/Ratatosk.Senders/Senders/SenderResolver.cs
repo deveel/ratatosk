@@ -6,7 +6,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Ratatosk
+namespace Ratatosk.Senders
 {
     /// <summary>
     /// Resolves sender identities from a repository, with optional caching

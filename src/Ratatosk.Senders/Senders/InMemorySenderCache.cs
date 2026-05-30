@@ -5,7 +5,7 @@
 
 using System.Collections.Concurrent;
 
-namespace Ratatosk
+namespace Ratatosk.Senders
 {
     /// <summary>
     /// An in-memory implementation of <see cref="ISenderCache"/> that

@@ -7,6 +7,8 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Ratatosk.Senders;
+
 namespace Ratatosk.XUnit
 {
 	[Trait("Category", "Unit")]

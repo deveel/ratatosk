@@ -1,6 +1,6 @@
 using Moq;
 
-namespace Ratatosk;
+namespace Ratatosk.Senders;
 
 [Trait("Category", "Unit")]
 [Trait("Layer", "Domain")]

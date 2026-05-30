@@ -6,7 +6,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Ratatosk
+namespace Ratatosk.Senders
 {
     /// <summary>
     /// Provides extension methods for registering sender identity services

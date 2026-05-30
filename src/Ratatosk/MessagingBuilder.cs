@@ -6,6 +6,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using Ratatosk.Senders;
+
 namespace Ratatosk
 {
     /// <summary>

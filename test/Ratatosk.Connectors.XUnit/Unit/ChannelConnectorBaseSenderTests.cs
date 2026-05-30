@@ -100,7 +100,7 @@ public class ChannelConnectorBaseSenderTests
             .FromSender("my-sender")
             .Build();
 
-        var result = await connector.SendMessageAsync(message, default);
+        var result = await connector.SendMessageAsync(message, TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess());
         Assert.Equal(1, stub.CallCount);

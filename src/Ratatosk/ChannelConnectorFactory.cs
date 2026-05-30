@@ -9,6 +9,8 @@ using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Reflection;
 
+using Ratatosk.Senders;
+
 namespace Ratatosk
 {
     /// <summary>

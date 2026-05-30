@@ -5,7 +5,7 @@
 
 using Kista;
 
-namespace Ratatosk
+namespace Ratatosk.Senders
 {
     /// <summary>
     /// Manages sender identities using an underlying repository and

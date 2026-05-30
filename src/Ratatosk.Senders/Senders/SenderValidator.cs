@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 using Kista;
 
-namespace Ratatosk
+namespace Ratatosk.Senders
 {
     /// <summary>
     /// Validates <see cref="ISender"/> instances before they are
@@ -18,7 +18,7 @@ namespace Ratatosk
         where TSender : class, ISender
     {
         /// <inheritdoc />
-        public async IAsyncEnumerable<ValidationResult> ValidateAsync(EntityManager<TSender> manager, TSender entity, [EnumeratorCancellation] CancellationToken cancellationToken)
+        public virtual async IAsyncEnumerable<ValidationResult> ValidateAsync(EntityManager<TSender> manager, TSender entity, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(entity.Name))
                 yield return new ValidationResult("The sender name is required.", new[] { nameof(entity.Name) });

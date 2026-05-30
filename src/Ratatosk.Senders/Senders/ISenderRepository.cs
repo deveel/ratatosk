@@ -5,7 +5,7 @@
 
 using Kista;
 
-namespace Ratatosk
+namespace Ratatosk.Senders
 {
     /// <summary>
     /// Defines the contract for a repository of sender identities.

@@ -5,7 +5,7 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace Ratatosk;
+namespace Ratatosk.Senders;
 
 static partial class LoggerExtensions
 {
