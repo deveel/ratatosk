@@ -105,8 +105,8 @@ Start from the docs home and follow the path that best matches what you are buil
   ([Channel schema](docs/channel-schema.md) -> [Connector implementation](docs/connector-implementation.md) -> [Installation](docs/installation.md))
 - **Validation-first integration** - Model endpoints, apply validation rules, and extend validation when channel-specific constraints grow.
   ([Message model](docs/messaging-model.md) -> [Message validation](docs/message-validation.md) -> [Channel schema](docs/channel-schema.md))
-- **Sender identity management** - Set up sender registries, resolution, and caching for decoupled sender configuration.
-  ([Sender management](docs/sender-management.md) -> [Message model](docs/messaging-model.md#sender-identities) -> [Sender Manager sample](docs/samples/sender-manager.md))
+- **Sender identity management** - Set up sender registries, define lifecycle rules, and understand runtime resolution and caching.
+  ([Sender management](docs/senders/sender-management.md) -> [Sender resolution](docs/senders/sender-resolution.md) -> [Sender Manager sample](docs/samples/sender-manager.md))
 
 
 ## Roadmap
@@ -137,7 +137,7 @@ Locks the public API and ships stable package releases with production-ready gua
 - [x] **API freeze and compatibility enforcement** - Prevent breaking API changes without a major version bump.
 - [x] **NuGet GA release** - Publish stable `Ratatosk.*` packages without prerelease suffixes.
 - [x] **Interactive content model** - Add cross-channel abstractions for buttons, quick replies, carousels, and lists.
-- [ ] **Sender identity model** - Provide typed sender identities for phone, email, and bot-based channels.
+- [x] **Sender identity model** - Provide typed sender identities for phone, email, and bot-based channels.
 
 ### v1.1.0 and beyond - Platform Expansion
 

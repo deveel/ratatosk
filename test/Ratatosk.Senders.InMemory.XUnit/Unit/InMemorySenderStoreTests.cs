@@ -12,7 +12,7 @@ public class InMemorySenderStoreTests
     {
         // Arrange
         var services = new ServiceCollection();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
         
         // Act
         builder.UseInMemoryStore();
@@ -30,7 +30,7 @@ public class InMemorySenderStoreTests
         // Arrange
         var services = new ServiceCollection();
         var builder = services.AddMessaging()
-            .AddSenders<SenderEntity>();
+            .AddSenders();
 
         // Act
         var result = builder.UseInMemoryStore();
@@ -51,7 +51,7 @@ public class InMemorySenderStoreTests
     {
         // Arrange
         var services = new ServiceCollection();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
         
         var seedSender = new SenderEntity
         {
@@ -68,9 +68,9 @@ public class InMemorySenderStoreTests
         // Assert
         var provider = services.BuildServiceProvider();
         var seedData = provider.GetService<IEnumerable<SenderEntity>>();
-        Assert.NotNull(seedData);
-        Assert.Single(seedData!);
-        Assert.Equal("seed-sender", seedData!.First().Name);
+        var seededSenders = Assert.IsAssignableFrom<IEnumerable<SenderEntity>>(seedData).ToList();
+        Assert.Single(seededSenders);
+        Assert.Equal("seed-sender", seededSenders[0].Name);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class InMemorySenderStoreTests
         var customTtl = TimeSpan.FromMinutes(10);
 
         // Act
-        var builder = services.AddMessaging().AddSenders<SenderEntity>()
+        services.AddMessaging().AddSenders()
             .ConfigureCacheOptions(opts => opts.DefaultTtl = customTtl)
             .UseInMemoryStore();
 

@@ -4,7 +4,7 @@ Demonstrates sender identity management via an ASP.NET Core Web API. The sample 
 
 ## What it shows
 
-- Registering sender infrastructure with `AddSenders<SenderEntity>()` and configuring the in-memory store via `UseInMemoryStore()` on the builder
+- Registering sender infrastructure with `AddSenders()` and configuring the in-memory store via `UseInMemoryStore()` on the builder
 - Creating, reading, updating, and deleting sender identities through REST endpoints
 - Sending messages with `SenderRef` — the connector resolves the identity at send time
 - Polymorphic sender input via `[JsonDerivedType]` on `IEndpoint`
@@ -88,7 +88,7 @@ The sample never resolves the sender in the API handler. It passes a `SenderRef`
 1. `MessageBuilder.From(sender)` sets `Message.Sender` to the `SenderRef`
 2. `IMessagingClient.SendAsync("sendgrid", message)` delegates to the connector
 3. `ChannelConnectorBase.SendMessageAsync` calls `ResolveSenderAsync`
-4. `SenderResolver<SenderEntity>` looks up the name in the repository (via cache → `ISenderRepository<SenderEntity>` → `InMemorySenderRepository`)
+4. `SenderResolver` looks up the name in the repository (via cache → `ISenderRepository<SenderEntity>` → `InMemorySenderRepository`)
 5. The resolved sender replaces the `SenderRef` on the message before validation and dispatch
 
 ## Configuration

@@ -232,35 +232,36 @@ namespace Ratatosk.XUnit
 		{
 			var services = CreateServices();
 			services.AddMessaging()
-				.AddSenders<SenderEntity>();
+				.AddSenders();
 
 			Assert.Contains(services, d => d.ServiceType == typeof(ISenderCache));
 		}
 
-		// ── AddSenders<TSender> ─────────────────────────────────────────────────
+		// ── AddSenders + Store Registration ─────────────────────────────────────
 
 		[Fact]
-		public void Should_RegisterSenderInfrastructure_When_AddSendersGenericIsCalled()
+		public void Should_RegisterTypedSenderInfrastructure_When_InMemoryStoreIsConfigured()
 		{
 			var services = CreateServices();
 			services.AddMessaging()
-				.AddSenders<SenderEntity>();
+				.AddSenders()
+				.UseInMemoryStore();
 
 			Assert.Contains(services, d => d.ServiceType == typeof(ISenderCache));
 			Assert.Contains(services, d => d.ServiceType == typeof(SenderManager<SenderEntity>));
 			Assert.Contains(services, d => d.ServiceType == typeof(ISenderResolver));
 		}
 
-		// ── Direct InMemory Repository Registration ────────────────────────────
+		// ── InMemory Store Registration ────────────────────────────────────────
 
 		[Fact]
-		public void Should_RegisterInMemoryStore_When_RepositoryIsAddedDirectly()
+		public void Should_RegisterInMemoryStore_When_UseInMemoryStoreIsCalled()
 		{
 			var services = CreateServices();
 
-			services.AddMessaging().AddSenders<SenderEntity>();
-			services.AddRepositoryContext()
-				.AddRepository<InMemorySenderRepository>();
+			services.AddMessaging()
+				.AddSenders()
+				.UseInMemoryStore();
 
 			var provider = services.BuildServiceProvider();
 			var repository = provider.GetRequiredService<ISenderRepository<SenderEntity>>();
@@ -282,9 +283,9 @@ namespace Ratatosk.XUnit
 
 			var services = CreateServices();
 			services.AddSingleton<IEnumerable<SenderEntity>>(new[] { seedSender });
-			services.AddMessaging().AddSenders<SenderEntity>();
-			services.AddRepositoryContext()
-				.AddRepository<InMemorySenderRepository>();
+			services.AddMessaging()
+				.AddSenders()
+				.UseInMemoryStore();
 
 			var provider = services.BuildServiceProvider();
 			var resolver = provider.GetRequiredService<ISenderResolver>();
@@ -301,7 +302,7 @@ namespace Ratatosk.XUnit
 		public void Should_RegisterCacheOptions_When_ConfiguredDirectly()
 		{
 			var services = CreateServices();
-			services.AddMessaging().AddSenders<SenderEntity>();
+			services.AddMessaging().AddSenders();
 			services.Configure<SenderCacheOptions>(opt => opt.DefaultTtl = TimeSpan.FromMinutes(15));
 
 			var provider = services.BuildServiceProvider();
@@ -316,7 +317,7 @@ namespace Ratatosk.XUnit
 			var customCache = new Mock<ISenderCache>().Object;
 			var services = CreateServices();
 			services.AddSingleton(customCache);
-			services.AddMessaging().AddSenders<SenderEntity>();
+			services.AddMessaging().AddSenders();
 
 			var provider = services.BuildServiceProvider();
 			var cache = provider.GetRequiredService<ISenderCache>();

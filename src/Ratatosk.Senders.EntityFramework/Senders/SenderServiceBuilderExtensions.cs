@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Ratatosk.Senders
 {
@@ -25,6 +26,10 @@ namespace Ratatosk.Senders
             builder.Services.AddLogging();
             builder.Services.AddRepositoryContext()
                 .AddRepository<EntitySenderRepository>();
+            builder.Services.TryAddScoped<ISenderValidator<DbSender>, SenderValidator<DbSender>>();
+            builder.Services.TryAddScoped<SenderManager<DbSender>>();
+            builder.Services.AddScoped<ISenderRepository<ISender>>(sp =>
+                new SenderRepositoryAdapter<DbSender>(sp.GetRequiredService<ISenderRepository<DbSender>>()));
 
             return builder;
         }

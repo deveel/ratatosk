@@ -160,7 +160,7 @@ Available `$type` values: `endpoint`, `sender`, `senderref`, `email`, `phone`, `
 
 ## How It Works
 
-1. `AddMessaging().AddClient().AddSenders<SenderEntity>(cfg => cfg.UseInMemoryStore(seedSenders))` registers cache, `SenderManager<SenderEntity>`, `ISenderResolver`, and the seeded in-memory store.
+1. `AddMessaging().AddClient().AddSenders(cfg => cfg.UseInMemoryStore(seedSenders))` registers cache, `SenderManager<SenderEntity>`, `ISenderResolver`, and the seeded in-memory store.
 2. `MessageBuilder.From(request.Sender!)` sets the sender on the message. If `Sender` is a `SenderRef`, it carries a logical name instead of a concrete address
 3. `IMessagingClient.SendAsync("sendgrid", message)` delegates to the SendGrid connector
 4. `ChannelConnectorBase.SendMessageAsync` calls `ResolveSenderAsync` which uses `ISenderResolver` to resolve `SenderRef` instances from the repository. The resolved sender replaces the `SenderRef` on the message before validation and dispatch

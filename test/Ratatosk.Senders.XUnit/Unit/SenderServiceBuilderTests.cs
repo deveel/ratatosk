@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ratatosk.Senders;
@@ -11,29 +10,30 @@ public class SenderServiceBuilderTests
     private static IServiceCollection CreateServices() => new ServiceCollection();
 
     [Fact]
-    public void Should_SenderTypeBeCorrect_When_AddSendersCalled()
+    public void Should_ServicesBeSame_When_AddSendersCalledWithoutType()
     {
         // Arrange
         var services = CreateServices();
 
         // Act
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
-
-        // Assert
-        Assert.Equal(typeof(SenderEntity), builder.SenderType);
-    }
-
-    [Fact]
-    public void Should_ServicesBeSame_When_AddSendersCalled()
-    {
-        // Arrange
-        var services = CreateServices();
-
-        // Act
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
 
         // Assert
         Assert.Same(services, builder.Services);
+    }
+
+    [Fact]
+    public void Should_Configure_When_AddSendersCalledWithoutTypeAndDelegate()
+    {
+        // Arrange
+        var services = CreateServices();
+        var configured = false;
+
+        // Act
+        services.AddMessaging().AddSenders(_ => configured = true);
+
+        // Assert
+        Assert.True(configured);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class SenderServiceBuilderTests
         var services = CreateServices();
 
         // Act
-        services.AddMessaging().AddSenders<SenderEntity>().WithCache<CustomSenderCache>();
+        services.AddMessaging().AddSenders().WithCache<CustomSenderCache>();
 
         // Assert
         var provider = services.BuildServiceProvider();
@@ -59,7 +59,7 @@ public class SenderServiceBuilderTests
         var customCache = new CustomSenderCache();
 
         // Act
-        services.AddMessaging().AddSenders<SenderEntity>().WithCache(_ => customCache);
+        services.AddMessaging().AddSenders().WithCache(_ => customCache);
 
         // Assert
         var provider = services.BuildServiceProvider();
@@ -72,10 +72,12 @@ public class SenderServiceBuilderTests
     {
         // Arrange
         var services = CreateServices();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => builder.WithCache((Func<IServiceProvider, ISenderCache>)null!));
+        Func<IServiceProvider, ISenderCache> factory = null!;
+
+        Assert.Throws<ArgumentNullException>(() => builder.WithCache(factory));
     }
 
     [Fact]
@@ -86,7 +88,7 @@ public class SenderServiceBuilderTests
         var customTtl = TimeSpan.FromMinutes(10);
 
         // Act
-        services.AddMessaging().AddSenders<SenderEntity>().ConfigureCacheOptions(opts => opts.DefaultTtl = customTtl);
+        services.AddMessaging().AddSenders().ConfigureCacheOptions(opts => opts.DefaultTtl = customTtl);
 
         // Assert
         var provider = services.BuildServiceProvider();
@@ -99,7 +101,7 @@ public class SenderServiceBuilderTests
     {
         // Arrange
         var services = CreateServices();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => builder.ConfigureCacheOptions(null!));
@@ -112,7 +114,7 @@ public class SenderServiceBuilderTests
         var services = CreateServices();
 
         // Act
-        services.AddMessaging().AddSenders<SenderEntity>().WithResolver<CustomSenderResolver>();
+        services.AddMessaging().AddSenders().WithResolver<CustomSenderResolver>();
 
         // Assert
         var provider = services.BuildServiceProvider();
@@ -129,7 +131,7 @@ public class SenderServiceBuilderTests
         var customResolver = new CustomSenderResolver();
 
         // Act
-        services.AddMessaging().AddSenders<SenderEntity>().WithResolver(_ => customResolver);
+        services.AddMessaging().AddSenders().WithResolver(_ => customResolver);
 
         // Assert
         var provider = services.BuildServiceProvider();
@@ -143,10 +145,12 @@ public class SenderServiceBuilderTests
     {
         // Arrange
         var services = CreateServices();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => builder.WithResolver((Func<IServiceProvider, ISenderResolver>)null!));
+        Func<IServiceProvider, ISenderResolver> factory = null!;
+
+        Assert.Throws<ArgumentNullException>(() => builder.WithResolver(factory));
     }
 
     [Fact]
@@ -154,7 +158,7 @@ public class SenderServiceBuilderTests
     {
         // Arrange
         var services = CreateServices();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
 
         // Act
         var result = builder.WithCache<CustomSenderCache>();
@@ -168,7 +172,7 @@ public class SenderServiceBuilderTests
     {
         // Arrange
         var services = CreateServices();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
 
         // Act
         var result = builder.WithCache(_ => new CustomSenderCache());
@@ -182,7 +186,7 @@ public class SenderServiceBuilderTests
     {
         // Arrange
         var services = CreateServices();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
 
         // Act
         var result = builder.WithResolver<CustomSenderResolver>();
@@ -196,7 +200,7 @@ public class SenderServiceBuilderTests
     {
         // Arrange
         var services = CreateServices();
-        var builder = services.AddMessaging().AddSenders<SenderEntity>();
+        var builder = services.AddMessaging().AddSenders();
 
         // Act
         var result = builder.WithResolver(_ => new CustomSenderResolver());

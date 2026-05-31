@@ -17,7 +17,7 @@ public class MessagingBuilderExtensionsTests
         var builder = services.AddMessaging();
 
         // Act
-        var result = builder.AddSenders<SenderEntity>();
+        var result = builder.AddSenders();
 
         // Assert
         Assert.NotNull(result);
@@ -32,7 +32,7 @@ public class MessagingBuilderExtensionsTests
         var builder = services.AddMessaging();
 
         // Act
-        var result = builder.AddSenders<SenderEntity>(b => { });
+        var result = builder.AddSenders(_ => { });
 
         // Assert
         Assert.Same(builder, result);
@@ -46,7 +46,7 @@ public class MessagingBuilderExtensionsTests
         var builder = services.AddMessaging();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => builder.AddSenders<SenderEntity>(null!));
+        Assert.Throws<ArgumentNullException>(() => builder.AddSenders(null!));
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class MessagingBuilderExtensionsTests
         var customTtl = TimeSpan.FromMinutes(10);
 
         // Act
-        builder.AddSenders<SenderEntity>(b => b.ConfigureCacheOptions(opts => opts.DefaultTtl = customTtl));
+        builder.AddSenders(b => b.ConfigureCacheOptions(opts => opts.DefaultTtl = customTtl));
 
         // Assert
         var provider = services.BuildServiceProvider();
@@ -74,7 +74,7 @@ public class MessagingBuilderExtensionsTests
         var builder = services.AddMessaging();
 
         // Act
-        var result = builder.AddSenders<SenderEntity>(b => { });
+        var result = builder.AddSenders(_ => { });
 
         // Assert
         Assert.Same(builder, result);

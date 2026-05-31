@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Ratatosk.Senders
 {
@@ -24,6 +25,10 @@ namespace Ratatosk.Senders
 
             builder.Services.AddRepositoryContext()
                 .AddRepository<InMemorySenderRepository>();
+            builder.Services.TryAddScoped<ISenderValidator<SenderEntity>, SenderValidator<SenderEntity>>();
+            builder.Services.TryAddScoped<SenderManager<SenderEntity>>();
+            builder.Services.AddScoped<ISenderRepository<ISender>>(sp =>
+                new SenderRepositoryAdapter<SenderEntity>(sp.GetRequiredService<ISenderRepository<SenderEntity>>()));
 
             return builder;
         }

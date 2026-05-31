@@ -10,22 +10,16 @@ namespace Ratatosk.Senders
     /// </summary>
     public sealed class SenderServiceBuilder
     {
-        internal SenderServiceBuilder(IServiceCollection services, Type senderType)
+        internal SenderServiceBuilder(IServiceCollection services)
         {
             ArgumentNullException.ThrowIfNull(services);
-            ArgumentNullException.ThrowIfNull(senderType);
 
             Services = services;
-            SenderType = senderType;
 
             services.AddOptions<SenderCacheOptions>();
             services.TryAddSingleton<IDistributedCache, MemoryDistributedCache>();
             services.TryAddSingleton<ISenderCache, DistributedSenderCache>();
-            services.TryAddScoped(typeof(SenderManager<>).MakeGenericType(senderType));
-            services.TryAddScoped(typeof(ISenderValidator<>).MakeGenericType(senderType),
-                typeof(SenderValidator<>).MakeGenericType(senderType));
-            services.TryAddScoped(typeof(ISenderResolver),
-                typeof(SenderResolver<>).MakeGenericType(senderType));
+            services.TryAddScoped<ISenderResolver, SenderResolver>();
         }
         
         /// <summary>
@@ -33,10 +27,6 @@ namespace Ratatosk.Senders
         /// </summary>
         public IServiceCollection Services { get; }
 
-        /// <summary>
-        /// Gets the type of sender entity being configured.
-        /// </summary>
-        public Type SenderType { get; }
 
         /// <summary>
         /// Replaces the default sender cache with the specified implementation.
