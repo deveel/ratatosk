@@ -67,7 +67,7 @@ namespace Ratatosk.Senders
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to find sender by name '{Name}'", name);
+                Logger.LogFailedToFindSenderByName(ex, name);
                 return OperationResult<TSender>.Fail(SenderErrorCodes.SenderError, SenderErrorCodes.ErrorDomain, ex.Message);
             }
         }
@@ -92,7 +92,7 @@ namespace Ratatosk.Senders
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to find sender by endpoint '{Address}' ({Type})", address, endpointType);
+                Logger.LogFailedToFindSenderByEndpoint(ex, address, endpointType);
                 return OperationResult<TSender>.Fail(SenderErrorCodes.SenderError, SenderErrorCodes.ErrorDomain, ex.Message);
             }
         }
@@ -113,7 +113,7 @@ namespace Ratatosk.Senders
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to retrieve all active senders");
+                Logger.LogFailedToRetrieveAllActiveSenders(ex);
                 return OperationResult<IList<TSender>>.Fail(SenderErrorCodes.SenderError, SenderErrorCodes.ErrorDomain, ex.Message);
             }
         }
@@ -142,7 +142,7 @@ namespace Ratatosk.Senders
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to set active state for sender '{Id}'", id);
+                Logger.LogFailedToSetActiveState(ex, id);
                 return OperationResult.Fail(SenderErrorCodes.SenderError, SenderErrorCodes.ErrorDomain, ex.Message);
             }
         }
