@@ -45,7 +45,7 @@ The framework is deliberately focused on the messaging contract and connector co
 
 ## Features
 
-- **Unified message model** — `Message` with fluent builder, dedicated `MessageBuilder`, typed endpoints, and 8 content types (text, HTML, media, binary, JSON, location, template, multipart)
+- **Unified message model** — `Message` with fluent builder, dedicated `MessageBuilder`, typed endpoints, and 12 content types (text, HTML, media, binary, JSON, location, template, multipart, button, quick reply, carousel, list picker)
 - **Schema-driven validation** — every connector declares its capabilities, parameters, and constraints via `IChannelSchema`; validate messages before they reach the provider
 - **Pluggable authentication** — API key, token, basic auth, OAuth 2.0 client credentials, Firebase service account, or custom providers
 - **DI-first design** — `AddMessaging()` + `AddConnector<T>()` integration with `Microsoft.Extensions.DependencyInjection`
@@ -58,7 +58,7 @@ The framework is deliberately focused on the messaging contract and connector co
 
 | Package | Description | NuGet |
 |---|---|---|
-| `Ratatosk.Abstractions` | Message model with fluent builder, dedicated `MessageBuilder`, typed endpoints, eight content types, properties, and batch support. No external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Abstractions)](https://nuget.org/packages/Ratatosk.Abstractions) |
+| `Ratatosk.Abstractions` | Message model with fluent builder, dedicated `MessageBuilder`, typed endpoints, 12 content types (including interactive), properties, and batch support. No external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Abstractions)](https://nuget.org/packages/Ratatosk.Abstractions) |
 | `Ratatosk` | DI registration (`AddMessaging`), `IMessagingClient` facade (disposable), connector factory, and service collection extensions. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk)](https://nuget.org/packages/Ratatosk) |
 | `Ratatosk.Connector.Abstractions` | Contracts for connectors, schemas, authentication, validation, and result types. Reference when building custom connector libraries. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Connector.Abstractions)](https://nuget.org/packages/Ratatosk.Connector.Abstractions) |
 | `Ratatosk.Connectors` | Abstract connector base class (`ChannelConnectorBase`) with state management and error wrapping, fluent schema builder (`ChannelSchema`), schema registry, auth manager, and connector builder API. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Connectors)](https://nuget.org/packages/Ratatosk.Connectors) |
@@ -67,6 +67,9 @@ The framework is deliberately focused on the messaging contract and connector co
 | `Ratatosk.Firebase` | Firebase Cloud Messaging push notifications for device tokens and topics, with batch sends and dry-run mode. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Firebase)](https://nuget.org/packages/Ratatosk.Firebase) |
 | `Ratatosk.Facebook` | Facebook Messenger Page-based messaging with text, media, quick replies, and webhook inbound processing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Facebook)](https://nuget.org/packages/Ratatosk.Facebook) |
 | `Ratatosk.Telegram` | Telegram bot messaging with rich text, media, locations, and webhook-based update processing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Telegram)](https://nuget.org/packages/Ratatosk.Telegram) |
+| `Ratatosk.Senders` | Sender identity infrastructure: `ISenderRepository<TSender>`, `ISenderResolver`, cache, per-connector configuration, and `MessageBuilder.FromSender()` extension. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders)](https://nuget.org/packages/Ratatosk.Senders) |
+| `Ratatosk.Senders.InMemory` | In-memory sender repository for development and testing, with optional seed data. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.InMemory)](https://nuget.org/packages/Ratatosk.Senders.InMemory) |
+| `Ratatosk.Senders.EntityFramework` | EF Core persistence for the sender identity registry (`SenderDbContext`, `EntitySenderRepository`, `DbSender`). | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.EntityFramework)](https://nuget.org/packages/Ratatosk.Senders.EntityFramework) |
 
 ## Reading path
 

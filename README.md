@@ -22,7 +22,7 @@ Current stable release: **v1.0.1** (pre-release packages available from `main` b
 
 ## Features
 
-- **Unified message model** — `IMessage` with fluent `MessageBuilder`, typed endpoints, and 8 content types (text, HTML, media, binary, JSON, location, template, multipart)
+- **Unified message model** — `IMessage` with fluent `MessageBuilder`, typed endpoints, and 12 content types (text, HTML, media, binary, JSON, location, template, multipart, button, quick reply, carousel, list picker)
 - **Schema-driven validation** — every connector declares capabilities, parameters, and constraints via `IChannelSchema`; catch invalid messages before they reach the provider
 - **Pluggable authentication** — API key, token, basic auth, OAuth 2.0, Firebase service account, or custom providers
 - **DI-first design** — `AddMessaging()` + `AddConnector<T>()` integration with `Microsoft.Extensions.DependencyInjection`
@@ -45,7 +45,7 @@ Those are application-level concerns, so you can choose your own architecture.
 
 | Package | Description | NuGet |
 |---|---|---|
-| `Ratatosk.Abstractions` | Message model with fluent builder, typed endpoints, 8 content types, properties, batch support. Zero external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Abstractions/) |
+| `Ratatosk.Abstractions` | Message model with fluent builder, typed endpoints, 12 content types (including interactive), properties, and batch support. Zero external dependencies. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Abstractions/) |
 | `Ratatosk` | DI registration (`AddMessaging`), `IMessagingClient` facade (disposable), connector factory, service collection extensions. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk/) |
 | `Ratatosk.Connector.Abstractions` | Connector contracts, schemas, authentication, validation, result types. Reference for custom connector libraries. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Connector.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Connector.Abstractions/) |
 | `Ratatosk.Connectors` | Abstract connector base (`ChannelConnectorBase`) with state management and error wrapping, `ChannelSchema` builder, schema registry, auth manager, connector builder API. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Connectors.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Connectors/) |
@@ -56,6 +56,7 @@ Those are application-level concerns, so you can choose your own architecture.
 | `Ratatosk.Telegram` | Telegram bot messaging with rich text, media, locations, and webhook-based updates. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Telegram.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Telegram/) |
 | `Ratatosk.Senders` | Sender identity infrastructure: `ISenderRepository<TSender>`, `ISenderResolver`, cache, per-connector configuration, `MessageBuilder.FromSender()` extension. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders/) |
 | `Ratatosk.Senders.InMemory` | In-memory `IRepository<Sender>` for development and testing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.InMemory.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders.InMemory/) |
+| `Ratatosk.Senders.EntityFramework` | EF Core persistence for the sender identity registry (`SenderDbContext`, `EntitySenderRepository`, `DbSender`). | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.EntityFramework.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders.EntityFramework/) |
 
 ## Quick example
 

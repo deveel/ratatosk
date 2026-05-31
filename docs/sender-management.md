@@ -112,6 +112,10 @@ senderBuilder.UseInMemoryStore();
 
 ### Entity Framework
 
+```bash
+dotnet add package Ratatosk.Senders.EntityFramework
+```
+
 ```csharp
 using Ratatosk.Senders;
 
