@@ -44,7 +44,7 @@ namespace Ratatosk {
 		/// Constructs a new instance of the message attachment
 		/// from the given attachment.
 		/// </summary>
-		/// <param name="attachment"></param>
+		/// <param name="attachment">The attachment from which to copy the identifier, file name, MIME type, and content.</param>
 		public MessageAttachment(IAttachment attachment) {
 			Id = attachment.Id;
 			FileName = attachment.FileName;

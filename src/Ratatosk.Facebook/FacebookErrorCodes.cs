@@ -23,14 +23,6 @@ namespace Ratatosk
         #region Authentication and Credentials
 
         /// <summary>
-        /// Indicates that required Facebook credentials (Access Token) are missing.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs during initialization when the connection settings do not
-        /// contain a valid Page Access Token required for Facebook Graph API access.
-        /// </remarks>
-
-        /// <summary>
         /// Indicates that the provided access token is invalid or expired.
         /// </summary>
         /// <remarks>
@@ -64,14 +56,6 @@ namespace Ratatosk
         #endregion
 
         #region Message Validation
-
-        /// <summary>
-        /// Indicates that the message content is too long.
-        /// </summary>
-        /// <remarks>
-        /// This error occurs when the message text exceeds Facebook's limits,
-        /// which is typically 2000 characters for text messages.
-        /// </remarks>
 
         #endregion
 

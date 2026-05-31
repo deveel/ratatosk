@@ -16,9 +16,9 @@ namespace Ratatosk
 		/// the specified local batch ID, the batch ID assigned by the provider, 
 		/// and optional message results.
 		/// </summary>
-		/// <param name="batchId"></param>
-		/// <param name="remoteBatchId"></param>
-		/// <param name="messageResults"></param>
+		/// <param name="batchId">The unique identifier of the message batch.</param>
+		/// <param name="remoteBatchId">The remote system identifier of the batch, if available.</param>
+		/// <param name="messageResults">The collection of individual message send results.</param>
 		public BatchSendResult(string batchId, string? remoteBatchId, IDictionary<string, SendResult>? messageResults = null)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(batchId, nameof(batchId));

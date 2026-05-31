@@ -34,13 +34,14 @@ namespace Ratatosk
 		/// Initializes a new instance of the <see cref="MultipartContent"/> class
 		/// copying the parts from an existing <see cref="IMultipartContent"/>.
 		/// </summary>
-		/// <param name="multipartContent"></param>
+		/// <param name="multipartContent">The multipart content from which to copy the parts.</param>
 		public MultipartContent(IMultipartContent multipartContent)
 		{
 			Parts = multipartContent.Parts?
 				.Select(p => MessageContentPart.Create(p)).ToList() ?? new List<MessageContentPart>();
 		}
 
+		/// <inheritdoc />
 		IEnumerable<IMessageContentPart> IMultipartContent.Parts => Parts;
 
 		/// <summary>

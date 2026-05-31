@@ -190,6 +190,7 @@ builder.AddClient(o => o.AutoInitialize = false);
 ## Next steps
 
 - [Message model](messaging-model.md) — all content types, advanced builder methods, message properties
-- [Sender management](sender-management.md) — sender identity model, registry, resolution, caching, and selectors
+- [Sender management](senders/sender-management.md) - sender identity lifecycle, storage, and governance
+- [Sender resolution](senders/sender-resolution.md) - send-time lookup, fallback, and cache behavior
 - [Channel schema](channel-schema.md) — defining connector contracts and validation rules
 - [Connector guides](connectors/README.md) — per-provider connection parameters and features

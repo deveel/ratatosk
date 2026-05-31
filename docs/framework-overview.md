@@ -54,7 +54,7 @@ var smsResult = await twilioConnector.SendMessageAsync(message, ct);
 
 ### Content
 
-**`MessageContent` / `IMessageContent`** — abstract base for 8 content types:
+**`MessageContent` / `IMessageContent`** — abstract base for 12 content types:
 
 | Type | Use case |
 |---|---|
@@ -66,6 +66,12 @@ var smsResult = await twilioConnector.SendMessageAsync(message, ct);
 | `LocationContent` | Geo coordinates (chat) |
 | `TemplateContent` | Provider-side template rendering |
 | `MultipartContent` | Combination of multiple parts |
+| `ButtonContent` | Single interactive button (URL, postback, or phone number) |
+| `QuickReplyContent` | One-tap quick reply option above the keyboard |
+| `CarouselContent` | Horizontally scrollable set of cards with buttons |
+| `ListPickerContent` | Vertically scrollable list of selectable items |
+
+The last four types implement the `IInteractiveContent` marker interface, which extends `IMessageContent`. Connectors that do not support interactive elements can check for this interface to reject unsupported content types early, during schema validation.
 
 ### Schema
 
@@ -141,12 +147,15 @@ var message = new MessageBuilder()
 ## Package responsibilities
 
 | Package | Role | Dependencies |
-|---|---|---|---|
-| `Ratatosk.Abstractions` | Message model, `MessageBuilder`, endpoints, content types. Pure model — no infrastructure. | None |
+|---|---|---|
+| `Ratatosk.Abstractions` | Message model, `MessageBuilder`, endpoints, content types (including interactive). Pure model — no infrastructure. | None |
 | `Ratatosk` | `AddMessaging()` DI entry point, `MessagingBuilder`, `IMessagingClient` facade (disposable), `ChannelConnectorFactory`. | `Connector.Abstractions` |
 | `Ratatosk.Connector.Abstractions` | Interfaces for connectors, schemas, auth, and result types. Contracts only. | `Abstractions` |
 | `Ratatosk.Connectors` | `ChannelConnectorBase`, `ChannelSchema` builder, `ChannelSchemaRegistry`, authentication manager, `ChannelConnectorBuilder`. | `Connector.Abstractions` |
 | `Ratatosk.Connector.*` | Provider-specific implementations. Each references `Connectors` or `Connector.Abstractions`. | Provider SDK + `Connectors` |
+| `Ratatosk.Senders` | Sender identity infrastructure: `ISenderRepository<TSender>`, `ISenderResolver`, `SenderManager<TSender>`, distributed cache, and `MessageBuilder.FromSender()`. | `Abstractions` |
+| `Ratatosk.Senders.InMemory` | In-memory sender repository for development and testing, with optional seed data. | `Ratatosk.Senders` |
+| `Ratatosk.Senders.EntityFramework` | EF Core persistence for the sender registry (`SenderDbContext`, `EntitySenderRepository`, `DbSender`). | `Ratatosk.Senders` + EF Core |
 
 ## What the framework does not do
 

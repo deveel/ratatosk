@@ -5,21 +5,17 @@ namespace Ratatosk.Senders
     /// <summary>
     /// Resolves sender identities by querying the global sender repository.
     /// </summary>
-    /// <typeparam name="TSender">
-    /// The type of the sender entity, which must implement <see cref="ISender"/>.
-    /// </typeparam>
-    public class SenderResolver<TSender> : SenderResolverBase
-        where TSender : class, ISender
+    public class SenderResolver : SenderResolverBase
     {
-        private readonly ISenderRepository<TSender> _repository;
+        private readonly ISenderRepository<ISender> _repository;
 
         /// <summary>
         /// Constructs the resolver with the given dependencies.
         /// </summary>
         public SenderResolver(
-            ISenderRepository<TSender> repository,
+            ISenderRepository<ISender> repository,
             ISenderCache cache,
-            ILogger<SenderResolver<TSender>>? logger = null)
+            ILogger<SenderResolver>? logger = null)
             : base(cache, logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -35,6 +31,25 @@ namespace Ratatosk.Senders
         protected override async ValueTask<ISender?> ResolveByEndpointAsync(string address, EndpointType endpointType, CancellationToken cancellationToken)
         {
             return await _repository.FindByEndpointAsync(address, endpointType, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Backward-compatible typed resolver that delegates to the non-generic resolver pipeline.
+    /// </summary>
+    /// <typeparam name="TSender">The sender entity type.</typeparam>
+    public class SenderResolver<TSender> : SenderResolver
+        where TSender : class, ISender
+    {
+        /// <summary>
+        /// Constructs a typed compatibility resolver over the non-generic pipeline.
+        /// </summary>
+        public SenderResolver(
+            ISenderRepository<TSender> repository,
+            ISenderCache cache,
+            ILogger<SenderResolver>? logger = null)
+            : base(new SenderRepositoryAdapter<TSender>(repository), cache, logger)
+        {
         }
     }
 }

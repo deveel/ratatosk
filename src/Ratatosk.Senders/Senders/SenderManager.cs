@@ -45,6 +45,9 @@ namespace Ratatosk.Senders
         {
         }
         
+        /// <summary>
+        /// Gets the underlying sender repository cast to the specific sender type.
+        /// </summary>
         protected ISenderRepository<TSender> SenderRepository => Repository as ISenderRepository<TSender> 
             ?? throw new InvalidOperationException($"The underlying repository must implement {nameof(ISenderRepository<TSender>)}.");
         

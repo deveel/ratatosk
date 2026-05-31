@@ -200,4 +200,95 @@ public class SenderResolverTests
         Assert.Throws<ArgumentNullException>(() =>
             new SenderResolver<Ratatosk.Sender>(CreateRepositoryMock().Object, null!));
     }
+
+    [Fact]
+    public async Task Should_ResolveDefaultSender_When_ContextSenderIsNull()
+    {
+        var defaultSender = CreateSender("default-sender");
+        var repositoryMock = CreateRepositoryMock(byEndpoint: defaultSender);
+        var cacheMock = CreateCacheMock();
+        var resolver = new SenderResolver<Ratatosk.Sender>(repositoryMock.Object, cacheMock.Object);
+
+        var settings = new ConnectionSettings();
+        settings.SetParameter("DefaultSenderName", "default-sender");
+        settings.SetParameter("DefaultSenderAddress", defaultSender.Address);
+        settings.SetParameter("DefaultSenderType", ((IEndpoint)defaultSender).Type.ToString());
+        var context = new SenderResolutionContext(null, settings);
+
+        var result = await resolver.ResolveAsync(context);
+
+        Assert.NotNull(result);
+        Assert.Equal("default-sender", result.Name);
+    }
+
+    [Fact]
+    public async Task Should_ReturnNull_When_ContextSenderIsNullAndNoDefaultSender()
+    {
+        var repositoryMock = CreateRepositoryMock();
+        var cacheMock = CreateCacheMock();
+        var resolver = new SenderResolver<Ratatosk.Sender>(repositoryMock.Object, cacheMock.Object);
+
+        var context = new SenderResolutionContext(null, new ConnectionSettings());
+
+        var result = await resolver.ResolveAsync(context);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task Should_ReturnNull_When_ContextIsNull()
+    {
+        var repositoryMock = CreateRepositoryMock();
+        var cacheMock = CreateCacheMock();
+        var resolver = new SenderResolver<Ratatosk.Sender>(repositoryMock.Object, cacheMock.Object);
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => resolver.ResolveAsync(null!).AsTask());
+    }
+
+    [Fact]
+    public async Task Should_ReturnNull_When_DefaultSenderIsInactive()
+    {
+        var defaultSender = CreateSender("inactive-default", isActive: false);
+        var repositoryMock = CreateRepositoryMock(byEndpoint: defaultSender);
+        var cacheMock = CreateCacheMock();
+        var resolver = new SenderResolver<Ratatosk.Sender>(repositoryMock.Object, cacheMock.Object);
+
+        var settings = new ConnectionSettings();
+        settings.SetParameter("DefaultSenderName", "inactive-default");
+        settings.SetParameter("DefaultSenderAddress", defaultSender.Address);
+        settings.SetParameter("DefaultSenderType", ((IEndpoint)defaultSender).Type.ToString());
+        var context = new SenderResolutionContext(null, settings);
+
+        var result = await resolver.ResolveAsync(context);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task Should_CacheResult_When_ResolvedByEndpointFromRepository()
+    {
+        var sender = CreateSender("email-sender", endpointType: EndpointType.EmailAddress, address: "test@example.com");
+        var repositoryMock = CreateRepositoryMock(byEndpoint: sender);
+        var cacheMock = CreateCacheMock();
+        var resolver = new SenderResolver<Ratatosk.Sender>(repositoryMock.Object, cacheMock.Object);
+
+        await resolver.ResolveAsync(CreateContext(new EmailSender("test@example.com")));
+
+        cacheMock.Verify(x => x.SetAsync(sender, It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Should_ResolveByEndpointFromCache_When_Cached()
+    {
+        var sender = CreateSender("email-sender", endpointType: EndpointType.EmailAddress, address: "test@example.com");
+        var repositoryMock = CreateRepositoryMock();
+        var cacheMock = CreateCacheMock(cachedByEndpoint: sender);
+        var resolver = new SenderResolver<Ratatosk.Sender>(repositoryMock.Object, cacheMock.Object);
+
+        var result = await resolver.ResolveAsync(CreateContext(new EmailSender("test@example.com")));
+
+        Assert.NotNull(result);
+        Assert.Equal("email-sender", result.Name);
+        repositoryMock.Verify(x => x.FindByEndpointAsync(It.IsAny<string>(), It.IsAny<EndpointType>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

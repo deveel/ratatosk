@@ -27,6 +27,7 @@ namespace Ratatosk
 		/// <inheritdoc />
 		public IList<IMessage> Messages { get; set; } = new List<IMessage>();
 
+		/// <inheritdoc />
 		IEnumerable<IMessage> IMessageBatch.Messages => Messages;
 	}
 }

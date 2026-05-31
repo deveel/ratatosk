@@ -22,6 +22,8 @@ namespace Ratatosk
 		/// Initializes a new instance of the <see cref="MessageProperty"/> class
 		/// with the specified name and value.
 		/// </summary>
+		/// <param name="name">The name of the message property.</param>
+		/// <param name="value">The value of the message property.</param>
 		public MessageProperty(string name, object? value)
 		{
 			Name = name;

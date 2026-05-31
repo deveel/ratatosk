@@ -62,6 +62,7 @@ namespace Ratatosk
 			ArgumentException.ThrowIfNullOrWhiteSpace(errorCode, nameof(errorCode));
 		}
 		
+		/// <inheritdoc />
 		string? IMessagingError.ErrorMessage => Message;
 	}
 }

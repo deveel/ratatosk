@@ -13,6 +13,9 @@ namespace Ratatosk
         /// <summary>
         /// Constructs a new resolution context.
         /// </summary>
+        /// <param name="sender">The sender endpoint to resolve.</param>
+        /// <param name="settings">The connection settings for the resolution.</param>
+        /// <param name="tenantId">An optional tenant identifier for multi-tenant scenarios.</param>
         public SenderResolutionContext(IEndpoint? sender, ConnectionSettings settings, string? tenantId = null)
         {
             Sender = sender;

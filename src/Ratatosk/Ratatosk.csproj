@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ratatosk.Connector.Abstractions\Ratatosk.Connector.Abstractions.csproj" />
-    <ProjectReference Include="..\Ratatosk.Senders\Ratatosk.Senders.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net8.0'">

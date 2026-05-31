@@ -46,15 +46,19 @@ namespace Ratatosk {
 		/// </summary>
 		public IEndpoint? Receiver { get; set; }
 
+		/// <inheritdoc />
 		IEndpoint? IMessage.Sender => Sender;
 
+		/// <inheritdoc />
 		IEndpoint? IMessage.Receiver => Receiver;
 
 		/// <inheritdoc/>
 		public MessageContent? Content { get; set; }
 
+		/// <inheritdoc />
 		IMessageContent? IMessage.Content => Content;
 
+		/// <inheritdoc />
 		IDictionary<string, IMessageProperty>? IMessage.Properties 
 			=> Properties?.ToDictionary(x => x.Key, y => (IMessageProperty)y.Value);
 

@@ -24,7 +24,7 @@ namespace Ratatosk
         /// <param name="cancellationToken">
         /// A cancellation token used to propagate notification that the operation should be canceled.
         /// </param>
-        /// <returns>A <see cref="BatchResponse"/> with per-message results.</returns>
+        /// <returns>A <see cref="FirebaseAdmin.Messaging.BatchResponse"/> with per-message results.</returns>
         Task<FirebaseAdmin.Messaging.BatchResponse> SendEachAsync(IEnumerable<FirebaseAdmin.Messaging.Message> messages, bool dryRun, CancellationToken cancellationToken);
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Ratatosk
         /// <param name="cancellationToken">
         /// A cancellation token used to propagate notification that the operation should be canceled.
         /// </param>
-        /// <returns>A <see cref="BatchResponse"/> with per-recipient results.</returns>
+        /// <returns>A <see cref="FirebaseAdmin.Messaging.BatchResponse"/> with per-recipient results.</returns>
         Task<FirebaseAdmin.Messaging.BatchResponse> SendMulticastAsync(FirebaseAdmin.Messaging.MulticastMessage message, bool dryRun, CancellationToken cancellationToken);
     }
 }

@@ -2,8 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using Deveel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 
 namespace Ratatosk.Senders;
 
@@ -12,13 +10,6 @@ namespace Ratatosk.Senders;
 [Trait("Feature", "EntityFrameworkSenderStore")]
 public class EntityFrameworkSenderStoreTests
 {
-    private static DbContextOptions<SenderDbContext> CreateOptions(string dbName)
-    {
-        return new DbContextOptionsBuilder<SenderDbContext>()
-            .UseInMemoryDatabase(dbName)
-            .Options;
-    }
-
     private static DbSender CreateEntity(string id, string name, EndpointType endpointType = EndpointType.PhoneNumber, string address = "+1234567890", bool isActive = true)
     {
         var entity = new DbSender
@@ -42,16 +33,11 @@ public class EntityFrameworkSenderStoreTests
     private static IServiceProvider CreateServices(Action<DbContextOptionsBuilder> optionsAction)
     {
         var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddDbContext<SenderDbContext>(optionsAction);
-        services.AddScoped<ISenderRepository<DbSender>, EntitySenderRepository>();
-        services.AddScoped<SenderManager<DbSender>>(sp =>
-        {
-            var repo = sp.GetRequiredService<ISenderRepository<DbSender>>();
-            return new SenderManager<DbSender>(repo, services: sp);
-        });
-        services.AddSingleton<ISenderCache>(sp => new Mock<ISenderCache>().Object);
-        services.AddScoped<ISenderResolver, SenderResolver<DbSender>>();
+        services.AddMessaging()
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(optionsAction);
+
         return services.BuildServiceProvider();
     }
 
@@ -104,7 +90,7 @@ public class EntityFrameworkSenderStoreTests
 
         var resolver = scope.ServiceProvider.GetService<ISenderResolver>();
         Assert.NotNull(resolver);
-        Assert.IsType<SenderResolver<DbSender>>(resolver);
+        Assert.IsType<SenderResolver>(resolver);
     }
 
     [Fact]
@@ -495,16 +481,16 @@ public class EntityFrameworkSenderStoreTests
         }
     }
 
-    // ── UseEntityFramework Extension Method Tests ─────────────────────────────
+    // ── Entity Framework Store Direct Registration Tests ─────────────────────
 
     [Fact]
     public void UseEntityFramework_ShouldRegisterSenderDbContext()
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-context"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-context"));
 
         var provider = services.BuildServiceProvider();
         var context = provider.GetService<SenderDbContext>();
@@ -517,9 +503,9 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-repo"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-repo"));
 
         var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
@@ -534,9 +520,9 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-manager"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-manager"));
 
         var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
@@ -550,15 +536,15 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-resolver"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-resolver"));
 
         var provider = services.BuildServiceProvider();
         var resolver = provider.GetService<ISenderResolver>();
 
         Assert.NotNull(resolver);
-        Assert.IsType<SenderResolver<DbSender>>(resolver);
+        Assert.IsType<SenderResolver>(resolver);
     }
 
     [Fact]
@@ -566,9 +552,9 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-resolve-sender"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-resolve-sender"));
 
         // Seed sender
         await using (var seedScope = services.BuildServiceProvider().CreateAsyncScope())
@@ -592,9 +578,9 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-not-found"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-not-found"));
 
         var provider = services.BuildServiceProvider();
         var resolver = provider.GetRequiredService<ISenderResolver>();
@@ -608,9 +594,9 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-resolve-endpoint"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-resolve-endpoint"));
 
         // Seed sender
         await using (var seedScope = services.BuildServiceProvider().CreateAsyncScope())
@@ -633,9 +619,9 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-inactive"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-inactive"));
 
         // Seed inactive sender
         await using (var seedScope = services.BuildServiceProvider().CreateAsyncScope())
@@ -657,9 +643,9 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-lifecycle"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-lifecycle"));
 
         var provider = services.BuildServiceProvider();
 
@@ -710,12 +696,9 @@ public class EntityFrameworkSenderStoreTests
     {
         var services = new ServiceCollection();
         services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-multi-1"))))
-            .AddConnector<AnotherTestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-multi-2"))));
+            .AddSenders()
+            .WithCache<NoopSenderCache>()
+            .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-multi-1"));
 
         // Seed senders for both connectors
         await using (var seedScope = services.BuildServiceProvider().CreateAsyncScope())
@@ -738,6 +721,17 @@ public class EntityFrameworkSenderStoreTests
     }
 
     // ── Test Connector Types ──────────────────────────────────────────────────
+
+    private sealed class NoopSenderCache : ISenderCache
+    {
+        public ValueTask<ISender?> GetByNameAsync(string senderName, CancellationToken cancellationToken = default) => ValueTask.FromResult<ISender?>(null);
+
+        public ValueTask<ISender?> GetByEndpointAsync(string address, EndpointType endpointType, CancellationToken cancellationToken = default) => ValueTask.FromResult<ISender?>(null);
+
+        public ValueTask SetAsync(ISender sender, TimeSpan? ttl = null, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
+        public ValueTask RemoveByNameAsync(string senderName, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+    }
 
     [ChannelSchema(typeof(TestEfSchemaFactory))]
     private class TestEfConnector : IChannelConnector

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 
 using Ratatosk.Senders;
+using Kista;
 
 namespace Ratatosk.XUnit
 {
@@ -224,52 +225,43 @@ namespace Ratatosk.XUnit
 			Assert.Equal("CustomFactory", connector.CreatedBy);
 		}
 
-		// ── WithSenders configuration ─────────────────────────────────────────
+		// ── Sender Infrastructure Registration ─────────────────────────────────
 
 		[Fact]
-		public void Should_ThrowArgumentNullException_When_WithSendersWithNullConfigure()
-		{
-			var services = CreateServices();
-
-			Assert.Throws<ArgumentNullException>(() =>
-				services.AddMessaging()
-					.AddConnector<TestConnector>(cfg => cfg
-						.WithSenders(null!)));
-		}
-
-		[Fact]
-		public void Should_ReturnBuilder_When_WithSendersIsCalled()
-		{
-			var services = CreateServices();
-			var messagingBuilder = services.AddMessaging();
-
-			var result = messagingBuilder.AddConnector<TestConnector>(cfg => cfg
-				.WithSenders(_ => { }));
-
-			Assert.Same(messagingBuilder, result);
-		}
-
-		[Fact]
-		public void Should_RegisterSenderInfrastructure_When_WithSendersIsCalled()
+		public void Should_RegisterSenderInfrastructure_When_AddSendersIsCalled()
 		{
 			var services = CreateServices();
 			services.AddMessaging()
-				.AddConnector<TestConnector>(cfg => cfg
-					.WithSenders(_ => { }));
+				.AddSenders();
 
 			Assert.Contains(services, d => d.ServiceType == typeof(ISenderCache));
 		}
 
-		// ── UseInMemoryStore ──────────────────────────────────────────────────
+		// ── AddSenders + Store Registration ─────────────────────────────────────
+
+		[Fact]
+		public void Should_RegisterTypedSenderInfrastructure_When_InMemoryStoreIsConfigured()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddSenders()
+				.UseInMemoryStore();
+
+			Assert.Contains(services, d => d.ServiceType == typeof(ISenderCache));
+			Assert.Contains(services, d => d.ServiceType == typeof(SenderManager<SenderEntity>));
+			Assert.Contains(services, d => d.ServiceType == typeof(ISenderResolver));
+		}
+
+		// ── InMemory Store Registration ────────────────────────────────────────
 
 		[Fact]
 		public void Should_RegisterInMemoryStore_When_UseInMemoryStoreIsCalled()
 		{
 			var services = CreateServices();
+
 			services.AddMessaging()
-				.AddConnector<TestConnector>(cfg => cfg
-					.WithSenders(s => s
-						.UseInMemoryStore()));
+				.AddSenders()
+				.UseInMemoryStore();
 
 			var provider = services.BuildServiceProvider();
 			var repository = provider.GetRequiredService<ISenderRepository<SenderEntity>>();
@@ -278,7 +270,7 @@ namespace Ratatosk.XUnit
 		}
 
 		[Fact]
-		public async Task Should_ResolveSender_When_UseInMemoryStoreWithSeedSenders()
+		public async Task Should_ResolveSender_When_InMemoryStoreWithSeedSenders()
 		{
 			var seedSender = new SenderEntity
 			{
@@ -290,10 +282,10 @@ namespace Ratatosk.XUnit
 			seedSender.Activate();
 
 			var services = CreateServices();
+			services.AddSingleton<IEnumerable<SenderEntity>>(new[] { seedSender });
 			services.AddMessaging()
-				.AddConnector<TestConnector>(cfg => cfg
-					.WithSenders(s => s
-						.UseInMemoryStore(new[] { seedSender })));
+				.AddSenders()
+				.UseInMemoryStore();
 
 			var provider = services.BuildServiceProvider();
 			var resolver = provider.GetRequiredService<ISenderResolver>();
@@ -307,13 +299,11 @@ namespace Ratatosk.XUnit
 		}
 
 		[Fact]
-		public void Should_RegisterCacheOptions_When_WithCacheOptionsIsCalled()
+		public void Should_RegisterCacheOptions_When_ConfiguredDirectly()
 		{
 			var services = CreateServices();
-			services.AddMessaging()
-				.AddConnector<TestConnector>(cfg => cfg
-					.WithSenders(s => s
-						.WithCacheOptions(opt => opt.DefaultTtl = TimeSpan.FromMinutes(15))));
+			services.AddMessaging().AddSenders();
+			services.Configure<SenderCacheOptions>(opt => opt.DefaultTtl = TimeSpan.FromMinutes(15));
 
 			var provider = services.BuildServiceProvider();
 			var cacheOptions = provider.GetRequiredService<IOptions<SenderCacheOptions>>();
@@ -322,14 +312,12 @@ namespace Ratatosk.XUnit
 		}
 
 		[Fact]
-		public void Should_RegisterCustomCache_When_WithCacheIsCalled()
+		public void Should_RegisterCustomCache_When_AddedDirectly()
 		{
 			var customCache = new Mock<ISenderCache>().Object;
 			var services = CreateServices();
-			services.AddMessaging()
-				.AddConnector<TestConnector>(cfg => cfg
-					.WithSenders(s => s
-						.WithCache(customCache)));
+			services.AddSingleton(customCache);
+			services.AddMessaging().AddSenders();
 
 			var provider = services.BuildServiceProvider();
 			var cache = provider.GetRequiredService<ISenderCache>();

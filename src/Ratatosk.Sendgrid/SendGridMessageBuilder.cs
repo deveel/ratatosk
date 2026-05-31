@@ -22,6 +22,13 @@ namespace Ratatosk
         private readonly string? _defaultReplyTo;
         private readonly ILogger? _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SendGridMessageBuilder"/> class.
+        /// </summary>
+        /// <param name="sandboxMode">Whether to enable sandbox mode for testing.</param>
+        /// <param name="trackingSettings">Whether to enable click and open tracking.</param>
+        /// <param name="defaultReplyTo">The default reply-to email address.</param>
+        /// <param name="logger">An optional logger for diagnostic messages.</param>
         public SendGridMessageBuilder(
             bool sandboxMode,
             bool trackingSettings,
@@ -38,6 +45,9 @@ namespace Ratatosk
         /// Sets the email content on the <see cref="SendGridMessage"/> based on the
         /// <see cref="IMessage.Content"/> type.
         /// </summary>
+        /// <param name="sendGridMessage">The SendGrid message to configure.</param>
+        /// <param name="message">The source message containing the content.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public Task SetMessageContentAsync(SendGridMessage sendGridMessage, IMessage message)
         {
             if (message.Content == null)
@@ -82,6 +92,9 @@ namespace Ratatosk
         /// Applies message-level properties (categories, custom args, priority, etc.) to the
         /// <see cref="SendGridMessage"/>.
         /// </summary>
+        /// <param name="sendGridMessage">The SendGrid message to configure.</param>
+        /// <param name="message">The source message containing property values.</param>
+        /// <param name="properties">The dictionary of message properties to apply.</param>
         public void ApplyMessageSettings(SendGridMessage sendGridMessage, IMessage message, Dictionary<string, object?> properties)
         {
             if (properties.TryGetValue("Priority", out var priorityValue))
@@ -172,6 +185,7 @@ namespace Ratatosk
         /// <summary>
         /// Applies connector-level settings (sandbox mode, tracking) to the <see cref="SendGridMessage"/>.
         /// </summary>
+        /// <param name="sendGridMessage">The SendGrid message to configure.</param>
         public void ApplyConnectorSettings(SendGridMessage sendGridMessage)
         {
             if (_sandboxMode)
