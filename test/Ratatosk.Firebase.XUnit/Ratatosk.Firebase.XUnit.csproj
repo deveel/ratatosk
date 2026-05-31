@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.20.70" />
-    <PackageReference Include="FirebaseAdmin" Version="2.4.0" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Deveel" />
