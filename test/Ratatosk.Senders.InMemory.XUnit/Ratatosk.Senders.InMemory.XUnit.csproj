@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Ratatosk.Senders.InMemory\Ratatosk.Senders.InMemory.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.20.70" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Kista" />
+  </ItemGroup>
+
+</Project>

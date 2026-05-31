@@ -12,14 +12,14 @@ namespace Ratatosk.XUnit.Unit
         public void Should_RegisterConnectorType()
         {
             var services = new ServiceCollection();
-            var builder = services.AddMessaging();
+            services.AddMessaging()
+                .AddConnectorType<MockConnector>("mock");
 
-            builder.AddConnectorType<MockConnector>("mock");
-
-            var prop = typeof(MessagingBuilder).GetProperty("ConnectorTypeRegistrations",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            var registrations = (List<(string Name, Type ConnectorType)>)prop!.GetValue(builder)!;
-            Assert.Contains(registrations, r => r.Name == "mock" && r.ConnectorType == typeof(MockConnector));
+            Assert.Contains(services, d =>
+                d.ServiceType == typeof(ConnectorTypeRegistration) &&
+                d.ImplementationInstance is ConnectorTypeRegistration reg &&
+                reg.Name == "mock" &&
+                reg.ConnectorType == typeof(MockConnector));
         }
 
         [Fact]
@@ -85,14 +85,15 @@ namespace Ratatosk.XUnit.Unit
         public void Should_SupportMultipleConnectorTypes()
         {
             var services = new ServiceCollection();
-            var builder = services.AddMessaging();
+            services.AddMessaging()
+                .AddConnectorType<MockConnector>("first")
+                .AddConnectorType<MockConnector>("second");
 
-            builder.AddConnectorType<MockConnector>("first");
-            builder.AddConnectorType<MockConnector>("second");
+            var registrations = services
+                .Where(d => d.ServiceType == typeof(ConnectorTypeRegistration))
+                .Select(d => (ConnectorTypeRegistration)d.ImplementationInstance!)
+                .ToList();
 
-            var prop = typeof(MessagingBuilder).GetProperty("ConnectorTypeRegistrations",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            var registrations = (List<(string Name, Type ConnectorType)>)prop!.GetValue(builder)!;
             Assert.Equal(2, registrations.Count);
             Assert.Contains(registrations, r => r.Name == "first");
             Assert.Contains(registrations, r => r.Name == "second");
@@ -164,15 +165,14 @@ namespace Ratatosk.XUnit.Unit
         public void Should_RegisterConnectorType_WithoutName()
         {
             var services = new ServiceCollection();
-            var builder = services.AddMessaging();
+            services.AddMessaging()
+                .AddConnectorType<MockConnector>();
 
-            builder.AddConnectorType<MockConnector>();
-
-            var prop = typeof(MessagingBuilder).GetProperty("ConnectorTypeRegistrations",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            var registrations = (List<(string Name, Type ConnectorType)>)prop!.GetValue(builder)!;
-            Assert.Contains(registrations,
-                r => r.Name == "MockConnector" && r.ConnectorType == typeof(MockConnector));
+            Assert.Contains(services, d =>
+                d.ServiceType == typeof(ConnectorTypeRegistration) &&
+                d.ImplementationInstance is ConnectorTypeRegistration reg &&
+                reg.Name == "MockConnector" &&
+                reg.ConnectorType == typeof(MockConnector));
         }
 
         [Fact]
@@ -227,7 +227,13 @@ namespace Ratatosk.XUnit.Unit
 
         private class InvalidConnector : IChannelConnector
         {
+            public InvalidConnector(ConnectionSettings? settings = null)
+            {
+                ConnectionSettings = settings ?? new ConnectionSettings();
+            }
+
             public IChannelSchema Schema => throw new NotSupportedException();
+            public ConnectionSettings ConnectionSettings { get; }
             public ConnectorState State => ConnectorState.Uninitialized;
 
             public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)

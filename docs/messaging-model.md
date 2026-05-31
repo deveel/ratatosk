@@ -91,6 +91,77 @@ Endpoint.Application("app-main")           // application identifier
 Endpoint.AlphaNumeric("AD12345")           // alphanumeric sender ID
 ```
 
+### Sender identities
+
+Beyond `Endpoint`, the framework provides specialised sender types that implement both `IEndpoint` and `ISender`. These carry additional semantic meaning and can be resolved at send time from the sender registry.
+
+| Type | `EndpointType` | Description |
+|------|----------------|-------------|
+| `SenderRef` | `Label` | Logical name reference, resolved at send time via `ISenderResolver` |
+| `EmailSender` | `EmailAddress` | Email sender with an optional display name |
+| `PhoneSender` | `PhoneNumber` | Phone number sender with an optional display name |
+| `AlphaNumericSender` | `Label` | Alphanumeric sender ID (e.g. brand name for SMS) |
+| `BotSender` | `Id` | Bot identifier (e.g. Telegram bot ID) |
+
+#### SenderRef — identity reference
+
+`SenderRef` carries a logical name that the connector resolves at send time. The resolution flows through `ISenderResolver` → `ISenderRepository<Sender>` → repository, letting you decouple message composition from sender configuration.
+
+```csharp
+// Creates a SenderRef that will be resolved when the message is sent
+var message = new MessageBuilder()
+    .From(new SenderRef("support"))
+    .ToEmail("user@example.com")
+    .WithText("Hello!")
+    .Build();
+```
+
+The `FromSender()` extension method on `MessageBuilder` (from `Ratatosk.Senders`) is a shorthand:
+
+```csharp
+new MessageBuilder()
+    .FromSender("support")
+    .ToEmail("user@example.com")
+    .WithText("Hello!")
+    .Build();
+```
+
+The connector (`ChannelConnectorBase.SendMessageAsync`) calls `ResolveSenderAsync` which uses `ISenderResolver` to look up the name in the registry and replace the `SenderRef` with the concrete sender before validation and dispatch.
+
+#### EmailSender, PhoneSender, AlphaNumericSender, BotSender
+
+These are direct sender types that carry both an address and optional display name. They are used when you know the sender details at message-construction time but want typed semantics:
+
+```csharp
+// Email sender with display name
+new MessageBuilder()
+    .From(new EmailSender("noreply@example.com", "No Reply"))
+    .ToEmail("user@example.com")
+    .WithText("Hello!")
+    .Build();
+
+// Phone sender
+new MessageBuilder()
+    .From(new PhoneSender("+15551234567", "MyApp"))
+    .ToPhone("+15559876543")
+    .WithText("Hello!")
+    .Build();
+
+// Alphanumeric sender (e.g. brand name for SMS)
+new MessageBuilder()
+    .From(new AlphaNumericSender("MYBRAND"))
+    .ToPhone("+15559876543")
+    .WithText("Hello!")
+    .Build();
+
+// Bot sender
+new MessageBuilder()
+    .From(new BotSender("my-bot-id", "My Bot"))
+    .To(Endpoint.Id("user-42"))
+    .WithText("Hello!")
+    .Build();
+```
+
 ### Setting sender and receiver
 
 ```csharp
@@ -111,6 +182,19 @@ new MessageBuilder()
 
 new MessageBuilder()
     .FromEmail("noreply@example.com")
+    .ToEmail("user@example.com")
+    .WithText("Hello")
+    .Build();
+
+// Using sender identity types
+new MessageBuilder()
+    .From(new SenderRef("support"))
+    .ToEmail("user@example.com")
+    .WithText("Hello")
+    .Build();
+
+new MessageBuilder()
+    .From(new EmailSender("noreply@example.com", "No Reply"))
     .ToEmail("user@example.com")
     .WithText("Hello")
     .Build();
@@ -520,3 +604,29 @@ var attachment = new MessageAttachment(
 ```
 
 Properties: `Id`, `FileName`, `MimeType`, `Content` (base64-encoded string).
+
+## Polymorphic JSON serialization
+
+`Message.Sender` and `Message.Receiver` are typed as `IEndpoint?`. The `IEndpoint` interface carries `[JsonDerivedType]` for every concrete implementation, enabling round-trip JSON serialization without custom converters:
+
+```json
+{
+  "id": "msg-1",
+  "sender": { "$type": "senderref", "senderName": "support" },
+  "receiver": { "$type": "endpoint", "address": "user@example.com", "type": "email" },
+  "content": { "$type": "text", "text": "Hello!" }
+}
+```
+
+The `$type` discriminator tells `System.Text.Json` which concrete type to deserialize. The available discriminator values and their corresponding types are:
+
+| `$type` value | CLR type | Sender-friendly |
+|---|---|---|
+| `endpoint` | `Endpoint` | Generic endpoint — specify `address` and `type` |
+| `senderref` | `SenderRef` | Identity reference — specify `senderName`, resolved at send time |
+| `email` | `EmailSender` | Email sender — specify `emailAddress` and optional `displayName` |
+| `phone` | `PhoneSender` | Phone sender — specify `phoneNumber` and optional `displayName` |
+| `alphanumeric` | `AlphaNumericSender` | Alphanumeric ID — specify `text` |
+| `bot` | `BotSender` | Bot sender — specify `botId` and optional `displayName` |
+
+When a message with a `SenderRef` is deserialized at a connector endpoint, the `SenderRef` is resolved through the sender identity pipeline before processing.

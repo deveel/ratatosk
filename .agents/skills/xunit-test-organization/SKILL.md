@@ -10,7 +10,7 @@ metadata:
     github-path: plugins/dotnet-tests/skills/xunit-test-organization
     github-ref: refs/heads/main
     github-repo: https://github.com/deveel/agents-skills
-    github-tree-sha: 47c2eb99650de494fe45647e97f60c95eee4157c
+    github-tree-sha: 4709dc809d2e833a753844334fe7512682c5a4de
     version: "1.0"
 name: xunit-test-organization
 ---
@@ -146,110 +146,21 @@ for names, emails, addresses, IDs, amounts, or any domain value that could
 realistically vary. Randomized data catches edge cases that fixed values miss
 and prevents tests from accidentally passing due to magic constants.
 
-### Required package
-```xml
-<PackageReference Include="Bogus" Version="34.*" />
-```
-
-### Faker placement
-
-Fakers are defined as `static readonly` fields inside the fixture that owns
-the entity, not inside individual test methods. This keeps data generation
-centralized and reusable.
-
-```csharp
-// test/MyLib.Testing/Fixtures/OrderServiceFixture.cs
-namespace MyLib.Testing.Fixtures;
-
-public class OrderServiceFixture
-{
-    // One Faker<T> per domain entity, defined once
-    private static readonly Faker<Order> OrderFaker = new Faker<Order>()
-        .RuleFor(o => o.Id, f => f.Random.Guid())
-        .RuleFor(o => o.ProductId, f => f.Commerce.Ean13())
-        .RuleFor(o => o.Quantity, f => f.Random.Int(1, 100))
-        .RuleFor(o => o.CustomerName, f => f.Name.FullName())
-        .RuleFor(o => o.Email, f => f.Internet.Email())
-        .RuleFor(o => o.CreatedAt, f => f.Date.RecentOffset().UtcDateTime);
-
-    public OrderService Sut { get; }
-
-    public OrderServiceFixture()
-    {
-        var repo = new InMemoryOrderRepository();
-        Sut = new OrderService(repo);
-    }
-
-    // Builder methods delegate to the Faker, with overrides for specific scenarios
-    public Order BuildValidOrder() =>
-        OrderFaker.Generate();
-
-    public Order BuildOrderWithQuantity(int quantity) =>
-        OrderFaker.Clone().RuleFor(o => o.Quantity, quantity).Generate();
-
-    public IEnumerable<Order> BuildOrders(int count) =>
-        OrderFaker.Generate(count);
-}
-```
-
-### Seeding for reproducibility
-
-When a test fails due to randomized data, the seed must be reproducible.
-Use a fixed seed only in `[Theory]` / `[MemberData]` scenarios where
-determinism is required; elsewhere let Bogus randomize freely.
-
-```csharp
-// Deterministic seed for MemberData — use when the exact values matter
-private static readonly Faker<Order> SeededOrderFaker =
-    new Faker<Order>("en").UseSeed(12345)
-        .RuleFor(o => o.Id, f => f.Random.Guid())
-        .RuleFor(o => o.Quantity, f => f.Random.Int(1, 100));
-```
-
-When a randomly seeded test fails, xUnit's output includes the data values —
-capture them and promote the failing case to a named `[InlineData]` or
-`[MemberData]` entry so it becomes a permanent regression test.
-
-### MemberData with Bogus
-
-Use `[MemberData]` with a Bogus-generated dataset for `[Theory]` tests on
-complex objects:
-
-```csharp
-public static IEnumerable<object[]> InvalidOrders =>
-    new Faker<Order>()
-        .RuleFor(o => o.Id, f => f.Random.Guid())
-        .RuleFor(o => o.Quantity, f => f.Random.Int(-100, 0)) // always invalid
-        .RuleFor(o => o.ProductId, f => f.Commerce.Ean13())
-        .Generate(5)
-        .Select(o => new object[] { o });
-
-[Theory]
-[MemberData(nameof(InvalidOrders))]
-[Trait("Category", "Unit")]
-[Trait("Layer", "Domain")]
-[Trait("Feature", "OrderProcessing")]
-public void Should_ThrowArgumentException_When_QuantityIsNotPositive(Order order)
-{
-    // Act & Assert
-    var ex = Assert.Throws<ArgumentException>(
-        () => _fixture.Sut.ProcessOrder(order));
-    Assert.Contains("quantity", ex.Message);
-}
-```
-
-### Rules
-- Always use `Faker<T>` with explicit `RuleFor` for every property — never
-  rely on Bogus auto-generation without rules, as it can produce unexpected nulls
-- Define one `Faker<T>` per entity type per fixture — do not instantiate
-  new `Faker<T>` inside individual test methods
+Key rules:
+- Define one `Faker<T>` per entity type as a `static readonly` field **in the
+  fixture** — never instantiate `Faker<T>` inside individual test methods
+- Always use explicit `RuleFor` for every property; never rely on Bogus
+  auto-generation without rules (it can produce unexpected nulls)
 - Use `f.Random.Guid()` instead of `Guid.NewGuid()` so randomization flows
-  through the Bogus seed
-- Use locale `"en"` explicitly when string format matters (e.g. phone numbers,
-  postcodes): `new Faker<Order>("en")`
-- Prefer exact-value assertions when the expected value is deterministic and
-  meaningful for the test intent; when using non-deterministic randomized data,
-  assert on behaviour, shape, or range instead (e.g. `Assert.True(result > 0)`)
+  through the Bogus seed; use locale `"en"` when string format matters
+- Use a fixed seed (`UseSeed(n)`) only in `[MemberData]` datasets or for
+  regression reproduction — elsewhere let Bogus randomize freely
+- Assert on observable behaviour / shape for freely randomized values;
+  use exact-value assertions only when the value is deterministic (seeded
+  or explicitly overridden)
+
+→ See [`references/bogus.md`](./references/bogus.md) for full placement
+patterns, seeding guidance, `[MemberData]` examples, and assertion strategy.
 
 ---
 
@@ -269,13 +180,12 @@ namespace MyLib.Testing.Fixtures;
 
 public class OrderServiceFixture
 {
-    // Bogus Faker defined once — see Section 3 for full rules
+    // One Faker<T> per entity, defined once as static readonly
+    // (see references/bogus.md for full placement and seeding patterns)
     private static readonly Faker<Order> OrderFaker = new Faker<Order>("en")
-        .RuleFor(o => o.Id, f => f.Random.Guid())
-        .RuleFor(o => o.ProductId, f => f.Commerce.Ean13())
+        .RuleFor(o => o.Id,       f => f.Random.Guid())
         .RuleFor(o => o.Quantity, f => f.Random.Int(1, 100))
-        .RuleFor(o => o.CustomerName, f => f.Name.FullName())
-        .RuleFor(o => o.Email, f => f.Internet.Email());
+        /* ... remaining RuleFor calls ... */;
 
     public OrderService Sut { get; }
 
@@ -285,8 +195,7 @@ public class OrderServiceFixture
         Sut = new OrderService(repo);
     }
 
-    public Order BuildValidOrder() =>
-        OrderFaker.Generate();
+    public Order BuildValidOrder() => OrderFaker.Generate();
 
     public Order BuildOrderWithQuantity(int quantity) =>
         OrderFaker.Clone().RuleFor(o => o.Quantity, quantity).Generate();
@@ -361,9 +270,14 @@ public void Should_PersistOrder_When_ProcessingSucceeds() { ... }
 
 To run only unit tests in CI:
 ```bash
+# MTP projects (.NET 8+ with xUnit v3) — runner args go after the "--" divider
+dotnet test -- --filter "Trait[Category]=Unit"
+dotnet test -- --filter "Trait[Category]=Integration"
+dotnet test -- --filter "Trait[Feature]=OrderProcessing"
+
+# VSTest projects (.NET 6/7 with xUnit v2) — filter goes before "--"
 dotnet test --filter "Category=Unit"
 dotnet test --filter "Category=Integration"
-dotnet test --filter "Feature=OrderProcessing"
 ```
 
 ---

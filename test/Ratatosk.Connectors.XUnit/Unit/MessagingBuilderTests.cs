@@ -5,6 +5,10 @@
 
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Moq;
+
+using Ratatosk.Senders;
 
 namespace Ratatosk.XUnit
 {
@@ -220,6 +224,119 @@ namespace Ratatosk.XUnit
 			Assert.Equal("CustomFactory", connector.CreatedBy);
 		}
 
+		// ── WithSenders configuration ─────────────────────────────────────────
+
+		[Fact]
+		public void Should_ThrowArgumentNullException_When_WithSendersWithNullConfigure()
+		{
+			var services = CreateServices();
+
+			Assert.Throws<ArgumentNullException>(() =>
+				services.AddMessaging()
+					.AddConnector<TestConnector>(cfg => cfg
+						.WithSenders(null!)));
+		}
+
+		[Fact]
+		public void Should_ReturnBuilder_When_WithSendersIsCalled()
+		{
+			var services = CreateServices();
+			var messagingBuilder = services.AddMessaging();
+
+			var result = messagingBuilder.AddConnector<TestConnector>(cfg => cfg
+				.WithSenders(_ => { }));
+
+			Assert.Same(messagingBuilder, result);
+		}
+
+		[Fact]
+		public void Should_RegisterSenderInfrastructure_When_WithSendersIsCalled()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(_ => { }));
+
+			Assert.Contains(services, d => d.ServiceType == typeof(ISenderCache));
+		}
+
+		// ── UseInMemoryStore ──────────────────────────────────────────────────
+
+		[Fact]
+		public void Should_RegisterInMemoryStore_When_UseInMemoryStoreIsCalled()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(s => s
+						.UseInMemoryStore()));
+
+			var provider = services.BuildServiceProvider();
+			var repository = provider.GetRequiredService<ISenderRepository<SenderEntity>>();
+
+			Assert.Equal(typeof(InMemorySenderRepository), repository.GetType());
+		}
+
+		[Fact]
+		public async Task Should_ResolveSender_When_UseInMemoryStoreWithSeedSenders()
+		{
+			var seedSender = new SenderEntity
+			{
+				Id = "test-1",
+				Name = "test-sender",
+				Address = "test@example.com",
+				Type = EndpointType.EmailAddress
+			};
+			seedSender.Activate();
+
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(s => s
+						.UseInMemoryStore(new[] { seedSender })));
+
+			var provider = services.BuildServiceProvider();
+			var resolver = provider.GetRequiredService<ISenderResolver>();
+
+			var context = new SenderResolutionContext(new SenderRef("test-sender"), new ConnectionSettings());
+			var sender = await resolver.ResolveAsync(context, CancellationToken.None);
+
+			Assert.NotNull(sender);
+			Assert.Equal("test-sender", sender.Name);
+			Assert.Equal("test@example.com", sender.Address);
+		}
+
+		[Fact]
+		public void Should_RegisterCacheOptions_When_WithCacheOptionsIsCalled()
+		{
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(s => s
+						.WithCacheOptions(opt => opt.DefaultTtl = TimeSpan.FromMinutes(15))));
+
+			var provider = services.BuildServiceProvider();
+			var cacheOptions = provider.GetRequiredService<IOptions<SenderCacheOptions>>();
+
+			Assert.Equal(TimeSpan.FromMinutes(15), cacheOptions.Value.DefaultTtl);
+		}
+
+		[Fact]
+		public void Should_RegisterCustomCache_When_WithCacheIsCalled()
+		{
+			var customCache = new Mock<ISenderCache>().Object;
+			var services = CreateServices();
+			services.AddMessaging()
+				.AddConnector<TestConnector>(cfg => cfg
+					.WithSenders(s => s
+						.WithCache(customCache)));
+
+			var provider = services.BuildServiceProvider();
+			var cache = provider.GetRequiredService<ISenderCache>();
+
+			Assert.Same(customCache, cache);
+		}
+
 		// ── Test connector types ──────────────────────────────────────────────
 
 		[ChannelSchema(typeof(TestSchemaFactory))]
@@ -252,9 +369,14 @@ namespace Ratatosk.XUnit
 		[ChannelSchema(typeof(AnotherTestSchemaFactory))]
 		private class AnotherTestConnector : IChannelConnector
 		{
-			public AnotherTestConnector(IChannelSchema schema, ConnectionSettings? settings = null) { Schema = schema; }
+			public AnotherTestConnector(IChannelSchema schema, ConnectionSettings? settings = null)
+			{
+				Schema = schema;
+				ConnectionSettings = settings ?? new ConnectionSettings();
+			}
 
 			public IChannelSchema Schema { get; }
+			public ConnectionSettings ConnectionSettings { get; }
 			public ConnectorState State => ConnectorState.Uninitialized;
 
 			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
@@ -272,8 +394,13 @@ namespace Ratatosk.XUnit
 
 		private class ConnectorWithoutAttribute : IChannelConnector
 		{
-			public ConnectorWithoutAttribute(IChannelSchema schema, ConnectionSettings? settings = null) { Schema = schema; }
+			public ConnectorWithoutAttribute(IChannelSchema schema, ConnectionSettings? settings = null)
+			{
+				Schema = schema;
+				ConnectionSettings = settings ?? new ConnectionSettings();
+			}
 			public IChannelSchema Schema { get; }
+			public ConnectionSettings ConnectionSettings { get; }
 			public ConnectorState State => ConnectorState.Uninitialized;
 
 			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken ct) => throw new NotSupportedException();

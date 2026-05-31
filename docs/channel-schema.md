@@ -142,6 +142,8 @@ schema.UpdateParameter("Timeout", p =>
 
 Different connectors handle different addressing schemes: SMS uses phone numbers, email uses email addresses, push notifications use device tokens, and chat apps use user or chat identifiers. Endpoint configurations declare which addressing schemes the connector supports and whether each can be used for sending, receiving, or both. The schema validator uses this to reject messages that use an endpoint type the connector cannot handle.
 
+### Standard endpoints
+
 Declare which `EndpointType` values the connector handles and in which direction:
 
 ```csharp
@@ -174,6 +176,62 @@ For connectors that accept any endpoint type (e.g., a generic webhook relay):
 
 ```csharp
 schema.AllowsAnyMessageEndpoint();
+```
+
+### Sender identity endpoints
+
+The framework defines specialised sender types (see [Message model](messaging-model.md#sender-identities)) that each carry a specific `EndpointType`:
+
+| Sender type | `EndpointType` | When to expect on messages |
+|---|---|---|
+| `SenderRef` | `Label` | Before resolution — a logical name reference awaiting registry lookup |
+| `EmailSender` | `EmailAddress` | After resolution — a resolved email sender |
+| `PhoneSender` | `PhoneNumber` | After resolution — a resolved phone sender |
+| `AlphaNumericSender` | `Label` | After resolution — a resolved alphanumeric sender ID |
+| `BotSender` | `Id` | After resolution — a resolved bot identifier |
+
+#### Resolution-aware validation
+
+When a message arrives at the connector (`SendMessageAsync`), sender resolution happens **before** validation:
+
+```
+SendMessageAsync
+  → ResolveSenderAsync         // SenderRef → concrete sender
+  → ValidateMessageAsync       // validate against schema
+```
+
+This means:
+- **`SenderRef`** (which has `EndpointType.Label`) is replaced by the concrete sender **before** validation runs. The validator sees the resolved endpoint, not the reference. You do **not** need to declare `EndpointType.Label` in the schema unless you also send `AlphaNumericSender` endpoints after resolution.
+- **Resolved senders** must still match the schema's endpoint declarations. For example, if the schema only declares `EndpointType.PhoneNumber` and the registry returns an `EmailSender`, validation fails even though resolution succeeded.
+
+A connector that accepts only phone senders and supports `SenderRef` resolution:
+
+```csharp
+schema
+    .HandlesMessageEndpoint(EndpointType.PhoneNumber, cfg =>
+    {
+        cfg.CanSend = true;
+        cfg.CanReceive = false;
+    });
+    // SenderRef (Label) is resolved to PhoneNumber before validation;
+    // no need to declare Label unless you also handle alphanumeric senders.
+```
+
+A connector that also accepts alphanumeric senders (which stay as `Label` after resolution) must declare both:
+
+```csharp
+schema
+    .HandlesMessageEndpoint(EndpointType.PhoneNumber, cfg =>
+    {
+        cfg.CanSend = true;
+        cfg.CanReceive = false;
+    })
+    .HandlesMessageEndpoint(EndpointType.Label, cfg =>
+    {
+        cfg.CanSend = true;
+        cfg.CanReceive = false;
+    });
+    // Label covers both unresolved SenderRef AND resolved AlphaNumericSender
 ```
 
 ### ChannelEndpointConfiguration properties

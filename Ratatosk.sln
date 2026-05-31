@@ -21,36 +21,47 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0F91077D-AC4
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Abstractions.XUnit", "test\Ratatosk.Connector.Abstractions.XUnit\Ratatosk.Connector.Abstractions.XUnit.csproj", "{82E69A88-5CC5-14D6-7B53-49AC0C426B4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Twilio", "src\Ratatosk.Twilio\Ratatosk.Twilio.csproj", "{CA2F7FC9-8687-E717-9C28-8BFC7974EB50}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Twilio", "src\Ratatosk.Twilio\Ratatosk.Twilio.csproj", "{CA2F7FC9-8687-E717-9C28-8BFC7974EB50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Twilio.XUnit", "test\Ratatosk.Twilio.XUnit\Ratatosk.Twilio.XUnit.csproj", "{29B04B95-B476-6906-729A-D74BBB3216D5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Twilio.XUnit", "test\Ratatosk.Twilio.XUnit\Ratatosk.Twilio.XUnit.csproj", "{29B04B95-B476-6906-729A-D74BBB3216D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Sendgrid.XUnit", "test\Ratatosk.Sendgrid.XUnit\Ratatosk.Sendgrid.XUnit.csproj", "{DBF2F766-0207-DA49-967C-AA3E9D547A69}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Sendgrid.XUnit", "test\Ratatosk.Sendgrid.XUnit\Ratatosk.Sendgrid.XUnit.csproj", "{DBF2F766-0207-DA49-967C-AA3E9D547A69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Sendgrid", "src\Ratatosk.Sendgrid\Ratatosk.Sendgrid.csproj", "{19DE628A-AB50-F558-4124-894C4EDAB123}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Sendgrid", "src\Ratatosk.Sendgrid\Ratatosk.Sendgrid.csproj", "{19DE628A-AB50-F558-4124-894C4EDAB123}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connectors", "src\Ratatosk.Connectors\Ratatosk.Connectors.csproj", "{1DFDB54F-8522-4804-92EB-7C7E403D3576}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connectors.XUnit", "test\Ratatosk.Connectors.XUnit\Ratatosk.Connectors.XUnit.csproj", "{99577C80-2B4C-47DD-A274-788A5CF86B68}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Firebase", "src\Ratatosk.Firebase\Ratatosk.Firebase.csproj", "{3931E0C7-2B09-5C0A-1EDF-1EB97A545F93}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Firebase", "src\Ratatosk.Firebase\Ratatosk.Firebase.csproj", "{3931E0C7-2B09-5C0A-1EDF-1EB97A545F93}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Firebase.XUnit", "test\Ratatosk.Firebase.XUnit\Ratatosk.Firebase.XUnit.csproj", "{FAA38244-1DFE-A70C-4F12-3012E65A9779}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Firebase.XUnit", "test\Ratatosk.Firebase.XUnit\Ratatosk.Firebase.XUnit.csproj", "{FAA38244-1DFE-A70C-4F12-3012E65A9779}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Facebook", "src\Ratatosk.Facebook\Ratatosk.Facebook.csproj", "{BAA0E8C8-0BAF-3908-4ACE-48FCDDB9BD26}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Facebook", "src\Ratatosk.Facebook\Ratatosk.Facebook.csproj", "{BAA0E8C8-0BAF-3908-4ACE-48FCDDB9BD26}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Facebook.XUnit", "test\Ratatosk.Facebook.XUnit\Ratatosk.Facebook.XUnit.csproj", "{6DE730ED-C03C-7F63-E5C3-06920CD5B0FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Facebook.XUnit", "test\Ratatosk.Facebook.XUnit\Ratatosk.Facebook.XUnit.csproj", "{6DE730ED-C03C-7F63-E5C3-06920CD5B0FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Telegram", "src\Ratatosk.Telegram\Ratatosk.Telegram.csproj", "{7AB2FDCA-D49E-0329-5707-469617078EB8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Telegram", "src\Ratatosk.Telegram\Ratatosk.Telegram.csproj", "{7AB2FDCA-D49E-0329-5707-469617078EB8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Connector.Telegram.XUnit", "test\Ratatosk.Telegram.XUnit\Ratatosk.Telegram.XUnit.csproj", "{D6BAA05A-DB2C-5209-2E20-6A6BBCE22BC8}"
-EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Telegram.XUnit", "test\Ratatosk.Telegram.XUnit\Ratatosk.Telegram.XUnit.csproj", "{D6BAA05A-DB2C-5209-2E20-6A6BBCE22BC8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk", "src\Ratatosk\Ratatosk.csproj", "{E89DB6F7-29B2-455D-B0AE-FB9E41F90B46}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.XUnit", "test\Ratatosk.XUnit\Ratatosk.XUnit.csproj", "{8838304E-3F66-41D0-95C2-CEAE20859BDF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Testing", "test\Ratatosk.Testing\Ratatosk.Testing.csproj", "{6F694C65-9580-422A-ADC4-85C5566599D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Senders.XUnit", "test\Ratatosk.Senders.XUnit\Ratatosk.Senders.XUnit.csproj", "{DF8372EE-1A68-4A0F-A92E-FC76478712FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Senders", "src\Ratatosk.Senders\Ratatosk.Senders.csproj", "{491FB8AE-D385-4806-A0AB-245F8E8E023B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Senders.EntityFramework", "src\Ratatosk.Senders.EntityFramework\Ratatosk.Senders.EntityFramework.csproj", "{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Senders.InMemory", "src\Ratatosk.Senders.InMemory\Ratatosk.Senders.InMemory.csproj", "{BB959F65-44CD-4444-8607-108AE75AE7EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Senders.InMemory.XUnit", "test\Ratatosk.Senders.InMemory.XUnit\Ratatosk.Senders.InMemory.XUnit.csproj", "{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ratatosk.Senders.EntityFramework.XUnit", "test\Ratatosk.Senders.EntityFramework.XUnit\Ratatosk.Senders.EntityFramework.XUnit.csproj", "{15A47650-BE84-4ECC-86DD-245F7C0BA865}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -290,6 +301,78 @@ Global
 		{6F694C65-9580-422A-ADC4-85C5566599D4}.Release|x64.Build.0 = Release|Any CPU
 		{6F694C65-9580-422A-ADC4-85C5566599D4}.Release|x86.ActiveCfg = Release|Any CPU
 		{6F694C65-9580-422A-ADC4-85C5566599D4}.Release|x86.Build.0 = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|x64.Build.0 = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Debug|x86.Build.0 = Debug|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|x64.ActiveCfg = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|x64.Build.0 = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|x86.ActiveCfg = Release|Any CPU
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC}.Release|x86.Build.0 = Release|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Debug|x64.Build.0 = Debug|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Debug|x86.Build.0 = Debug|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Release|x64.ActiveCfg = Release|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Release|x64.Build.0 = Release|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Release|x86.ActiveCfg = Release|Any CPU
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B}.Release|x86.Build.0 = Release|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Debug|x64.Build.0 = Debug|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Debug|x86.Build.0 = Debug|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Release|x64.ActiveCfg = Release|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Release|x64.Build.0 = Release|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Release|x86.ActiveCfg = Release|Any CPU
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E}.Release|x86.Build.0 = Release|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Debug|x64.Build.0 = Debug|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Debug|x86.Build.0 = Debug|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Release|x64.ActiveCfg = Release|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Release|x64.Build.0 = Release|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Release|x86.ActiveCfg = Release|Any CPU
+		{BB959F65-44CD-4444-8607-108AE75AE7EA}.Release|x86.Build.0 = Release|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Debug|x64.Build.0 = Debug|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Debug|x86.Build.0 = Debug|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Release|x64.ActiveCfg = Release|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Release|x64.Build.0 = Release|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Release|x86.ActiveCfg = Release|Any CPU
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29}.Release|x86.Build.0 = Release|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Debug|x64.Build.0 = Debug|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Debug|x86.Build.0 = Debug|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Release|x64.ActiveCfg = Release|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Release|x64.Build.0 = Release|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Release|x86.ActiveCfg = Release|Any CPU
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -314,6 +397,12 @@ Global
 		{E89DB6F7-29B2-455D-B0AE-FB9E41F90B46} = {0F91077D-AC47-4319-96FF-09CA6EE50CC6}
 		{8838304E-3F66-41D0-95C2-CEAE20859BDF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{6F694C65-9580-422A-ADC4-85C5566599D4} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{DF8372EE-1A68-4A0F-A92E-FC76478712FC} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{491FB8AE-D385-4806-A0AB-245F8E8E023B} = {0F91077D-AC47-4319-96FF-09CA6EE50CC6}
+		{CC2AA93D-07E6-43CD-AB61-C82BD4AB0A8E} = {0F91077D-AC47-4319-96FF-09CA6EE50CC6}
+		{BB959F65-44CD-4444-8607-108AE75AE7EA} = {0F91077D-AC47-4319-96FF-09CA6EE50CC6}
+		{D1A54750-C8F4-4B48-A7E2-0CDAF0F6DD29} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{15A47650-BE84-4ECC-86DD-245F7C0BA865} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {64BF9420-C7A8-4D2B-804F-41EB2E83437F}

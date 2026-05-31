@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SenderManagerSample</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Abstractions\Ratatosk.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Connector.Abstractions\Ratatosk.Connector.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Connectors\Ratatosk.Connectors.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk\Ratatosk.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Senders\Ratatosk.Senders.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Senders.InMemory\Ratatosk.Senders.InMemory.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Ratatosk.Sendgrid\Ratatosk.Sendgrid.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Deveel" />
+  </ItemGroup>
+
+</Project>

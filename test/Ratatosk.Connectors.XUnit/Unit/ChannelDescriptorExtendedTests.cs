@@ -389,7 +389,13 @@ namespace Ratatosk.XUnit
 		// Test connector classes that implement IChannelConnector
 		private class TestConnector : IChannelConnector
 		{
+			public TestConnector(ConnectionSettings? settings = null)
+			{
+				ConnectionSettings = settings ?? new ConnectionSettings();
+			}
+
 			public IChannelSchema Schema { get; } = CreateTestSchema();
+			public ConnectionSettings ConnectionSettings { get; }
 			public ConnectorState State => ConnectorState.Ready;
 
 			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
@@ -428,7 +434,13 @@ namespace Ratatosk.XUnit
 
 		private class AnotherTestConnector : IChannelConnector
 		{
+			public AnotherTestConnector(ConnectionSettings? settings = null)
+			{
+				ConnectionSettings = settings ?? new ConnectionSettings();
+			}
+
 			public IChannelSchema Schema { get; } = CreateTestSchema();
+			public ConnectionSettings ConnectionSettings { get; }
 			public ConnectorState State => ConnectorState.Ready;
 
 			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)

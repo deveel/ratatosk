@@ -265,11 +265,17 @@ namespace Ratatosk.XUnit
 		/// <summary>A connector registered directly in the DI container with a distinct schema.</summary>
 		private sealed class DirectTestConnector : IChannelConnector
 		{
+			public DirectTestConnector(ConnectionSettings? settings = null)
+			{
+				ConnectionSettings = settings ?? new ConnectionSettings();
+			}
+
 			public IChannelSchema Schema { get; } = new ChannelSchemaBuilder("DirectProvider", "DirectType", "1.0.0")
 				.WithCapabilities(ChannelCapability.SendMessages)
 				.HandlesMessageEndpoint(EndpointType.EmailAddress)
 				.AddContentType(MessageContentType.PlainText).Build();
 
+			public ConnectionSettings ConnectionSettings { get; }
 			public ConnectorState State => ConnectorState.Ready;
 			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
 			public ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
@@ -287,11 +293,17 @@ namespace Ratatosk.XUnit
 		/// <summary>Same schema identity as TestConnector — used to test deduplication.</summary>
 		private sealed class DirectDuplicateTestConnector : IChannelConnector
 		{
+			public DirectDuplicateTestConnector(ConnectionSettings? settings = null)
+			{
+				ConnectionSettings = settings ?? new ConnectionSettings();
+			}
+
 			public IChannelSchema Schema { get; } = new ChannelSchemaBuilder("TestProvider", "TestType", "1.0.0")
 				.WithCapabilities(ChannelCapability.SendMessages)
 				.HandlesMessageEndpoint(EndpointType.PhoneNumber)
 				.AddContentType(MessageContentType.PlainText).Build();
 
+			public ConnectionSettings ConnectionSettings { get; }
 			public ConnectorState State => ConnectorState.Ready;
 			public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
 			public ValueTask<OperationResult<bool>> TestConnectionAsync(CancellationToken ct) => new ValueTask<OperationResult<bool>>(OperationResult<bool>.Success(true));
