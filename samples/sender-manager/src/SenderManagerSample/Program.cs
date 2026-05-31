@@ -50,7 +50,7 @@ foreach (var s in seedSenders)
 
 builder.Services.AddMessaging()
     .AddClient()
-    .AddSenders<SenderEntity>(s => s
+    .AddSenders<SenderEntity>(cfg => cfg
         .UseInMemoryStore(seedSenders))
     .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid"));
 

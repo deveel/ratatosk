@@ -16,21 +16,9 @@ namespace Ratatosk
 		public const string ErrorDomain = "Telegram";
 
 		/// <summary>
-		/// Error code for missing bot token.
-		/// </summary>
-
-		/// <summary>
-		/// Error code for invalid bot token format.
-		/// </summary>
-
-		/// <summary>
 		/// Error code for invalid chat ID.
 		/// </summary>
 		public const string InvalidChatId = "INVALID_CHAT_ID";
-
-		/// <summary>
-		/// Error code for message text too long.
-		/// </summary>
 
 		/// <summary>
 		/// Error code for file too large.

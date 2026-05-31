@@ -2,6 +2,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Ratatosk
 {
+    /// <summary>
+    /// A client that wraps the Firebase Messaging SDK for sending push notifications.
+    /// </summary>
     [ExcludeFromCodeCoverage]
     public class FirebaseMessagingClient : IFirebaseMessagingClient
     {

@@ -36,14 +36,6 @@ namespace Ratatosk
         public const string InitializationFailed = "INITIALIZATION_FAILED";
 
         /// <summary>
-        /// Indicates that the connection test to Firebase failed.
-        /// </summary>
-
-        /// <summary>
-        /// Indicates that sending a Firebase push message failed.
-        /// </summary>
-
-        /// <summary>
         /// Indicates that the message could not be sent because the
         /// registration token is not registered or invalid.
         /// </summary>
@@ -58,10 +50,6 @@ namespace Ratatosk
         /// Indicates that the sender ID does not match the registered token.
         /// </summary>
         public const string SenderIdMismatch = "SENDER_ID_MISMATCH";
-
-        /// <summary>
-        /// Indicates that the FCM quota has been exceeded.
-        /// </summary>
 
         /// <summary>
         /// Indicates that a third-party authentication error occurred.

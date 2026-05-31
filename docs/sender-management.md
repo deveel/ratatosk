@@ -8,21 +8,24 @@ The sender identity system solves a common problem: **message composition should
 
 A sender is an `IEndpoint` that also carries identity semantics — it represents *who* the message is from, not just an address. The framework distinguishes between:
 
-- **Inline senders** — concrete sender details used directly on the message (`EmailSender`, `PhoneSender`, etc.). No resolution needed; the connector uses them as-is.
-- **Unresolved references** — a logical name (`SenderRef`) that the connector resolves at send time. The actual sender (address, display name, endpoint type) is looked up from a registry. `SenderRef` implements the `IUnresolvedSender` marker interface to signal that resolution is required.
+- **Inline senders** — concrete sender details used directly on the message (`EmailSender`, `PhoneSender`, etc.). These may still be resolved against the registry to validate they match a known active identity.
+- **Unresolved references** — a logical name (`SenderRef`) that the connector resolves at send time. The actual sender (address, display name, endpoint type) is looked up from the registry. `SenderRef` implements the `IUnresolvedSender` marker interface to signal that resolution is required.
 - **Plain endpoints** — an `Endpoint` with a type and address. These are not resolved; they pass through as-is.
 
 This separation lets you build and dispatch messages with a logical name like `"support"`, while the concrete "support@example.com" endpoint lives in the registry — changeable at runtime without touching message code.
 
 ### The resolution pipeline
 
-When a message carrying a `SenderRef` reaches the connector, the framework resolves it before sending:
+When a message is sent, the `MessagingClient` builds a `SenderResolutionContext` and passes it to the registered `ISenderResolver`:
 
 ```
-SenderRef("support")
-  → cache check (avoid repeated lookups)
-  → repository lookup by name
-  → replace SenderRef with concrete ISender on the message
+message.Sender + ConnectionSettings
+  → SenderResolutionContext
+  → ISenderResolver.ResolveAsync(context)
+     → if IUnresolvedSender: cache check → repository lookup by name → cache result
+     → if ISender: cache check → repository lookup by address+type → cache result
+     → fallback: ConnectionSettings.GetDefaultSender()
+  → resolved ISender replaces message.Sender
   → validate against schema
   → send
 ```
@@ -33,11 +36,11 @@ Resolution is automatic — the connector handles it. The API or service that bu
 
 The repository persists sender entities (name, address, endpoint type, active flag). It decouples *who can send* from *how messages are built* — operations teams manage senders through CRUD, while developers reference them by name.
 
-The repository interface `ISenderRepository<TSender>` extends Kista's `IRepository<TSender>`, inheriting all standard CRUD, pagination, and query capabilities. Custom implementations can use their own storage-bound entity types (e.g., `DbSender`, `MongoSender`) that implement `ISender`.
+The repository interface `ISenderRepository<TSender>` extends Kista's `IRepository<TSender>`, inheriting all standard CRUD, pagination, and query capabilities. Custom implementations can use their own storage-bound entity types (e.g., `SenderEntity`, `DbSender`) that implement `ISender`.
 
 ### Cache for performance
 
-Resolution results are cached by sender name with a configurable TTL (default 5 minutes). Frequent messages using the same `SenderRef` skip the repository lookup, reducing latency and load on the store.
+Resolution results are cached with a configurable TTL (default 5 minutes). Each sender is indexed under two keys — by name and by endpoint (type + address) — so lookups are fast regardless of whether resolution started from a `SenderRef` or an inline sender. The default implementation uses `IDistributedCache` via `DistributedSenderCache`.
 
 ## Sender identity model
 
@@ -68,35 +71,84 @@ dotnet add package Ratatosk.Senders
 
 The `Ratatosk.Senders` package extends `IServiceCollection` directly — the `Ratatosk` package and `AddMessaging()` are **not** required. Sender management works as a standalone feature.
 
-### Standalone (no messaging)
+### With the messaging builder (recommended)
+
+Sender services are registered via `SenderServiceBuilder`, which is returned by `AddSenders<TSender>()` on the `MessagingBuilder`. Storage backends provide extension methods on the builder:
 
 ```csharp
-using Ratatosk;
+using Ratatosk.Senders;
 
-builder.Services.AddSenders();
-builder.Services.AddSenderInMemoryStore();
-```
-
-### With the messaging builder
-
-```csharp
+// Registers cache, sender manager, validator, resolver,
+// and configures the in-memory store — all in one fluent chain
 builder.Services.AddMessaging()
     .AddClient()
-    .AddSenders()
-    .AddSendGridEmail("sendgrid", cfg => cfg.WithSettings("SendGrid"));
+    .AddSenders<SenderEntity>(cfg => cfg
+        .UseInMemoryStore(seedSenders))
+    .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid"));
 ```
 
-### Storage backends
+For advanced scenarios, `AddSenders<TSender>()` returns the builder directly:
 
 ```csharp
-// In-memory (development/testing):
-builder.Services.AddSenderInMemoryStore(seedSenders);
+var senders = builder.Services.AddMessaging()
+    .AddSenders<SenderEntity>();
 
-// Entity Framework:
-builder.Services.AddSenderEntityFrameworkStore<MyDbContext>();
+senders.UseInMemoryStore(seedSenders);
+senders.ConfigureCacheOptions(o => o.DefaultTtl = TimeSpan.FromMinutes(10));
+```
 
-// Custom:
-builder.Services.AddSenderRepository<MySenderStore, MySender>();
+### Standalone (no messaging)
+
+Without a connector, the `SenderServiceBuilder` is accessible through the `MessagingBuilder`:
+
+```csharp
+using Ratatosk.Senders;
+
+var senderBuilder = builder.Services.AddMessaging()
+    .AddSenders<SenderEntity>();
+
+senderBuilder.UseInMemoryStore();
+```
+
+### Entity Framework
+
+```csharp
+using Ratatosk.Senders;
+
+builder.Services.AddMessaging()
+    .AddClient()
+    .AddSenders<DbSender>(cfg => cfg
+        .UseEntityFramework(options =>
+            options.UseSqlServer(connectionString)))
+    .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid"));
+```
+
+The `UseEntityFramework` extension registers `SenderDbContext`, `EntitySenderRepository`, and required logging services.
+
+### In-memory (development/testing)
+
+```csharp
+using Ratatosk.Senders;
+
+builder.Services.AddMessaging()
+    .AddSenders<SenderEntity>(cfg => cfg
+        .UseInMemoryStore(seedSenders));
+```
+
+`UseInMemoryStore` optionally accepts seed sender entities. Without seed data, the store starts empty.
+
+### Custom storage
+
+Register your own `ISenderRepository<TSender>` after calling `AddSenders<TSender>()`:
+
+```csharp
+using Ratatosk.Senders;
+
+builder.Services.AddMessaging()
+    .AddSenders<MySender>(cfg => cfg
+        .ConfigureCacheOptions(o => o.DefaultTtl = TimeSpan.FromMinutes(10)));
+
+builder.Services.AddScoped<ISenderRepository<MySender>, MySenderRepository>();
 ```
 
 ## Managing senders
@@ -111,7 +163,7 @@ var sender = new SenderBuilder()
     .WithDisplayName("Customer Support")
     .WithAddress("support@example.com")
     .WithEndpointType(EndpointType.EmailAddress)
-    .AsActive(true)
+    .AsActive()
     .Build();
 
 await repository.AddAsync(sender);
@@ -121,22 +173,22 @@ Each sender carries: `Name` (logical name used in `SenderRef`), `DisplayName`, `
 
 ### Repository CRUD
 
-The sender repository extends `IRepository<Sender>`, providing `FindAsync`, `AddAsync`, `UpdateAsync`, `RemoveAsync`, plus sender-specific methods:
+The sender repository extends `IRepository<TSender>`, providing `FindAsync`, `AddAsync`, `UpdateAsync`, `RemoveAsync`, plus sender-specific methods:
 
 ```csharp
 public class SenderService
 {
-    private readonly ISenderRepository<Sender> _repository;
+    private readonly ISenderRepository<SenderEntity> _repository;
 
-    public SenderService(ISenderRepository<Sender> repository) => _repository = repository;
+    public SenderService(ISenderRepository<SenderEntity> repository) => _repository = repository;
 
-    public async Task<IList<Sender>> GetAll()
+    public async Task<IList<SenderEntity>> GetAll()
         => (await _repository.FindAllAsync()).ToList();
 
-    public Task<Sender?> FindByName(string name)
+    public Task<SenderEntity?> FindByName(string name)
         => _repository.FindByNameAsync(name);
 
-    public async Task<Sender> Create(string name, string address, EndpointType type)
+    public async Task<SenderEntity> Create(string name, string address, EndpointType type)
     {
         var sender = new SenderBuilder()
             .WithName(name)
@@ -148,13 +200,13 @@ public class SenderService
         return sender;
     }
 
-    public async Task Update(Sender sender)
+    public async Task Update(SenderEntity sender)
     {
-        sender.UpdatedAt = DateTime.UtcNow;
+        sender.Update(displayName: "New Display Name");
         await _repository.UpdateAsync(sender);
     }
 
-    public Task Delete(Sender sender)
+    public Task Delete(SenderEntity sender)
         => _repository.RemoveAsync(sender);
 }
 ```
@@ -162,30 +214,29 @@ public class SenderService
 ### Seed data
 
 ```csharp
-builder.Services.AddSenderInMemoryStore(new[]
+var seedSenders = new[]
 {
-    new Sender
+    new SenderEntity
     {
         Id = "seed-support",
         Name = "support",
         DisplayName = "Customer Support",
         Address = "support@example.com",
-        EndpointType = EndpointType.EmailAddress,
-        IsActive = true,
-        CreatedAt = DateTime.UtcNow
+        Type = EndpointType.EmailAddress
     },
 
-    new Sender
+    new SenderEntity
     {
         Id = "seed-sms-alerts",
         Name = "sms-alerts",
         DisplayName = "SMS Alert System",
         Address = "+15551234567",
-        EndpointType = EndpointType.PhoneNumber,
-        IsActive = true,
-        CreatedAt = DateTime.UtcNow
+        Type = EndpointType.PhoneNumber
     }
-});
+};
+
+seedSenders[0].Activate();
+seedSenders[1].Activate();
 ```
 
 ## Using senders in messages
@@ -234,59 +285,89 @@ Content-Type: application/json
 
 The `$type` discriminator tells `System.Text.Json` which concrete endpoint type to deserialize. See the [message model](messaging-model.md#polymorphic-json-serialization) for the full list.
 
+## Default sender fallback
+
+When a message has no sender set, the resolver falls back to the default sender configured in the connection settings. `ConnectionSettings.GetDefaultSender()` checks for:
+
+1. Explicit parameters: `DefaultSenderName`, `DefaultSenderAddress`, `DefaultSenderType`
+2. Channel-native `From` parameter (e.g., Twilio phone number, SendGrid email address)
+
+```csharp
+// Via connection string:
+var settings = ConnectionSettings.Parse("DefaultSenderName=billing;DefaultSenderAddress=billing@example.com;DefaultSenderType=EmailAddress;ApiKey=...");
+
+// Or via schema parameter:
+schema.AddParameter("DefaultSenderName", DataType.String, isRequired: false);
+schema.AddParameter("From", DataType.String, isRequired: false);
+```
+
 ## Configuring resolution
 
 ### Cache TTL
 
-Resolution results expire after the configured TTL:
+Resolution results expire after the configured TTL. The default is 5 minutes:
 
 ```csharp
-builder.Services.AddSingleton<ISenderCache>(
-    sp => new InMemorySenderCache(TimeSpan.FromMinutes(15)));
+// Via the builder
+builder.Services.AddMessaging()
+    .AddSenders<SenderEntity>(cfg => cfg
+        .ConfigureCacheOptions(o => o.DefaultTtl = TimeSpan.FromMinutes(15)));
 ```
 
-## Connector-level defaults
+### Custom cache implementation
 
-Configure a default sender per-connector — used when a message has no sender set:
+Replace the default `DistributedSenderCache` with a custom `ISenderCache`:
 
 ```csharp
 builder.Services.AddMessaging()
-    .AddClient()
-    .AddSenders()
-    .AddSendGridEmail("sendgrid", cfg => cfg
-        .WithSettings("SendGrid")
-        .WithSenders(s => s
-            .WithDefault(d => d
-                .WithName("default-sender")
-                .WithDisplayName("Default")
-                .WithAddress("default@example.com")
-                .WithEndpointType(EndpointType.EmailAddress))));
+    .AddSenders<SenderEntity>(cfg => cfg
+        .WithCache<MyCustomSenderCache>());
 ```
 
-Each connector type can have its own sender configuration, stored in `ISenderConfigurationRegistry`. The factory creates a per-connector `SenderResolver` instance that uses the connector-specific cache and default sender settings.
+Or register a custom cache on the service collection before `AddSenders` to override the default (the builder uses `TryAddSingleton`):
+
+```csharp
+builder.Services.AddSingleton<ISenderCache, MyCustomSenderCache>();
+builder.Services.AddMessaging()
+    .AddSenders<SenderEntity>();
+```
 
 ## Resolution model internals
 
 The sender resolution pipeline is built on an extensible abstract base class, with storage-specific resolvers providing the lookup implementation.
 
+### Resolution context
+
+`SenderResolutionContext` carries all information needed to resolve a sender at send time:
+
+```csharp
+public class SenderResolutionContext
+{
+    public IEndpoint? Sender { get; }         // From the message
+    public ConnectionSettings Settings { get; }  // For default sender fallback
+    public string? TenantId { get; }          // Optional multi-tenant identifier
+}
+```
+
 ### Abstract base class
 
-`SenderResolverBase` implements `ISenderResolver` and defines the common resolution flow. It accepts an `IEndpoint` and dispatches through two abstract methods that subclasses must implement:
+`SenderResolverBase` implements `ISenderResolver` and defines the common resolution flow. It accepts a `SenderResolutionContext` and dispatches through two abstract methods that subclasses must implement:
 
 ```csharp
 public abstract class SenderResolverBase : ISenderResolver
 {
-    protected abstract ValueTask<ISender?> FindSenderByNameAsync(
+    protected abstract ValueTask<ISender?> ResolveByNameAsync(
         string name, CancellationToken cancellationToken);
 
-    protected abstract ValueTask<ISender?> FindSenderByEndpointAsync(
+    protected abstract ValueTask<ISender?> ResolveByEndpointAsync(
         string address, EndpointType endpointType, CancellationToken cancellationToken);
 
-    public async ValueTask<ISender?> ResolveSenderAsync(
-        IEndpoint endpoint, CancellationToken cancellationToken = default)
+    public async ValueTask<ISender?> ResolveAsync(
+        SenderResolutionContext context, CancellationToken cancellationToken = default)
     {
-        // Dispatches to FindSenderByNameAsync for IUnresolvedSender,
-        // or FindSenderByEndpointAsync for concrete ISender
+        // 1. If context.Sender is IUnresolvedSender → ResolveByNameAsyncCached
+        // 2. If context.Sender is ISender → ResolveBySenderAsync
+        // 3. Fallback → context.Settings.GetDefaultSender()
     }
 }
 ```
@@ -296,15 +377,20 @@ public abstract class SenderResolverBase : ISenderResolver
 | Input type | Resolution path | Example |
 |---|---|---|
 | `IUnresolvedSender` (`SenderRef`) | Lookup by logical name, with cache | `FromSender("support")` |
-| `ISender` (inline) | Lookup by address + endpoint type, no cache | `From(new EmailSender(...))` |
+| `ISender` (inline) | Lookup by address + endpoint type, with cache | `From(new EmailSender(...))` |
+| `null` | Fallback to `ConnectionSettings.GetDefaultSender()` | No sender on message |
 
 For **named references**, the resolver:
-1. Checks the cache — returns immediately if found and not expired
-2. Defers to `FindSenderByNameAsync` (the storage-specific override)
+1. Checks the cache by name — returns immediately if found and not expired
+2. Defers to `ResolveByNameAsync` (the storage-specific override)
 3. Rejects inactive senders (`IsActive == false`)
-4. Caches the resolved `ISender` for subsequent calls
+4. Caches the resolved `ISender` under both name and endpoint keys
 
-For **inline senders** (concrete `EmailSender`, `PhoneSender`, etc.), the resolver looks up the registry by address and endpoint type. This validates that the inline sender matches a known active identity — useful for governance when senders must be pre-registered.
+For **inline senders**, the resolver:
+1. Checks the cache by endpoint (address + type) — returns immediately if found
+2. Defers to `ResolveByEndpointAsync` (the storage-specific override)
+3. Rejects inactive senders
+4. Caches the resolved `ISender` under both name and endpoint keys
 
 ### Active state enforcement
 
@@ -312,14 +398,19 @@ Both resolution paths check `IsActive` on the resolved entity. An inactive sende
 
 ### Structured logging
 
-Resolution events are logged via source-generated `LoggerMessage` attributes:
+Resolution events are logged via source-generated `LoggerMessage` attributes with stable event IDs:
 
-| Event | Level | Trigger |
-|---|---|---|
-| `LogSenderResolvedFromCache` | Debug | Sender found in cache |
-| `LogSenderNotFoundInRegistry` | Warning | Name lookup returned null |
-| `LogNoSenderFoundForEndpoint` | Debug | Endpoint lookup returned null |
-| `LogSenderFoundButInactive` | Warning | Sender exists but is inactive |
+| Event ID | Event | Level | Trigger |
+|---|---|---|---|
+| 7001 | `LogSenderResolvedFromCache` | Debug | Sender found in cache by name |
+| 7002 | `LogSenderNotFoundInRegistry` | Warning | Name lookup returned null |
+| 7003 | `LogNoSenderFoundForEndpoint` | Debug | Endpoint lookup returned null |
+| 7004 | `LogSenderFoundButInactive` | Warning | Sender exists but is inactive |
+| 7005 | `LogFailedToFindSenderByName` | Error | Exception during name lookup |
+| 7006 | `LogFailedToFindSenderByEndpoint` | Error | Exception during endpoint lookup |
+| 7007 | `LogSenderResolvedFromCacheByEndpoint` | Debug | Sender found in cache by endpoint |
+| 7008 | `LogFailedToRetrieveAllActiveSenders` | Error | Exception retrieving active senders |
+| 7009 | `LogFailedToSetActiveState` | Error | Exception setting active state |
 
 ## Storage model
 
@@ -334,7 +425,7 @@ public interface ISenderRepository<TSender> : IRepository<TSender>
     Task<TSender?> FindByNameAsync(string name, CancellationToken cancellationToken = default);
     Task<TSender?> FindByEndpointAsync(string address, EndpointType endpointType, CancellationToken cancellationToken = default);
     Task<IList<TSender>> GetAllActiveAsync(CancellationToken cancellationToken = default);
-    Task SetActiveAsync(string id, bool isActive, CancellationToken cancellationToken = default);
+    Task SetActiveAsync(TSender sender, bool isActive, CancellationToken cancellationToken = default);
 }
 ```
 
@@ -342,27 +433,28 @@ Sender-specific operations (`FindByNameAsync`, `FindByEndpointAsync`, `GetAllAct
 
 ### SenderManager — generic manager implementation
 
-`SenderManager<TSender>` implements `ISenderRepository<TSender>` by delegating to an underlying `IRepository<TSender>`. It provides the standard entity management layer (validation, caching, system time) via Kista's `EntityManager<TSender>` base class.
-
-The sender-specific query methods require the underlying repository to implement `IQueryableRepository<TSender>`:
+`SenderManager<TSender>` extends Kista's `EntityManager<TSender>` and wraps an `IRepository<TSender>` to provide sender-specific management with validation, caching, and system-time support. All operations return `OperationResult<T>` for consistent error handling:
 
 ```csharp
-public virtual async Task<TSender?> FindByNameAsync(string name, CancellationToken cancellationToken = default)
+public class SenderManager<TSender> : EntityManager<TSender>
+    where TSender : class, ISender
 {
-    return AsQueryable().FirstOrDefault(s => s.Name == name);
+    public virtual async Task<OperationResult<TSender>> FindByNameAsync(string name);
+    public virtual async Task<OperationResult<TSender>> FindByEndpointAsync(string address, EndpointType endpointType);
+    public virtual async Task<OperationResult<IList<TSender>>> GetAllActiveAsync();
+    public virtual async Task<OperationResult> ActivateAsync(string id);
+    public virtual async Task<OperationResult> DeactivateAsync(string id);
 }
+```
 
-public virtual async Task<TSender?> FindByEndpointAsync(string address, EndpointType endpointType, CancellationToken cancellationToken = default)
-{
-    return AsQueryable().FirstOrDefault(s => s.Address == address && s.Type == endpointType);
-}
+The sender-specific query methods require the underlying repository to implement `ISenderRepository<TSender>`:
 
-public virtual async Task SetActiveAsync(string id, bool isActive, CancellationToken cancellationToken = default)
-{
-    var sender = await FindAsync(id, cancellationToken);
-    sender.IsActive = isActive;
-    await UpdateAsync(sender, cancellationToken);
-}
+```csharp
+// FindByNameAsync delegates to the repository:
+var sender = await SenderRepository.FindByNameAsync(name, CancellationToken);
+return sender is null
+    ? OperationResult<TSender>.Fail(SenderErrorCodes.SenderNotFound, ...)
+    : OperationResult<TSender>.Success(sender);
 ```
 
 This generic design lets different storage backends use their own entity types (e.g., `SenderEntity`, `DbSender`) as long as they implement `ISender`.
@@ -374,65 +466,44 @@ This generic design lets different storage backends use their own entity types (
 ```csharp
 public class SenderEntity : ISender
 {
+    [Key]
     public string Id { get; set; }
     public string Name { get; set; }
     public string DisplayName { get; set; }
     public string Address { get; set; }
     public EndpointType Type { get; set; }
-    public bool IsActive { get; set; }
+    public bool IsActive { get; private set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    EndpointType IEndpoint.Type => Type;
+
+    public void Activate()    // Sets IsActive = true, updates UpdatedAt
+    public void Deactivate()  // Sets IsActive = false, updates UpdatedAt
+    public void Update(string? displayName = null, string? address = null, EndpointType? type = null)
 }
 ```
 
 ### Storage backends
 
-Each storage backend provides its own resolver and repository, wired through `WithCustomStore`:
+Each storage backend provides its own repository and resolver, wired through the registration builder:
 
 **In-memory** (`Ratatosk.Senders.InMemory`):
-- `InMemorySenderStore` — in-memory repository backed by a concurrent dictionary
-- `InMemorySenderResolver` — resolves against `ISenderRepository<SenderEntity>`
-- Automatically seeds the default sender from `SenderConnectorOptions`
+- `InMemorySenderRepository` — in-memory repository backed by a concurrent dictionary, implementing `ISenderRepository<SenderEntity>`
+- `SenderResolver<SenderEntity>` — resolves against `ISenderRepository<SenderEntity>`
+- Accepts seed senders via constructor injection
 
 **Entity Framework** (`Ratatosk.Senders.EntityFramework`):
 - `SenderDbContext` — EF Core context with `DbSet<DbSender>`
-- `EfSenderRepository` — queries via LINQ against the context
-- `EfSenderResolver` — resolves against `ISenderRepository<DbSender>`
+- `EntitySenderRepository` — queries via LINQ against the context, implementing `ISenderRepository<DbSender>`
+- `DbSender` — EF entity with `string Type` property and `EndpointType` computed property
+- `SenderResolver<DbSender>` — resolves against `ISenderRepository<DbSender>`
 
 ## Management aspects
 
-### Per-connector configuration via SenderRegistrationBuilder
+### Per-connector cache configuration
 
-`SenderRegistrationBuilder<TConnector>` provides a fluent API for configuring sender resolution per connector type, chaining back to the parent connector builder:
-
-```csharp
-builder.Services.AddMessaging()
-    .AddClient()
-    .AddSenders()
-    .AddSendGridEmail("sendgrid", cfg => cfg
-        .WithSettings("SendGrid")
-        .WithSenders(s => s
-            .WithDefault(d => d
-                .WithName("billing")
-                .WithAddress("billing@example.com")
-                .WithEndpointType(EndpointType.EmailAddress))
-            .WithCache(new InMemorySenderCache(TimeSpan.FromMinutes(10)))
-            .WithCustomStore(services =>
-            {
-                // Register a custom resolver/repository for this connector
-            })));
-```
-
-The builder supports:
-
-| Method | Purpose |
-|---|---|
-| `WithDefault(Action<SenderBuilder>)` | Sets the fallback sender when the message has none |
-| `WithCache(ISenderCache)` | Replaces the default cache for this connector |
-| `WithCacheTtl(TimeSpan)` | Overrides the default cache TTL |
-| `WithCustomStore(Action<IServiceCollection>)` | Registers connector-specific storage and resolver |
-
-When `WithCustomStore` is omitted, the resolver falls back to the global `ISenderRepository<ISender>` registered via `AddSenders()`. When `WithCustomStore` is used, a connector-specific `ISenderResolver` is registered as well.
+Sender cache can be configured globally. `WithSenders()` is no longer available on connector builders — sender configuration is not per-connector.
 
 ### Validation
 
@@ -440,7 +511,7 @@ When `WithCustomStore` is omitted, the resolver falls back to the global `ISende
 
 - `Name` is not null or whitespace
 - `DisplayName` is not null or whitespace
-- `EndpointType` is not `Any`
+- `Type` is not `EndpointType.Any`
 - `Address` is not null or whitespace
 
 ```csharp
@@ -466,12 +537,17 @@ Custom validators can be registered per sender type to enforce domain-specific r
 ### Registration
 
 ```csharp
-// Minimal registration (resolver uses global repository):
-services.AddSenders();
+// Minimal registration with in-memory store:
+services.AddMessaging()
+    .AddSenders<SenderEntity>(cfg => cfg
+        .UseInMemoryStore());
 
 // With custom storage and validator:
-services.AddSenders();
-services.AddSenderRepository<MySenderRepository, MySender>();
+services.AddMessaging()
+    .AddSenders<MySender>(cfg => cfg
+        .ConfigureCacheOptions(o => o.DefaultTtl = TimeSpan.FromMinutes(10)));
+
+services.AddScoped<ISenderRepository<MySender>, MySenderRepository>();
 services.TryAddScoped<ISenderValidator<MySender>, MySenderValidator>();
 ```
 
@@ -490,12 +566,34 @@ var found = await repository.FindAsync(key);
 var byName = await repository.FindByNameAsync("support");
 var byEndpoint = await repository.FindByEndpointAsync("admin@example.com", EndpointType.EmailAddress);
 var active = await repository.GetAllActiveAsync();
-await repository.SetActiveAsync("sender-id", isActive: false);
+await repository.SetActiveAsync(sender, isActive: false);
+```
+
+### Distributed cache
+
+`DistributedSenderCache` implements `ISenderCache` using `IDistributedCache` (backed by Redis, SQL Server, or any other distributed cache provider). Each sender is stored under two keys:
+
+- `ratatosk:sender:name:{name}` — for name-based lookups
+- `ratatosk:sender:endpoint:{type}:{address}` — for endpoint-based lookups
+
+`SetAsync` writes to both keys simultaneously with the configured TTL. Serialization uses `System.Text.Json` with `JsonSerializerDefaults.Web`.
+
+```csharp
+// Configure with Redis:
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+});
+
+builder.Services.AddMessaging()
+    .AddSenders<SenderEntity>(cfg => cfg
+        .ConfigureCacheOptions(o => o.DefaultTtl = TimeSpan.FromMinutes(10)));
+// DistributedSenderCache is registered automatically by AddSenders<TSender>()
 ```
 
 ## End-to-end summary
 
-1. **Register** — `services.AddSenders()` + storage backend
-2. **Manage** — create/update/delete senders via `ISenderRepository<Sender>`
+1. **Register** — `services.AddMessaging().AddSenders<TSender>(cfg => cfg.UseInMemoryStore(...))`
+2. **Manage** — create/update/delete senders via `ISenderRepository<TSender>` or `SenderManager<TSender>`
 3. **Reference** — build messages with `MessageBuilder.FromSender(name)`
-4. **Send** — the connector resolves the name, validates, and dispatches
+4. **Send** — the client resolves the name via `SenderResolutionContext`, validates, and dispatches

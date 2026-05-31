@@ -3,13 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
-
-using Ratatosk.Senders;
 
 namespace Ratatosk
 {
@@ -290,42 +285,7 @@ namespace Ratatosk
         {
             return AddConnectorType<TConnector>(typeof(TConnector).Name);
         }
-
-        // ── Sender identity services ──────────────────────────────────────────
-
-        /// <summary>
-        /// Registers the sender identity services (cache, distributed cache,
-        /// and options) into the messaging infrastructure.
-        /// </summary>
-        public MessagingBuilder AddSenders()
-        {
-            Services.AddOptions<SenderCacheOptions>();
-            Services.AddDistributedMemoryCache();
-            Services.TryAddSingleton<ISenderCache, DistributedSenderCache>();
-            return this;
-        }
-
-        /// <summary>
-        /// Registers the sender identity services with a specific sender type,
-        /// including the <see cref="SenderManager{TSender}"/> for lifecycle management.
-        /// </summary>
-        /// <typeparam name="TSender">
-        /// The type of sender entity, which must implement <see cref="ISender"/>.
-        /// </typeparam>
-        /// <returns>
-        /// Returns the current <see cref="MessagingBuilder"/> instance
-        /// to allow chaining.
-        /// </returns>
-        public MessagingBuilder AddSenders<TSender>()
-            where TSender : class, ISender
-        {
-            AddSenders();
-            Services.TryAddScoped<SenderManager<TSender>>();
-            Services.TryAddScoped<ISenderValidator<TSender>, SenderValidator<TSender>>();
-            Services.TryAddScoped<ISenderResolver, SenderResolver<TSender>>();
-
-            return this;
-        }
+        
 
         // ── Message ID generator registration ─────────────────────────────────
 

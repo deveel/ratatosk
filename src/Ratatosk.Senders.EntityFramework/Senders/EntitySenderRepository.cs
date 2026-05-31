@@ -20,6 +20,9 @@ namespace Ratatosk.Senders
         {
         }
         
+        /// <summary>
+        /// Gets the underlying database context cast to <see cref="SenderDbContext"/>.
+        /// </summary>
         protected SenderDbContext SenderContext => Context as SenderDbContext 
             ?? throw new InvalidOperationException($"The database context must be of type {nameof(SenderDbContext)}.");
 

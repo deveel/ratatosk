@@ -27,7 +27,7 @@ namespace Ratatosk
 		/// Initializes a new instance of the <see cref="TemplateContent"/> class 
 		/// from a given source.
 		/// </summary>
-		/// <param name="content"></param>
+		/// <param name="content">The template content from which to copy the template identifier and parameters.</param>
 		public TemplateContent(ITemplateContent content)
 		{
 			TemplateId= content.TemplateId;

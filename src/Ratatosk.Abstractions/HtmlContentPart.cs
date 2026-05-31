@@ -58,6 +58,7 @@ namespace Ratatosk
 		/// <inheritdoc/>
 		public string Html { get; set; } = "";
 
+		/// <inheritdoc />
 		IEnumerable<IAttachment> IHtmlContent.Attachments => Attachments;
 
 		/// <summary>

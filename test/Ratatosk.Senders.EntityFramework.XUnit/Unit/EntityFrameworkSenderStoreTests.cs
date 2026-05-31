@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Kista;
 
 namespace Ratatosk.Senders;
 
@@ -495,16 +496,17 @@ public class EntityFrameworkSenderStoreTests
         }
     }
 
-    // ── UseEntityFramework Extension Method Tests ─────────────────────────────
+    // ── Entity Framework Store Direct Registration Tests ─────────────────────
 
     [Fact]
     public void UseEntityFramework_ShouldRegisterSenderDbContext()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-context"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-register-context"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         var provider = services.BuildServiceProvider();
         var context = provider.GetService<SenderDbContext>();
@@ -516,10 +518,11 @@ public class EntityFrameworkSenderStoreTests
     public void UseEntityFramework_ShouldRegisterSenderRepository()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-repo"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-register-repo"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
@@ -533,10 +536,11 @@ public class EntityFrameworkSenderStoreTests
     public void UseEntityFramework_ShouldRegisterSenderManager()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-manager"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-register-manager"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
@@ -549,10 +553,11 @@ public class EntityFrameworkSenderStoreTests
     public void UseEntityFramework_ShouldRegisterSenderResolver()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-register-resolver"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-register-resolver"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         var provider = services.BuildServiceProvider();
         var resolver = provider.GetService<ISenderResolver>();
@@ -565,10 +570,11 @@ public class EntityFrameworkSenderStoreTests
     public async Task UseEntityFramework_ShouldResolveSender_When_SenderExists()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-resolve-sender"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-resolve-sender"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         // Seed sender
         await using (var seedScope = services.BuildServiceProvider().CreateAsyncScope())
@@ -591,10 +597,11 @@ public class EntityFrameworkSenderStoreTests
     public async Task UseEntityFramework_ShouldReturnNull_When_SenderNotFound()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-not-found"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-not-found"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         var provider = services.BuildServiceProvider();
         var resolver = provider.GetRequiredService<ISenderResolver>();
@@ -607,10 +614,11 @@ public class EntityFrameworkSenderStoreTests
     public async Task UseEntityFramework_ShouldResolveByEndpoint_When_SenderExists()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-resolve-endpoint"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-resolve-endpoint"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         // Seed sender
         await using (var seedScope = services.BuildServiceProvider().CreateAsyncScope())
@@ -632,10 +640,11 @@ public class EntityFrameworkSenderStoreTests
     public async Task UseEntityFramework_ShouldNotResolveInactiveSender()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-inactive"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-inactive"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         // Seed inactive sender
         await using (var seedScope = services.BuildServiceProvider().CreateAsyncScope())
@@ -656,10 +665,11 @@ public class EntityFrameworkSenderStoreTests
     public async Task UseEntityFramework_ShouldSupportFullLifecycle()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-lifecycle"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-lifecycle"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         var provider = services.BuildServiceProvider();
 
@@ -709,13 +719,11 @@ public class EntityFrameworkSenderStoreTests
     public async Task UseEntityFramework_ShouldSupportMultipleConnectors()
     {
         var services = new ServiceCollection();
-        services.AddMessaging()
-            .AddConnector<TestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-multi-1"))))
-            .AddConnector<AnotherTestEfConnector>(cfg => cfg
-                .WithSenders(s => s
-                    .UseEntityFramework(opt => opt.UseInMemoryDatabase("test-multi-2"))));
+        services.AddLogging();
+        services.AddMessaging().AddSenders<DbSender>();
+        services.AddDbContext<SenderDbContext>(opt => opt.UseInMemoryDatabase("test-multi-1"));
+        services.AddRepositoryContext()
+            .AddRepository<EntitySenderRepository>();
 
         // Seed senders for both connectors
         await using (var seedScope = services.BuildServiceProvider().CreateAsyncScope())

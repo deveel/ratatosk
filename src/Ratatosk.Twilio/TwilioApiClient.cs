@@ -6,6 +6,9 @@ using Twilio.Rest.Api.V2010.Account;
 
 namespace Ratatosk
 {
+    /// <summary>
+    /// A client that wraps the Twilio SDK for API operations.
+    /// </summary>
     [ExcludeFromCodeCoverage]
     public class TwilioApiClient : ITwilioApiClient
     {

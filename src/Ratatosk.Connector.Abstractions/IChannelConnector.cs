@@ -137,9 +137,9 @@ namespace Ratatosk
 		/// Validates the specified message to ensure it meets the
 		/// requirements for sending through the connector.
 		/// </summary>
-		/// <param name="message"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
+		/// <param name="message">The message to validate.</param>
+		/// <param name="cancellationToken">A token to cancel the operation.</param>
+		/// <returns>An async enumerable of validation results for the message.</returns>
 		IAsyncEnumerable<ValidationResult> ValidateMessageAsync(IMessage message, CancellationToken cancellationToken);
 
 		/// <summary>

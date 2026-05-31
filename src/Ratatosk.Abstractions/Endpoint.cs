@@ -80,7 +80,7 @@ namespace Ratatosk {
 		/// Returns an instance of <see cref="Endpoint"/> that represents
 		/// the endpoint with the given type and address.
 		/// </returns>
-		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="ArgumentException">Thrown when the address is null, empty, or consists only of white space.</exception>
 		public static Endpoint Create(EndpointType type, string address) {
 			ArgumentException.ThrowIfNullOrWhiteSpace(address, nameof(address));
 			return new Endpoint(type, address);
@@ -100,8 +100,8 @@ namespace Ratatosk {
 		/// Returns an instance of <see cref="Endpoint"/> that represents
 		/// the endpoint with the given type and address.
 		/// </returns>
-		/// <exception cref="ArgumentException"></exception>
-		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentNullException">Thrown when the type is null.</exception>
+		/// <exception cref="ArgumentException">Thrown when the address is null, empty, or consists only of white space, or when the type string cannot be parsed.</exception>
 		public static Endpoint Create(string type, string address) {
 			ArgumentNullException.ThrowIfNull(type, nameof(type));
 			ArgumentException.ThrowIfNullOrWhiteSpace(address, nameof(address));

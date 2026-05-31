@@ -55,6 +55,7 @@ namespace Ratatosk {
 		[JsonConverter(typeof(Base64JsonConverter))]
 		public string Html { get; set; } = string.Empty;
 
+		/// <inheritdoc />
 		[ExcludeFromCodeCoverage]
 		IEnumerable<IAttachment> IHtmlContent.Attachments => Attachments;
 
