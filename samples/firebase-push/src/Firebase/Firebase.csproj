@@ -12,14 +12,12 @@
     <ProjectReference Include="..\..\..\..\src\Ratatosk.Connectors\Ratatosk.Connectors.csproj" />
     <ProjectReference Include="..\..\..\..\src\Ratatosk\Ratatosk.csproj" />
     <ProjectReference Include="..\..\..\..\src\Ratatosk.Firebase\Ratatosk.Firebase.csproj" />
-    <PackageReference Include="Spectre.Console" Version="0.49.1" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" />
+    <PackageReference Include="Spectre.Console" Version="0.49.1" />
     <PackageReference Include="Deveel.Results" Version="1.2.1" />
-    <PackageReference Include="FirebaseAdmin" Version="2.4.0" />
-    <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
