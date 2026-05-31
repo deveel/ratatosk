@@ -1,8 +1,8 @@
 [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Abstractions/)
-[![codecov](https://codecov.io/gh/deveel/deveel.messaging/graph/badge.svg)](https://codecov.io/gh/deveel/deveel.messaging)
+[![codecov](https://codecov.io/gh/deveel/ratatosk/graph/badge.svg)](https://codecov.io/gh/deveel/ratatosk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-512BD4)](https://dotnet.microsoft.com/)
-[![Documentation](https://img.shields.io/badge/docs-available-blue)](https://messaging.deveel.org)
+[![Documentation](https://img.shields.io/badge/docs-available-blue)](https://ratatosk.deveel.org)
 
 <p align="center">
   <img src="ratatosk-full-logo.png" alt="Ratatosk" width="400"/>
