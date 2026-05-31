@@ -1,107 +1,40 @@
-//
-// Copyright (c) Antonello Provenzano and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
-
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Ratatosk.Senders
 {
     /// <summary>
-    /// Resolves sender identities from a repository, with optional caching
-    /// and per-connector configuration.
+    /// Resolves sender identities by querying the global sender repository.
     /// </summary>
-    public class SenderResolver : ISenderResolver
+    /// <typeparam name="TSender">
+    /// The type of the sender entity, which must implement <see cref="ISender"/>.
+    /// </typeparam>
+    public class SenderResolver<TSender> : SenderResolverBase
+        where TSender : class, ISender
     {
-        private readonly ISenderRepository<ISender> _repository;
-        private readonly ISenderCache _cache;
-        private readonly ISender? _defaultSender;
-        private readonly ILogger _logger;
+        private readonly ISenderRepository<TSender> _repository;
 
         /// <summary>
         /// Constructs the resolver with the given dependencies.
         /// </summary>
-        /// <param name="repository">The sender repository.</param>
-        /// <param name="cache">The sender cache for resolution results.</param>
-        /// <param name="defaultSender">
-        /// Optional default sender. Takes precedence over connection settings-based defaults.
-        /// </param>
-        /// <param name="logger">Optional logger.</param>
         public SenderResolver(
-            ISenderRepository<ISender> repository,
+            ISenderRepository<TSender> repository,
             ISenderCache cache,
-            ISender? defaultSender = null,
-            ILogger<SenderResolver>? logger = null)
+            ILogger<SenderResolver<TSender>>? logger = null)
+            : base(cache, logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-            _defaultSender = defaultSender;
-            _logger = logger ?? NullLogger<SenderResolver>.Instance;
         }
-
-        /// <summary>
-        /// Gets the default sender for this connector, if configured.
-        /// </summary>
-        public ISender? DefaultSender => _defaultSender;
 
         /// <inheritdoc />
-        public async ValueTask<ISender?> ResolveSenderAsync(IEndpoint endpoint, CancellationToken cancellationToken = default)
+        protected override async ValueTask<ISender?> ResolveByNameAsync(string name, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(endpoint);
-
-            if (endpoint is IUnresolvedSender unresolved)
-                return await ResolveByNameAsync(unresolved.Address, cancellationToken);
-
-            if (endpoint is ISender sender)
-                return await ResolveByEndpointAsync(sender, cancellationToken);
-
-            return null;
+            return await _repository.FindByNameAsync(name, cancellationToken);
         }
 
-        private async ValueTask<ISender?> ResolveByNameAsync(string senderName, CancellationToken cancellationToken)
+        /// <inheritdoc />
+        protected override async ValueTask<ISender?> ResolveByEndpointAsync(string address, EndpointType endpointType, CancellationToken cancellationToken)
         {
-            var cached = await _cache.GetByNameAsync(senderName, cancellationToken);
-            if (cached != null)
-            {
-                _logger.LogSenderResolvedFromCache(senderName);
-                return cached;
-            }
-
-            var entity = await _repository.FindByNameAsync(senderName, cancellationToken);
-            if (entity == null)
-            {
-                _logger.LogSenderNotFoundInRegistry(senderName);
-                return null;
-            }
-
-            if (!entity.IsActive)
-            {
-                _logger.LogSenderFoundButInactive(entity.Name);
-                return null;
-            }
-
-            await _cache.SetByNameAsync(senderName, entity, cancellationToken: cancellationToken);
-
-            return entity;
-        }
-
-        private async ValueTask<ISender?> ResolveByEndpointAsync(ISender sender, CancellationToken cancellationToken)
-        {
-            var entity = await _repository.FindByEndpointAsync(sender.Address, sender.Type, cancellationToken);
-            if (entity == null)
-            {
-                _logger.LogNoSenderFoundForEndpoint(sender.Address, sender.Type);
-                return null;
-            }
-
-            if (!entity.IsActive)
-            {
-                _logger.LogSenderFoundButInactive(entity.Name);
-                return null;
-            }
-
-            return entity;
+            return await _repository.FindByEndpointAsync(address, endpointType, cancellationToken);
         }
     }
 }

@@ -27,6 +27,11 @@ namespace Ratatosk
 		IChannelSchema Schema { get; }
 
 		/// <summary>
+		/// Gets the connection settings used by this connector instance.
+		/// </summary>
+		ConnectionSettings ConnectionSettings { get; }
+
+		/// <summary>
 		/// Gets the current state of the connector.
 		/// </summary>
 		ConnectorState State { get; }

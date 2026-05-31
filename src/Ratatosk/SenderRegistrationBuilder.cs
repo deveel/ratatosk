@@ -1,7 +1,5 @@
-//
-// Copyright (c) Antonello Provenzano and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Ratatosk.Senders;
 
@@ -9,71 +7,49 @@ namespace Ratatosk
 {
     /// <summary>
     /// Provides a fluent builder for configuring sender resolution
-    /// for a specific connector type, with the ability to return
-    /// to the parent <see cref="ChannelConnectorBuilder{TConnector}"/>.
+    /// for a specific connector type.
     /// </summary>
-    /// <typeparam name="TConnector">The type of the channel connector being configured.</typeparam>
     public sealed class SenderRegistrationBuilder<TConnector>
         where TConnector : class, IChannelConnector
     {
-        private readonly ChannelConnectorBuilder<TConnector> _parent;
         private readonly MessagingBuilder _messagingBuilder;
-        private readonly SenderConnectorBuilder _senderBuilder;
 
-        internal SenderRegistrationBuilder(
-            ChannelConnectorBuilder<TConnector> parent,
-            MessagingBuilder messagingBuilder)
+        internal SenderRegistrationBuilder(MessagingBuilder messagingBuilder)
         {
-            _parent = parent;
             _messagingBuilder = messagingBuilder;
-            _senderBuilder = new SenderConnectorBuilder();
+            _messagingBuilder.AddSenders();
         }
 
         /// <summary>
-        /// Configures a default sender for the connector, used when
-        /// no sender is explicitly specified on a message.
+        /// Gets the service collection used to register sender store dependencies.
         /// </summary>
-        /// <param name="configure">An action to configure the sender.</param>
-        /// <returns>This builder instance.</returns>
-        public SenderRegistrationBuilder<TConnector> WithDefault(Action<SenderBuilder> configure)
+        public IServiceCollection Services => _messagingBuilder.Services;
+
+        /// <summary>
+        /// Configures the cache options used by the distributed sender cache.
+        /// </summary>
+        public SenderRegistrationBuilder<TConnector> WithCacheOptions(Action<SenderCacheOptions> configure)
         {
-            _senderBuilder.WithDefault(configure);
+            Services.PostConfigure(configure);
             return this;
         }
 
         /// <summary>
-        /// Sets the cache used for sender resolution results.
+        /// Sets the default time-to-live for cached sender entries.
         /// </summary>
-        /// <param name="cache">The cache instance.</param>
-        /// <returns>This builder instance.</returns>
-        public SenderRegistrationBuilder<TConnector> WithCache(ISenderCache cache)
-        {
-            _senderBuilder.WithCache(cache);
-            return this;
-        }
-
-        /// <summary>
-        /// Sets the TTL for cached sender resolution results.
-        /// </summary>
-        /// <param name="ttl">The time-to-live duration.</param>
-        /// <returns>This builder instance.</returns>
         public SenderRegistrationBuilder<TConnector> WithCacheTtl(TimeSpan ttl)
         {
-            _senderBuilder.WithCacheTtl(ttl);
+            Services.PostConfigure<SenderCacheOptions>(o => o.DefaultTtl = ttl);
             return this;
         }
 
         /// <summary>
-        /// Completes the sender configuration and returns to the
-        /// parent <see cref="ChannelConnectorBuilder{TConnector}"/>.
+        /// Replaces the default <see cref="ISenderCache"/> implementation.
         /// </summary>
-        /// <returns>The parent connector builder for continued configuration.</returns>
-        public ChannelConnectorBuilder<TConnector> Done()
+        public SenderRegistrationBuilder<TConnector> WithCache(ISenderCache cache)
         {
-            var config = _senderBuilder.Build();
-            _messagingBuilder.AddSenders();
-            _messagingBuilder.RegisterSenderConfiguration<TConnector>(config);
-            return _parent;
+            Services.AddSingleton(cache);
+            return this;
         }
     }
 }

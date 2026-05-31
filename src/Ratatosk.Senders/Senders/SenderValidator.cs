@@ -14,7 +14,7 @@ namespace Ratatosk.Senders
     /// Validates <see cref="ISender"/> instances before they are
     /// persisted by the <see cref="SenderManager{TSender}"/>.
     /// </summary>
-    public class SenderValidator<TSender> : IEntityValidator<TSender>
+    public class SenderValidator<TSender> : ISenderValidator<TSender>
         where TSender : class, ISender
     {
         /// <inheritdoc />

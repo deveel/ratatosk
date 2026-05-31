@@ -1,5 +1,5 @@
 ---
-description: Guides the agent in structuring xUnit test projects and solutions for .NET class libraries. Use this skill when setting up a new test project, organizing the test folder layout, configuring shared build properties via Directory.Build.props, selecting xUnit and coverage packages per target framework, or establishing MSBuild conventions for test solutions.
+description: Guides the agent in structuring xUnit test projects and solutions for .NET class libraries. Use this skill when setting up a new test project, organizing the test folder layout, configuring shared build properties via Directory.Build.props, selecting xUnit and coverage packages per target framework, or establishing MSBuild conventions for test solutions. Prefers xUnit v3 and the Microsoft Testing Platform (MTP) for all .NET 8+ projects.
 license: MIT
 metadata:
     author: Antonello Provenzano
@@ -10,8 +10,8 @@ metadata:
     github-path: plugins/dotnet-arch/skills/xunit-test-arch
     github-ref: refs/heads/main
     github-repo: https://github.com/deveel/agents-skills
-    github-tree-sha: 3015138b7747faee1885de92782da4b95e9b93a3
-    version: "1.0"
+    github-tree-sha: d73a264d7e5d8226cd478da9600c896f20c5ea9b
+    version: "1.1"
 name: xunit-test-arch
 ---
 # xUnit Test Architecture
@@ -21,6 +21,22 @@ solutions in .NET — covering project naming, folder layout, shared MSBuild
 configuration, package selection by target framework, and coverage tooling
 setup. It is the architectural counterpart to `xunit-test-organization`, which
 covers test coding practices.
+
+## Preferred Stack
+
+**Always prefer xUnit v3 + Microsoft Testing Platform (MTP) for any project
+targeting .NET 8 or later.** xUnit v2 + VSTest is a legacy fallback retained
+only for projects that are still forced to target .NET 6 or .NET 7 and cannot
+be upgraded.
+
+| Target framework | xUnit version | Runner / Platform | Coverage |
+|-----------------|--------------|-------------------|----------|
+| .NET 8+ | **xUnit v3** (`xunit.v3`) | **MTP** (`TestingPlatformDotnetTestSupport=true`) | `Microsoft.Testing.Extensions.CodeCoverage` |
+| .NET 6 / 7 | xUnit v2 (`xunit`) | VSTest (`Microsoft.NET.Test.Sdk`) | `coverlet.collector` |
+
+When a project multi-targets both .NET 6/7 and .NET 8+, the `Directory.Build.props`
+conditions handle the split automatically — no manual per-project configuration is
+needed beyond setting `<TargetFrameworks>`.
 
 ## When to Use
 
@@ -133,19 +149,20 @@ minimal.
          (IsTestProject = true)
     ============================================================ -->
 
-    <!-- .NET 8+ → xUnit v3 + Microsoft Testing Platform -->
+    <!-- .NET 8+ → xUnit v3 + Microsoft Testing Platform
+         NOTE: Do NOT include coverlet.collector here. MTP projects use
+         Microsoft.Testing.Extensions.CodeCoverage for coverage collection.
+         coverlet.collector is incompatible with the MTP runner model. -->
     <ItemGroup Condition="'$(IsTestProject)' == 'true'
              and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
         <PackageReference Include="xunit.v3" Version="1.*" />
         <PackageReference Include="xunit.runner.visualstudio" Version="3.*" />
         <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.*" />
-        <PackageReference Include="coverlet.collector" Version="6.*">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
     </ItemGroup>
 
-    <!-- .NET 6/7 → xUnit v2 + VSTest -->
+    <!-- .NET 6/7 → xUnit v2 + VSTest
+         NOTE: Do NOT include Microsoft.Testing.Extensions.CodeCoverage here.
+         VSTest projects use coverlet.collector with the XPlat Code Coverage collector. -->
     <ItemGroup Condition="'$(IsTestProject)' == 'true'
              and !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
         <PackageReference Include="xunit" Version="2.*" />
@@ -230,8 +247,8 @@ No further changes to `Directory.Build.props` are needed.
 # Collect in Cobertura format
 dotnet test --coverage --coverage-output ./coverage --coverage-output-format cobertura
 
-# Filter and collect together
-dotnet test --coverage -- --filter "Category=Unit"
+# Filter and collect together (MTP runner args go after the "--" divider — see Step 7)
+dotnet test --coverage -- --filter "Trait[Category]=Unit"
 ```
 
 **VSTest (.NET 6/7):**
@@ -265,6 +282,90 @@ MTP picks up the same exclusion patterns via MSBuild properties in
 </RunSettings>
 ```
 
+### Step 7: Use the MTP `--` divider for runner arguments
+
+When a test project uses the Microsoft Testing Platform (`TestingPlatformDotnetTestSupport=true`),
+`dotnet test` acts as a thin host that launches the MTP runner binary. The command
+line is split at the `--` separator:
+
+```
+dotnet test [dotnet-test-args] -- [mtp-runner-args]
+```
+
+- **Before `--`**: Arguments consumed by `dotnet test` / MSBuild (e.g. `--configuration`,
+  `--no-build`, `--coverage`, `--coverage-output`).
+- **After `--`**: Arguments forwarded verbatim to the MTP runner binary (e.g.
+  `--filter`, `--list-tests`, `--output-diag`).
+
+**Do not mix the two groups.** Passing a runner-specific flag such as `--filter`
+before the `--` divider will be silently ignored or cause an MSBuild error.
+
+#### Common MTP command examples
+
+```bash
+# Run all tests
+dotnet test
+
+# Run only unit tests (filter by xUnit trait)
+dotnet test -- --filter "Trait[Category]=Unit"
+
+# Run only integration tests
+dotnet test -- --filter "Trait[Category]=Integration"
+
+# Run tests for a specific feature
+dotnet test -- --filter "Trait[Feature]=OrderProcessing"
+
+# Run by fully-qualified class name (substring match)
+dotnet test -- --filter "FullyQualifiedName~OrderServiceTests"
+
+# List all discovered tests without running them
+dotnet test -- --list-tests
+
+# Collect coverage AND filter in the same invocation
+dotnet test --coverage --coverage-output ./coverage \
+            --coverage-output-format cobertura \
+            -- --filter "Trait[Category]=Unit"
+
+# Write diagnostic output from the runner to a file
+dotnet test -- --output-diag ./test-diag.log
+
+# Run in a specific configuration without rebuilding
+dotnet test --configuration Release --no-build -- --filter "Trait[Category]=Unit"
+```
+
+#### VSTest filter syntax (legacy — .NET 6/7 only)
+
+For projects still on VSTest (`Microsoft.NET.Test.Sdk`), the filter flag belongs
+**before** the `--` divider (or there is no `--` at all):
+
+```bash
+# VSTest-style filter (net6/7 only — NOT for MTP projects)
+dotnet test --filter "Category=Unit"
+```
+
+Never apply VSTest-style filter syntax to MTP projects, and never apply MTP
+runner syntax (`-- --filter`) to VSTest projects.
+
+#### xUnit v3 async tests — `TestContext.Current.CancellationToken`
+
+When writing async test methods in xUnit v3, always forward the MTP runner's
+cancellation token into every awaited call that accepts a `CancellationToken`:
+
+```csharp
+[Fact]
+public async Task Should_ReturnOrder_When_OrderExistsAsync()
+{
+    var cancellationToken = TestContext.Current.CancellationToken;
+    // ... pass cancellationToken to every awaited API call
+}
+```
+
+This ensures that if the MTP runner cancels the test run (e.g. on timeout or
+Ctrl+C), blocked async operations stop cooperatively instead of hanging.
+**Never omit `TestContext.Current.CancellationToken` in xUnit v3 async test
+methods that call APIs with a `CancellationToken` parameter.**
+`TestContext` is a v3-only API — it does not exist in xUnit v2.
+
 ## Validation
 
 - [ ] Test projects use `.XUnit` suffix for executable projects and `.Testing` for support libraries
@@ -276,6 +377,8 @@ MTP picks up the same exclusion patterns via MSBuild properties in
 - [ ] Individual `.csproj` files do not duplicate packages already present in `Directory.Build.props`
 - [ ] Multi-targeting uses `<TargetFrameworks>` and relies on `Directory.Build.props` conditions
 - [ ] Coverage tooling is configured appropriate to the target framework (MTP or VSTest/Coverlet)
+- [ ] MTP runner arguments (e.g. `--filter`, `--list-tests`) are placed **after** the `--` divider
+- [ ] VSTest filter syntax (`dotnet test --filter`) is not used for MTP projects
 
 ## What the Agent Must Never Do
 
@@ -288,6 +391,17 @@ MTP picks up the same exclusion patterns via MSBuild properties in
   only shared support libraries (`.Testing`) use this opt-out
 - Do not add `Microsoft.NET.Test.Sdk` to projects targeting .NET 8+ with xUnit v3 — it conflicts with MTP
 - Do not add `xunit` (v2) packages alongside `xunit.v3` — they are mutually exclusive
+- Do not include `coverlet.collector` in .NET 8+ xUnit v3 projects — MTP coverage is provided by
+  `Microsoft.Testing.Extensions.CodeCoverage`; `coverlet.collector` is incompatible with the MTP runner
+- Do not include `Microsoft.Testing.Extensions.CodeCoverage` in .NET 6/7 VSTest projects — use
+  `coverlet.collector` with `XPlat Code Coverage` instead
+- Do not pass MTP runner flags (e.g. `--filter`, `--list-tests`) before the `--`
+  divider when using MTP projects — they must appear after `--`
+- Do not use VSTest filter syntax (`dotnet test --filter "..."`) for .NET 8+ MTP
+  projects — use `dotnet test -- --filter "..."` instead
+- Do not omit `TestContext.Current.CancellationToken` in xUnit v3 async test methods that call
+  APIs accepting a `CancellationToken` — always forward the runner token to prevent hung operations
+- Do not use `TestContext.Current` in xUnit v2 projects — it is a v3-only API
 
 ## Common Pitfalls
 
@@ -300,4 +414,23 @@ MTP picks up the same exclusion patterns via MSBuild properties in
 | `IsTestProject` not set on support libraries | Set `<IsTestProject>false</IsTestProject>` in each `.Testing` `.csproj` |
 | Coverage excluded from shared support project | Exclude `[*.XUnit]*` and `[*.Testing]*` in `coverlet.runsettings` or MTP flags |
 | Missing `.Testing` project for cross-project fixtures | Add a `.Testing` project when fixtures or builders are reused by more than one test project |
+| Passing `--filter` before `--` in MTP projects | Move filter to after the `--` divider: `dotnet test -- --filter "Trait[Category]=Unit"` |
+| Using VSTest filter syntax on MTP projects | Replace `dotnet test --filter "Category=Unit"` with `dotnet test -- --filter "Trait[Category]=Unit"` |
+| Omitting `--` divider when passing runner args | All MTP runner arguments must follow `--`; args before it are consumed by `dotnet test` / MSBuild |
+| Including `coverlet.collector` in .NET 8+ xUnit v3 projects | Remove it — MTP projects use `Microsoft.Testing.Extensions.CodeCoverage`; `coverlet.collector` is a VSTest-only collector |
+| Including `Microsoft.Testing.Extensions.CodeCoverage` in .NET 6/7 VSTest projects | Remove it — use `coverlet.collector` with `XPlat Code Coverage` for VSTest-based projects |
+| Omitting `TestContext.Current.CancellationToken` in xUnit v3 async tests | Always pass it to every awaited API that accepts a `CancellationToken`; omitting it causes hung test runs on cancellation |
+| Using `TestContext.Current` in xUnit v2 projects | `TestContext` is xUnit v3-only; remove or gate behind a v3-specific code path |
+
+## Local References
+
+Additional supporting material for this skill is available in the
+[`references/README.md`](./references/README.md) index beside this file.
+
+- [`references/README.md`](./references/README.md) — overview and topic index
+- [`references/xunit-v3.md`](./references/xunit-v3.md) — xUnit v3 packages, MTP integration, async cancellation token, and filter syntax
+- [`references/xunit-v2.md`](./references/xunit-v2.md) — xUnit v2 packages, VSTest integration, and coverage collector setup
+
+Use these files when deeper background or authoritative external links are
+helpful, while treating this `SKILL.md` as the primary instruction source.
 

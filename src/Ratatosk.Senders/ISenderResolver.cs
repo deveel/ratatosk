@@ -19,27 +19,27 @@ namespace Ratatosk
     ///   <item>Plain <see cref="IEndpoint"/> — not resolved (returns <c>null</c>).</item>
     /// </list>
     /// <para>
-    /// If no matching entity is found in the registry, the resolver returns
-    /// <c>null</c> and the caller keeps the original sender.
+    /// If no matching entity is found in the registry, the resolver falls back
+    /// to the default sender configured in the connection settings, or returns
+    /// <c>null</c> to keep the original sender.
     /// </para>
     /// </remarks>
     public interface ISenderResolver
     {
         /// <summary>
-        /// Resolves the given endpoint to its canonical sender identity.
+        /// Resolves the sender for the given context.
         /// </summary>
-        /// <param name="endpoint">
-        /// The endpoint to resolve. If it is an <see cref="IUnresolvedSender"/>,
-        /// resolution is by logical name; if it is an <see cref="ISender"/>,
-        /// resolution is by endpoint type and address; otherwise returns <c>null</c>.
+        /// <param name="context">
+        /// The resolution context carrying the sender endpoint, connection settings,
+        /// and optional tenant information.
         /// </param>
         /// <param name="cancellationToken">
         /// A token that can be used to cancel the operation.
         /// </param>
         /// <returns>
         /// The resolved <see cref="ISender"/> instance, or <c>null</c>
-        /// if no matching identity was found in the registry.
+        /// if no matching identity was found and no default is configured.
         /// </returns>
-        ValueTask<ISender?> ResolveSenderAsync(IEndpoint endpoint, CancellationToken cancellationToken = default);
+        ValueTask<ISender?> ResolveAsync(SenderResolutionContext context, CancellationToken cancellationToken = default);
     }
 }

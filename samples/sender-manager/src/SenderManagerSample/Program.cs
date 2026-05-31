@@ -1,4 +1,5 @@
 using Ratatosk;
+using Ratatosk.Senders;
 using SenderManagerSample.Dtos;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,107 +14,157 @@ builder.Services.AddLogging(logging =>
     });
 });
 
-builder.Services.AddMessaging()
-    .AddClient()
-    .AddSenders()
-    .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid"));
-
-builder.Services.AddSenderInMemoryStore(new[]
+var seedSenders = new SenderEntity[]
 {
-    new Sender
+    new()
     {
         Id = "seed-support",
         Name = "support",
         DisplayName = "Customer Support",
         Address = "support@example.com",
-        EndpointType = EndpointType.EmailAddress,
-        IsActive = true,
+        Type = EndpointType.EmailAddress,
         CreatedAt = DateTime.UtcNow
     },
-    new Sender
+    new()
     {
         Id = "seed-notifications",
         Name = "notifications",
         DisplayName = "Notification Service",
         Address = "noreply@example.com",
-        EndpointType = EndpointType.EmailAddress,
-        IsActive = true,
+        Type = EndpointType.EmailAddress,
         CreatedAt = DateTime.UtcNow
     },
-    new Sender
+    new()
     {
         Id = "seed-sms-alerts",
         Name = "sms-alerts",
         DisplayName = "SMS Alert System",
         Address = "+15551234567",
-        EndpointType = EndpointType.PhoneNumber,
-        IsActive = true,
+        Type = EndpointType.PhoneNumber,
         CreatedAt = DateTime.UtcNow
     }
-});
+};
+
+foreach (var s in seedSenders)
+    s.Activate();
+
+builder.Services.AddMessaging()
+    .AddClient()
+    .AddSenders<SenderEntity>(s => s
+        .UseInMemoryStore(seedSenders))
+    .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid"));
 
 var app = builder.Build();
 
 var senderGroup = app.MapGroup("/api/senders");
 
-senderGroup.MapGet("/", async (ISenderRepository<Sender> repository) =>
+senderGroup.MapGet("/", async (SenderManager<SenderEntity> manager) =>
 {
-    var senders = await repository.FindAllAsync();
-    return Results.Ok(senders.Select(MapToResponse));
+    var result = await manager.GetAllActiveAsync();
+    if (!result.IsSuccess())
+        return Results.Problem(result.Error?.Message, statusCode: 500);
+
+    return Results.Ok(result.Value!.Select(MapToResponse));
 });
 
-senderGroup.MapGet("/{id}", async (string id, ISenderRepository<Sender> repository) =>
+senderGroup.MapGet("/{id}", async (string id, SenderManager<SenderEntity> manager) =>
 {
-    var sender = await repository.FindAsync(id);
-    return sender is not null
-        ? Results.Ok(MapToResponse(sender))
-        : Results.NotFound(new { Error = $"Sender '{id}' not found" });
+    var result = await manager.FindAsync(id);
+    if (!result.IsSuccess() || result.Value is null)
+        return Results.NotFound(new { Error = $"Sender '{id}' not found" });
+
+    return Results.Ok(MapToResponse(result.Value));
 });
 
-senderGroup.MapPost("/", async (CreateSenderRequest request, ISenderRepository<Sender> repository) =>
+senderGroup.MapGet("/name/{name}", async (string name, SenderManager<SenderEntity> manager) =>
 {
-    var sender = new Sender
+    var result = await manager.FindByNameAsync(name);
+    if (!result.IsSuccess() || result.Value is null)
+        return Results.NotFound(new { Error = $"Sender with name '{name}' not found" });
+
+    return Results.Ok(MapToResponse(result.Value));
+});
+
+senderGroup.MapPost("/", async (CreateSenderRequest request, SenderManager<SenderEntity> manager) =>
+{
+    var sender = new SenderEntity
     {
         Id = Guid.NewGuid().ToString("N"),
         Name = request.Name,
         DisplayName = request.DisplayName,
         Address = request.Address,
-        EndpointType = Endpoint.ParseEndpointType(request.EndpointType),
-        IsActive = request.IsActive,
+        Type = Ratatosk.Endpoint.ParseEndpointType(request.EndpointType),
         CreatedAt = DateTime.UtcNow
     };
+    sender.Activate();
 
-    await repository.AddAsync(sender);
+    var result = await manager.AddAsync(sender);
+    if (!result.IsSuccess())
+        return Results.Problem(result.Error?.Message, statusCode: 400);
 
     return Results.Created($"/api/senders/{sender.Id}", MapToResponse(sender));
 });
 
-senderGroup.MapPut("/{id}", async (string id, UpdateSenderRequest request, ISenderRepository<Sender> repository) =>
+senderGroup.MapPut("/{id}", async (string id, UpdateSenderRequest request, SenderManager<SenderEntity> manager) =>
 {
-    var existing = await repository.FindAsync(id);
-    if (existing is null)
+    var findResult = await manager.FindAsync(id);
+    if (!findResult.IsSuccess() || findResult.Value is null)
         return Results.NotFound(new { Error = $"Sender '{id}' not found" });
 
-    if (request.DisplayName is not null) existing.DisplayName = request.DisplayName;
-    if (request.Address is not null) existing.Address = request.Address;
-    if (request.EndpointType is not null) existing.EndpointType = Endpoint.ParseEndpointType(request.EndpointType);
-    if (request.IsActive.HasValue) existing.IsActive = request.IsActive.Value;
-    existing.UpdatedAt = DateTime.UtcNow;
+    var existing = findResult.Value;
 
-    await repository.UpdateAsync(existing);
+    var endpointType = request.EndpointType is not null
+        ? Ratatosk.Endpoint.ParseEndpointType(request.EndpointType)
+        : (EndpointType?)null;
+
+    existing.Update(request.DisplayName, request.Address, endpointType);
+
+    if (request.IsActive.HasValue)
+    {
+        if (request.IsActive.Value)
+            existing.Activate();
+        else
+            existing.Deactivate();
+    }
+
+    var updateResult = await manager.UpdateAsync(existing);
+    if (!updateResult.IsSuccess())
+        return Results.Problem(updateResult.Error?.Message, statusCode: 400);
 
     return Results.Ok(MapToResponse(existing));
 });
 
-senderGroup.MapDelete("/{id}", async (string id, ISenderRepository<Sender> repository) =>
+senderGroup.MapDelete("/{id}", async (string id, SenderManager<SenderEntity> manager) =>
 {
-    var existing = await repository.FindAsync(id);
-    if (existing is null)
+    var findResult = await manager.FindAsync(id);
+    if (!findResult.IsSuccess() || findResult.Value is null)
         return Results.NotFound(new { Error = $"Sender '{id}' not found" });
 
-    await repository.RemoveAsync(existing);
+    var removeResult = await manager.RemoveAsync(findResult.Value);
+    if (!removeResult.IsSuccess())
+        return Results.Problem(removeResult.Error?.Message, statusCode: 500);
 
     return Results.NoContent();
+});
+
+senderGroup.MapPost("/{id}/activate", async (string id, SenderManager<SenderEntity> manager) =>
+{
+    var result = await manager.ActivateAsync(id);
+    if (!result.IsSuccess())
+        return Results.NotFound(new { Error = result.Error?.Message });
+
+    var senderResult = await manager.FindAsync(id);
+    return Results.Ok(MapToResponse(senderResult.Value!));
+});
+
+senderGroup.MapPost("/{id}/deactivate", async (string id, SenderManager<SenderEntity> manager) =>
+{
+    var result = await manager.DeactivateAsync(id);
+    if (!result.IsSuccess())
+        return Results.NotFound(new { Error = result.Error?.Message });
+
+    var senderResult = await manager.FindAsync(id);
+    return Results.Ok(MapToResponse(senderResult.Value!));
 });
 
 app.MapPost("/api/messages", async (SendMessageRequest request, IMessagingClient client) =>
@@ -144,26 +195,24 @@ app.MapGet("/", () => Results.Ok(new
     {
         ListSenders = "GET /api/senders",
         GetSender = "GET /api/senders/{id}",
+        GetSenderByName = "GET /api/senders/name/{name}",
         CreateSender = "POST /api/senders",
         UpdateSender = "PUT /api/senders/{id}",
         DeleteSender = "DELETE /api/senders/{id}",
+        ActivateSender = "POST /api/senders/{id}/activate",
+        DeactivateSender = "POST /api/senders/{id}/deactivate",
         SendMessage = "POST /api/messages"
     }
 }));
 
 app.Run();
 
-/// <summary>
-/// Maps a <see cref="Sender"/> to a <see cref="SenderResponse"/> DTO.
-/// </summary>
-/// <param name="sender">The sender to map.</param>
-/// <returns>A <see cref="SenderResponse"/> representing the sender.</returns>
-static SenderResponse MapToResponse(Sender sender) => new(
+static SenderResponse MapToResponse(SenderEntity sender) => new(
     sender.Id,
     sender.Name,
     sender.DisplayName,
     sender.Address,
-    sender.EndpointType.ToString(),
+    sender.Type.ToString(),
     sender.IsActive,
     sender.CreatedAt,
     sender.UpdatedAt

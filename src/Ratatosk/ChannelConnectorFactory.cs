@@ -4,12 +4,9 @@
 //
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 using System.Collections.Concurrent;
 using System.Reflection;
-
-using Ratatosk.Senders;
 
 namespace Ratatosk
 {
@@ -18,9 +15,6 @@ namespace Ratatosk
     /// that creates connector instances using the dependency injection container,
     /// with pooling to reuse connectors that match the same settings and schema.
     /// </summary>
-    /// <typeparam name="TConnector">
-    /// The type of the connector that is created by the factory.
-    /// </typeparam>
     public class ChannelConnectorFactory<TConnector> : IChannelConnectorFactory<TConnector>
         where TConnector : class, IChannelConnector
     {
@@ -32,48 +26,17 @@ namespace Ratatosk
         /// <summary>
         /// Constructs the factory with a service provider.
         /// </summary>
-        /// <param name="serviceProvider">
-        /// The service provider used to resolve dependencies
-        /// and create the connector instances.
-        /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if <paramref name="serviceProvider"/> is <c>null</c>.
-        /// </exception>
         public ChannelConnectorFactory(IServiceProvider serviceProvider)
         {
             ArgumentNullException.ThrowIfNull(serviceProvider, nameof(serviceProvider));
             _serviceProvider = serviceProvider;
         }
 
-        /// <summary>
-        /// Creates a new instance of the connector using the given settings.
-        /// </summary>
-        /// <param name="settings">
-        /// The settings used to configure the connector.
-        /// </param>
-        /// <returns>
-        /// Returns a new instance of <typeparamref name="TConnector"/>.
-        /// </returns>
+        /// <inheritdoc />
         public TConnector Create(ConnectionSettings settings)
             => Create(settings, null);
 
-        /// <summary>
-        /// Creates a new instance of the connector using the given settings
-        /// and schema.
-        /// </summary>
-        /// <param name="settings">
-        /// The settings used to configure the connector.
-        /// </param>
-        /// <param name="schema">
-        /// The schema that defines the structure of the channel,
-        /// or <c>null</c> to discover it automatically.
-        /// </param>
-        /// <returns>
-        /// Returns a new instance of <typeparamref name="TConnector"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if <paramref name="settings"/> is <c>null</c>.
-        /// </exception>
+        /// <inheritdoc />
         public TConnector Create(ConnectionSettings settings, IChannelSchema? schema)
         {
             ArgumentNullException.ThrowIfNull(settings, nameof(settings));
@@ -81,63 +44,15 @@ namespace Ratatosk
             var effectiveSchema = schema ?? DiscoverSchema();
             var key = new ConnectorPoolKey(settings, effectiveSchema);
 
-            // Probe the pool first (cheap path).
             if (_pool.TryGetValue(key, out var pooled) && pooled.IsReusable)
                 return pooled;
 
-            // Create a per-connector sender resolver if sender services are registered.
-            var senderResolver = CreateSenderResolver(settings);
-
-            // Create a new instance, then conditionally store it.
-            var instance = senderResolver != null
-                ? ActivatorUtilities.CreateInstance<TConnector>(_serviceProvider, effectiveSchema, settings, senderResolver)
-                : ActivatorUtilities.CreateInstance<TConnector>(_serviceProvider, effectiveSchema, settings);
+            var instance = ActivatorUtilities.CreateInstance<TConnector>(_serviceProvider, effectiveSchema, settings);
 
             if (instance.IsReusable)
                 return _pool.GetOrAdd(key, instance);
 
             return instance;
-        }
-
-        private ISenderResolver? CreateSenderResolver(ConnectionSettings settings)
-        {
-            var repository = _serviceProvider.GetService<ISenderRepository<ISender>>();
-            if (repository == null)
-                return null;
-
-            var defaultCache = _serviceProvider.GetService<ISenderCache>();
-            if (defaultCache == null)
-                return null;
-
-            var optionsMonitor = _serviceProvider.GetService<IOptionsMonitor<SenderConnectorOptions>>();
-            var connectorOptions = optionsMonitor?.Get(typeof(TConnector).FullName!);
-            var cache = connectorOptions?.Cache ?? defaultCache;
-
-            // ConnectionSettings (per operation/session) overrides SenderConnectorOptions (build-time default).
-            var defaultSender = BuildDefaultSenderFromSettings(settings)
-                ?? connectorOptions?.DefaultSender;
-
-            return new SenderResolver(repository, cache, defaultSender);
-        }
-
-        private static ISender? BuildDefaultSenderFromSettings(ConnectionSettings settings)
-        {
-            var name = settings.GetParameter<string>("DefaultSenderName");
-            var address = settings.GetParameter<string>("DefaultSenderAddress");
-            var typeStr = settings.GetParameter<string>("DefaultSenderType");
-
-            if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(address))
-                return null;
-
-            var type = Enum.TryParse<EndpointType>(typeStr, ignoreCase: true, out var parsed)
-                ? parsed
-                : EndpointType.Any;
-
-            return new SenderBuilder()
-                .WithName(name ?? "default")
-                .WithAddress(address ?? string.Empty)
-                .WithEndpointType(type)
-                .Build();
         }
 
         private IChannelSchema DiscoverSchema()

@@ -1,30 +1,12 @@
-//
-// Copyright (c) Antonello Provenzano and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for details.
-//
-
-using Kista;
-
 namespace Ratatosk.Senders
 {
     /// <summary>
-    /// Defines the contract for a repository of sender identities.
+    /// Defines the contract for a repository of sender identities,
+    /// extending standard CRUD with sender-specific query operations.
     /// </summary>
     /// <typeparam name="TSender">
     /// The type of sender entity, which must implement <see cref="ISender"/>.
     /// </typeparam>
-    /// <remarks>
-    /// <para>
-    /// This interface extends <see cref="IRepository{TSender}"/> from Kista,
-    /// inheriting all standard CRUD, pagination, and query capabilities.
-    /// </para>
-    /// <para>
-    /// Custom repository implementations can use their own storage-bound
-    /// entity types (e.g., <c>DbSender</c>, <c>MongoSender</c>) that
-    /// implement <see cref="ISender"/>, handling the transformation between
-    /// the domain model and storage format internally.
-    /// </para>
-    /// </remarks>
     public interface ISenderRepository<TSender> : IRepository<TSender>
         where TSender : class, ISender
     {
@@ -63,5 +45,17 @@ namespace Ratatosk.Senders
         /// A list of all active senders.
         /// </returns>
         Task<IList<TSender>> GetAllActiveAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Sets the active state of a sender by its identifier.
+        /// </summary>
+        /// <param name="sender">The sender to update.</param>
+        /// <param name="isActive">
+        /// <c>true</c> to activate the sender; <c>false</c> to deactivate.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A token that can be used to cancel the operation.
+        /// </param>
+        Task SetActiveAsync(TSender sender, bool isActive, CancellationToken cancellationToken = default);
     }
 }

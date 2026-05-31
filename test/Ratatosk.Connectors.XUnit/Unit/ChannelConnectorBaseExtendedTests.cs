@@ -9,8 +9,8 @@ public class ChannelConnectorBaseExtendedTests
 {
     private sealed class TestConnector : ChannelConnectorBase
     {
-        public TestConnector(IChannelSchema schema, ConnectionSettings? settings = null, IAuthenticationManager? authManager = null, ISenderResolver? senderResolver = null)
-            : base(schema, settings ?? new ConnectionSettings(), senderResolver: senderResolver, authenticationManager: authManager)
+        public TestConnector(IChannelSchema schema, ConnectionSettings? settings = null, IAuthenticationManager? authManager = null)
+            : base(schema, settings ?? new ConnectionSettings(), authenticationManager: authManager)
         {
         }
 

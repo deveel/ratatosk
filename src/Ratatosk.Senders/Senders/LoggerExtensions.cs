@@ -20,4 +20,7 @@ static partial class LoggerExtensions
 
     [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "Sender '{SenderName}' found but is inactive.")]
     public static partial void LogSenderFoundButInactive(this ILogger logger, string senderName);
+
+    [LoggerMessage(EventId = 7, Level = LogLevel.Debug, Message = "Sender for endpoint '{Address}' (type: {EndpointType}) resolved from cache.")]
+    public static partial void LogSenderResolvedFromCacheByEndpoint(this ILogger logger, string address, EndpointType endpointType);
 }

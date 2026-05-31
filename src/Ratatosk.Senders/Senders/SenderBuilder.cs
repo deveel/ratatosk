@@ -81,14 +81,24 @@ namespace Ratatosk.Senders
         /// </returns>
         public Sender Build()
         {
-            return new Sender
+            var sender = new Sender
             {
                 Name = _name ?? throw new InvalidOperationException("The sender name is required."),
                 DisplayName = _displayName ?? _name ?? "Unknown",
                 Address = _address ?? throw new InvalidOperationException("The address is required."),
-                EndpointType = _endpointType ?? throw new InvalidOperationException("The endpoint type is required."),
-                IsActive = _isActive
+                EndpointType = _endpointType ?? throw new InvalidOperationException("The endpoint type is required.")
             };
+            
+            if (_isActive)
+            {
+                sender.Activate();
+            }
+            else
+            {
+                sender.Deactivate();
+            }
+            
+            return sender;
         }
     }
 }

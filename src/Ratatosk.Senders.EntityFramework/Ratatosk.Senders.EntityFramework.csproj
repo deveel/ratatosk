@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Ratatosk.Abstractions\Ratatosk.Abstractions.csproj" />
     <ProjectReference Include="..\Ratatosk.Senders\Ratatosk.Senders.csproj" />
+    <ProjectReference Include="..\Ratatosk\Ratatosk.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net8.0'">
@@ -26,11 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Deveel.Repository.EntityFramework" Version="1.4.3" />
+    <PackageReference Include="Kista.EntityFramework" Version="1.6.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Deveel" />
-    <Using Include="Deveel.Data" />
+    <Using Include="Kista" />
   </ItemGroup>
 </Project>

@@ -104,7 +104,7 @@ public class SenderBuilderTests
     }
 
     [Fact]
-    public void Should_NotSetTimestamps_When_Built()
+    public void Should_SetUpdatedAt_When_Built()
     {
         var sender = new SenderBuilder()
             .WithName("test-sender")
@@ -113,6 +113,6 @@ public class SenderBuilderTests
             .Build();
 
         Assert.Null(sender.CreatedAt);
-        Assert.Null(sender.UpdatedAt);
+        Assert.NotNull(sender.UpdatedAt);
     }
 }

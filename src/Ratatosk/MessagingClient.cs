@@ -9,22 +9,7 @@ namespace Ratatosk
     /// channel connectors from the dependency injection container and manages
     /// their initialization and lifecycle.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Connectors are resolved lazily on first use and cached for subsequent
-    /// calls, ensuring each named channel is initialized at most once.
-    /// Thread-safe resolution is guaranteed via a <see cref="SemaphoreSlim"/>
-    /// guard.
-    /// </para>
-    /// <para>
-    /// When <see cref="MessagingClientOptions.AutoInitialize"/> is <c>true</c>
-    /// (default), the client automatically calls
-    /// <see cref="IChannelConnector.InitializeAsync"/> on the connector before
-    /// delegating the operation. If initialization fails, the error is logged
-    /// and a failure result is returned.
-    /// </para>
-    /// </remarks>
-    public class MessagingClient : IMessagingClient, IDisposable, IAsyncDisposable
+    public class MessagingClient : IMessagingClient
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly MessagingClientOptions _options;
@@ -40,27 +25,6 @@ namespace Ratatosk
         /// <summary>
         /// Constructs a new <see cref="MessagingClient"/> instance.
         /// </summary>
-        /// <param name="serviceProvider">
-        /// The service provider used to resolve channel connectors by name.
-        /// </param>
-        /// <param name="options">
-        /// An optional <see cref="MessagingClientOptions"/> instance that
-        /// controls auto-initialization and other client behavior. When
-        /// <c>null</c>, a default options instance is used.
-        /// </param>
-        /// <param name="logger">
-        /// An optional logger for diagnostic output. When <c>null</c>,
-        /// logging is suppressed.
-        /// </param>
-        /// <param name="resolver">
-        /// An optional <see cref="IChannelConnectorResolver"/> used to
-        /// resolve pre-configured connectors by name. When <c>null</c>,
-        /// connectors are resolved directly from the service provider.
-        /// </param>
-        /// <param name="catalog">
-        /// An optional <see cref="ConnectorTypeCatalog"/> used to create
-        /// connectors at runtime from <see cref="ConnectionSettings"/>.
-        /// </param>
         public MessagingClient(
             IServiceProvider serviceProvider,
             MessagingClientOptions? options = null,
@@ -83,6 +47,8 @@ namespace Ratatosk
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
                 return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
+
+            await ResolveSenderAsync(message, connector.ConnectionSettings, cancellationToken);
 
             var result = await connector.SendMessageAsync(message, cancellationToken);
             if (result.IsSuccess())
@@ -158,6 +124,8 @@ namespace Ratatosk
             var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
             if (connector == null)
                 return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
+
+            await ResolveSenderAsync(message, connector.ConnectionSettings, cancellationToken);
 
             var result = await connector.SendMessageAsync(message, cancellationToken);
             if (result.IsSuccess())
@@ -236,6 +204,8 @@ namespace Ratatosk
             if (connector == null)
                 return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
 
+            await ResolveSenderAsync(message, settings, cancellationToken);
+
             var result = await connector.SendMessageAsync(message, cancellationToken);
             if (result.IsSuccess())
                 _logger.LogMessageSent(channelName);
@@ -311,6 +281,8 @@ namespace Ratatosk
             if (connector == null)
                 return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
 
+            await ResolveSenderAsync(message, settings, cancellationToken);
+
             var result = await connector.SendMessageAsync(message, cancellationToken);
             if (result.IsSuccess())
                 _logger.LogMessageSent(channelName);
@@ -375,6 +347,23 @@ namespace Ratatosk
                 _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
 
             return result;
+        }
+
+        // ── Sender resolution ────────────────────────────────────────────────
+
+        private async ValueTask ResolveSenderAsync(IMessage message, ConnectionSettings settings, CancellationToken cancellationToken)
+        {
+            var resolver = _serviceProvider.GetService<ISenderResolver>();
+            if (resolver == null)
+                return;
+
+            var context = new SenderResolutionContext(message.Sender, settings);
+            var resolved = await resolver.ResolveAsync(context, cancellationToken);
+
+            if (resolved != null && message is Message msg)
+            {
+                msg.Sender = resolved;
+            }
         }
 
         // ── Runtime connector creation ──────────────────────────────────────
@@ -499,17 +488,6 @@ namespace Ratatosk
         /// Resolves a channel connector by name, with lazy initialization
         /// and thread-safe caching.
         /// </summary>
-        /// <param name="channelName">
-        /// The name of the channel to resolve.
-        /// </param>
-        /// <param name="cancellationToken">
-        /// A token that can be used to cancel the operation.
-        /// </param>
-        /// <returns>
-        /// The resolved <see cref="IChannelConnector"/> instance, or
-        /// <c>null</c> if no connector is registered for the given name
-        /// or if auto-initialization failed.
-        /// </returns>
         private async Task<IChannelConnector?> ResolveConnectorAsync(string channelName, CancellationToken cancellationToken)
         {
             if (_connectors.TryGetValue(channelName, out var existing))

@@ -420,5 +420,50 @@ namespace Ratatosk
 
 			return sb.ToString();
 		}
+
+		/// <summary>
+		/// Gets the default sender configured in these connection settings.
+		/// </summary>
+		/// <remarks>
+		/// Checks for explicit default sender parameters (<c>DefaultSenderName</c>,
+		/// <c>DefaultSenderAddress</c>, <c>DefaultSenderType</c>), then falls back
+		/// to the channel-native <c>From</c> parameter (e.g., Twilio phone number,
+		/// SendGrid email address).
+		/// </remarks>
+		public ISender? GetDefaultSender()
+		{
+			var name = GetParameter<string>("DefaultSenderName");
+			var address = GetParameter<string>("DefaultSenderAddress");
+			var typeStr = GetParameter<string>("DefaultSenderType");
+
+			if (!string.IsNullOrWhiteSpace(name) || !string.IsNullOrWhiteSpace(address))
+			{
+				var type = Enum.TryParse<EndpointType>(typeStr, ignoreCase: true, out var parsed)
+					? parsed
+					: EndpointType.Any;
+
+				return new Sender
+				{
+					Name = name ?? "default",
+					DisplayName = name ?? "default",
+					Address = address ?? string.Empty,
+					EndpointType = type
+				};
+			}
+
+			var from = GetParameter<string>("From");
+			if (!string.IsNullOrWhiteSpace(from))
+			{
+				return new Sender
+				{
+					Name = "default",
+					DisplayName = "default",
+					Address = from,
+					EndpointType = EndpointType.Any
+				};
+			}
+
+			return null;
+		}
 	}
 }

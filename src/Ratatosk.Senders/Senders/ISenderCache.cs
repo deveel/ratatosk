@@ -6,46 +6,32 @@
 namespace Ratatosk.Senders
 {
     /// <summary>
-    /// Caches sender identities by name to avoid repeated lookups in the registry.
+    /// Caches sender identities to avoid repeated lookups in the registry.
     /// </summary>
     /// <remarks>
-    /// This is a domain-level cache that caches resolution results keyed by sender name.
+    /// Implementations index senders by both name and by endpoint (type + address).
+    /// A single <see cref="SetAsync"/> call stores the sender under both keys.
     /// </remarks>
     public interface ISenderCache
     {
         /// <summary>
         /// Gets a cached sender by its logical name.
         /// </summary>
-        /// <param name="senderName">The logical name of the sender.</param>
-        /// <param name="cancellationToken">
-        /// A token that can be used to cancel the operation.
-        /// </param>
-        /// <returns>
-        /// The cached <see cref="ISender"/>, or <c>null</c> if not cached.
-        /// </returns>
         ValueTask<ISender?> GetByNameAsync(string senderName, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Stores a sender in the cache, keyed by its logical name.
+        /// Gets a cached sender by its endpoint address and type.
         /// </summary>
-        /// <param name="senderName">The logical name of the sender.</param>
-        /// <param name="sender">The sender to cache.</param>
-        /// <param name="ttl">
-        /// An optional time-to-live for the cache entry. If <c>null</c>,
-        /// the default TTL configured for the cache is used.
-        /// </param>
-        /// <param name="cancellationToken">
-        /// A token that can be used to cancel the operation.
-        /// </param>
-        ValueTask SetByNameAsync(string senderName, ISender sender, TimeSpan? ttl = null, CancellationToken cancellationToken = default);
+        ValueTask<ISender?> GetByEndpointAsync(string address, EndpointType endpointType, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Stores a sender in the cache, indexed by both name and endpoint.
+        /// </summary>
+        ValueTask SetAsync(ISender sender, TimeSpan? ttl = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Removes a cached sender by its logical name.
         /// </summary>
-        /// <param name="senderName">The logical name of the sender.</param>
-        /// <param name="cancellationToken">
-        /// A token that can be used to cancel the operation.
-        /// </param>
         ValueTask RemoveByNameAsync(string senderName, CancellationToken cancellationToken = default);
     }
 }

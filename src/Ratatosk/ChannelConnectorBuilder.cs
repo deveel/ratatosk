@@ -190,24 +190,10 @@ namespace Ratatosk
         {
             ArgumentNullException.ThrowIfNull(configure, nameof(configure));
 
-            var senderBuilder = new SenderRegistrationBuilder<TConnector>(this, MessagingBuilder);
+            var senderBuilder = new SenderRegistrationBuilder<TConnector>(MessagingBuilder);
             configure(senderBuilder);
-            senderBuilder.Done();
 
             return this;
-        }
-
-        /// <summary>
-        /// Begins configuring sender resolution for this connector.
-        /// Call <see cref="SenderRegistrationBuilder{TConnector}.Done"/> to
-        /// return to this builder for continued configuration.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="SenderRegistrationBuilder{TConnector}"/> for configuring senders.
-        /// </returns>
-        public SenderRegistrationBuilder<TConnector> WithSenders()
-        {
-            return new SenderRegistrationBuilder<TConnector>(this, MessagingBuilder);
         }
 
         // ── Factory override ───────────────────────────────────────────────────

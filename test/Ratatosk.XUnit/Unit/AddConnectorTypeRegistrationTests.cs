@@ -227,7 +227,13 @@ namespace Ratatosk.XUnit.Unit
 
         private class InvalidConnector : IChannelConnector
         {
+            public InvalidConnector(ConnectionSettings? settings = null)
+            {
+                ConnectionSettings = settings ?? new ConnectionSettings();
+            }
+
             public IChannelSchema Schema => throw new NotSupportedException();
+            public ConnectionSettings ConnectionSettings { get; }
             public ConnectorState State => ConnectorState.Uninitialized;
 
             public ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)

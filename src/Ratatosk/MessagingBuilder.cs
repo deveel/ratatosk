@@ -3,8 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 //
 
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 using Ratatosk.Senders;
 
@@ -291,39 +294,37 @@ namespace Ratatosk
         // ── Sender identity services ──────────────────────────────────────────
 
         /// <summary>
-        /// Registers the sender identity services (configuration registry,
-        /// cache, repository, resolver) into the messaging infrastructure.
+        /// Registers the sender identity services (cache, distributed cache,
+        /// and options) into the messaging infrastructure.
         /// </summary>
-        /// <returns>
-        /// Returns the current <see cref="MessagingBuilder"/> instance
-        /// to allow chaining.
-        /// </returns>
         public MessagingBuilder AddSenders()
         {
-            Services.TryAddSingleton<ISenderCache>(sp => new InMemorySenderCache(TimeSpan.FromMinutes(5)));
-            Services.TryAddScoped<ISenderRepository<ISender>, SenderManager<ISender>>();
-            Services.TryAddScoped<ISenderResolver, SenderResolver>();
+            Services.AddOptions<SenderCacheOptions>();
+            Services.AddDistributedMemoryCache();
+            Services.TryAddSingleton<ISenderCache, DistributedSenderCache>();
             return this;
         }
 
         /// <summary>
-        /// Registers a sender configuration for a specific connector type
-        /// using the named options pattern.
+        /// Registers the sender identity services with a specific sender type,
+        /// including the <see cref="SenderManager{TSender}"/> for lifecycle management.
         /// </summary>
-        /// <typeparam name="TConnector">
-        /// The connector type to associate the configuration with.
+        /// <typeparam name="TSender">
+        /// The type of sender entity, which must implement <see cref="ISender"/>.
         /// </typeparam>
-        /// <param name="options">The sender connector options.</param>
-        internal void RegisterSenderConfiguration<TConnector>(SenderConnectorOptions options)
-            where TConnector : IChannelConnector
+        /// <returns>
+        /// Returns the current <see cref="MessagingBuilder"/> instance
+        /// to allow chaining.
+        /// </returns>
+        public MessagingBuilder AddSenders<TSender>()
+            where TSender : class, ISender
         {
-            Services.Configure<SenderConnectorOptions>(typeof(TConnector).FullName!, _ => { });
-            Services.PostConfigure<SenderConnectorOptions>(typeof(TConnector).FullName!, o =>
-            {
-                o.DefaultSender = options.DefaultSender;
-                o.Cache = options.Cache;
-                o.CacheTtl = options.CacheTtl;
-            });
+            AddSenders();
+            Services.TryAddScoped<SenderManager<TSender>>();
+            Services.TryAddScoped<ISenderValidator<TSender>, SenderValidator<TSender>>();
+            Services.TryAddScoped<ISenderResolver, SenderResolver<TSender>>();
+
+            return this;
         }
 
         // ── Message ID generator registration ─────────────────────────────────

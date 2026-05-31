@@ -7,15 +7,19 @@ namespace Ratatosk.Senders;
 [Trait("Feature", "SenderValidator")]
 public class SenderValidatorTests
 {
-    private static Sender CreateValidSender() => new()
+    private static Sender CreateValidSender()
     {
-        Id = Guid.NewGuid().ToString(),
-        Name = "test-sender",
-        DisplayName = "Test Sender",
-        Address = "+1234567890",
-        EndpointType = EndpointType.PhoneNumber,
-        IsActive = true
-    };
+        var sender = new Sender
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = "test-sender",
+            DisplayName = "Test Sender",
+            Address = "+1234567890",
+            EndpointType = EndpointType.PhoneNumber
+        };
+        sender.Activate();
+        return sender;
+    }
 
     private static async Task<List<ValidationResult>> CollectResults(Sender sender)
     {

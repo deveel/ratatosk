@@ -44,7 +44,7 @@ namespace Ratatosk
         /// <summary>
         /// Gets or sets whether the sender is active and can be used to send messages.
         /// </summary>
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; private set; } = true;
 
         /// <summary>
         /// Gets or sets the date and time when the sender was created.
@@ -58,5 +58,43 @@ namespace Ratatosk
 
         /// <inheritdoc />
         EndpointType IEndpoint.Type => EndpointType;
+
+        /// <summary>
+        /// Activates the sender.
+        /// </summary>
+        public void Activate()
+        {
+            IsActive = true;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Deactivates the sender.
+        /// </summary>
+        public void Deactivate()
+        {
+            IsActive = false;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Updates the sender properties with the provided values.
+        /// </summary>
+        /// <param name="displayName">The new display name, or null to keep the current value.</param>
+        /// <param name="address">The new address, or null to keep the current value.</param>
+        /// <param name="endpointType">The new endpoint type, or null to keep the current value.</param>
+        public void Update(string? displayName = null, string? address = null, EndpointType? endpointType = null)
+        {
+            if (displayName is not null)
+                DisplayName = displayName;
+            
+            if (address is not null)
+                Address = address;
+            
+            if (endpointType.HasValue)
+                EndpointType = endpointType.Value;
+            
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

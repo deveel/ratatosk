@@ -23,41 +23,16 @@ namespace Ratatosk
         private readonly IAuthenticationManager _authenticationManager;
         private bool _autoAuthenticationAttempted;
         private readonly IMessageIdGenerator _idGenerator;
-        private readonly ISenderResolver? _senderResolver;
 
         /// <summary>
         /// Constructs the connector base with the given schema and optional settings.
         /// </summary>
-        /// <param name="schema">
-        /// The channel schema that defines the capabilities and configuration of the connector.
-        /// </param>
-        /// <param name="connectionSettings">
-        /// An optional set of connection settings to use for the connector.
-        /// </param>
-        /// <param name="logger">
-        /// An optional logger instance used to log diagnostic information.
-        /// </param>
-        /// <param name="authenticationManager">
-        /// An optional authentication manager used to handle authentication operations.
-        /// </param>
-        /// <param name="idGenerator">
-        /// An optional message identifier generator used to generate unique message identifiers.
-        /// </param>
-        /// <param name="senderResolver">
-        /// An optional sender resolver used to resolve sender identities
-        /// before messages are validated and sent.
-        /// </param>
-        /// <param name="stateManager">
-        /// An optional state manager used to track and transition the connector state.
-        /// When <c>null</c>, a default <see cref="ConnectorStateManager"/> is used.
-        /// </param>
         protected ChannelConnectorBase(
             IChannelSchema schema,
             ConnectionSettings? connectionSettings = null,
             ILogger? logger = null,
             IAuthenticationManager? authenticationManager = null,
             IMessageIdGenerator? idGenerator = null,
-            ISenderResolver? senderResolver = null,
             IConnectorStateManager? stateManager = null)
         {
             Schema = schema ?? throw new ArgumentNullException(nameof(schema));
@@ -65,7 +40,6 @@ namespace Ratatosk
             Logger = logger ?? NullLogger.Instance;
             _authenticationManager = authenticationManager ?? new AuthenticationManager(logger: NullLogger<AuthenticationManager>.Instance);
             _idGenerator = idGenerator ?? new DefaultMessageIdGenerator();
-            _senderResolver = senderResolver;
             _stateManager = stateManager ?? new ConnectorStateManager();
         }
 
@@ -539,8 +513,6 @@ namespace Ratatosk
 
             _idGenerator.EnsureMessageId(message);
 
-            await ResolveSenderAsync(message, cancellationToken);
-
             using var scope = BeginConnectorLoggerScope();
             using var messageScope = BeginMessageLoggerScope(message);
 
@@ -629,8 +601,6 @@ namespace Ratatosk
                 foreach (var message in batch.Messages)
                 {
                     _idGenerator.EnsureMessageId(message);
-
-                    await ResolveSenderAsync(message, cancellationToken);
 
                     var messageErrors = new List<ValidationResult>();
                     await foreach (var validationResult in ValidateMessageAsync(message, cancellationToken))
@@ -1096,29 +1066,6 @@ namespace Ratatosk
         protected virtual Task ShutdownConnectorAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Resolves the sender identity on the message if a sender resolver is registered.
-        /// </summary>
-        /// <param name="message">The message whose sender to resolve.</param>
-        /// <param name="cancellationToken">
-        /// A cancellation token used to propagate notification that the operation should be canceled.
-        /// </param>
-        private async ValueTask ResolveSenderAsync(IMessage message, CancellationToken cancellationToken)
-        {
-            if (_senderResolver == null)
-                return;
-
-            if (message.Sender is not IEndpoint endpoint)
-                return;
-
-            var resolved = await _senderResolver.ResolveSenderAsync(endpoint, cancellationToken);
-
-            if (resolved != null && message is Message msg)
-            {
-                msg.Sender = resolved;
-            }
         }
     }
 }
