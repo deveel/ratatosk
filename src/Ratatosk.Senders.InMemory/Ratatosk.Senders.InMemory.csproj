@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Kista.InMemory" Version="1.6.3" />
+    <PackageReference Include="Kista.InMemory" Version="1.6.5" />
   </ItemGroup>
 
   <ItemGroup>

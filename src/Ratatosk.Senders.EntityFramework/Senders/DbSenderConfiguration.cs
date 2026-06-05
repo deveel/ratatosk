@@ -11,7 +11,6 @@ namespace Ratatosk.Senders
         /// <inheritdoc />
         public void Configure(EntityTypeBuilder<DbSender> builder)
         {
-            builder.ToTable("senders");
             builder.HasKey(e => e.Id);
             builder.HasIndex(e => e.Name).IsUnique();
 
@@ -32,12 +31,10 @@ namespace Ratatosk.Senders
                 .IsRequired();
 
             builder.Property(e => e.Type)
-                .HasColumnName("EndpointType")
                 .HasMaxLength(50)
                 .IsRequired();
 
-            builder.Property(e => e.IsActive)
-                .HasDefaultValue(true);
+            builder.Property(e => e.IsActive);
 
             builder.Property(e => e.CreatedAt);
 
