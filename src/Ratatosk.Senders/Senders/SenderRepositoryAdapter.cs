@@ -8,6 +8,7 @@ namespace Ratatosk.Senders
         where TSender : class, ISender
     {
         private readonly ISenderRepository<TSender> _inner;
+        private ISenderRepository<ISender> _senderRepositoryImplementation;
 
         /// <summary>
         /// Initializes a new adapter around a typed sender repository.
@@ -57,6 +58,12 @@ namespace Ratatosk.Senders
         /// <inheritdoc />
         public async ValueTask<ISender?> FindAsync(object key, CancellationToken cancellationToken = default)
             => await _inner.FindAsync(key, cancellationToken);
+
+        /// <inheritdoc/>
+        public ValueTask<PageResult<ISender>> GetPageAsync(PageRequest request, CancellationToken cancellationToken = new CancellationToken())
+        {
+            return _senderRepositoryImplementation.GetPageAsync(request, cancellationToken);
+        }
 
         /// <inheritdoc />
         public async Task<ISender?> FindByNameAsync(string name, CancellationToken cancellationToken = default)
