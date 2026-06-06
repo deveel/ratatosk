@@ -26,6 +26,7 @@ namespace Ratatosk
         private bool _autoAuthenticationAttempted;
         private readonly IMessageIdGenerator _idGenerator;
         private readonly RetryPolicyOptions? _retryPolicy;
+        private readonly Lazy<ResiliencePipeline<SendResult>?> _sendPipeline;
 
         /// <summary>
         /// Constructs the connector base with the given schema and optional settings.
@@ -46,6 +47,11 @@ namespace Ratatosk
             _stateManager = stateManager ?? new ConnectorStateManager();
 
             _retryPolicy = ReadRetryPolicyFromSettings();
+            _sendPipeline = new Lazy<ResiliencePipeline<SendResult>?>(() =>
+            {
+                var options = _retryPolicy ?? GetDefaultRetryPolicy();
+                return ResiliencePipelineFactory.BuildPipeline<SendResult>(options);
+            });
         }
 
         /// <summary>
@@ -118,8 +124,8 @@ namespace Ratatosk
         public virtual bool IsReusable => true;
 
         /// <summary>
-        /// Gets the retry policy options for this connector, or <c>null</c> if no retry policy is configured.
-        /// Override to provide a connector-specific default retry policy.
+        /// Reads the retry policy options from the connection settings, or <c>null</c>
+        /// if no retry policy is configured in the settings.
         /// </summary>
         private RetryPolicyOptions? ReadRetryPolicyFromSettings()
         {
@@ -183,6 +189,9 @@ namespace Ratatosk
 
         private ResiliencePipeline<T>? BuildPipeline<T>()
         {
+            if (typeof(T) == typeof(SendResult))
+                return (ResiliencePipeline<T>?)(object?)_sendPipeline.Value;
+
             var options = _retryPolicy ?? GetDefaultRetryPolicy();
             return ResiliencePipelineFactory.BuildPipeline<T>(options);
         }
@@ -646,6 +655,17 @@ namespace Ratatosk
                                 ConnectorErrorCodes.CircuitBreakerOpen,
                                 MessagingErrorCodes.ErrorDomain,
                                 "The circuit breaker is open; requests are blocked until it recovers");
+                        }
+
+                        // Non-retryable ConnectorExceptions propagate to the outer handler
+                        // to preserve the original error code instead of being masked as exhaustion
+                        if (ex is ConnectorException connEx)
+                        {
+                            var retryPolicy = _retryPolicy ?? GetDefaultRetryPolicy();
+                            if (retryPolicy == null || !retryPolicy.RetryableErrorCodes.Contains(connEx.ErrorCode))
+                            {
+                                throw;
+                            }
                         }
 
                         Logger.LogRetryExhausted(_retryPolicy?.MaxRetryAttempts ?? 3, "SendMessage", ex.Message);

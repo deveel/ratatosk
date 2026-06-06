@@ -15,7 +15,7 @@ namespace Ratatosk
 
             var retryOptions = new RetryStrategyOptions<T>
             {
-                MaxRetryAttempts = options.MaxRetryAttempts,
+                MaxRetryAttempts = options.MaxRetryAttempts - 1,
                 Delay = options.BaseDelay,
                 BackoffType = MapBackoffType(options.BackoffType),
                 UseJitter = options.UseJitter,

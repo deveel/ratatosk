@@ -149,7 +149,7 @@ protected override RetryPolicyOptions? GetDefaultRetryPolicy()
     };
 ```
 
-The policy configured via `WithRetryPolicy` or `ConnectionSettings.Parameters["RetryPolicy"]` takes precedence. See [Retry Policies](retry-policies.md) for details.
+The policy configured via `WithRetryPolicy` or individual `RetrySettingsKeys.*` parameters in `ConnectionSettings` takes precedence. See [Retry Policies](retry-policies.md) for details.
 
 ## Optional overrides
 

@@ -151,7 +151,7 @@ public class RetryPolicySendTests
 
         Assert.False(result.IsSuccess());
         Assert.Equal(ConnectorErrorCodes.RetryAttemptsExhausted, result.Error?.Code);
-        Assert.Equal(4, connector.CallCount);
+        Assert.Equal(3, connector.CallCount);
     }
 
     [Fact]
@@ -168,6 +168,7 @@ public class RetryPolicySendTests
         var result = await connector.SendMessageAsync(CreateTestMessage(), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess());
+        Assert.Equal("INVALID_CONFIG", result.Error?.Code);
         Assert.Equal(1, connector.CallCount);
     }
 

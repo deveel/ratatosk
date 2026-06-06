@@ -515,7 +515,7 @@ namespace Ratatosk
         [LoggerMessage(
             EventId = ConnectorLoggerEventId.CircuitBreakerReset,
             Level = LogLevel.Information,
-            Message = "Circuit breaker reset for {OperationType} —恢复正常 operation")]
+            Message = "Circuit breaker reset for {OperationType} — normal operation resumed")]
         internal static partial void LogCircuitBreakerReset(this ILogger logger, string operationType);
 
         #endregion
