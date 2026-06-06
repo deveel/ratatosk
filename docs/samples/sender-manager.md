@@ -93,4 +93,4 @@ The sample never resolves the sender in the API handler. It passes a `SenderRef`
 
 ## Configuration
 
-See the [`samples/sender-manager/README.md`](https://github.com/deveel/deveel.messaging/blob/main/samples/sender-manager/README.md) file in the repository for the full configuration reference and SendGrid setup.
+See the [`samples/sender-manager/README.md`](https://github.com/deveel/ratatosk/blob/main/samples/sender-manager/README.md) file in the repository for the full configuration reference and SendGrid setup.
