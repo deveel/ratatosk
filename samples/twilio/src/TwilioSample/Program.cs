@@ -26,8 +26,26 @@ builder.Services.AddLogging(logging =>
 
 builder.Services.AddMessaging()
     .AddClient()
-    .AddTwilioSms("sms", c => c.WithSettings("Twilio"))
-    .AddTwilioWhatsApp("whatsapp", c => c.WithSettings("Twilio"));
+    .AddTwilioSms("sms", c => c
+        .WithSettings("Twilio")
+        .WithRetryPolicy(options =>
+        {
+            options.WithMaxAttempts(3)
+                   .WithExponentialBackoff()
+                   .WithBaseDelay(TimeSpan.FromSeconds(2))
+                   .WithJitter()
+                   .RetryOnErrorCodes("RATE_LIMITED", "SERVICE_UNAVAILABLE");
+        }))
+    .AddTwilioWhatsApp("whatsapp", c => c
+        .WithSettings("Twilio")
+        .WithRetryPolicy(options =>
+        {
+            options.WithMaxAttempts(3)
+                   .WithExponentialBackoff()
+                   .WithBaseDelay(TimeSpan.FromSeconds(2))
+                   .WithJitter()
+                   .RetryOnErrorCodes("RATE_LIMITED", "SERVICE_UNAVAILABLE");
+        }));
 
 builder.Services.AddSingleton<TwilioSample.TwilioSampleSupport>();
 

@@ -9,6 +9,7 @@ Demonstrates running multiple Ratatosk connectors simultaneously in a single ASP
 - Exposing channel operations through REST endpoints
 - Sending messages, receiving webhooks, and checking status over HTTP
 - Handling all connector types in a single application with shared configuration
+- Shared retry policy applied to all connectors (exponential backoff, rate limit retries)
 
 ## Run
 

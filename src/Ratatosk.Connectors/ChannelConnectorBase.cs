@@ -6,6 +6,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Polly;
+
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
 
@@ -23,6 +25,7 @@ namespace Ratatosk
         private readonly IAuthenticationManager _authenticationManager;
         private bool _autoAuthenticationAttempted;
         private readonly IMessageIdGenerator _idGenerator;
+        private readonly RetryPolicyOptions? _retryPolicy;
 
         /// <summary>
         /// Constructs the connector base with the given schema and optional settings.
@@ -41,6 +44,8 @@ namespace Ratatosk
             _authenticationManager = authenticationManager ?? new AuthenticationManager(logger: NullLogger<AuthenticationManager>.Instance);
             _idGenerator = idGenerator ?? new DefaultMessageIdGenerator();
             _stateManager = stateManager ?? new ConnectorStateManager();
+
+            _retryPolicy = ReadRetryPolicyFromSettings();
         }
 
         /// <summary>
@@ -111,6 +116,76 @@ namespace Ratatosk
         /// </para>
         /// </remarks>
         public virtual bool IsReusable => true;
+
+        /// <summary>
+        /// Gets the retry policy options for this connector, or <c>null</c> if no retry policy is configured.
+        /// Override to provide a connector-specific default retry policy.
+        /// </summary>
+        private RetryPolicyOptions? ReadRetryPolicyFromSettings()
+        {
+            if (!ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.MaxAttempts, out var maxRaw))
+                return null;
+
+            var options = new RetryPolicyOptions
+            {
+                MaxRetryAttempts = Convert.ToInt32(maxRaw)
+            };
+
+            if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.BackoffType, out var backoffRaw) && backoffRaw is string backoffStr)
+            {
+                if (Enum.TryParse<RetryBackoffType>(backoffStr, out var backoffType))
+                    options.BackoffType = backoffType;
+            }
+
+            if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.BaseDelay, out var delayRaw) && delayRaw is string delayStr)
+            {
+                if (TimeSpan.TryParse(delayStr, out var baseDelay))
+                    options.BaseDelay = baseDelay;
+            }
+
+            if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.UseJitter, out var jitterRaw))
+                options.UseJitter = Convert.ToBoolean(jitterRaw);
+
+            if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.RetryableErrorCodes, out var codesRaw) && codesRaw is string codesStr && !string.IsNullOrWhiteSpace(codesStr))
+            {
+                foreach (var code in codesStr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    options.RetryableErrorCodes.Add(code);
+            }
+
+            if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.EnableCircuitBreaker, out var cbRaw))
+                options.EnableCircuitBreaker = Convert.ToBoolean(cbRaw);
+
+            if (options.EnableCircuitBreaker)
+            {
+                if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.CircuitBreakerFailureRatio, out var ratioRaw))
+                    options.CircuitBreakerFailureRatio = Convert.ToDouble(ratioRaw);
+
+                if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.CircuitBreakerSamplingDuration, out var sampleRaw) && sampleRaw is string sampleStr)
+                {
+                    if (TimeSpan.TryParse(sampleStr, out var samplingDuration))
+                        options.CircuitBreakerSamplingDuration = samplingDuration;
+                }
+
+                if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.CircuitBreakerMinimumThroughput, out var throughputRaw))
+                    options.CircuitBreakerMinimumThroughput = Convert.ToInt32(throughputRaw);
+
+                if (ConnectionSettings.Parameters.TryGetValue(RetrySettingsKeys.CircuitBreakerBreakDuration, out var breakRaw) && breakRaw is string breakStr)
+                {
+                    if (TimeSpan.TryParse(breakStr, out var breakDuration))
+                        options.CircuitBreakerBreakDuration = breakDuration;
+                }
+            }
+
+            return options;
+        }
+
+        protected virtual RetryPolicyOptions? GetDefaultRetryPolicy() => null;
+
+        private ResiliencePipeline<T>? BuildPipeline<T>()
+        {
+            var options = _retryPolicy ?? GetDefaultRetryPolicy();
+            return ResiliencePipelineFactory.BuildPipeline<T>(options);
+        }
 
         /// <summary>
         /// Gets the current state of the connector.
@@ -543,11 +618,57 @@ namespace Ratatosk
 
                 Logger.LogSendingMessage(message.Id!);
 
-                var result = await SendMessageCoreAsync(message, cancellationToken);
+                var pipeline = BuildPipeline<SendResult>();
+                SendResult result;
+                var attempts = 1;
 
+                if (pipeline != null)
+                {
+                    var count = 0;
+
+                    try
+                    {
+                        result = await pipeline.ExecuteAsync(async ct =>
+                        {
+                            count++;
+                            return await SendMessageCoreAsync(message, ct);
+                        }, cancellationToken);
+
+                        attempts = count;
+                        Logger.LogRetrySucceeded("SendMessage", attempts);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.GetType().Name == "BrokenCircuitException")
+                        {
+                            Logger.LogCircuitBreakerOpened("SendMessage", _retryPolicy?.CircuitBreakerBreakDuration ?? TimeSpan.FromSeconds(30));
+                            return OperationResult<SendResult>.Fail(
+                                ConnectorErrorCodes.CircuitBreakerOpen,
+                                MessagingErrorCodes.ErrorDomain,
+                                "The circuit breaker is open; requests are blocked until it recovers");
+                        }
+
+                        Logger.LogRetryExhausted(_retryPolicy?.MaxRetryAttempts ?? 3, "SendMessage", ex.Message);
+                        return OperationResult<SendResult>.Fail(
+                            ConnectorErrorCodes.RetryAttemptsExhausted,
+                            MessagingErrorCodes.ErrorDomain,
+                            $"All retry attempts exhausted: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    result = await SendMessageCoreAsync(message, cancellationToken);
+
+                    result.AdditionalData[ResultMetadataKeys.RetryAttempts] = 1;
+                    Logger.LogMessageSent(result.RemoteMessageId);
+
+                    return OperationResult<SendResult>.Success(result);
+                }
+
+                result.AdditionalData[ResultMetadataKeys.RetryAttempts] = attempts;
                 Logger.LogMessageSent(result.RemoteMessageId);
 
-                return result;
+                return OperationResult<SendResult>.Success(result);
             }
             catch (MessagingException ex)
             {

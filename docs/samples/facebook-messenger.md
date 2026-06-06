@@ -8,6 +8,7 @@ Demonstrates the Facebook Messenger connector (`FacebookMessengerConnector`): se
 - Sending via `IMessagingClient` using the `facebook` channel name
 - Validating messages against the Facebook channel schema before sending
 - Parsing inbound Facebook webhook payloads into `IMessage` objects
+- Retry policy with exponential backoff for rate limit errors (`RATE_LIMITED`)
 - Viewing the channel schema, capabilities, and parameters
 - Checking connector runtime status
 

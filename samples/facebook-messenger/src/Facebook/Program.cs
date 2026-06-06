@@ -26,7 +26,16 @@ builder.Services.AddLogging(logging =>
 
 builder.Services.AddMessaging()
     .AddClient()
-    .AddFacebookMessenger("facebook", c => c.WithSettings("Facebook"));
+    .AddFacebookMessenger("facebook", c => c
+        .WithSettings("Facebook")
+        .WithRetryPolicy(options =>
+        {
+            options.WithMaxAttempts(3)
+                   .WithExponentialBackoff()
+                   .WithBaseDelay(TimeSpan.FromSeconds(1))
+                   .WithJitter()
+                   .RetryOnErrorCodes("RATE_LIMITED");
+        }));
 
 builder.Services.AddSingleton<Facebook.FacebookSampleSupport>();
 

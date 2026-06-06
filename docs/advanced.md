@@ -181,6 +181,22 @@ public class MetricsDecorator : IChannelConnector
 }
 ```
 
+## Retry policies
+
+Connector send operations can be configured with automatic retry for transient failures using a policy-based approach. See [Retry Policies](retry-policies.md) for full documentation.
+
+```csharp
+services.AddMessaging()
+    .AddConnector<TwilioSmsConnector>("sms", cfg => cfg
+        .WithRetryPolicy(options =>
+        {
+            options.WithMaxAttempts(3)
+                   .WithExponentialBackoff()
+                   .WithJitter()
+                   .RetryOnErrorCodes("RATE_LIMITED", "SERVICE_UNAVAILABLE");
+        }));
+```
+
 ## Performance
 
 ### Bulk sending

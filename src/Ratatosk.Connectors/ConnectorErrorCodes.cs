@@ -157,5 +157,19 @@ namespace Ratatosk
         public const string ReceiveMessagesError = "RECEIVE_MESSAGES_ERROR";
 
         #endregion
+
+        #region Retry Errors
+
+        /// <summary>
+        /// Indicates that all retry attempts have been exhausted for an operation.
+        /// </summary>
+        public const string RetryAttemptsExhausted = "RETRY_ATTEMPTS_EXHAUSTED";
+
+        /// <summary>
+        /// Indicates that the circuit breaker is open and the operation was not attempted.
+        /// </summary>
+        public const string CircuitBreakerOpen = "CIRCUIT_BREAKER_OPEN";
+
+        #endregion
     }
 }

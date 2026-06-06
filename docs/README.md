@@ -95,6 +95,7 @@ The framework is deliberately focused on the messaging contract and connector co
 - [Connector implementation](connector-implementation.md) — writing custom connectors with `ChannelConnectorBase`
 - [Authentication](authentication.md) — auth providers, credential management, OAuth flows
 - [Result types](result-types.md) — `OperationResult<T>`, send results, health data
+- [Retry policies](retry-policies.md) — automatic retry with backoff, jitter, and circuit breaker
 - [Advanced configuration](advanced.md) — security, named connector isolation, health checks, testing
 
 **Connector guides:**

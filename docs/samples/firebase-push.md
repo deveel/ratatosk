@@ -9,6 +9,7 @@ Demonstrates the Firebase push connector (`FirebasePushConnector`): sending push
 - Sending batch notifications to multiple targets
 - Using dry-run mode for testing without actual delivery
 - Validating messages against the Firebase channel schema before sending
+- Retry policy with exponential backoff for transient provider errors (`UNAVAILABLE`, `INTERNAL`, `DEADLINE_EXCEEDED`)
 - Viewing the channel schema, capabilities, and parameters
 - Checking connector runtime status
 
