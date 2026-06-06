@@ -26,9 +26,9 @@ For larger changes, open an issue or discussion first so the approach can be ali
 ### Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/deveel.messaging.git
-cd deveel.messaging
-git remote add upstream https://github.com/deveel/deveel.messaging.git
+git clone https://github.com/YOUR_USERNAME/ratatosk.git
+cd ratatosk
+git remote add upstream https://github.com/deveel/ratatosk.git
 dotnet build
 dotnet test
 ```

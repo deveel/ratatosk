@@ -186,4 +186,4 @@ See [LICENSE](LICENSE) for the full text and terms.
 
 ## Contributors
 
-[![Contributors](https://contrib.rocks/image?repo=deveel/ratatosk)](https://github.com/deveel/deveel.messaging/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=deveel/ratatosk)](https://github.com/deveel/ratatosk/graphs/contributors)

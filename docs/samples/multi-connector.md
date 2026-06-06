@@ -50,4 +50,4 @@ Content-Type: application/json
 
 ## Configuration
 
-Configure credentials in `appsettings.json` or via environment variables. See the [`samples/multi-connector/README.md`](https://github.com/deveel/deveel.messaging/blob/main/samples/multi-connector/README.md) file in the repository for the full configuration reference.
+Configure credentials in `appsettings.json` or via environment variables. See the [`samples/multi-connector/README.md`](https://github.com/deveel/ratatosk/blob/main/samples/multi-connector/README.md) file in the repository for the full configuration reference.
