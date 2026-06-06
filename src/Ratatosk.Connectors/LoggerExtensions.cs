@@ -485,5 +485,39 @@ namespace Ratatosk
         internal static partial void LogNotInOperationalState(this ILogger logger, ConnectorState state);
 
         #endregion
+
+        #region Retry Policy Logging
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.RetryAttempt,
+            Level = LogLevel.Debug,
+            Message = "Retry attempt {AttemptNumber} of {MaxAttempts} for operation {OperationType}: {ErrorMessage}")]
+        internal static partial void LogRetryAttempt(this ILogger logger, int attemptNumber, int maxAttempts, string operationType, string? errorMessage);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.RetrySucceeded,
+            Level = LogLevel.Information,
+            Message = "Operation {OperationType} succeeded after {AttemptCount} attempt(s)")]
+        internal static partial void LogRetrySucceeded(this ILogger logger, string operationType, int attemptCount);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.RetryExhausted,
+            Level = LogLevel.Error,
+            Message = "All {MaxAttempts} retry attempt(s) exhausted for operation {OperationType}: {ErrorMessage}")]
+        internal static partial void LogRetryExhausted(this ILogger logger, int maxAttempts, string operationType, string? errorMessage);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.CircuitBreakerOpened,
+            Level = LogLevel.Warning,
+            Message = "Circuit breaker opened for {OperationType} — failing fast until {BreakDuration} elapses")]
+        internal static partial void LogCircuitBreakerOpened(this ILogger logger, string operationType, TimeSpan breakDuration);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.CircuitBreakerReset,
+            Level = LogLevel.Information,
+            Message = "Circuit breaker reset for {OperationType} — normal operation resumed")]
+        internal static partial void LogCircuitBreakerReset(this ILogger logger, string operationType);
+
+        #endregion
     }
 }

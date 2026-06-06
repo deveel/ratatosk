@@ -120,6 +120,7 @@ public class MyConnector : ChannelConnectorBase
 | Authentication | Provides `AuthenticateAsync()`, `GetAuthenticationHeader()` |
 | Logging scopes | Auto-creates scopes per connector and per message |
 | Cancellation | Passes token to all operations |
+| Retry support | Override `GetDefaultRetryPolicy()`; configurable via builder or connection settings (see [Retry Policies](retry-policies.md)) |
 | Result wrapping | Your core methods return raw values; base class wraps them |
 
 ### How wrapping works
@@ -134,6 +135,21 @@ Your override returns a raw `SendResult` or `ValueTask`. The base class:
 6. Wraps the result (or error) in `OperationResult<T>`
 
 This means your override can throw on error — you never need to create `OperationResult<T>` instances yourself.
+
+## Retry policy
+
+Connectors can provide a default retry policy by overriding `GetDefaultRetryPolicy()`:
+
+```csharp
+protected override RetryPolicyOptions? GetDefaultRetryPolicy()
+    => new RetryPolicyOptions
+    {
+        MaxRetryAttempts = 5,
+        RetryableErrorCodes = { "RATE_LIMITED", "NETWORK_ERROR" }
+    };
+```
+
+The policy configured via `WithRetryPolicy` or individual `RetrySettingsKeys.*` parameters in `ConnectionSettings` takes precedence. See [Retry Policies](retry-policies.md) for details.
 
 ## Optional overrides
 

@@ -113,42 +113,107 @@ Start from the docs home and follow the path that best matches what you are buil
 
 The project roadmap is tracked in detail in [ROADMAP.md](ROADMAP.md). The summary below highlights the upcoming milestones and the main features planned for each release.
 
-### v0.4.0 - Framework Foundations
+### v0.4.0 — Framework Foundations ✓
 
 Strengthens quality gates, release automation, observability, and docs completeness across the existing connector ecosystem.
 
-- [x] **Test coverage target (>= 80%)** - Enforce minimum line coverage per library in CI.
-- [x] **CI/CD pipeline hardening** - Automate build, test, compatibility checks, signing, and NuGet publishing from release tags.
-- [x] **Structured logging improvements** - Standardize event IDs, scopes, and `LoggerMessage` patterns across connectors.
-- [x] **Documentation completeness** - Complete XML API docs and connector guides with consistent coverage.
+- [x] **Test coverage target (≥ 80%)** — Enforce minimum line coverage per library in CI.
+- [x] **CI/CD pipeline hardening** — Automate build, test, compatibility checks, signing, and NuGet publishing from release tags.
+- [x] **Structured logging improvements** — Standardize event IDs, scopes, and `LoggerMessage` patterns across connectors.
+- [x] **Documentation completeness** — Complete XML API docs and connector guides with consistent coverage.
 
-### v0.5.0 - Inbound Messaging
+### v0.5.0 — Inbound Messaging ✓
 
 Completes the receive-side model for current connectors to support bidirectional messaging scenarios.
 
-- [x] **Twilio inbound messages (SMS/WhatsApp)** - Parse inbound payloads into framework messages and endpoints.
-- [x] **SendGrid inbound parse support** - Map multipart inbound emails, content, and attachments into the message model.
-- [x] **Firebase inbound messages** - Support upstream device data messages through the same receive abstractions.
+- [x] **Twilio inbound messages (SMS/WhatsApp)** — Parse inbound payloads into framework messages and endpoints.
+- [x] **SendGrid inbound parse support** — Map multipart inbound emails, content, and attachments into the message model.
+- [x] **Firebase inbound messages** — Support upstream device data messages through the same receive abstractions.
 
-### v1.0.0 - First Stable Release
+### v1.0.0 — First Stable Release ✓
 
 Locks the public API and ships stable package releases with production-ready guarantees.
 
-- [x] **API freeze and compatibility enforcement** - Prevent breaking API changes without a major version bump.
-- [x] **NuGet GA release** - Publish stable `Ratatosk.*` packages without prerelease suffixes.
-- [x] **Interactive content model** - Add cross-channel abstractions for buttons, quick replies, carousels, and lists.
-- [x] **Sender identity model** - Provide typed sender identities for phone, email, and bot-based channels.
+- [x] **API freeze and compatibility enforcement** — Prevent breaking API changes without a major version bump.
+- [x] **NuGet GA release** — Publish stable `Ratatosk.*` packages without prerelease suffixes.
+- [x] **Interactive content model** — Add cross-channel abstractions for buttons, quick replies, carousels, and lists.
+- [x] **Sender identity model** — Provide typed sender identities for phone, email, and bot-based channels.
 
-### v1.1.0 and beyond - Platform Expansion
+### v1.1.0 — Resilience & Observability
 
-Extends resilience, observability, connectors, protocol support, and higher-level messaging capabilities.
+Adds retry/circuit-breaker policies, OpenTelemetry signals, health checks, and timeout controls.
 
-- [ ] **Resilience and observability** - Retry/circuit-breaker policies, OpenTelemetry signals, health checks, and timeout controls.
-- [ ] **New SaaS connectors** - Add Slack, Microsoft Teams, WhatsApp Business API, Viber, and LINE connectors.
-- [ ] **Protocol connectors** - Add SMPP, SMTP, RCS, and direct APNs support with shared protocol base classes.
-- [ ] **Content adaptation and validation** - Introduce transcoding, channel-aware fallback, segmentation, and address validation.
-- [ ] **Tooling and diagnostics** - Ship connector scaffolding templates and ASP.NET Core diagnostic middleware.
-- [ ] **Conversations and templates (v2.x)** - Add conversation state/correlation and provider-agnostic template modeling.
+- [x] **Retry policies** — Polly-based retry and circuit-breaker integrated at the connector base level.
+- [ ] **OpenTelemetry tracing & metrics** — ActivitySources, Meters, and histograms per connector.
+- [ ] **Health checks** — ASP.NET Core `IHealthCheck` implementations auto-registered per connector.
+- [ ] **Connector-level timeout configuration** — Per-operation timeout via the DI registration API.
+
+### v1.2.0 — New SaaS Connectors
+
+Extends the connector ecosystem with additional major cloud messaging providers.
+
+- [ ] **Slack** — Incoming Webhooks and Bot API support with Block Kit content mapping.
+- [ ] **Microsoft Teams** — Incoming Webhooks and Bot Framework API with Adaptive Card support.
+- [ ] **WhatsApp Business API** — Direct Meta Cloud API connector (text, media, interactive, templates).
+- [ ] **Viber Business** — Viber Business Messages API (text, image, rich media, keyboards).
+- [ ] **LINE** — LINE Messaging API (text, image, video, audio, Flex Messages).
+
+### v1.3.0 — Protocol Connectors
+
+Raw protocol support for teams with direct carrier or Apple developer relationships.
+
+- [ ] **Protocol connector base classes** — Session management, connection lifecycle, reconnection policies.
+- [ ] **SMPP** — Direct SMSC connectivity (v3.4 session client, `submit_sm`/`deliver_sm` mapping).
+- [ ] **SMTP** — Direct email delivery via MailKit (RFC 5321 MIME messages).
+- [ ] **RCS** — Rich Communication Services Business Messaging API.
+- [ ] **APNs (direct)** — Apple Push Notification HTTP/2 API without Firebase dependency.
+
+### v1.4.0 — Content Adaptation & Transcoding
+
+Transcoding layer that converts content between types for multi-channel delivery.
+
+- [ ] **`IContentTranscoder` abstraction** — Generic content conversion with resolution registry.
+- [ ] **Built-in transcoders** — HTML-to-plaintext, HTML-to-Markdown, Markdown-to-GSM-7, and more.
+- [ ] **Channel-aware content fallback** — Automatic fallback to best available content type per channel.
+- [ ] **SMS segmentation** — GSM-7/UCS-2 segment counting and encoding analysis.
+- [ ] **Character encoding detection** — `SmsEncodingAnalyzer` for pre-send encoding warnings.
+
+### v1.5.0 — Address & Number Validation
+
+Validation layer for recipient addresses across all channels.
+
+- [ ] **E.164 normalization** — libphonenumber-based canonical phone number formatting.
+- [ ] **HLR lookup** — Optional Home Location Register reachability checks before SMS send.
+- [ ] **Number portability awareness** — Ported number routing in the SMPP connector.
+- [ ] **Email address validation** — RFC 5321 syntax, MX record, and disposable domain checks.
+- [ ] **`IAddressValidator` abstraction** — Extensible validation chain per connector.
+
+### v1.6.0 — Tooling & Instrumentation
+
+Developer and operator tooling for the framework.
+
+- [ ] **`dotnet new` connector scaffold** — Template package for bootstrapping new connectors.
+- [ ] **ASP.NET Core diagnostic middleware** — Runtime connector state, health, and counters endpoint.
+
+### v2.0.0 — Conversations
+
+Conversation management as a first-class framework concept.
+
+- [ ] **`IConversation` abstraction** — Thread of messages with participants, status, and history.
+- [ ] **Conversation state model** — State transitions, persistence, in-memory store for testing.
+- [ ] **Conversation correlation** — Link inbound replies to originating conversations.
+- [ ] **Multi-channel conversations** — Span single conversations across SMS, WhatsApp, email, and more.
+- [ ] **Multi-tenant channel registry** — Tenant-aware connector and schema resolution.
+- [ ] **xUnit test helpers** — Fake inbound injectors and assertion helpers for conversation flows.
+
+### v2.1.0 — Message Templates
+
+Provider-agnostic template model with local and server-side rendering.
+
+- [ ] **`IMessageTemplate` abstraction** — Named templates with locale, content structure, and variable schema.
+- [ ] **Variable substitution engine** — Local rendering with placeholder resolution and type-safe binding.
+- [ ] **Per-connector template rendering** — Bridge between framework templates and provider-native systems.
+- [ ] **Template registry** — Central store with startup validation and locale-aware resolution.
 
 For milestone-level detail, rationale, and dependencies, see [ROADMAP.md](ROADMAP.md).
 

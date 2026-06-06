@@ -173,6 +173,47 @@ namespace Ratatosk
         // ── Factory override ───────────────────────────────────────────────────
 
         /// <summary>
+        /// Configures the retry policy for the connector, controlling how transient
+        /// failures are retried and whether a circuit breaker is enabled.
+        /// </summary>
+        /// <param name="configure">
+        /// A delegate that configures the <see cref="RetryPolicyOptions"/> instance.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="configure"/> is <c>null</c>.
+        /// </exception>
+        public ChannelConnectorBuilder<TConnector> WithRetryPolicy(Action<RetryPolicyOptions> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure, nameof(configure));
+
+            var options = new RetryPolicyOptions();
+            configure(options);
+
+            _fluentSettings[RetrySettingsKeys.MaxAttempts] = options.MaxRetryAttempts;
+            _fluentSettings[RetrySettingsKeys.BackoffType] = options.BackoffType.ToString();
+            _fluentSettings[RetrySettingsKeys.BaseDelay] = options.BaseDelay.ToString();
+            _fluentSettings[RetrySettingsKeys.UseJitter] = options.UseJitter;
+
+            if (options.RetryableErrorCodes.Count > 0)
+                _fluentSettings[RetrySettingsKeys.RetryableErrorCodes] = string.Join(",", options.RetryableErrorCodes);
+
+            _fluentSettings[RetrySettingsKeys.EnableCircuitBreaker] = options.EnableCircuitBreaker;
+
+            if (options.EnableCircuitBreaker)
+            {
+                _fluentSettings[RetrySettingsKeys.CircuitBreakerFailureRatio] = options.CircuitBreakerFailureRatio;
+                _fluentSettings[RetrySettingsKeys.CircuitBreakerSamplingDuration] = options.CircuitBreakerSamplingDuration.ToString();
+                _fluentSettings[RetrySettingsKeys.CircuitBreakerMinimumThroughput] = options.CircuitBreakerMinimumThroughput;
+                _fluentSettings[RetrySettingsKeys.CircuitBreakerBreakDuration] = options.CircuitBreakerBreakDuration.ToString();
+            }
+
+            return this;
+        }
+
+        /// <summary>
         /// Overrides the default factory used to create the connector
         /// with a custom factory type.
         /// </summary>

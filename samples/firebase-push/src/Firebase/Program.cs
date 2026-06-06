@@ -26,7 +26,16 @@ builder.Services.AddLogging(logging =>
 
 builder.Services.AddMessaging()
     .AddClient()
-    .AddFirebasePush("firebase", c => c.WithSettings("Firebase"));
+    .AddFirebasePush("firebase", c => c
+        .WithSettings("Firebase")
+        .WithRetryPolicy(options =>
+        {
+            options.WithMaxAttempts(3)
+                   .WithExponentialBackoff()
+                   .WithBaseDelay(TimeSpan.FromSeconds(1))
+                   .WithJitter()
+                   .RetryOnErrorCodes("UNAVAILABLE", "INTERNAL", "DEADLINE_EXCEEDED");
+        }));
 
 builder.Services.AddSingleton<Firebase.FirebaseSampleSupport>();
 

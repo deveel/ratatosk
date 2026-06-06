@@ -26,7 +26,16 @@ builder.Services.AddLogging(logging =>
 
 builder.Services.AddMessaging()
     .AddClient()
-    .AddTelegramBot("telegram", c => c.WithSettings("Telegram"));
+    .AddTelegramBot("telegram", c => c
+        .WithSettings("Telegram")
+        .WithRetryPolicy(options =>
+        {
+            options.WithMaxAttempts(3)
+                   .WithExponentialBackoff()
+                   .WithBaseDelay(TimeSpan.FromSeconds(1))
+                   .WithJitter()
+                   .RetryOnErrorCodes("RATE_LIMITED", "RETRY_AFTER");
+        }));
 
 builder.Services.AddSingleton<Telegram.TelegramSampleSupport>();
 

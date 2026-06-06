@@ -8,6 +8,7 @@ Demonstrates the SendGrid email connector (`SendGridEmailConnector`): sending tr
 - Sending via `IMessagingClient` using the `sendgrid` channel name
 - Validating messages against the SendGrid channel schema before sending
 - Parsing inbound email webhook payloads and delivery event callbacks
+- Retry policy with exponential backoff for transient failures (`RATE_LIMITED`, `SERVER_ERROR`)
 - Viewing the channel schema, capabilities, and parameters
 - Checking connector runtime status
 

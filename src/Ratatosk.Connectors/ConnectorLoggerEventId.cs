@@ -88,4 +88,11 @@ internal static class ConnectorLoggerEventId
     public const int TokenRefreshFailedWithStatus = LoggerEventId.BaseId + 143;
     public const int RetryingTokenObtainment = LoggerEventId.BaseId + 144;
     public const int TokenRefreshed = LoggerEventId.BaseId + 145;
+
+    // Retry Policy events
+    public const int RetryAttempt = LoggerEventId.BaseId + 150;
+    public const int RetrySucceeded = LoggerEventId.BaseId + 151;
+    public const int RetryExhausted = LoggerEventId.BaseId + 152;
+    public const int CircuitBreakerOpened = LoggerEventId.BaseId + 153;
+    public const int CircuitBreakerReset = LoggerEventId.BaseId + 154;
 }

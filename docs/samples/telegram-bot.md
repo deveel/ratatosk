@@ -7,6 +7,7 @@ Demonstrates the Telegram Bot connector (`TelegramBotConnector`): sending messag
 - Building a `Message` with text, media, or location content for a Telegram chat
 - Sending via `IMessagingClient` using the `telegram` channel name
 - Validating messages against the Telegram channel schema before sending
+- Retry policy with exponential backoff for rate limit errors (`RATE_LIMITED`, `RETRY_AFTER`)
 - Viewing the channel schema, capabilities, and parameters
 - Checking connector runtime status
 

@@ -20,14 +20,23 @@ builder.Services.AddLogging(logging =>
     }
 });
 
+var retry = (Action<RetryPolicyOptions>)(options =>
+{
+    options.WithMaxAttempts(3)
+           .WithExponentialBackoff()
+           .WithBaseDelay(TimeSpan.FromSeconds(1))
+           .WithJitter()
+           .RetryOnErrorCodes("RATE_LIMITED", "SERVICE_UNAVAILABLE");
+});
+
 builder.Services.AddMessaging()
     .AddClient()
-    .AddFacebookMessenger("facebook", c => c.WithSettings("Facebook"))
-    .AddFirebasePush("firebase", c => c.WithSettings("Firebase"))
-    .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid"))
-    .AddTelegramBot("telegram", c => c.WithSettings("Telegram"))
-    .AddTwilioSms("sms", c => c.WithSettings("Twilio"))
-    .AddTwilioWhatsApp("whatsapp", c => c.WithSettings("Twilio"));
+    .AddFacebookMessenger("facebook", c => c.WithSettings("Facebook").WithRetryPolicy(retry))
+    .AddFirebasePush("firebase", c => c.WithSettings("Firebase").WithRetryPolicy(retry))
+    .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid").WithRetryPolicy(retry))
+    .AddTelegramBot("telegram", c => c.WithSettings("Telegram").WithRetryPolicy(retry))
+    .AddTwilioSms("sms", c => c.WithSettings("Twilio").WithRetryPolicy(retry))
+    .AddTwilioWhatsApp("whatsapp", c => c.WithSettings("Twilio").WithRetryPolicy(retry));
 
 var app = builder.Build();
 

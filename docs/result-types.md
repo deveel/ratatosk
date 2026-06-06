@@ -91,7 +91,14 @@ if (result.IsSuccess())
 | `RemoteMessageId` | `string` | Provider-assigned message identifier |
 | `Status` | `MessageStatus?` | Initial delivery status from provider |
 | `Timestamp` | `DateTimeOffset?` | When the provider accepted the message |
-| `AdditionalData` | `IDictionary<string, object>` | Provider-specific metadata |
+| `AdditionalData` | `IDictionary<string, object>` | Provider-specific metadata; includes `RetryAttempts` when [retry policy](retry-policies.md) is active |
+
+The `GetRetryAttempts()` extension method reads the retry count from `AdditionalData`:
+
+```csharp
+var result = await connector.SendMessageAsync(message, ct);
+Console.WriteLine($"Attempts: {result.Value.GetRetryAttempts()}"); // 1 if no retries
+```
 
 ### In a connector override
 
@@ -225,7 +232,7 @@ if (statusResult.IsSuccess())
 | `Status` | `MessageStatus` | Status value (`Received`, `Queued`, `Sent`, `Delivered`, `DeliveryFailed`, etc.) |
 | `Timestamp` | `DateTimeOffset` | When the status was recorded |
 | `Description` | `string?` | Optional human-readable description |
-| `AdditionalData` | `IDictionary<string, object>` | Provider-specific metadata |
+| `AdditionalData` | `IDictionary<string, object>` | Provider-specific metadata; includes `RetryAttempts` when [retry policy](retry-policies.md) is active |
 
 **StatusUpdatesResult** properties:
 
@@ -258,7 +265,7 @@ if (status.IsSuccess())
 | `Status` | `string` | Status string (provider-specific) |
 | `Description` | `string?` | Optional description |
 | `Timestamp` | `DateTimeOffset` | When the status was determined |
-| `AdditionalData` | `IDictionary<string, object>` | Provider-specific metadata |
+| `AdditionalData` | `IDictionary<string, object>` | Provider-specific metadata; includes `RetryAttempts` when [retry policy](retry-policies.md) is active |
 
 ## ConnectorHealth
 

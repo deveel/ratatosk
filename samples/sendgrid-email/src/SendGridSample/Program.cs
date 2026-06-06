@@ -26,7 +26,16 @@ builder.Services.AddLogging(logging =>
 
 builder.Services.AddMessaging()
     .AddClient()
-    .AddSendGridEmail("sendgrid", c => c.WithSettings("SendGrid"));
+    .AddSendGridEmail("sendgrid", c => c
+        .WithSettings("SendGrid")
+        .WithRetryPolicy(options =>
+        {
+            options.WithMaxAttempts(3)
+                   .WithExponentialBackoff()
+                   .WithBaseDelay(TimeSpan.FromSeconds(1))
+                   .WithJitter()
+                   .RetryOnErrorCodes("RATE_LIMITED", "SERVER_ERROR");
+        }));
 
 builder.Services.AddSingleton<SendGridSample.SendGridSampleSupport>();
 

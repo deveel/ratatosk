@@ -9,6 +9,7 @@ Demonstrates the Twilio connectors (`TwilioSmsConnector` and `TwilioWhatsAppConn
 - Validating messages against the Twilio channel schema before sending
 - Parsing inbound webhook payloads and delivery status callbacks
 - Using Messaging Service SID for SMS sending
+- Retry policy with exponential backoff for transient failures (`RATE_LIMITED`, `SERVICE_UNAVAILABLE`)
 - Viewing channel schemas, capabilities, and parameters
 - Checking connector runtime status
 
