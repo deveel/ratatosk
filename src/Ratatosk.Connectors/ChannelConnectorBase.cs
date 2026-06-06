@@ -26,6 +26,7 @@ namespace Ratatosk
         private bool _autoAuthenticationAttempted;
         private readonly IMessageIdGenerator _idGenerator;
         private readonly RetryPolicyOptions? _retryPolicy;
+        private RetryPolicyOptions? _effectiveRetryPolicy;
         private readonly Lazy<ResiliencePipeline<SendResult>?> _sendPipeline;
 
         /// <summary>
@@ -50,6 +51,7 @@ namespace Ratatosk
             _sendPipeline = new Lazy<ResiliencePipeline<SendResult>?>(() =>
             {
                 var options = _retryPolicy ?? GetDefaultRetryPolicy();
+                _effectiveRetryPolicy = options;
                 return ResiliencePipelineFactory.BuildPipeline<SendResult>(options);
             });
         }
@@ -650,7 +652,7 @@ namespace Ratatosk
                     {
                         if (ex.GetType().Name == "BrokenCircuitException")
                         {
-                            Logger.LogCircuitBreakerOpened("SendMessage", _retryPolicy?.CircuitBreakerBreakDuration ?? TimeSpan.FromSeconds(30));
+                            Logger.LogCircuitBreakerOpened("SendMessage", _effectiveRetryPolicy?.CircuitBreakerBreakDuration ?? TimeSpan.FromSeconds(30));
                             return OperationResult<SendResult>.Fail(
                                 ConnectorErrorCodes.CircuitBreakerOpen,
                                 MessagingErrorCodes.ErrorDomain,
@@ -661,14 +663,13 @@ namespace Ratatosk
                         // to preserve the original error code instead of being masked as exhaustion
                         if (ex is ConnectorException connEx)
                         {
-                            var retryPolicy = _retryPolicy ?? GetDefaultRetryPolicy();
-                            if (retryPolicy == null || !retryPolicy.RetryableErrorCodes.Contains(connEx.ErrorCode))
+                            if (_effectiveRetryPolicy == null || !_effectiveRetryPolicy.RetryableErrorCodes.Contains(connEx.ErrorCode))
                             {
                                 throw;
                             }
                         }
 
-                        Logger.LogRetryExhausted(_retryPolicy?.MaxRetryAttempts ?? 3, "SendMessage", ex.Message);
+                        Logger.LogRetryExhausted(_effectiveRetryPolicy?.MaxRetryAttempts ?? 3, "SendMessage", ex.Message);
                         return OperationResult<SendResult>.Fail(
                             ConnectorErrorCodes.RetryAttemptsExhausted,
                             MessagingErrorCodes.ErrorDomain,
