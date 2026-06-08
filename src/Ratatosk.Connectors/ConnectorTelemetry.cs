@@ -33,8 +33,8 @@ namespace Ratatosk
             ConnectorInstanceName = connectorInstanceName;
             _options = options ?? new TelemetryOptions();
 
-            var sourceName = $"Ratatosk.Connector.{connectorType}";
-            var meterName = $"Ratatosk.Connector.{connectorType}";
+            var sourceName = ConnectorMeter.MakeConnectorName(connectorType);
+            var meterName = ConnectorMeter.MakeConnectorName(connectorType);
 
             _activitySource = new ActivitySource(sourceName, _version);
             _meter = new Meter(meterName, _version);
