@@ -70,6 +70,7 @@ The framework is deliberately focused on the messaging contract and connector co
 | `Ratatosk.Senders` | Sender identity infrastructure: `ISenderRepository<TSender>`, `ISenderResolver`, cache, per-connector configuration, and `MessageBuilder.FromSender()` extension. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders)](https://nuget.org/packages/Ratatosk.Senders) |
 | `Ratatosk.Senders.InMemory` | In-memory sender repository for development and testing, with optional seed data. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.InMemory)](https://nuget.org/packages/Ratatosk.Senders.InMemory) |
 | `Ratatosk.Senders.EntityFramework` | EF Core persistence for the sender identity registry (`SenderDbContext`, `EntitySenderRepository`, `DbSender`). | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.EntityFramework)](https://nuget.org/packages/Ratatosk.Senders.EntityFramework) |
+| `Ratatosk.Extensions.OpenTelemetry` | Convenience extensions for wiring Ratatosk telemetry sources into OpenTelemetry SDK (`WithOpenTelemetry()` on `MessagingBuilder`, `AddRatatoskInstrumentation()` on `TracerProviderBuilder`/`MeterProviderBuilder`). | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Extensions.OpenTelemetry)](https://nuget.org/packages/Ratatosk.Extensions.OpenTelemetry) |
 
 ## Reading path
 
@@ -96,6 +97,7 @@ The framework is deliberately focused on the messaging contract and connector co
 - [Authentication](authentication.md) — auth providers, credential management, OAuth flows
 - [Result types](result-types.md) — `OperationResult<T>`, send results, health data
 - [Retry policies](retry-policies.md) — automatic retry with backoff, jitter, and circuit breaker
+- [Telemetry](telemetry.md) — OpenTelemetry tracing and metrics, wiring, configuration
 - [Advanced configuration](advanced.md) — security, named connector isolation, health checks, testing
 
 **Connector guides:**

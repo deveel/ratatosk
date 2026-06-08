@@ -39,5 +39,10 @@ namespace Ratatosk
         /// do not provide their own. A value of <c>0</c> means no timeout.
         /// </remarks>
         public int DefaultTimeoutSeconds { get; set; } = 30;
+
+        /// <summary>
+        /// Gets or sets the telemetry configuration for the messaging client.
+        /// </summary>
+        public TelemetryOptions Telemetry { get; set; } = new();
     }
 }

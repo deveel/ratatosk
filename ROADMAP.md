@@ -2,9 +2,9 @@
 
 This document describes the planned evolution of the **Ratatosk Framework** — a .NET library that provides a unified, provider-agnostic model for sending and receiving messages across multiple channels and connectors. Each milestone below includes a summary of its intent, detailed descriptions of every planned feature, and the rationale behind each decision.
 
-> **Current stable release:** `v0.4.0`  
+> **Current stable release:** `v1.0.1`  
 > Connectors available: Facebook Messenger, Firebase Push, SendGrid Email, Telegram Bot, Twilio SMS/WhatsApp  
-> Framework includes: `IMessagingClient` facade, `MessageBuilder`, auto-initialization, `ChannelSchema` derivation, expanded validation
+> Framework includes: `IMessagingClient` facade, `MessageBuilder`, auto-initialization, `ChannelSchema` derivation, expanded validation, retry policies, OpenTelemetry tracing & metrics
 
 ---
 
@@ -15,7 +15,7 @@ This document describes the planned evolution of the **Ratatosk Framework** — 
 | [Framework Foundations](#v040--framework-foundations) | v0.4.0 | [Test Coverage Target](#test-coverage-target--80) · [CI/CD Pipeline Hardening](#cicd-pipeline-hardening) · [Structured Logging Improvements](#structured-logging-improvements) · [Documentation](#documentation) |
 | [Inbound Messaging](#v050--inbound-messaging) | v0.5.0 | [Twilio Inbound Messages](#twilio-inbound-messages-sms--whatsapp) · [SendGrid Inbound Messages](#sendgrid-inbound-messages-inbound-parse) · [Firebase Inbound Messages](#firebase-inbound-messages-data--notification-messages) |
 | [First Stable Release](#v100--first-stable-release) | v1.0.0 | [API Freeze](#api-freeze) · [NuGet GA Release](#nuget-ga-release) · [Interactive Content](#interactive-content) · [Sender Identity Model](#sender-identity-model) |
-| [Resilience & Observability](#v110--resilience--observability) | v1.1.0 | [Retry Policies](#retry-policies) · [OpenTelemetry Tracing & Metrics](#opentelemetry-tracing--metrics) · [Health Checks](#health-checks) · [Connector-Level Timeout Configuration](#connector-level-timeout-configuration) |
+| [Resilience & Observability](#v110--resilience--observability) | v1.1.0 | [Retry Policies](#retry-policies) ✓ · [OpenTelemetry Tracing & Metrics](#opentelemetry-tracing--metrics) ✓ · [Health Checks](#health-checks) · [Connector-Level Timeout Configuration](#connector-level-timeout-configuration) |
 | [New SaaS Connectors](#v120--new-saas-connectors) | v1.2.0 | [Slack](#slack-connector) · [Microsoft Teams](#microsoft-teams-connector) · [WhatsApp Business API](#whatsapp-business-api-connector-direct-cloud-api) · [Viber Business](#viber-business-connector) · [LINE](#line-connector) |
 | [Protocol Connectors](#v130--protocol-connectors) | v1.3.0 | [Base Classes](#protocol-connector-base-classes) · [SMPP](#smpp-connector) · [SMTP](#smtp-connector) · [RCS](#rcs-connector) · [APNs](#apns-connector-direct) |
 | [Content Adaptation & Transcoding](#v140--content-adaptation--transcoding) | v1.4.0 | [IContentTranscoder Abstraction](#icontenttrancoder-abstraction) · [Built-In Transcoders](#built-in-transcoders) · [Channel-Aware Fallback](#channel-aware-content-fallback) · [SMS Segmentation](#sms-segmentation) · [Character Encoding Detection](#character-encoding-detection) |
@@ -272,6 +272,8 @@ A generic sender identity system that decouples message composition from sender 
 
 A messaging connector that fails silently, cannot be monitored, or brings down dependent services on provider outages is not production-ready. This milestone adds the operational layer that connectors need to be trusted in production: structured retry and circuit-breaker policies, distributed tracing and metrics via OpenTelemetry, health check endpoints, and consistent structured logging across all connectors.
 
+Retry policies and OpenTelemetry tracing & metrics are complete in this release. Health checks and timeout configuration remain in progress.
+
 ---
 
 ### Retry Policies
@@ -294,23 +296,24 @@ Polly-based retry and circuit-breaker policies integrated at the connector base 
 
 ---
 
-### OpenTelemetry Tracing & Metrics
+### OpenTelemetry Tracing & Metrics ✓
 
 > *"You cannot improve what you cannot observe."*
 
-#### The Problem Today
+#### The Problem (Before)
 
-There is no built-in telemetry in the connector layer. Developers who want to trace message send latency, track delivery rates, or count failures must instrument their own wrapper code on top of the connectors.
+There was no built-in telemetry in the connector layer. Developers who wanted to trace message send latency, track delivery rates, or count failures had to instrument their own wrapper code on top of the connectors.
 
-#### What We Are Building
+#### What We Built
 
-Activity sources and metric instruments built into the connector base: an `ActivitySource` per connector for distributed tracing (spans for send, receive, status query), and `Meter` instruments for counters (messages sent, received, failed) and histograms (send latency, payload size). All telemetry follows OpenTelemetry semantic conventions and is automatically exported via the application's configured OTLP pipeline.
+Activity sources and metric instruments built into the connector base: an `ActivitySource` per connector for distributed tracing (spans for send, receive, status query), and `Meter` instruments for counters (messages sent, received, failed) and histograms (send latency, payload size). All telemetry follows OpenTelemetry semantic conventions and is automatically exported via the application's configured OTLP pipeline. A dedicated `Ratatosk.Extensions.OpenTelemetry` package provides convenience extensions (`WithOpenTelemetry()` on `MessagingBuilder`, `AddRatatoskInstrumentation()` on `TracerProviderBuilder`/`MeterProviderBuilder`). Telemetry options (`EnableTracing`, `EnableMetrics`, `EnablePayloadSizeMetrics`) are configurable per connector through connection settings or the builder API, following the same pattern as retry policies.
 
 #### Benefits
 
 - End-to-end distributed traces include connector-level spans out of the box
 - Dashboards and alerts can be built on connector metrics without custom instrumentation
 - Fully compatible with any OpenTelemetry-compliant backend (Jaeger, Prometheus, Azure Monitor, etc.)
+- Payload size metrics are opt-in (disabled by default) to avoid serialisation overhead in high-throughput scenarios
 
 ---
 

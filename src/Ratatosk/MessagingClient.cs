@@ -2,6 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using System.Diagnostics;
+
 namespace Ratatosk
 {
     /// <summary>
@@ -21,6 +23,7 @@ namespace Ratatosk
         private readonly SemaphoreSlim _lock = new(1, 1);
         private readonly List<IChannelConnector> _runtimeConnectors = new();
         private readonly object _runtimeLock = new();
+        private readonly ClientTelemetry _clientTelemetry;
 
         /// <summary>
         /// Constructs a new <see cref="MessagingClient"/> instance.
@@ -37,6 +40,7 @@ namespace Ratatosk
             _logger = logger ?? NullLogger<MessagingClient>.Instance;
             _resolver = resolver;
             _catalog = catalog;
+            _clientTelemetry = new ClientTelemetry(_options.Telemetry);
         }
 
         /// <inheritdoc/>
@@ -44,17 +48,35 @@ namespace Ratatosk
         {
             _logger.LogSendingMessage(channelName);
 
+            using var activity = _clientTelemetry.StartSendActivity(channelName, message.Id);
+            var sw = Stopwatch.StartNew();
+
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
+            }
 
             await ResolveSenderAsync(message, connector.ConnectionSettings, cancellationToken);
 
             var result = await connector.SendMessageAsync(message, cancellationToken);
+            sw.Stop();
+
             if (result.IsSuccess())
+            {
+                _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Ok);
                 _logger.LogMessageSent(channelName);
+            }
             else
+            {
+                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
                 _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+            }
 
             return result;
         }
@@ -64,15 +86,30 @@ namespace Ratatosk
         {
             _logger.LogReceivingMessage(channelName);
 
+            using var activity = _clientTelemetry.StartReceiveActivity(channelName);
+            var sw = Stopwatch.StartNew();
+
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
+            {
+                sw.Stop();
+                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
+            }
 
             var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
+            sw.Stop();
+
             if (result.IsSuccess())
+            {
+                activity?.SetStatus(ActivityStatusCode.Ok);
                 _logger.LogMessageReceived(channelName);
+            }
             else
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
                 _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
+            }
 
             return result;
         }
@@ -82,15 +119,26 @@ namespace Ratatosk
         {
             _logger.LogReadingStatus(channelName);
 
+            using var activity = _clientTelemetry.StartStatusActivity(channelName);
+
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
+            }
 
             var result = await connector.GetStatusAsync(cancellationToken);
             if (result.IsSuccess())
+            {
+                activity?.SetStatus(ActivityStatusCode.Ok);
                 _logger.LogStatusRead(channelName);
+            }
             else
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
                 _logger.LogStatusReadFailed(channelName, result.Error?.Message);
+            }
 
             return result;
         }
@@ -100,15 +148,26 @@ namespace Ratatosk
         {
             _logger.LogReceivingMessageStatus(channelName);
 
+            using var activity = _clientTelemetry.StartReceiveActivity(channelName);
+
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
+            }
 
             var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
             if (result.IsSuccess())
+            {
+                activity?.SetStatus(ActivityStatusCode.Ok);
                 _logger.LogMessageStatusReceived(channelName);
+            }
             else
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
                 _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
+            }
 
             return result;
         }
@@ -556,6 +615,7 @@ namespace Ratatosk
             }
 
             _lock.Dispose();
+            _clientTelemetry.Dispose();
         }
 
         /// <inheritdoc/>
@@ -585,6 +645,7 @@ namespace Ratatosk
             }
 
             _lock.Dispose();
+            _clientTelemetry.Dispose();
         }
     }
 }

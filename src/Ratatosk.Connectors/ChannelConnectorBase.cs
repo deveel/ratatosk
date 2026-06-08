@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Polly;
 
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Ratatosk
@@ -28,6 +29,7 @@ namespace Ratatosk
         private readonly RetryPolicyOptions? _retryPolicy;
         private RetryPolicyOptions? _effectiveRetryPolicy;
         private readonly Lazy<ResiliencePipeline<SendResult>?> _sendPipeline;
+        private readonly ConnectorTelemetry _telemetry;
 
         /// <summary>
         /// Constructs the connector base with the given schema and optional settings.
@@ -54,6 +56,9 @@ namespace Ratatosk
                 _effectiveRetryPolicy = options;
                 return ResiliencePipelineFactory.BuildPipeline<SendResult>(options);
             });
+
+            var telemetryOptions = ReadTelemetryFromSettings();
+            _telemetry = new ConnectorTelemetry(Schema.ChannelType, ConnectorName, telemetryOptions);
         }
 
         /// <summary>
@@ -189,6 +194,22 @@ namespace Ratatosk
 
         protected virtual RetryPolicyOptions? GetDefaultRetryPolicy() => null;
 
+        private TelemetryOptions ReadTelemetryFromSettings()
+        {
+            var options = new TelemetryOptions();
+
+            if (ConnectionSettings.Parameters.TryGetValue(TelemetrySettingsKeys.EnableTracing, out var tracingRaw))
+                options.EnableTracing = Convert.ToBoolean(tracingRaw);
+
+            if (ConnectionSettings.Parameters.TryGetValue(TelemetrySettingsKeys.EnableMetrics, out var metricsRaw))
+                options.EnableMetrics = Convert.ToBoolean(metricsRaw);
+
+            if (ConnectionSettings.Parameters.TryGetValue(TelemetrySettingsKeys.EnablePayloadSizeMetrics, out var payloadRaw))
+                options.EnablePayloadSizeMetrics = Convert.ToBoolean(payloadRaw);
+
+            return options;
+        }
+
         private ResiliencePipeline<T>? BuildPipeline<T>()
         {
             if (typeof(T) == typeof(SendResult))
@@ -207,7 +228,12 @@ namespace Ratatosk
         /// Transitions the connector to <paramref name="newState"/> in a thread-safe manner.
         /// </summary>
         /// <param name="newState">The new state to set for the connector.</param>
-        protected void SetState(ConnectorState newState) => _stateManager.TransitionTo(newState);
+        protected void SetState(ConnectorState newState)
+        {
+            var oldState = State;
+            _stateManager.TransitionTo(newState);
+            _telemetry.RecordStateChange(oldState.ToString(), newState.ToString());
+        }
 
         /// <summary>
         /// Validates that the connector supports the given capability.
@@ -284,9 +310,11 @@ namespace Ratatosk
         public async ValueTask<OperationResult<bool>> InitializeAsync(CancellationToken cancellationToken)
         {
             using var scope = BeginConnectorLoggerScope();
+            using var activity = _telemetry.StartInitializeActivity();
 
             if (State != ConnectorState.Uninitialized)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, "Already initialized");
                 return OperationResult<bool>.Fail(ConnectorErrorCodes.AlreadyInitialized,
                     MessagingErrorCodes.ErrorDomain,
                     "The connector has already been initialized.");
@@ -317,11 +345,14 @@ namespace Ratatosk
                 Logger.LogConnectorInitialized();
                 SetState(ConnectorState.Ready);
 
+                activity?.SetStatus(ActivityStatusCode.Ok);
+
                 return true;
             }
             catch (MessagingException ex)
             {
                 Logger.LogConnectorInitializationFailed(ex);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
 
                 SetState(ConnectorState.Error);
                 return OperationResult<bool>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
@@ -329,6 +360,7 @@ namespace Ratatosk
             catch (Exception ex)
             {
                 Logger.LogConnectorInitializationFailed(ex);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
 
                 SetState(ConnectorState.Error);
                 return OperationResult<bool>.Fail(
@@ -602,6 +634,14 @@ namespace Ratatosk
             using var scope = BeginConnectorLoggerScope();
             using var messageScope = BeginMessageLoggerScope(message);
 
+            var activity = _telemetry.StartSendActivity(
+                Schema.ChannelType, message.Id);
+            var sw = Stopwatch.StartNew();
+
+            var payloadSize = _telemetry.IsPayloadSizeEnabled
+                ? (int)_telemetry.MeasurePayloadSize(message)
+                : 0;
+
             try
             {
                 Logger.LogValidatingMessage(message.Id!);
@@ -618,6 +658,9 @@ namespace Ratatosk
                 if (validationErrors.Count > 0)
                 {
                     Logger.LogMessageValidationFailed(message.Id!, validationErrors.Count);
+                    sw.Stop();
+                    _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, "validation_failed");
+                    activity?.SetStatus(ActivityStatusCode.Error, "Validation failed");
 
                     return OperationResult<SendResult>.ValidationFailed(
                         ConnectorErrorCodes.MessageValidationFailed,
@@ -652,6 +695,10 @@ namespace Ratatosk
                     {
                         if (ex.GetType().Name == "BrokenCircuitException")
                         {
+                            sw.Stop();
+                            _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, "circuit_breaker_open");
+                            activity?.SetStatus(ActivityStatusCode.Error, "Circuit breaker open");
+
                             Logger.LogCircuitBreakerOpened("SendMessage", _effectiveRetryPolicy?.CircuitBreakerBreakDuration ?? TimeSpan.FromSeconds(30));
                             return OperationResult<SendResult>.Fail(
                                 ConnectorErrorCodes.CircuitBreakerOpen,
@@ -669,6 +716,10 @@ namespace Ratatosk
                             }
                         }
 
+                        sw.Stop();
+                        _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, "retry_exhausted");
+                        activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+
                         Logger.LogRetryExhausted(_effectiveRetryPolicy?.MaxRetryAttempts ?? 3, "SendMessage", ex.Message);
                         return OperationResult<SendResult>.Fail(
                             ConnectorErrorCodes.RetryAttemptsExhausted,
@@ -680,11 +731,19 @@ namespace Ratatosk
                 {
                     result = await SendMessageCoreAsync(message, cancellationToken);
 
+                    sw.Stop();
+                    _telemetry.RecordSendSuccess(sw.ElapsedMilliseconds, payloadSize);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+
                     result.AdditionalData[ResultMetadataKeys.RetryAttempts] = 1;
                     Logger.LogMessageSent(result.RemoteMessageId);
 
                     return OperationResult<SendResult>.Success(result);
                 }
+
+                sw.Stop();
+                _telemetry.RecordSendSuccess(sw.ElapsedMilliseconds, payloadSize);
+                activity?.SetStatus(ActivityStatusCode.Ok);
 
                 result.AdditionalData[ResultMetadataKeys.RetryAttempts] = attempts;
                 Logger.LogMessageSent(result.RemoteMessageId);
@@ -693,11 +752,19 @@ namespace Ratatosk
             }
             catch (MessagingException ex)
             {
+                sw.Stop();
+                _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, ex.ErrorCode);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+
                 Logger.LogMessageSendFailed(message.Id!, ex);
                 return OperationResult<SendResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
+                sw.Stop();
+                _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, "unknown");
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+
                 Logger.LogMessageSendFailed(message.Id!, ex);
                 return OperationResult<SendResult>.Fail(ConnectorErrorCodes.SendMessageError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
@@ -734,6 +801,11 @@ namespace Ratatosk
             _idGenerator.EnsureBatchId(batch);
 
             using var scope = BeginConnectorLoggerScope();
+            using var activity = _telemetry.StartActivity(
+                MessagingSemanticConventions.OperationBatchSend,
+                Schema.ChannelType);
+
+            var sw = Stopwatch.StartNew();
 
             try
             {
@@ -762,6 +834,8 @@ namespace Ratatosk
 
                 if (allValidationErrors.Count > 0)
                 {
+                    sw.Stop();
+                    activity?.SetStatus(ActivityStatusCode.Error, "Batch validation failed");
                     Logger.LogBatchValidationFailed(batch.Messages.Count());
 
                     return OperationResult<BatchSendResult>.ValidationFailed(
@@ -774,17 +848,27 @@ namespace Ratatosk
 
                 var result = await SendBatchCoreAsync(batch, cancellationToken);
 
+                sw.Stop();
+                _telemetry.RecordSendSuccess(sw.ElapsedMilliseconds, batch.Messages.Count());
+                activity?.SetStatus(ActivityStatusCode.Ok);
+
                 Logger.LogBatchSent(batch.Messages.Count());
 
                 return result;
             }
             catch (MessagingException ex)
             {
+                sw.Stop();
+                _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, ex.ErrorCode);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogBatchSendFailed(batch.Messages.Count(), ex);
                 return OperationResult<BatchSendResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
+                sw.Stop();
+                _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, "unknown");
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogBatchSendFailed(batch.Messages.Count(), ex);
                 return OperationResult<BatchSendResult>.Fail(ConnectorErrorCodes.SendBatchError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
@@ -817,6 +901,7 @@ namespace Ratatosk
         public async ValueTask<OperationResult<StatusInfo>> GetStatusAsync(CancellationToken cancellationToken)
         {
             using var scope = BeginConnectorLoggerScope();
+            using var activity = _telemetry.StartStatusQueryActivity();
 
             try
             {
@@ -824,17 +909,21 @@ namespace Ratatosk
 
                 var result = await GetConnectorStatusAsync(cancellationToken);
 
+                activity?.SetStatus(ActivityStatusCode.Ok);
+
                 Logger.LogStatusRead();
 
                 return result;
             }
             catch (MessagingException ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogStatusReadFailed(ex);
                 return OperationResult<StatusInfo>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogStatusReadFailed(ex);
                 return OperationResult<StatusInfo>.Fail(ConnectorErrorCodes.GetStatusError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
@@ -868,6 +957,7 @@ namespace Ratatosk
             await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
+            using var activity = _telemetry.StartStatusQueryActivity(messageId);
 
             try
             {
@@ -875,17 +965,21 @@ namespace Ratatosk
 
                 var result = await GetMessageStatusCoreAsync(messageId, cancellationToken);
 
+                activity?.SetStatus(ActivityStatusCode.Ok);
+
                 Logger.LogMessageStatusRead(messageId);
 
                 return result;
             }
             catch (MessagingException ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogMessageStatusReadFailed(messageId, ex);
                 return OperationResult<StatusUpdatesResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogMessageStatusReadFailed(messageId, ex);
                 return OperationResult<StatusUpdatesResult>.Fail(ConnectorErrorCodes.GetMessageStatusError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
@@ -1014,6 +1108,7 @@ namespace Ratatosk
             await EnsureInitializedAsync(cancellationToken);
 
             using var scope = BeginConnectorLoggerScope();
+            using var activity = _telemetry.StartActivity("receive_status", Schema.ChannelType);
 
             try
             {
@@ -1021,17 +1116,21 @@ namespace Ratatosk
 
                 var result = await ReceiveMessageStatusCoreAsync(source, cancellationToken);
 
+                activity?.SetStatus(ActivityStatusCode.Ok);
+
                 Logger.LogMessageStatusReceived(result.MessageId);
 
                 return result;
             }
             catch (MessagingException ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogMessageStatusReceiveFailed(ex);
                 return OperationResult<StatusUpdateResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogMessageStatusReceiveFailed(ex);
                 return OperationResult<StatusUpdateResult>.Fail(ConnectorErrorCodes.ReceiveStatusError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }
@@ -1069,11 +1168,19 @@ namespace Ratatosk
 
             using var scope = BeginConnectorLoggerScope();
 
+            using var activity = _telemetry.StartReceiveActivity(Schema.ChannelType);
+            var sw = Stopwatch.StartNew();
+
             try
             {
                 Logger.LogReceivingMessage();
 
                 var result = await ReceiveMessagesCoreAsync(source, cancellationToken);
+
+                sw.Stop();
+                var messageCount = result?.Messages?.Count ?? 0;
+                _telemetry.RecordReceiveSuccess(sw.ElapsedMilliseconds, messageCount);
+                activity?.SetStatus(ActivityStatusCode.Ok);
 
                 Logger.LogMessageReceived();
 
@@ -1081,11 +1188,19 @@ namespace Ratatosk
             }
             catch (MessagingException ex)
             {
+                sw.Stop();
+                _telemetry.RecordReceiveFailure(sw.ElapsedMilliseconds, ex.ErrorCode);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+
                 Logger.LogMessageReceiveFailed(ex);
                 return OperationResult<ReceiveResult>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
+                sw.Stop();
+                _telemetry.RecordReceiveFailure(sw.ElapsedMilliseconds, "unknown");
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+
                 Logger.LogMessageReceiveFailed(ex);
                 return OperationResult<ReceiveResult>.Fail(
                     ConnectorErrorCodes.ReceiveMessagesError,
@@ -1122,6 +1237,9 @@ namespace Ratatosk
             ValidateCapability(ChannelCapability.HealthCheck);
 
             using var scope = BeginConnectorLoggerScope();
+            using var activity = _telemetry.StartActivity(
+                MessagingSemanticConventions.OperationHealthCheck,
+                Schema.ChannelType);
 
             try
             {
@@ -1129,17 +1247,21 @@ namespace Ratatosk
 
                 var result = await GetConnectorHealthAsync(cancellationToken);
 
+                activity?.SetStatus(ActivityStatusCode.Ok);
+
                 Logger.LogHealthCheckSuccessful();
 
                 return result;
             }
             catch (MessagingException ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogHealthCheckFailed(ex);
                 return OperationResult<ConnectorHealth>.Fail(ex.ErrorCode, ex.ErrorDomain, ex.Message);
             }
             catch (Exception ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 Logger.LogHealthCheckFailed(ex);
                 return OperationResult<ConnectorHealth>.Fail(ConnectorErrorCodes.GetHealthError, MessagingErrorCodes.ErrorDomain, ex.Message);
             }

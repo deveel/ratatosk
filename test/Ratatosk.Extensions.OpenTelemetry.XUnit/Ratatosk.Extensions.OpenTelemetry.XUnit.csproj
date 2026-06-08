@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Ratatosk OpenTelemetry Tests</Title>
+    <Description>Unit tests for the Ratatosk OpenTelemetry instrumentation package.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Ratatosk.Extensions.OpenTelemetry\Ratatosk.Extensions.OpenTelemetry.csproj" />
+    <ProjectReference Include="..\..\src\Ratatosk\Ratatosk.csproj" />
+  </ItemGroup>
+</Project>

@@ -57,6 +57,7 @@ Those are application-level concerns, so you can choose your own architecture.
 | `Ratatosk.Senders` | Sender identity infrastructure: `ISenderRepository<TSender>`, `ISenderResolver`, cache, per-connector configuration, `MessageBuilder.FromSender()` extension. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders/) |
 | `Ratatosk.Senders.InMemory` | In-memory `IRepository<Sender>` for development and testing. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.InMemory.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders.InMemory/) |
 | `Ratatosk.Senders.EntityFramework` | EF Core persistence for the sender identity registry (`SenderDbContext`, `EntitySenderRepository`, `DbSender`). | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Senders.EntityFramework.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Senders.EntityFramework/) |
+| `Ratatosk.Extensions.OpenTelemetry` | Convenience extensions for wiring Ratatosk telemetry sources into OpenTelemetry SDK. | [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Extensions.OpenTelemetry.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Extensions.OpenTelemetry/) |
 
 ## Quick example
 
@@ -144,7 +145,7 @@ Locks the public API and ships stable package releases with production-ready gua
 Adds retry/circuit-breaker policies, OpenTelemetry signals, health checks, and timeout controls.
 
 - [x] **Retry policies** — Polly-based retry and circuit-breaker integrated at the connector base level.
-- [ ] **OpenTelemetry tracing & metrics** — ActivitySources, Meters, and histograms per connector.
+- [x] **OpenTelemetry tracing & metrics** — ActivitySources, Meters, and histograms per connector.
 - [ ] **Health checks** — ASP.NET Core `IHealthCheck` implementations auto-registered per connector.
 - [ ] **Connector-level timeout configuration** — Per-operation timeout via the DI registration API.
 
