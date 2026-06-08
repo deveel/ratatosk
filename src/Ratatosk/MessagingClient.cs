@@ -6,11 +6,6 @@ using System.Diagnostics;
 
 namespace Ratatosk
 {
-    /// <summary>
-    /// Default implementation of <see cref="IMessagingClient"/> that resolves
-    /// channel connectors from the dependency injection container and manages
-    /// their initialization and lifecycle.
-    /// </summary>
     public class MessagingClient : IMessagingClient
     {
         private readonly IServiceProvider _serviceProvider;
@@ -25,9 +20,6 @@ namespace Ratatosk
         private readonly object _runtimeLock = new();
         private readonly ClientTelemetry _clientTelemetry;
 
-        /// <summary>
-        /// Constructs a new <see cref="MessagingClient"/> instance.
-        /// </summary>
         public MessagingClient(
             IServiceProvider serviceProvider,
             MessagingClientOptions? options = null,
@@ -43,15 +35,20 @@ namespace Ratatosk
             _clientTelemetry = new ClientTelemetry(_options.Telemetry);
         }
 
-        /// <inheritdoc/>
-        public async Task<OperationResult<SendResult>> SendAsync(string channelName, IMessage message, CancellationToken cancellationToken = default)
+        // ── Core methods ──────────────────────────────────────────────────────
+
+        public async Task<OperationResult<SendResult>> SendAsync(SendRequest request, CancellationToken cancellationToken = default)
         {
+            var channelName = request.ChannelName;
+            var message = request.Message;
+
             _logger.LogSendingMessage(channelName);
 
-            using var activity = _clientTelemetry.StartSendActivity(channelName, message.Id);
+            using var scope = BeginContextScope(request.Context);
+            using var activity = _clientTelemetry.StartSendActivity(channelName, message.Id, request.Context);
             var sw = Stopwatch.StartNew();
 
-            var connector = await ResolveConnectorAsync(channelName, cancellationToken);
+            var connector = await ResolveConnectorAsync(request.ConnectorType, channelName, request.ConnectionSettings, cancellationToken);
             if (connector == null)
             {
                 sw.Stop();
@@ -61,6 +58,7 @@ namespace Ratatosk
             }
 
             await ResolveSenderAsync(message, connector.ConnectionSettings, cancellationToken);
+            StampMessageContext(message, request.Context);
 
             try
             {
@@ -91,15 +89,66 @@ namespace Ratatosk
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<OperationResult<ReceiveResult>> ReceiveAsync(string channelName, MessageSource source, CancellationToken cancellationToken = default)
+        public async Task<OperationResult<BatchSendResult>> SendBatchAsync(BatchSendRequest request, CancellationToken cancellationToken = default)
         {
-            _logger.LogReceivingMessage(channelName);
+            var channelName = request.ChannelName;
+            var batch = request.Batch;
 
-            using var activity = _clientTelemetry.StartReceiveActivity(channelName);
+            _logger.LogSendingMessage(channelName);
+
+            using var scope = BeginContextScope(request.Context);
+            using var activity = _clientTelemetry.StartSendActivity(channelName, batch.Id, request.Context);
             var sw = Stopwatch.StartNew();
 
-            var connector = await ResolveConnectorAsync(channelName, cancellationToken);
+            var connector = await ResolveConnectorAsync(request.ConnectorType, channelName, request.ConnectionSettings, cancellationToken);
+            if (connector == null)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
+                return OperationResult<BatchSendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
+            }
+
+            try
+            {
+                var result = await connector.SendBatchAsync(batch, cancellationToken);
+                sw.Stop();
+
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageSent(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
+        }
+
+        public async Task<OperationResult<ReceiveResult>> ReceiveAsync(ReceiveRequest request, CancellationToken cancellationToken = default)
+        {
+            var channelName = request.ChannelName;
+
+            _logger.LogReceivingMessage(channelName);
+
+            using var scope = BeginContextScope(request.Context);
+            using var activity = _clientTelemetry.StartReceiveActivity(channelName, request.Context);
+            var sw = Stopwatch.StartNew();
+
+            var connector = await ResolveConnectorAsync(request.ConnectorType, channelName, request.ConnectionSettings, cancellationToken);
             if (connector == null)
             {
                 sw.Stop();
@@ -110,7 +159,7 @@ namespace Ratatosk
 
             try
             {
-                var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
+                var result = await connector.ReceiveMessagesAsync(request.Source, cancellationToken);
                 sw.Stop();
 
                 if (result.IsSuccess())
@@ -137,15 +186,17 @@ namespace Ratatosk
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<OperationResult<StatusInfo>> GetStatusAsync(string channelName, CancellationToken cancellationToken = default)
+        public async Task<OperationResult<StatusInfo>> GetStatusAsync(StatusRequest request, CancellationToken cancellationToken = default)
         {
+            var channelName = request.ChannelName;
+
             _logger.LogReadingStatus(channelName);
 
-            using var activity = _clientTelemetry.StartStatusActivity(channelName);
+            using var scope = BeginContextScope(request.Context);
+            using var activity = _clientTelemetry.StartStatusActivity(channelName, request.Context);
             var sw = Stopwatch.StartNew();
 
-            var connector = await ResolveConnectorAsync(channelName, cancellationToken);
+            var connector = await ResolveConnectorAsync(request.ConnectorType, channelName, request.ConnectionSettings, cancellationToken);
             if (connector == null)
             {
                 sw.Stop();
@@ -183,15 +234,17 @@ namespace Ratatosk
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(string channelName, MessageSource source, CancellationToken cancellationToken = default)
+        public async Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(ReceiveStatusRequest request, CancellationToken cancellationToken = default)
         {
+            var channelName = request.ChannelName;
+
             _logger.LogReceivingMessageStatus(channelName);
 
-            using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName);
+            using var scope = BeginContextScope(request.Context);
+            using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName, request.Context);
             var sw = Stopwatch.StartNew();
 
-            var connector = await ResolveConnectorAsync(channelName, cancellationToken);
+            var connector = await ResolveConnectorAsync(request.ConnectorType, channelName, request.ConnectionSettings, cancellationToken);
             if (connector == null)
             {
                 sw.Stop();
@@ -202,7 +255,7 @@ namespace Ratatosk
 
             try
             {
-                var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
+                var result = await connector.ReceiveMessageStatusAsync(request.Source, cancellationToken);
                 sw.Stop();
 
                 if (result.IsSuccess())
@@ -229,718 +282,25 @@ namespace Ratatosk
             }
         }
 
-        // ── Type-parameterized standard overloads ────────────────────────────
+        // ── Connector resolution ──────────────────────────────────────────
 
-        /// <inheritdoc/>
-        public async Task<OperationResult<SendResult>> SendAsync<TConnector>(IMessage message, CancellationToken cancellationToken = default)
-            where TConnector : class, IChannelConnector
+        private async Task<IChannelConnector?> ResolveConnectorAsync(Type? connectorType, string channelName, ConnectionSettings? settings, CancellationToken cancellationToken)
         {
-            var channelName = typeof(TConnector).Name;
-
-            using var activity = _clientTelemetry.StartSendActivity(channelName, message.Id);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
-            if (connector == null)
+            if (connectorType != null)
             {
-                sw.Stop();
-                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
+                if (settings != null)
+                    return await CreateRuntimeConnectorAsync(connectorType, channelName, settings, cancellationToken);
+
+                return await ResolveConnectorByTypeAsync(channelName, connectorType, cancellationToken);
             }
 
-            await ResolveSenderAsync(message, connector.ConnectionSettings, cancellationToken);
+            if (settings != null)
+                return await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
 
-            try
-            {
-                var result = await connector.SendMessageAsync(message, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageSent(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageSendFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
+            return await ResolveConnectorByNameAsync(channelName, cancellationToken);
         }
 
-        /// <inheritdoc/>
-        public async Task<OperationResult<ReceiveResult>> ReceiveAsync<TConnector>(MessageSource source, CancellationToken cancellationToken = default)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            using var activity = _clientTelemetry.StartReceiveActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordReceiveSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageReceived(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<StatusInfo>> GetStatusAsync<TConnector>(CancellationToken cancellationToken = default)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            using var activity = _clientTelemetry.StartStatusActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.GetStatusAsync(cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordStatusSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogStatusRead(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogStatusReadFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync<TConnector>(MessageSource source, CancellationToken cancellationToken = default)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordReceiveStatusSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageStatusReceived(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        // ── Runtime overloads ────────────────────────────────────────────────
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<SendResult>> SendAsync(string channelName, ConnectionSettings settings, IMessage message, CancellationToken cancellationToken = default)
-        {
-            _logger.LogSendingMessage(channelName);
-
-            using var activity = _clientTelemetry.StartSendActivity(channelName, message.Id);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
-            }
-
-            await ResolveSenderAsync(message, settings, cancellationToken);
-
-            try
-            {
-                var result = await connector.SendMessageAsync(message, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageSent(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageSendFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<ReceiveResult>> ReceiveAsync(string channelName, ConnectionSettings settings, MessageSource source, CancellationToken cancellationToken = default)
-        {
-            _logger.LogReceivingMessage(channelName);
-
-            using var activity = _clientTelemetry.StartReceiveActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordReceiveSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageReceived(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<StatusInfo>> GetStatusAsync(string channelName, ConnectionSettings settings, CancellationToken cancellationToken = default)
-        {
-            _logger.LogReadingStatus(channelName);
-
-            using var activity = _clientTelemetry.StartStatusActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.GetStatusAsync(cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordStatusSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogStatusRead(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogStatusReadFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync(string channelName, ConnectionSettings settings, MessageSource source, CancellationToken cancellationToken = default)
-        {
-            _logger.LogReceivingMessageStatus(channelName);
-
-            using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordReceiveStatusSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageStatusReceived(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        // ── Type-parameterized runtime overloads ────────────────────────────
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<SendResult>> SendAsync<TConnector>(ConnectionSettings settings, IMessage message, CancellationToken cancellationToken = default)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            using var activity = _clientTelemetry.StartSendActivity(channelName, message.Id);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<SendResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
-            }
-
-            await ResolveSenderAsync(message, settings, cancellationToken);
-
-            try
-            {
-                var result = await connector.SendMessageAsync(message, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageSent(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageSendFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<ReceiveResult>> ReceiveAsync<TConnector>(ConnectionSettings settings, MessageSource source, CancellationToken cancellationToken = default)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            using var activity = _clientTelemetry.StartReceiveActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordReceiveSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageReceived(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<StatusInfo>> GetStatusAsync<TConnector>(ConnectionSettings settings, CancellationToken cancellationToken = default)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            using var activity = _clientTelemetry.StartStatusActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.GetStatusAsync(cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordStatusSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogStatusRead(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogStatusReadFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task<OperationResult<StatusUpdateResult>> ReceiveMessageStatusAsync<TConnector>(ConnectionSettings settings, MessageSource source, CancellationToken cancellationToken = default)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName);
-            var sw = Stopwatch.StartNew();
-
-            var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
-            if (connector == null)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
-                return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
-            }
-
-            try
-            {
-                var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
-                sw.Stop();
-
-                if (result.IsSuccess())
-                {
-                    _clientTelemetry.RecordReceiveStatusSuccess(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogMessageStatusReceived(channelName);
-                }
-                else
-                {
-                    _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                    _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                throw;
-            }
-        }
-
-        // ── Sender resolution ────────────────────────────────────────────────
-
-        private async ValueTask ResolveSenderAsync(IMessage message, ConnectionSettings settings, CancellationToken cancellationToken)
-        {
-            var resolver = _serviceProvider.GetService<ISenderResolver>();
-            if (resolver == null)
-                return;
-
-            var context = new SenderResolutionContext(message.Sender, settings);
-            var resolved = await resolver.ResolveAsync(context, cancellationToken);
-
-            if (resolved != null && message is Message msg)
-            {
-                msg.Sender = resolved;
-            }
-        }
-
-        // ── Runtime connector creation ──────────────────────────────────────
-
-        private async Task<IChannelConnector?> CreateRuntimeConnectorAsync(string channelName, ConnectionSettings settings, CancellationToken cancellationToken)
-        {
-            if (_catalog == null || !_catalog.TryGetEntry(channelName, out var entry))
-            {
-                _logger.LogChannelNotFound(channelName);
-                return null;
-            }
-
-            _logger.LogResolvingChannel(channelName);
-
-            var schema = entry!.GetSchema(_serviceProvider);
-            var connector = (IChannelConnector)ActivatorUtilities.CreateInstance(
-                _serviceProvider, entry.ConnectorType, schema, settings);
-
-            if (_options.AutoInitialize && connector.State == ConnectorState.Uninitialized)
-            {
-                _logger.LogInitializingConnector(channelName);
-
-                var initResult = await connector.InitializeAsync(cancellationToken);
-                if (!initResult.IsSuccess())
-                {
-                    _logger.LogConnectorInitializationFailed(channelName, initResult.Error?.Message);
-                    return null;
-                }
-
-                _logger.LogConnectorInitialized(channelName);
-            }
-
-            TrackRuntimeConnector(connector);
-            return connector;
-        }
-
-        private async Task<IChannelConnector?> CreateRuntimeConnectorAsync<TConnector>(ConnectionSettings settings, CancellationToken cancellationToken)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            _logger.LogResolvingChannel(channelName);
-
-            var connectorType = typeof(TConnector);
-            var schema = ConnectorSchemaHelper.DiscoverConnectorSchema(_serviceProvider, connectorType);
-            var connector = (IChannelConnector)ActivatorUtilities.CreateInstance(
-                _serviceProvider, connectorType, schema, settings);
-
-            if (_options.AutoInitialize && connector.State == ConnectorState.Uninitialized)
-            {
-                _logger.LogInitializingConnector(channelName);
-
-                var initResult = await connector.InitializeAsync(cancellationToken);
-                if (!initResult.IsSuccess())
-                {
-                    _logger.LogConnectorInitializationFailed(channelName, initResult.Error?.Message);
-                    return null;
-                }
-
-                _logger.LogConnectorInitialized(channelName);
-            }
-
-            TrackRuntimeConnector(connector);
-            return connector;
-        }
-
-        private async Task<IChannelConnector?> ResolveConnectorAsync<TConnector>(CancellationToken cancellationToken)
-            where TConnector : class, IChannelConnector
-        {
-            var channelName = typeof(TConnector).Name;
-
-            if (_connectors.TryGetValue(channelName, out var existing))
-                return existing;
-
-            await _lock.WaitAsync(cancellationToken);
-            try
-            {
-                if (_connectors.TryGetValue(channelName, out existing))
-                    return existing;
-
-                _logger.LogResolvingChannel(channelName);
-
-                var connector = _serviceProvider.GetService<TConnector>();
-                if (connector == null)
-                {
-                    _logger.LogChannelNotFound(channelName);
-                    return null;
-                }
-
-                if (_options.AutoInitialize && connector.State == ConnectorState.Uninitialized)
-                {
-                    _logger.LogInitializingConnector(channelName);
-
-                    var initResult = await connector.InitializeAsync(cancellationToken);
-                    if (!initResult.IsSuccess())
-                    {
-                        _logger.LogConnectorInitializationFailed(channelName, initResult.Error?.Message);
-                        return null;
-                    }
-
-                    _logger.LogConnectorInitialized(channelName);
-                }
-
-                _logger.LogChannelResolved(channelName);
-
-                _connectors[channelName] = connector;
-                return connector;
-            }
-            finally
-            {
-                _lock.Release();
-            }
-        }
-
-        private void TrackRuntimeConnector(IChannelConnector connector)
-        {
-            lock (_runtimeLock)
-                _runtimeConnectors.Add(connector);
-        }
-
-        /// <summary>
-        /// Resolves a channel connector by name, with lazy initialization
-        /// and thread-safe caching.
-        /// </summary>
-        private async Task<IChannelConnector?> ResolveConnectorAsync(string channelName, CancellationToken cancellationToken)
+        private async Task<IChannelConnector?> ResolveConnectorByNameAsync(string channelName, CancellationToken cancellationToken)
         {
             if (_connectors.TryGetValue(channelName, out var existing))
                 return existing;
@@ -988,7 +348,165 @@ namespace Ratatosk
             }
         }
 
-        /// <inheritdoc/>
+        private async Task<IChannelConnector?> ResolveConnectorByTypeAsync(string channelName, Type connectorType, CancellationToken cancellationToken)
+        {
+            if (_connectors.TryGetValue(channelName, out var existing))
+                return existing;
+
+            await _lock.WaitAsync(cancellationToken);
+            try
+            {
+                if (_connectors.TryGetValue(channelName, out existing))
+                    return existing;
+
+                _logger.LogResolvingChannel(channelName);
+
+                var connector = _serviceProvider.GetService(connectorType) as IChannelConnector;
+                if (connector == null)
+                {
+                    _logger.LogChannelNotFound(channelName);
+                    return null;
+                }
+
+                if (_options.AutoInitialize && connector.State == ConnectorState.Uninitialized)
+                {
+                    _logger.LogInitializingConnector(channelName);
+
+                    var initResult = await connector.InitializeAsync(cancellationToken);
+                    if (!initResult.IsSuccess())
+                    {
+                        _logger.LogConnectorInitializationFailed(channelName, initResult.Error?.Message);
+                        return null;
+                    }
+
+                    _logger.LogConnectorInitialized(channelName);
+                }
+
+                _logger.LogChannelResolved(channelName);
+
+                _connectors[channelName] = connector;
+                return connector;
+            }
+            finally
+            {
+                _lock.Release();
+            }
+        }
+
+        private async Task<IChannelConnector?> CreateRuntimeConnectorAsync(Type connectorType, string channelName, ConnectionSettings settings, CancellationToken cancellationToken)
+        {
+            _logger.LogResolvingChannel(channelName);
+
+            var schema = ConnectorSchemaHelper.DiscoverConnectorSchema(_serviceProvider, connectorType);
+            var connector = (IChannelConnector)ActivatorUtilities.CreateInstance(
+                _serviceProvider, connectorType, schema, settings);
+
+            if (_options.AutoInitialize && connector.State == ConnectorState.Uninitialized)
+            {
+                _logger.LogInitializingConnector(channelName);
+
+                var initResult = await connector.InitializeAsync(cancellationToken);
+                if (!initResult.IsSuccess())
+                {
+                    _logger.LogConnectorInitializationFailed(channelName, initResult.Error?.Message);
+                    return null;
+                }
+
+                _logger.LogConnectorInitialized(channelName);
+            }
+
+            TrackRuntimeConnector(connector);
+            return connector;
+        }
+
+        private async Task<IChannelConnector?> CreateRuntimeConnectorAsync(string channelName, ConnectionSettings settings, CancellationToken cancellationToken)
+        {
+            if (_catalog == null || !_catalog.TryGetEntry(channelName, out var entry))
+            {
+                _logger.LogChannelNotFound(channelName);
+                return null;
+            }
+
+            _logger.LogResolvingChannel(channelName);
+
+            var schema = entry!.GetSchema(_serviceProvider);
+            var connector = (IChannelConnector)ActivatorUtilities.CreateInstance(
+                _serviceProvider, entry.ConnectorType, schema, settings);
+
+            if (_options.AutoInitialize && connector.State == ConnectorState.Uninitialized)
+            {
+                _logger.LogInitializingConnector(channelName);
+
+                var initResult = await connector.InitializeAsync(cancellationToken);
+                if (!initResult.IsSuccess())
+                {
+                    _logger.LogConnectorInitializationFailed(channelName, initResult.Error?.Message);
+                    return null;
+                }
+
+                _logger.LogConnectorInitialized(channelName);
+            }
+
+            TrackRuntimeConnector(connector);
+            return connector;
+        }
+
+        // ── Sender resolution ────────────────────────────────────────────
+
+        private async ValueTask ResolveSenderAsync(IMessage message, ConnectionSettings settings, CancellationToken cancellationToken)
+        {
+            var resolver = _serviceProvider.GetService<ISenderResolver>();
+            if (resolver == null)
+                return;
+
+            var context = new SenderResolutionContext(message.Sender, settings);
+            var resolved = await resolver.ResolveAsync(context, cancellationToken);
+
+            if (resolved != null && message is Message msg)
+            {
+                msg.Sender = resolved;
+            }
+        }
+
+        // ── Context enrichment ───────────────────────────────────────────
+
+        private static void StampMessageContext(IMessage message, MessageContext? context)
+        {
+            if (context == null || context.Data.Count == 0)
+                return;
+
+            if (message is not Message msg)
+                return;
+
+            msg.Properties ??= new Dictionary<string, MessageProperty>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var (key, value) in context.Data)
+            {
+                if (!string.IsNullOrWhiteSpace(key))
+                    msg.Properties[key] = new MessageProperty(key, value);
+            }
+        }
+
+        private IDisposable? BeginContextScope(MessageContext? context)
+        {
+            if (context == null || context.Data.Count == 0)
+                return null;
+
+            return _logger.BeginScope(context.Data.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value ?? "<null>"));
+        }
+
+        // ── Runtime connector tracking ───────────────────────────────────
+
+        private void TrackRuntimeConnector(IChannelConnector connector)
+        {
+            lock (_runtimeLock)
+                _runtimeConnectors.Add(connector);
+        }
+
+        // ── Dispose ──────────────────────────────────────────────────────
+
         public void Dispose()
         {
             foreach (var connector in _connectors.Values)
@@ -1011,7 +529,6 @@ namespace Ratatosk
             _clientTelemetry.Dispose();
         }
 
-        /// <inheritdoc/>
         public async ValueTask DisposeAsync()
         {
             foreach (var connector in _connectors.Values)

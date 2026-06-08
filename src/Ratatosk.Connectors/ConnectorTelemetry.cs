@@ -97,7 +97,7 @@ namespace Ratatosk
             return _activitySource.StartActivity(
                 $"{ConnectorInstanceName ?? ConnectorType} {operation}",
                 ActivityKind.Client,
-                default(ActivityContext),
+                Activity.Current?.Context ?? default,
                 tags);
         }
 

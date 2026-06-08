@@ -18,22 +18,18 @@ namespace Ratatosk
         private readonly Meter _meter;
         private readonly TelemetryOptions _options;
 
-        // Send metrics
         private readonly Counter<int> _messagesSentTotal;
         private readonly Counter<int> _messagesSentFailed;
         private readonly Histogram<double> _sendDuration;
 
-        // Receive metrics
         private readonly Counter<int> _messagesReceivedTotal;
         private readonly Counter<int> _messagesReceiveFailed;
         private readonly Histogram<double> _receiveDuration;
 
-        // Status query metrics
         private readonly Counter<int> _statusQueriesTotal;
         private readonly Counter<int> _statusQueriesFailed;
         private readonly Histogram<double> _statusQueryDuration;
 
-        // Receive status metrics
         private readonly Counter<int> _statusReceivesTotal;
         private readonly Counter<int> _statusReceivesFailed;
         private readonly Histogram<double> _statusReceiveDuration;
@@ -117,161 +113,108 @@ namespace Ratatosk
                 description: "Duration of status receive operations through the client");
         }
 
-        public Activity? StartSendActivity(string channelName, string? messageId = null)
+        private static ActivityTagsCollection BuildBaseTags(string operation, string channelName, string? messageId, MessageContext? context)
         {
-            if (!_options.EnableTracing || !_activitySource.HasListeners())
-                return null;
-
             var tags = new ActivityTagsCollection
             {
                 { AttrMessagingSystem, ClientSystemName },
-                { AttrMessagingOperation, "send" },
+                { AttrMessagingOperation, operation },
                 { AttrChannelName, channelName }
             };
 
             if (messageId != null)
                 tags[AttrMessagingMessageId] = messageId;
 
-            return _activitySource.StartActivity(
-                $"{channelName} send",
-                ActivityKind.Client,
-                default(ActivityContext),
-                tags);
+            if (context != null)
+            {
+                foreach (var (key, value) in context.Data)
+                {
+                    if (!string.IsNullOrWhiteSpace(key))
+                        tags[key] = value;
+                }
+            }
+
+            return tags;
         }
 
-        public Activity? StartReceiveActivity(string channelName)
+        private Activity? StartActivity(string name, string operation, string channelName, string? messageId, MessageContext? context)
         {
             if (!_options.EnableTracing || !_activitySource.HasListeners())
                 return null;
 
-            var tags = new ActivityTagsCollection
-            {
-                { AttrMessagingSystem, ClientSystemName },
-                { AttrMessagingOperation, "receive" },
-                { AttrChannelName, channelName }
-            };
+            var tags = BuildBaseTags(operation, channelName, messageId, context);
 
             return _activitySource.StartActivity(
-                $"{channelName} receive",
+                name,
                 ActivityKind.Client,
-                default(ActivityContext),
+                Activity.Current?.Context ?? default,
                 tags);
         }
 
-        public Activity? StartStatusActivity(string channelName)
-        {
-            if (!_options.EnableTracing || !_activitySource.HasListeners())
-                return null;
+        public Activity? StartSendActivity(string channelName, string? messageId = null, MessageContext? context = null)
+            => StartActivity($"{channelName} send", "send", channelName, messageId, context);
 
-            var tags = new ActivityTagsCollection
-            {
-                { AttrMessagingSystem, ClientSystemName },
-                { AttrMessagingOperation, "status_query" },
-                { AttrChannelName, channelName }
-            };
+        public Activity? StartReceiveActivity(string channelName, MessageContext? context = null)
+            => StartActivity($"{channelName} receive", "receive", channelName, null, context);
 
-            return _activitySource.StartActivity(
-                $"{channelName} status_query",
-                ActivityKind.Client,
-                default(ActivityContext),
-                tags);
-        }
+        public Activity? StartStatusActivity(string channelName, MessageContext? context = null)
+            => StartActivity($"{channelName} status_query", "status_query", channelName, null, context);
 
-        public Activity? StartReceiveStatusActivity(string channelName)
-        {
-            if (!_options.EnableTracing || !_activitySource.HasListeners())
-                return null;
-
-            var tags = new ActivityTagsCollection
-            {
-                { AttrMessagingSystem, ClientSystemName },
-                { AttrMessagingOperation, "receive_status" },
-                { AttrChannelName, channelName }
-            };
-
-            return _activitySource.StartActivity(
-                $"{channelName} receive_status",
-                ActivityKind.Client,
-                default(ActivityContext),
-                tags);
-        }
-
-        // ── Send metrics ──────────────────────────────────────────────────────
+        public Activity? StartReceiveStatusActivity(string channelName, MessageContext? context = null)
+            => StartActivity($"{channelName} receive_status", "receive_status", channelName, null, context);
 
         public void RecordSendSuccess(long elapsedMs)
         {
-            if (!_options.EnableMetrics)
-                return;
-
+            if (!_options.EnableMetrics) return;
             _messagesSentTotal.Add(1);
             _sendDuration.Record(elapsedMs);
         }
 
         public void RecordSendFailure(long elapsedMs)
         {
-            if (!_options.EnableMetrics)
-                return;
-
+            if (!_options.EnableMetrics) return;
             _messagesSentFailed.Add(1);
             _sendDuration.Record(elapsedMs);
         }
 
-        // ── Receive metrics ───────────────────────────────────────────────────
-
         public void RecordReceiveSuccess(long elapsedMs)
         {
-            if (!_options.EnableMetrics)
-                return;
-
+            if (!_options.EnableMetrics) return;
             _messagesReceivedTotal.Add(1);
             _receiveDuration.Record(elapsedMs);
         }
 
         public void RecordReceiveFailure(long elapsedMs)
         {
-            if (!_options.EnableMetrics)
-                return;
-
+            if (!_options.EnableMetrics) return;
             _messagesReceiveFailed.Add(1);
             _receiveDuration.Record(elapsedMs);
         }
 
-        // ── Status query metrics ──────────────────────────────────────────────
-
         public void RecordStatusSuccess(long elapsedMs)
         {
-            if (!_options.EnableMetrics)
-                return;
-
+            if (!_options.EnableMetrics) return;
             _statusQueriesTotal.Add(1);
             _statusQueryDuration.Record(elapsedMs);
         }
 
         public void RecordStatusFailure(long elapsedMs)
         {
-            if (!_options.EnableMetrics)
-                return;
-
+            if (!_options.EnableMetrics) return;
             _statusQueriesFailed.Add(1);
             _statusQueryDuration.Record(elapsedMs);
         }
 
-        // ── Receive status metrics ────────────────────────────────────────────
-
         public void RecordReceiveStatusSuccess(long elapsedMs)
         {
-            if (!_options.EnableMetrics)
-                return;
-
+            if (!_options.EnableMetrics) return;
             _statusReceivesTotal.Add(1);
             _statusReceiveDuration.Record(elapsedMs);
         }
 
         public void RecordReceiveStatusFailure(long elapsedMs)
         {
-            if (!_options.EnableMetrics)
-                return;
-
+            if (!_options.EnableMetrics) return;
             _statusReceivesFailed.Add(1);
             _statusReceiveDuration.Record(elapsedMs);
         }
