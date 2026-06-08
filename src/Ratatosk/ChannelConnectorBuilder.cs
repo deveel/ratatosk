@@ -214,6 +214,33 @@ namespace Ratatosk
         }
 
         /// <summary>
+        /// Configures the telemetry options for the connector, controlling which
+        /// metrics and traces are emitted.
+        /// </summary>
+        /// <param name="configure">
+        /// A delegate that configures the <see cref="TelemetryOptions"/> instance.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="configure"/> is <c>null</c>.
+        /// </exception>
+        public ChannelConnectorBuilder<TConnector> WithTelemetry(Action<TelemetryOptions> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure, nameof(configure));
+
+            var options = new TelemetryOptions();
+            configure(options);
+
+            _fluentSettings[TelemetrySettingsKeys.EnableTracing] = options.EnableTracing;
+            _fluentSettings[TelemetrySettingsKeys.EnableMetrics] = options.EnableMetrics;
+            _fluentSettings[TelemetrySettingsKeys.EnablePayloadSizeMetrics] = options.EnablePayloadSizeMetrics;
+
+            return this;
+        }
+
+        /// <summary>
         /// Overrides the default factory used to create the connector
         /// with a custom factory type.
         /// </summary>

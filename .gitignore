@@ -419,3 +419,6 @@ FodyWeavers.xsd
 
 .idea
 samples/**/src/**/appsettings.local.json
+
+# macOS
+.DS_Store

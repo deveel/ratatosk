@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Ratatosk OpenTelemetry</Title>
+    <Description>OpenTelemetry instrumentation for the Ratatosk messaging framework,
+      providing simplified registration of tracing and metrics sources.</Description>
+    <PackageTags>ratatosk;messaging;opentelemetry;tracing;metrics;instrumentation</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ratatosk\Ratatosk.csproj" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Ratatosk" />
+  </ItemGroup>
+</Project>

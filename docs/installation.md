@@ -29,6 +29,9 @@ dotnet add package Ratatosk.Abstractions
 # Custom connector authoring — needed only if you build your own connector
 dotnet add package Ratatosk.Connector.Abstractions
 dotnet add package Ratatosk.Connectors
+
+# OpenTelemetry — convenience extensions for wiring Ratatosk telemetry sources
+dotnet add package Ratatosk.Extensions.OpenTelemetry
 ```
 
 `Ratatosk` depends on `Ratatosk.Abstractions` and `Ratatosk.Connectors` (which bring in `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging.Abstractions`). The `Abstractions` and `Connector.Abstractions` packages have no external dependencies beyond the .NET BCL.

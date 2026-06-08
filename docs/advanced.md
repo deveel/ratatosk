@@ -145,41 +145,11 @@ Logger.LogInformation("Sending to {Receiver}", message.Receiver?.Address);
 // [Connector: Twilio/SMS] [Message: sms-123] Sending to +15550002222
 ```
 
-### Metrics to track
+### OpenTelemetry tracing & metrics
 
-For production monitoring, track per-connector metrics:
+Ratatosk emits `ActivitySource` and `Meter` instruments from every connector operation — spans for send, receive, status query, and initialization; counters for messages sent, received, and failed; histograms for latency and payload size. The `IMessagingClient` facade emits its own telemetry under `Ratatosk.Client`.
 
-| Metric | Source | What it detects |
-|---|---|---|
-| Send attempts | Count before `SendMessageAsync` call | Volume trends |
-| Send success rate | `OperationResult.IsSuccess()` | Provider degradation |
-| Send latency | Stopwatch around `SendMessageAsync` | Provider performance |
-| Error codes | `OperationResult.Error.Code` | Failure type distribution |
-| Connection state | `Connector.State` | Connectivity issues |
-
-```csharp
-public class MetricsDecorator : IChannelConnector
-{
-    private readonly IChannelConnector _inner;
-    private readonly IMeterFactory _meters;
-
-    public async Task<OperationResult<SendResult>> SendMessageAsync(
-        IMessage message, CancellationToken ct)
-    {
-        var sw = Stopwatch.StartNew();
-        var result = await _inner.SendMessageAsync(message, ct);
-        sw.Stop();
-
-        _meters.CreateCounter("messaging.sends").Add(1);
-        _meters.CreateHistogram("messaging.latency").Record(sw.ElapsedMilliseconds);
-
-        if (result.IsFailure())
-            _meters.CreateCounter($"messaging.errors.{result.Error?.Code}").Add(1);
-
-        return result;
-    }
-}
-```
+See [Telemetry](telemetry.md) for the full signal reference, wiring instructions, configuration options, and performance considerations.
 
 ## Retry policies
 
