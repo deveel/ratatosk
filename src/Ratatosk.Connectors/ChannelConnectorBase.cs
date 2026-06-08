@@ -1318,6 +1318,7 @@ namespace Ratatosk
             finally
             {
                 SetState(ConnectorState.Shutdown);
+                _telemetry.Dispose();
             }
         }
 

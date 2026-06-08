@@ -35,20 +35,6 @@ namespace Ratatosk
         public const string MetricSendPayloadSize = "ratatosk.messages.send.payload_size";
         public const string MetricConnectorStateChanges = "ratatosk.connector.state_changes";
 
-        public static ActivityTagsCollection CreateConnectorTags(string connectorType, string? connectorName = null)
-        {
-            var tags = new Dictionary<string, object?>
-            {
-                [AttributeMessagingSystem] = SystemName,
-                [AttributeConnectorType] = connectorType
-            };
-
-            if (connectorName != null)
-                tags[AttributeConnectorName] = connectorName;
-
-            return new ActivityTagsCollection(tags);
-        }
-
         public static ActivityTagsCollection CreateOperationTags(
             string connectorType,
             string operation,

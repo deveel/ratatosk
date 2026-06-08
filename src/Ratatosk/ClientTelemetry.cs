@@ -6,6 +6,13 @@ namespace Ratatosk
 {
     internal class ClientTelemetry : IDisposable
     {
+        private const string AttrMessagingSystem = "messaging.system";
+        private const string AttrMessagingOperation = "messaging.operation";
+        private const string AttrMessagingMessageId = "messaging.message.id";
+        private const string AttrChannelName = "ratatosk.channel.name";
+
+        private static readonly string ClientSystemName = "ratatosk";
+
         private readonly ActivitySource _activitySource;
         private readonly Meter _meter;
         private readonly TelemetryOptions _options;
@@ -55,13 +62,13 @@ namespace Ratatosk
 
             var tags = new ActivityTagsCollection
             {
-                { "messaging.system", "ratatosk" },
-                { "messaging.operation", "send" },
-                { "ratatosk.channel.name", channelName }
+                { AttrMessagingSystem, ClientSystemName },
+                { AttrMessagingOperation, "send" },
+                { AttrChannelName, channelName }
             };
 
             if (messageId != null)
-                tags["messaging.message.id"] = messageId;
+                tags[AttrMessagingMessageId] = messageId;
 
             return _activitySource.StartActivity(
                 $"MessagingClient send",
@@ -77,9 +84,9 @@ namespace Ratatosk
 
             var tags = new ActivityTagsCollection
             {
-                { "messaging.system", "ratatosk" },
-                { "messaging.operation", "receive" },
-                { "ratatosk.channel.name", channelName }
+                { AttrMessagingSystem, ClientSystemName },
+                { AttrMessagingOperation, "receive" },
+                { AttrChannelName, channelName }
             };
 
             return _activitySource.StartActivity(
@@ -96,13 +103,32 @@ namespace Ratatosk
 
             var tags = new ActivityTagsCollection
             {
-                { "messaging.system", "ratatosk" },
-                { "messaging.operation", "status_query" },
-                { "ratatosk.channel.name", channelName }
+                { AttrMessagingSystem, ClientSystemName },
+                { AttrMessagingOperation, "status_query" },
+                { AttrChannelName, channelName }
             };
 
             return _activitySource.StartActivity(
                 $"MessagingClient status_query",
+                ActivityKind.Client,
+                default(ActivityContext),
+                tags);
+        }
+
+        public Activity? StartReceiveStatusActivity(string channelName)
+        {
+            if (!_options.EnableTracing || !_activitySource.HasListeners())
+                return null;
+
+            var tags = new ActivityTagsCollection
+            {
+                { AttrMessagingSystem, ClientSystemName },
+                { AttrMessagingOperation, "receive_status" },
+                { AttrChannelName, channelName }
+            };
+
+            return _activitySource.StartActivity(
+                $"MessagingClient receive_status",
                 ActivityKind.Client,
                 default(ActivityContext),
                 tags);
