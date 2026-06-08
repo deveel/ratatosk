@@ -9,7 +9,8 @@ namespace Ratatosk
         private const string AttrMessagingSystem = "messaging.system";
         private const string AttrMessagingOperation = "messaging.operation";
         private const string AttrMessagingMessageId = "messaging.message.id";
-        private const string AttrChannelName = "ratatosk.channel.name";
+        private const string AttrChannelName = "messaging.destination";
+        private const string AttrErrorType = "error.type";
 
         private static readonly string ClientSystemName = "ratatosk";
 
@@ -17,9 +18,25 @@ namespace Ratatosk
         private readonly Meter _meter;
         private readonly TelemetryOptions _options;
 
+        // Send metrics
         private readonly Counter<int> _messagesSentTotal;
         private readonly Counter<int> _messagesSentFailed;
         private readonly Histogram<double> _sendDuration;
+
+        // Receive metrics
+        private readonly Counter<int> _messagesReceivedTotal;
+        private readonly Counter<int> _messagesReceiveFailed;
+        private readonly Histogram<double> _receiveDuration;
+
+        // Status query metrics
+        private readonly Counter<int> _statusQueriesTotal;
+        private readonly Counter<int> _statusQueriesFailed;
+        private readonly Histogram<double> _statusQueryDuration;
+
+        // Receive status metrics
+        private readonly Counter<int> _statusReceivesTotal;
+        private readonly Counter<int> _statusReceivesFailed;
+        private readonly Histogram<double> _statusReceiveDuration;
 
         private static readonly AssemblyVersionAttribute? _versionAttr =
             typeof(ClientTelemetry).Assembly
@@ -53,6 +70,51 @@ namespace Ratatosk
                 "ratatosk.client.messages.send.duration",
                 unit: "ms",
                 description: "Duration of message send operations through the client");
+
+            _messagesReceivedTotal = _meter.CreateCounter<int>(
+                "ratatosk.client.messages.received",
+                unit: "{message}",
+                description: "Total number of messages received through the client");
+
+            _messagesReceiveFailed = _meter.CreateCounter<int>(
+                "ratatosk.client.messages.receive_failed",
+                unit: "{message}",
+                description: "Total number of messages that failed to receive through the client");
+
+            _receiveDuration = _meter.CreateHistogram<double>(
+                "ratatosk.client.messages.receive.duration",
+                unit: "ms",
+                description: "Duration of message receive operations through the client");
+
+            _statusQueriesTotal = _meter.CreateCounter<int>(
+                "ratatosk.client.status.queries",
+                unit: "{query}",
+                description: "Total number of status queries through the client");
+
+            _statusQueriesFailed = _meter.CreateCounter<int>(
+                "ratatosk.client.status.query_failed",
+                unit: "{query}",
+                description: "Total number of status queries that failed through the client");
+
+            _statusQueryDuration = _meter.CreateHistogram<double>(
+                "ratatosk.client.status.query.duration",
+                unit: "ms",
+                description: "Duration of status query operations through the client");
+
+            _statusReceivesTotal = _meter.CreateCounter<int>(
+                "ratatosk.client.status.received",
+                unit: "{update}",
+                description: "Total number of status updates received through the client");
+
+            _statusReceivesFailed = _meter.CreateCounter<int>(
+                "ratatosk.client.status.receive_failed",
+                unit: "{update}",
+                description: "Total number of status updates that failed to receive through the client");
+
+            _statusReceiveDuration = _meter.CreateHistogram<double>(
+                "ratatosk.client.status.receive.duration",
+                unit: "ms",
+                description: "Duration of status receive operations through the client");
         }
 
         public Activity? StartSendActivity(string channelName, string? messageId = null)
@@ -71,7 +133,7 @@ namespace Ratatosk
                 tags[AttrMessagingMessageId] = messageId;
 
             return _activitySource.StartActivity(
-                $"MessagingClient send",
+                $"{channelName} send",
                 ActivityKind.Client,
                 default(ActivityContext),
                 tags);
@@ -90,7 +152,7 @@ namespace Ratatosk
             };
 
             return _activitySource.StartActivity(
-                $"MessagingClient receive",
+                $"{channelName} receive",
                 ActivityKind.Client,
                 default(ActivityContext),
                 tags);
@@ -109,7 +171,7 @@ namespace Ratatosk
             };
 
             return _activitySource.StartActivity(
-                $"MessagingClient status_query",
+                $"{channelName} status_query",
                 ActivityKind.Client,
                 default(ActivityContext),
                 tags);
@@ -128,11 +190,13 @@ namespace Ratatosk
             };
 
             return _activitySource.StartActivity(
-                $"MessagingClient receive_status",
+                $"{channelName} receive_status",
                 ActivityKind.Client,
                 default(ActivityContext),
                 tags);
         }
+
+        // ── Send metrics ──────────────────────────────────────────────────────
 
         public void RecordSendSuccess(long elapsedMs)
         {
@@ -150,6 +214,66 @@ namespace Ratatosk
 
             _messagesSentFailed.Add(1);
             _sendDuration.Record(elapsedMs);
+        }
+
+        // ── Receive metrics ───────────────────────────────────────────────────
+
+        public void RecordReceiveSuccess(long elapsedMs)
+        {
+            if (!_options.EnableMetrics)
+                return;
+
+            _messagesReceivedTotal.Add(1);
+            _receiveDuration.Record(elapsedMs);
+        }
+
+        public void RecordReceiveFailure(long elapsedMs)
+        {
+            if (!_options.EnableMetrics)
+                return;
+
+            _messagesReceiveFailed.Add(1);
+            _receiveDuration.Record(elapsedMs);
+        }
+
+        // ── Status query metrics ──────────────────────────────────────────────
+
+        public void RecordStatusSuccess(long elapsedMs)
+        {
+            if (!_options.EnableMetrics)
+                return;
+
+            _statusQueriesTotal.Add(1);
+            _statusQueryDuration.Record(elapsedMs);
+        }
+
+        public void RecordStatusFailure(long elapsedMs)
+        {
+            if (!_options.EnableMetrics)
+                return;
+
+            _statusQueriesFailed.Add(1);
+            _statusQueryDuration.Record(elapsedMs);
+        }
+
+        // ── Receive status metrics ────────────────────────────────────────────
+
+        public void RecordReceiveStatusSuccess(long elapsedMs)
+        {
+            if (!_options.EnableMetrics)
+                return;
+
+            _statusReceivesTotal.Add(1);
+            _statusReceiveDuration.Record(elapsedMs);
+        }
+
+        public void RecordReceiveStatusFailure(long elapsedMs)
+        {
+            if (!_options.EnableMetrics)
+                return;
+
+            _statusReceivesFailed.Add(1);
+            _statusReceiveDuration.Record(elapsedMs);
         }
 
         public void Dispose()

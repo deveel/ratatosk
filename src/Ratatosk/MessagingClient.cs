@@ -62,23 +62,33 @@ namespace Ratatosk
 
             await ResolveSenderAsync(message, connector.ConnectionSettings, cancellationToken);
 
-            var result = await connector.SendMessageAsync(message, cancellationToken);
-            sw.Stop();
+            try
+            {
+                var result = await connector.SendMessageAsync(message, cancellationToken);
+                sw.Stop();
 
-            if (result.IsSuccess())
-            {
-                _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageSent(channelName);
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageSent(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
             }
-            else
+            catch (Exception ex)
             {
+                sw.Stop();
                 _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
             }
-
-            return result;
         }
 
         /// <inheritdoc/>
@@ -87,28 +97,44 @@ namespace Ratatosk
             _logger.LogReceivingMessage(channelName);
 
             using var activity = _clientTelemetry.StartReceiveActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
             }
 
-            var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
-
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageReceived(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordReceiveSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageReceived(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -117,27 +143,44 @@ namespace Ratatosk
             _logger.LogReadingStatus(channelName);
 
             using var activity = _clientTelemetry.StartStatusActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
             }
 
-            var result = await connector.GetStatusAsync(cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogStatusRead(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogStatusReadFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.GetStatusAsync(cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordStatusSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogStatusRead(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogStatusReadFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -146,27 +189,44 @@ namespace Ratatosk
             _logger.LogReceivingMessageStatus(channelName);
 
             using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
             }
 
-            var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageStatusReceived(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordReceiveStatusSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageStatusReceived(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         // ── Type-parameterized standard overloads ────────────────────────────
@@ -191,23 +251,33 @@ namespace Ratatosk
 
             await ResolveSenderAsync(message, connector.ConnectionSettings, cancellationToken);
 
-            var result = await connector.SendMessageAsync(message, cancellationToken);
-            sw.Stop();
+            try
+            {
+                var result = await connector.SendMessageAsync(message, cancellationToken);
+                sw.Stop();
 
-            if (result.IsSuccess())
-            {
-                _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageSent(channelName);
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageSent(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
             }
-            else
+            catch (Exception ex)
             {
+                sw.Stop();
                 _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
             }
-
-            return result;
         }
 
         /// <inheritdoc/>
@@ -217,27 +287,44 @@ namespace Ratatosk
             var channelName = typeof(TConnector).Name;
 
             using var activity = _clientTelemetry.StartReceiveActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
             }
 
-            var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageReceived(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordReceiveSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageReceived(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -247,27 +334,44 @@ namespace Ratatosk
             var channelName = typeof(TConnector).Name;
 
             using var activity = _clientTelemetry.StartStatusActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
             }
 
-            var result = await connector.GetStatusAsync(cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogStatusRead(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogStatusReadFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.GetStatusAsync(cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordStatusSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogStatusRead(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogStatusReadFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -277,27 +381,44 @@ namespace Ratatosk
             var channelName = typeof(TConnector).Name;
 
             using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await ResolveConnectorAsync<TConnector>(cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for type '{channelName}'.");
             }
 
-            var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageStatusReceived(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordReceiveStatusSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageStatusReceived(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         // ── Runtime overloads ────────────────────────────────────────────────
@@ -321,23 +442,33 @@ namespace Ratatosk
 
             await ResolveSenderAsync(message, settings, cancellationToken);
 
-            var result = await connector.SendMessageAsync(message, cancellationToken);
-            sw.Stop();
+            try
+            {
+                var result = await connector.SendMessageAsync(message, cancellationToken);
+                sw.Stop();
 
-            if (result.IsSuccess())
-            {
-                _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageSent(channelName);
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageSent(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
             }
-            else
+            catch (Exception ex)
             {
+                sw.Stop();
                 _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
             }
-
-            return result;
         }
 
         /// <inheritdoc/>
@@ -346,27 +477,44 @@ namespace Ratatosk
             _logger.LogReceivingMessage(channelName);
 
             using var activity = _clientTelemetry.StartReceiveActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
             }
 
-            var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageReceived(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordReceiveSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageReceived(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -375,27 +523,44 @@ namespace Ratatosk
             _logger.LogReadingStatus(channelName);
 
             using var activity = _clientTelemetry.StartStatusActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
             }
 
-            var result = await connector.GetStatusAsync(cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogStatusRead(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogStatusReadFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.GetStatusAsync(cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordStatusSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogStatusRead(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogStatusReadFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -404,27 +569,44 @@ namespace Ratatosk
             _logger.LogReceivingMessageStatus(channelName);
 
             using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await CreateRuntimeConnectorAsync(channelName, settings, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for channel '{channelName}'.");
             }
 
-            var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageStatusReceived(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordReceiveStatusSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageStatusReceived(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         // ── Type-parameterized runtime overloads ────────────────────────────
@@ -449,23 +631,33 @@ namespace Ratatosk
 
             await ResolveSenderAsync(message, settings, cancellationToken);
 
-            var result = await connector.SendMessageAsync(message, cancellationToken);
-            sw.Stop();
+            try
+            {
+                var result = await connector.SendMessageAsync(message, cancellationToken);
+                sw.Stop();
 
-            if (result.IsSuccess())
-            {
-                _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageSent(channelName);
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordSendSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageSent(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
             }
-            else
+            catch (Exception ex)
             {
+                sw.Stop();
                 _clientTelemetry.RecordSendFailure(sw.ElapsedMilliseconds);
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageSendFailed(channelName, result.Error?.Message);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
             }
-
-            return result;
         }
 
         /// <inheritdoc/>
@@ -475,27 +667,44 @@ namespace Ratatosk
             var channelName = typeof(TConnector).Name;
 
             using var activity = _clientTelemetry.StartReceiveActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
             }
 
-            var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageReceived(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordReceiveSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageReceived(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageReceiveFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -505,27 +714,44 @@ namespace Ratatosk
             var channelName = typeof(TConnector).Name;
 
             using var activity = _clientTelemetry.StartStatusActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusInfo>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
             }
 
-            var result = await connector.GetStatusAsync(cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogStatusRead(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogStatusReadFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.GetStatusAsync(cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordStatusSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogStatusRead(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogStatusReadFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordStatusFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         /// <inheritdoc/>
@@ -535,27 +761,44 @@ namespace Ratatosk
             var channelName = typeof(TConnector).Name;
 
             using var activity = _clientTelemetry.StartReceiveStatusActivity(channelName);
+            var sw = Stopwatch.StartNew();
 
             var connector = await CreateRuntimeConnectorAsync<TConnector>(settings, cancellationToken);
             if (connector == null)
             {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<StatusUpdateResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector type registered for '{channelName}'.");
             }
 
-            var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
-            if (result.IsSuccess())
+            try
             {
-                activity?.SetStatus(ActivityStatusCode.Ok);
-                _logger.LogMessageStatusReceived(channelName);
-            }
-            else
-            {
-                activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
-                _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
-            }
+                var result = await connector.ReceiveMessageStatusAsync(source, cancellationToken);
+                sw.Stop();
 
-            return result;
+                if (result.IsSuccess())
+                {
+                    _clientTelemetry.RecordReceiveStatusSuccess(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogMessageStatusReceived(channelName);
+                }
+                else
+                {
+                    _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
+                    activity?.SetStatus(ActivityStatusCode.Error, result.Error?.Message);
+                    _logger.LogMessageStatusReceiveFailed(channelName, result.Error?.Message);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _clientTelemetry.RecordReceiveStatusFailure(sw.ElapsedMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         // ── Sender resolution ────────────────────────────────────────────────
