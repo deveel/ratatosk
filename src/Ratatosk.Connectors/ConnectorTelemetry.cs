@@ -121,14 +121,14 @@ namespace Ratatosk
             return StartActivity(MessagingSemanticConventions.OperationInitialize);
         }
 
-        public void RecordSendSuccess(long elapsedMs, int payloadSize = 0)
+        public void RecordSendSuccess(long elapsedMs, int payloadSize = 0, int messageCount = 1)
         {
             if (!_options.EnableMetrics)
                 return;
 
             var tags = CreateConnectorMetricTags();
 
-            _messagesSentTotal.Add(1, tags);
+            _messagesSentTotal.Add(messageCount, tags);
 
             _sendDuration.Record(elapsedMs, tags);
 

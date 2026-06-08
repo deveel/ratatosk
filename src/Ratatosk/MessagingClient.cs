@@ -87,18 +87,15 @@ namespace Ratatosk
             _logger.LogReceivingMessage(channelName);
 
             using var activity = _clientTelemetry.StartReceiveActivity(channelName);
-            var sw = Stopwatch.StartNew();
 
             var connector = await ResolveConnectorAsync(channelName, cancellationToken);
             if (connector == null)
             {
-                sw.Stop();
                 activity?.SetStatus(ActivityStatusCode.Error, "Connector not found");
                 return OperationResult<ReceiveResult>.Fail(MessagingErrorCodes.ConnectorNotFound, MessagingErrorCodes.ErrorDomain, $"No connector registered for channel '{channelName}'.");
             }
 
             var result = await connector.ReceiveMessagesAsync(source, cancellationToken);
-            sw.Stop();
 
             if (result.IsSuccess())
             {

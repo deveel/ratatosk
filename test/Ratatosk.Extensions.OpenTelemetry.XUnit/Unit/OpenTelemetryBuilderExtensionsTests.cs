@@ -14,102 +14,75 @@ namespace Ratatosk;
 public class OpenTelemetryBuilderExtensionsTests
 {
     [Fact]
-    public void AddRatatoskInstrumentation_OnTracerProviderBuilder_RegistersClientSource()
+    public void AddRatatoskInstrumentation_OnTracerProviderBuilder_ExportsClientActivities()
     {
-        var sourceNames = new List<string>();
+        var processor = new TestActivityProcessor();
 
         using var tracerProvider = Sdk.CreateTracerProviderBuilder()
             .AddRatatoskInstrumentation()
+            .AddProcessor(processor)
             .Build();
 
-        // Verify by checking that sources are added (via listener detection)
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = source =>
-            {
-                sourceNames.Add(source.Name);
-                return false;
-            },
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.None
-        };
-        ActivitySource.AddActivityListener(listener);
+        var source = new ActivitySource("Ratatosk.Client");
+        using var activity = source.StartActivity("test-activity");
+        activity?.Stop();
 
-        _ = new ActivitySource("Ratatosk.Client");
-        _ = new ActivitySource("Ratatosk.Connector.TwilioSms");
-
-        Assert.Contains(sourceNames, s => s == "Ratatosk.Client");
+        Assert.Contains(processor.Exported, a => a.Source.Name == "Ratatosk.Client");
     }
 
     [Fact]
-    public void AddRatatoskInstrumentation_OnTracerProviderBuilder_RegistersConnectorWildcard()
+    public void AddRatatoskInstrumentation_OnTracerProviderBuilder_ExportsConnectorActivities()
     {
-        var sourceNames = new List<string>();
+        var processor = new TestActivityProcessor();
 
         using var tracerProvider = Sdk.CreateTracerProviderBuilder()
             .AddRatatoskInstrumentation()
+            .AddProcessor(processor)
             .Build();
 
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = source =>
-            {
-                sourceNames.Add(source.Name);
-                return false;
-            },
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.None
-        };
-        ActivitySource.AddActivityListener(listener);
+        var source = new ActivitySource("Ratatosk.Connector.TwilioSms");
+        using var activity = source.StartActivity("test-activity");
+        activity?.Stop();
 
-        _ = new ActivitySource("Ratatosk.Connector.TwilioSms");
-        _ = new ActivitySource("Ratatosk.Connector.SendGridEmail");
-
-        Assert.Contains(sourceNames, s => s == "Ratatosk.Connector.TwilioSms");
-        Assert.Contains(sourceNames, s => s == "Ratatosk.Connector.SendGridEmail");
+        Assert.Contains(processor.Exported, a => a.Source.Name == "Ratatosk.Connector.TwilioSms");
     }
 
     [Fact]
-    public void AddRatatoskInstrumentation_OnMeterProviderBuilder_RegistersClientMeter()
+    public void AddRatatoskInstrumentation_OnMeterProviderBuilder_ExportsClientMetrics()
     {
-        var meterNames = new List<string>();
+        var exporter = new TestMetricExporter();
 
         using var meterProvider = Sdk.CreateMeterProviderBuilder()
             .AddRatatoskInstrumentation()
+            .AddReader(new PeriodicExportingMetricReader(exporter, 10) { TemporalityPreference = MetricReaderTemporalityPreference.Cumulative })
             .Build();
 
-        using var meterListener = new MeterListener
-        {
-            InstrumentPublished = (instrument, listener) => { }
-        };
+        var meter = new Meter("Ratatosk.Client");
+        var counter = meter.CreateCounter<int>("test_counter");
+        counter.Add(1);
 
-        // Create meters to verify they are registered
-        var meter1 = new Meter("Ratatosk.Client");
-        var meter2 = new Meter("Ratatosk.Connector.TwilioSms");
+        meterProvider.ForceFlush();
 
-        // No exception thrown = registration succeeded
-        Assert.NotNull(meter1);
-        Assert.NotNull(meter2);
+        Assert.Contains(exporter.Exported, m => m.MeterName == "Ratatosk.Client");
     }
 
     [Fact]
-    public void AddRatatoskInstrumentation_OnMeterProviderBuilder_RegistersConnectorWildcard()
+    public void AddRatatoskInstrumentation_OnMeterProviderBuilder_ExportsConnectorMetrics()
     {
+        var exporter = new TestMetricExporter();
+
         using var meterProvider = Sdk.CreateMeterProviderBuilder()
             .AddRatatoskInstrumentation()
+            .AddReader(new PeriodicExportingMetricReader(exporter, 10) { TemporalityPreference = MetricReaderTemporalityPreference.Cumulative })
             .Build();
-
-        using var meterListener = new MeterListener
-        {
-            InstrumentPublished = (instrument, listener) => { }
-        };
-        meterListener.Start();
 
         var meter = new Meter("Ratatosk.Connector.SendGridEmail");
-        var counter = meter.CreateCounter<int>("test");
+        var counter = meter.CreateCounter<int>("test_counter");
+        counter.Add(1);
 
-        meterListener.RecordObservableInstruments();
+        meterProvider.ForceFlush();
 
-        // No exception = registration succeeded
-        Assert.NotNull(counter);
+        Assert.Contains(exporter.Exported, m => m.MeterName == "Ratatosk.Connector.SendGridEmail");
     }
 
     [Fact]
@@ -150,7 +123,6 @@ public class OpenTelemetryBuilderExtensionsTests
 
         var provider = services.BuildServiceProvider();
 
-        // OpenTelemetry hosting integration registers these services
         var tracerProvider = provider.GetService<TracerProvider>();
         var meterProvider = provider.GetService<MeterProvider>();
 
@@ -168,5 +140,28 @@ public class OpenTelemetryBuilderExtensionsTests
 
         Assert.NotNull(builder);
         Assert.Same(services, builder.Services);
+    }
+
+    private sealed class TestActivityProcessor : BaseProcessor<Activity>
+    {
+        public List<Activity> Exported { get; } = new();
+
+        public override void OnEnd(Activity data)
+        {
+            Exported.Add(data);
+            base.OnEnd(data);
+        }
+    }
+
+    private sealed class TestMetricExporter : BaseExporter<Metric>
+    {
+        public List<Metric> Exported { get; } = new();
+
+        public override ExportResult Export(in Batch<Metric> batch)
+        {
+            foreach (var metric in batch)
+                Exported.Add(metric);
+            return ExportResult.Success;
+        }
     }
 }

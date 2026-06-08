@@ -634,7 +634,7 @@ namespace Ratatosk
             using var scope = BeginConnectorLoggerScope();
             using var messageScope = BeginMessageLoggerScope(message);
 
-            var activity = _telemetry.StartSendActivity(
+            using var activity = _telemetry.StartSendActivity(
                 Schema.ChannelType, message.Id);
             var sw = Stopwatch.StartNew();
 
@@ -849,7 +849,7 @@ namespace Ratatosk
                 var result = await SendBatchCoreAsync(batch, cancellationToken);
 
                 sw.Stop();
-                _telemetry.RecordSendSuccess(sw.ElapsedMilliseconds, batch.Messages.Count());
+                _telemetry.RecordSendSuccess(sw.ElapsedMilliseconds, messageCount: batch.Messages.Count());
                 activity?.SetStatus(ActivityStatusCode.Ok);
 
                 Logger.LogBatchSent(batch.Messages.Count());
