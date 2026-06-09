@@ -1,6 +1,6 @@
 {
   "index_name": "ratatosk",
-  "start_urls": ["https://ratatosk.deveel.org/docs/"],
+  "start_urls": ["https://ratatosk.deveel.org/"],
   "sitemap_urls": ["https://ratatosk.deveel.org/sitemap.xml"],
   "selectors": {
     "lvl0": {
