@@ -76,7 +76,6 @@ const config: Config = {
         docs: {
           path: '../docs',
           sidebarPath: './sidebars.ts',
-          routeBasePath: '/',
           editUrl: 'https://github.com/deveel/ratatosk/edit/main/docs/',
         },
         blog: false,
@@ -136,15 +135,15 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/',
+              to: '/docs/',
             },
             {
               label: 'Framework Overview',
-              to: '/framework-overview',
+              to: '/docs/framework-overview',
             },
             {
               label: 'Roadmap',
-              to: '/roadmap',
+              to: '/docs/roadmap',
             },
           ],
         },
