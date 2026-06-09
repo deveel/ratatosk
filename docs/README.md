@@ -1,11 +1,15 @@
+---
+slug: /
+---
+
 [![NuGet](https://img.shields.io/nuget/v/Ratatosk.Abstractions.svg?label=NuGet)](https://www.nuget.org/packages/Ratatosk.Abstractions/)
 [![codecov](https://codecov.io/gh/deveel/ratatosk/graph/badge.svg)](https://codecov.io/gh/deveel/ratatosk)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/deveel/ratatosk/blob/main/LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-512BD4)](https://dotnet.microsoft.com/)
 [![Documentation](https://img.shields.io/badge/docs-available-blue)](https://ratatosk.deveel.org)
 
 <p align="center">
-  <img src="ratatosk-full-logo.png" alt="Ratatosk" width="400"/>
+  <img src="/img/ratatosk-full-logo.png" alt="Ratatosk" width="400"/>
 </p>
 
 # Ratatosk
@@ -89,7 +93,7 @@ The framework is deliberately focused on the messaging contract and connector co
 - [Senders](senders/README.md) - sender identity guides and navigation hub
 - [Sender management](senders/sender-management.md) - sender identity model, registry lifecycle, storage options, and governance
 - [Sender resolution](senders/sender-resolution.md) - runtime sender lookup, fallback behavior, cache, and diagnostics
-- [IMessagingClient facade](quickstart.md#6-imessagingclient-facade) — high-level client with lazy initialization and named channel routing
+- [IMessagingClient facade](quickstart.md#5-advanced-resolution-strategies) — high-level client with lazy initialization and named channel routing
 
 **Building and wiring:**
 

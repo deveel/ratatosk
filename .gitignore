@@ -420,5 +420,11 @@ FodyWeavers.xsd
 .idea
 samples/**/src/**/appsettings.local.json
 
+# Docusaurus website
+website/node_modules/
+website/build/
+website/.docusaurus/
+website/.cache-loader/
+
 # macOS
 .DS_Store
