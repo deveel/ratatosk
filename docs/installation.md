@@ -59,7 +59,7 @@ builder.Services
 
 `AddMessaging()` returns a `MessagingBuilder` instance. Each `AddConnector<T>()` call registers the connector as a singleton in DI and also registers the connector's schema in the `IChannelSchemaRegistry`. Connectors are resolved as `IChannelConnector` from DI.
 
-Call `.AddClient()` on the builder to register the `IMessagingClient` facade, which handles lazy connector initialization and channel routing (see [Quickstart](quickstart.md#6-imessagingclient-facade)).
+Call `.AddClient()` on the builder to register the `IMessagingClient` facade, which handles lazy connector initialization and channel routing (see [Quickstart](quickstart.md#5-advanced-resolution-strategies)).
 
 ### What AddMessaging registers
 
