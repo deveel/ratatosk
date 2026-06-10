@@ -77,13 +77,9 @@ const config: Config = {
           path: '../docs',
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/deveel/ratatosk/edit/main/docs/',
+          includeCurrentVersion: false,
           lastVersion: '1.1.2',
           versions: {
-            current: {
-              label: 'Next',
-              path: 'next',
-              banner: 'unreleased',
-            },
             '1.1.2': {
               label: 'v1.1.2 (latest)',
               path: '',
