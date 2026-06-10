@@ -1,3 +1,7 @@
+---
+sidebar_position: 6
+---
+
 # Channel Schema
 
 A connector without a schema is a black box: you have no way to know what parameters it needs, what capabilities it offers, what message shapes it accepts, or what authentication it requires without reading its source code. The schema solves this by making every connector self-describing.

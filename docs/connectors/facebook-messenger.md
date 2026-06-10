@@ -1,3 +1,7 @@
+---
+sidebar_position: 5
+---
+
 # Facebook Messenger Connector
 
 Send and receive messages through the Facebook Messenger Platform API using a Facebook Page.

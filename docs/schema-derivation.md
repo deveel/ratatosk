@@ -1,3 +1,7 @@
+---
+sidebar_position: 7
+---
+
 # Schema Derivation
 
 A single connector type — say, Twilio SMS — can serve many different use cases. A development environment should not send real messages. A basic-tier environment should not have access to media messaging. An outbound-only integration does not need webhook parameters. These are all variations of the same connector, differing only in which capabilities, parameters, and constraints apply.

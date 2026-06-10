@@ -1,3 +1,7 @@
+---
+sidebar_position: 12
+---
+
 # Retry Policies
 
 When a connector sends a message, transient failures can happen: rate limits, network timeouts, or temporary provider outages. The retry policy system lets you control how `ChannelConnectorBase` retries failed send operations with configurable backoff, jitter, and optional circuit breaking.

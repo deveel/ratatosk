@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Twilio SMS & WhatsApp Sample
 
 Demonstrates the Twilio connectors (`TwilioSmsConnector` and `TwilioWhatsAppConnector`): sending SMS and WhatsApp messages through the Twilio API, status callbacks, and webhook inbound processing.

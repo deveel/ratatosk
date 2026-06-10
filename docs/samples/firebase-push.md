@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Firebase Cloud Messaging Sample
 
 Demonstrates the Firebase push connector (`FirebasePushConnector`): sending push notifications through Firebase Cloud Messaging (FCM) to devices and topics.

@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Sender Management
 
 Sender management is the operational side of sender identities: defining who is allowed to send, where those identities are stored, and how teams maintain them over time.

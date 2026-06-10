@@ -1,3 +1,7 @@
+---
+sidebar_position: 13
+---
+
 # Telemetry (Tracing & Metrics)
 
 Ratatosk emits OpenTelemetry-compatible tracing and metrics from every connector operation. Each connector has its own `ActivitySource` and `Meter` — traces and metrics are available out of the box without any manual instrumentation.

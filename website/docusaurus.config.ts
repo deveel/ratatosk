@@ -77,6 +77,31 @@ const config: Config = {
           path: '../docs',
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/deveel/ratatosk/edit/main/docs/',
+          lastVersion: '1.1.2',
+          versions: {
+            current: {
+              label: 'Next (unreleased)',
+              path: 'next',
+              banner: 'unreleased',
+            },
+            '1.1.2': {
+              label: 'v1.1.2 (latest)',
+              path: '',
+              banner: 'none',
+            },
+            '1.1.1': {
+              label: 'v1.1.1',
+              banner: 'unmaintained',
+            },
+            '1.0.6': {
+              label: 'v1.0.6',
+              banner: 'unmaintained',
+            },
+            '1.0.5': {
+              label: 'v1.0.5',
+              banner: 'unmaintained',
+            },
+          },
         },
         blog: false,
         theme: {
@@ -108,17 +133,8 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'docs',
+          type: 'docsVersionDropdown',
           position: 'left',
-          label: 'Docs',
-        },
-        {
-          type: 'doc',
-          docsPluginId: 'default',
-          position: 'left',
-          label: 'Getting Started',
-          docId: 'README',
         },
         {
           type: 'html',

@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Installation
 
 The framework is split into layers so you depend only on what you use. The model layer has zero external dependencies; the connector infrastructure depends only on Microsoft.Extensions abstractions; provider connectors bring in their respective SDKs.
