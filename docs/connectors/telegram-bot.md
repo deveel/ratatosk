@@ -1,3 +1,7 @@
+---
+sidebar_position: 6
+---
+
 # Telegram Bot Connector
 
 Send and receive messages through the Telegram Bot API.

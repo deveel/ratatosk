@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # SendGrid Email Connector
 
 Transactional and bulk email via the SendGrid v3 API.

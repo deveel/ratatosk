@@ -1,3 +1,7 @@
+---
+sidebar_position: 11
+---
+
 # Result Types
 
 If every connector used its own error model — one throwing exceptions, another returning tuples, a third using custom error objects — the application code that calls connectors would be a mess of adapters and conditionals. The framework standardizes on a single result type for every operation: `OperationResult<T>`.

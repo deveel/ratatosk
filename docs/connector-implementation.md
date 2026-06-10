@@ -1,3 +1,7 @@
+---
+sidebar_position: 10
+---
+
 # Connector Implementation
 
 Not every messaging provider has a ready-made connector in the framework. When you need to integrate with a custom or niche provider — an internal notification gateway, a legacy SMTP server, a proprietary chat system — you build a connector. The framework provides `ChannelConnectorBase`, an abstract base class that implements the `IChannelConnector` contract and handles all cross-cutting concerns so you only write the provider-specific translation layer.

@@ -1,3 +1,7 @@
+---
+sidebar_position: 5
+---
+
 # Message Model
 
 At the core of the framework is the `IMessage` interface and its concrete implementation `Message`. Every piece of data that flows through the system — whether it is an SMS text, an email with attachments, a push notification, or a chat message — is represented as an `IMessage`. This unified representation is what makes multi-channel messaging possible: the same message object can be sent through different connectors without transformation.

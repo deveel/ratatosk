@@ -1,3 +1,7 @@
+---
+sidebar_position: 30
+---
+
 # Roadmap
 
 The project roadmap is tracked in the repository root as [ROADMAP.md](https://github.com/deveel/ratatosk/blob/main/ROADMAP.md).

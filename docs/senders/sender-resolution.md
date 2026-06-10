@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Sender Resolution
 
 Sender resolution is the runtime process that determines the concrete sender used for a message right before connector validation and dispatch.

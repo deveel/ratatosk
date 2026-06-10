@@ -1,3 +1,7 @@
+---
+sidebar_position: 8
+---
+
 # Message Validation
 
 Every connector validates messages internally before sending — the base class checks the message against the schema and returns validation failures as `OperationResult<T>.ValidationFailed`. But waiting until the connector call to discover validation errors is wasteful: the message may be invalid in ways that are obvious from the schema alone, without any provider interaction.

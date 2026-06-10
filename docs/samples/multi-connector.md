@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Multi-Connector Sample
 
 Demonstrates running multiple Ratatosk connectors simultaneously in a single ASP.NET Core web application, exposing each through REST API endpoints. Supports all six channel providers: Facebook Messenger, Firebase Cloud Messaging, SendGrid Email, Telegram Bot, Twilio SMS, and Twilio WhatsApp.

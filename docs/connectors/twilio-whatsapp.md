@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Twilio WhatsApp Connector
 
 WhatsApp Business messaging through Twilio's API for WhatsApp.

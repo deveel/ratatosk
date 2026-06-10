@@ -1,3 +1,7 @@
+---
+sidebar_position: 6
+---
+
 # Telegram Bot Sample
 
 Demonstrates the Telegram Bot connector (`TelegramBotConnector`): sending messages via the Telegram Bot API, schema validation, and webhook update processing.

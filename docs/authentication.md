@@ -1,3 +1,7 @@
+---
+sidebar_position: 9
+---
+
 # Authentication
 
 Every messaging provider requires some form of authentication — an API key, a bearer token, a username and password pair, or an OAuth 2.0 client credentials flow. If every connector handled auth internally, each would duplicate logic for token refresh, credential caching, and error handling. Authentication would be inconsistent across connectors, and adding a new auth scheme would require modifying every connector.

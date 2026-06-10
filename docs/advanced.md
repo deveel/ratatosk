@@ -1,3 +1,7 @@
+---
+sidebar_position: 14
+---
+
 # Advanced Configuration
 
 The basic patterns — register a connector, build a message, send it — cover the common cases. Production deployments introduce additional concerns: keeping credentials secure, monitoring connector health, understanding performance characteristics, and testing thoroughly without sending real messages.

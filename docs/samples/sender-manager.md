@@ -1,3 +1,7 @@
+---
+sidebar_position: 7
+---
+
 # Sender Manager Sample
 
 Demonstrates sender identity management via an ASP.NET Core Web API. The sample uses `ISenderRepository<Sender>` backed by `SenderManager<Sender>` and an in-memory store to provide full CRUD over sender identities, and shows how those identities integrate with the messaging pipeline.

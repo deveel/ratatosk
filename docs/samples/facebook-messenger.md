@@ -1,3 +1,7 @@
+---
+sidebar_position: 4
+---
+
 # Facebook Messenger Sample
 
 Demonstrates the Facebook Messenger connector (`FacebookMessengerConnector`): sending and receiving messages through a Facebook Page, schema validation, and webhook inbound processing.

@@ -1,3 +1,7 @@
+---
+sidebar_position: 4
+---
+
 # Firebase Push Connector
 
 Push notifications via Firebase Cloud Messaging (FCM) HTTP v1 API.

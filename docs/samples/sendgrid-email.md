@@ -1,3 +1,7 @@
+---
+sidebar_position: 5
+---
+
 # SendGrid Email Sample
 
 Demonstrates the SendGrid email connector (`SendGridEmailConnector`): sending transactional emails, schema validation, and event webhook processing.
