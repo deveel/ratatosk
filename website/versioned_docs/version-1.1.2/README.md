@@ -5,7 +5,7 @@
 [![Documentation](https://img.shields.io/badge/docs-available-blue)](https://ratatosk.deveel.org)
 
 <p align="center">
-  <img src="ratatosk-full-logo.png" alt="Ratatosk" width="400"/>
+  <img src="/img/ratatosk-full-logo.png" alt="Ratatosk" width="400"/>
 </p>
 
 # Ratatosk
