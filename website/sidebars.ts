@@ -12,10 +12,10 @@ const sidebars: SidebarsConfig = {
     'message-validation',
     'authentication',
     'connector-implementation',
-    'result-types',
-    'retry-policies',
+    'connectors-implementation/result-types',
+    'connectors-configuration/retry-policies',
     'telemetry',
-    'advanced',
+    'connectors-implementation/advanced-topics',
     {
       type: 'category',
       label: 'Senders',
