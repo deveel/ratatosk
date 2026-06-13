@@ -171,5 +171,36 @@ namespace Ratatosk
         public const string CircuitBreakerOpen = "CIRCUIT_BREAKER_OPEN";
 
         #endregion
+
+        #region Timeout Errors
+
+        /// <summary>
+        /// Indicates that a send operation timed out.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the send operation exceeds the configured
+        /// <see cref="TimeoutOptions.SendTimeout"/> duration.
+        /// </remarks>
+        public const string SendTimeout = "SEND_TIMEOUT";
+
+        /// <summary>
+        /// Indicates that a receive operation timed out.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the receive operation exceeds the configured
+        /// <see cref="TimeoutOptions.ReceiveTimeout"/> duration.
+        /// </remarks>
+        public const string ReceiveTimeout = "RECEIVE_TIMEOUT";
+
+        /// <summary>
+        /// Indicates that a status query operation timed out.
+        /// </summary>
+        /// <remarks>
+        /// This error occurs when the status query operation exceeds the configured
+        /// <see cref="TimeoutOptions.StatusQueryTimeout"/> duration.
+        /// </remarks>
+        public const string StatusQueryTimeout = "STATUS_QUERY_TIMEOUT";
+
+        #endregion
     }
 }

@@ -190,7 +190,7 @@ public class ConnectorTelemetryTests
     [Fact]
     public async Task ReceiveOperation_CreatesActivity()
     {
-        var events = new List<Activity>();
+        var events = new System.Collections.Concurrent.ConcurrentBag<Activity>();
 
         using var listener = new ActivityListener
         {
@@ -208,6 +208,10 @@ public class ConnectorTelemetryTests
         var result = await connector.ReceiveMessagesAsync(source, TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess());
+        
+        // Small delay to ensure all Activity callbacks have completed
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        
         Assert.Contains(events, a =>
             a.OperationName.Contains("receive") &&
             a.Tags.Any(t => t.Key == "messaging.operation" && (string?)t.Value == "receive"));
@@ -306,7 +310,7 @@ public class ConnectorTelemetryTests
     [Fact]
     public async Task MultipleConnectors_HaveSeparateSources()
     {
-        var sources = new HashSet<string>();
+        var sources = new System.Collections.Concurrent.ConcurrentBag<string>();
 
         using var listener = new ActivityListener
         {
@@ -334,6 +338,9 @@ public class ConnectorTelemetryTests
 
         await connector1.InitializeAsync(TestContext.Current.CancellationToken);
         await connector2.InitializeAsync(TestContext.Current.CancellationToken);
+        
+        // Small delay to ensure all Activity callbacks have completed
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         Assert.Contains(sources, s => s.Contains("type-a"));
         Assert.Contains(sources, s => s.Contains("type-b"));

@@ -95,4 +95,9 @@ internal static class ConnectorLoggerEventId
     public const int RetryExhausted = LoggerEventId.BaseId + 152;
     public const int CircuitBreakerOpened = LoggerEventId.BaseId + 153;
     public const int CircuitBreakerReset = LoggerEventId.BaseId + 154;
+
+    // Timeout events
+    public const int SendTimeout = LoggerEventId.BaseId + 160;
+    public const int ReceiveTimeout = LoggerEventId.BaseId + 161;
+    public const int StatusQueryTimeout = LoggerEventId.BaseId + 162;
 }
