@@ -35,6 +35,26 @@ namespace Ratatosk
         /// </summary>
         public string? DefaultReplyTo { get; set; }
 
+        /// <summary>
+        /// Gets or sets the timeout for send operations.
+        /// </summary>
+        public TimeSpan? SendTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout for receive operations.
+        /// </summary>
+        public TimeSpan? ReceiveTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout for status query operations.
+        /// </summary>
+        public TimeSpan? StatusQueryTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether timeout errors should be retried.
+        /// </summary>
+        public bool? RetryOnTimeout { get; set; }
+
         /// <inheritdoc/>
         public ConnectionSettings ToConnectionSettings()
         {
@@ -52,6 +72,15 @@ namespace Ratatosk
                 settings.SetParameter(SendGridConnectionParameters.DefaultFromName, DefaultFromName);
             if (!string.IsNullOrWhiteSpace(DefaultReplyTo))
                 settings.SetParameter(SendGridConnectionParameters.DefaultReplyTo, DefaultReplyTo);
+
+            if (SendTimeout.HasValue)
+                settings.SetParameter(TimeoutSettingsKeys.SendTimeout, SendTimeout.Value);
+            if (ReceiveTimeout.HasValue)
+                settings.SetParameter(TimeoutSettingsKeys.ReceiveTimeout, ReceiveTimeout.Value);
+            if (StatusQueryTimeout.HasValue)
+                settings.SetParameter(TimeoutSettingsKeys.StatusQueryTimeout, StatusQueryTimeout.Value);
+            if (RetryOnTimeout.HasValue)
+                settings.SetParameter(TimeoutSettingsKeys.RetryOnTimeout, RetryOnTimeout.Value);
 
             return settings;
         }

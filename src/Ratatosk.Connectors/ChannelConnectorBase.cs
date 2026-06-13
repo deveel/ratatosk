@@ -30,6 +30,8 @@ namespace Ratatosk
         private RetryPolicyOptions? _effectiveRetryPolicy;
         private readonly Lazy<ResiliencePipeline<SendResult>?> _sendPipeline;
         private readonly ConnectorTelemetry _telemetry;
+        private readonly TimeoutOptions _timeoutOptions;
+        private TimeoutOptions _effectiveTimeoutOptions;
 
         /// <summary>
         /// Constructs the connector base with the given schema and optional settings.
@@ -59,6 +61,9 @@ namespace Ratatosk
 
             var telemetryOptions = ReadTelemetryFromSettings();
             _telemetry = new ConnectorTelemetry(Schema.ChannelType, ConnectorName, telemetryOptions);
+
+            _timeoutOptions = ReadTimeoutFromSettings();
+            _effectiveTimeoutOptions = _timeoutOptions;
         }
 
         /// <summary>
@@ -189,6 +194,17 @@ namespace Ratatosk
                 }
             }
 
+            // Auto-add timeout error codes to retryable list if RetryOnTimeout is enabled
+            if (_timeoutOptions?.RetryOnTimeout == true)
+            {
+                if (!options.RetryableErrorCodes.Contains(ConnectorErrorCodes.SendTimeout))
+                    options.RetryableErrorCodes.Add(ConnectorErrorCodes.SendTimeout);
+                if (!options.RetryableErrorCodes.Contains(ConnectorErrorCodes.ReceiveTimeout))
+                    options.RetryableErrorCodes.Add(ConnectorErrorCodes.ReceiveTimeout);
+                if (!options.RetryableErrorCodes.Contains(ConnectorErrorCodes.StatusQueryTimeout))
+                    options.RetryableErrorCodes.Add(ConnectorErrorCodes.StatusQueryTimeout);
+            }
+
             return options;
         }
 
@@ -209,6 +225,82 @@ namespace Ratatosk
 
             return options;
         }
+
+        private TimeoutOptions ReadTimeoutFromSettings()
+        {
+            var options = new TimeoutOptions();
+
+            if (ConnectionSettings.Parameters.TryGetValue(TimeoutSettingsKeys.SendTimeout, out var sendRaw) && sendRaw is string sendStr)
+            {
+                if (TimeSpan.TryParse(sendStr, out var sendTimeout))
+                    options.SendTimeout = sendTimeout;
+            }
+
+            if (ConnectionSettings.Parameters.TryGetValue(TimeoutSettingsKeys.ReceiveTimeout, out var receiveRaw) && receiveRaw is string receiveStr)
+            {
+                if (TimeSpan.TryParse(receiveStr, out var receiveTimeout))
+                    options.ReceiveTimeout = receiveTimeout;
+            }
+
+            if (ConnectionSettings.Parameters.TryGetValue(TimeoutSettingsKeys.StatusQueryTimeout, out var statusRaw) && statusRaw is string statusStr)
+            {
+                if (TimeSpan.TryParse(statusStr, out var statusTimeout))
+                    options.StatusQueryTimeout = statusTimeout;
+            }
+
+            if (ConnectionSettings.Parameters.TryGetValue(TimeoutSettingsKeys.RetryOnTimeout, out var retryRaw))
+                options.RetryOnTimeout = Convert.ToBoolean(retryRaw);
+
+            return options;
+        }
+
+        /// <summary>
+        /// Gets the timeout for send operations.
+        /// </summary>
+        /// <returns>
+        /// The <see cref="TimeSpan"/> to use for send operation timeouts.
+        /// </returns>
+        /// <remarks>
+        /// This method can be overridden by derived connectors to customize the send timeout
+        /// based on connector-specific requirements.
+        /// </remarks>
+        protected virtual TimeSpan GetSendTimeout() => _effectiveTimeoutOptions.SendTimeout;
+
+        /// <summary>
+        /// Gets the timeout for receive operations.
+        /// </summary>
+        /// <returns>
+        /// The <see cref="TimeSpan"/> to use for receive operation timeouts.
+        /// </returns>
+        /// <remarks>
+        /// This method can be overridden by derived connectors to customize the receive timeout
+        /// based on connector-specific requirements.
+        /// </remarks>
+        protected virtual TimeSpan GetReceiveTimeout() => _effectiveTimeoutOptions.ReceiveTimeout;
+
+        /// <summary>
+        /// Gets the timeout for status query operations.
+        /// </summary>
+        /// <returns>
+        /// The <see cref="TimeSpan"/> to use for status query operation timeouts.
+        /// </returns>
+        /// <remarks>
+        /// This method can be overridden by derived connectors to customize the status query timeout
+        /// based on connector-specific requirements.
+        /// </remarks>
+        protected virtual TimeSpan GetStatusQueryTimeout() => _effectiveTimeoutOptions.StatusQueryTimeout;
+
+        /// <summary>
+        /// Gets whether timeout errors should be retried.
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> if timeout errors should be retried; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method can be overridden by derived connectors to customize retry behavior
+        /// for timeout errors.
+        /// </remarks>
+        protected virtual bool ShouldRetryOnTimeout() => _effectiveTimeoutOptions.RetryOnTimeout;
 
         private ResiliencePipeline<T>? BuildPipeline<T>()
         {
@@ -672,6 +764,10 @@ namespace Ratatosk
 
                 Logger.LogSendingMessage(message.Id!);
 
+                var sendTimeout = GetSendTimeout();
+                using var timeoutCts = new CancellationTokenSource(sendTimeout);
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
                 var pipeline = BuildPipeline<SendResult>();
                 SendResult result;
                 var attempts = 1;
@@ -686,10 +782,22 @@ namespace Ratatosk
                         {
                             count++;
                             return await SendMessageCoreAsync(message, ct);
-                        }, cancellationToken);
+                        }, linkedCts.Token);
 
                         attempts = count;
                         Logger.LogRetrySucceeded("SendMessage", attempts);
+                    }
+                    catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
+                    {
+                        sw.Stop();
+                        _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, ConnectorErrorCodes.SendTimeout);
+                        activity?.SetStatus(ActivityStatusCode.Error, "Send operation timed out");
+
+                        Logger.LogSendTimeout(message.Id!, sendTimeout);
+                        return OperationResult<SendResult>.Fail(
+                            ConnectorErrorCodes.SendTimeout,
+                            MessagingErrorCodes.ErrorDomain,
+                            $"The send operation timed out after {sendTimeout}");
                     }
                     catch (Exception ex)
                     {
@@ -729,7 +837,22 @@ namespace Ratatosk
                 }
                 else
                 {
-                    result = await SendMessageCoreAsync(message, cancellationToken);
+                    try
+                    {
+                        result = await SendMessageCoreAsync(message, linkedCts.Token);
+                    }
+                    catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
+                    {
+                        sw.Stop();
+                        _telemetry.RecordSendFailure(sw.ElapsedMilliseconds, ConnectorErrorCodes.SendTimeout);
+                        activity?.SetStatus(ActivityStatusCode.Error, "Send operation timed out");
+
+                        Logger.LogSendTimeout(message.Id!, sendTimeout);
+                        return OperationResult<SendResult>.Fail(
+                            ConnectorErrorCodes.SendTimeout,
+                            MessagingErrorCodes.ErrorDomain,
+                            $"The send operation timed out after {sendTimeout}");
+                    }
 
                     sw.Stop();
                     _telemetry.RecordSendSuccess(sw.ElapsedMilliseconds, payloadSize);
@@ -959,17 +1082,30 @@ namespace Ratatosk
             using var scope = BeginConnectorLoggerScope();
             using var activity = _telemetry.StartStatusQueryActivity(messageId);
 
+            var statusTimeout = GetStatusQueryTimeout();
+            using var timeoutCts = new CancellationTokenSource(statusTimeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
             try
             {
                 Logger.LogReadingMessageStatus(messageId);
 
-                var result = await GetMessageStatusCoreAsync(messageId, cancellationToken);
+                var result = await GetMessageStatusCoreAsync(messageId, linkedCts.Token);
 
                 activity?.SetStatus(ActivityStatusCode.Ok);
 
                 Logger.LogMessageStatusRead(messageId);
 
                 return result;
+            }
+            catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, "Status query timed out");
+                Logger.LogStatusQueryTimeout(messageId, statusTimeout);
+                return OperationResult<StatusUpdatesResult>.Fail(
+                    ConnectorErrorCodes.StatusQueryTimeout,
+                    MessagingErrorCodes.ErrorDomain,
+                    $"The status query operation timed out after {statusTimeout}");
             }
             catch (MessagingException ex)
             {
@@ -1171,11 +1307,15 @@ namespace Ratatosk
             using var activity = _telemetry.StartReceiveActivity(Schema.ChannelType);
             var sw = Stopwatch.StartNew();
 
+            var receiveTimeout = GetReceiveTimeout();
+            using var timeoutCts = new CancellationTokenSource(receiveTimeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
             try
             {
                 Logger.LogReceivingMessage();
 
-                var result = await ReceiveMessagesCoreAsync(source, cancellationToken);
+                var result = await ReceiveMessagesCoreAsync(source, linkedCts.Token);
 
                 sw.Stop();
                 var messageCount = result?.Messages?.Count ?? 0;
@@ -1185,6 +1325,18 @@ namespace Ratatosk
                 Logger.LogMessageReceived();
 
                 return result;
+            }
+            catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
+            {
+                sw.Stop();
+                _telemetry.RecordReceiveFailure(sw.ElapsedMilliseconds, ConnectorErrorCodes.ReceiveTimeout);
+                activity?.SetStatus(ActivityStatusCode.Error, "Receive operation timed out");
+
+                Logger.LogReceiveTimeout(receiveTimeout);
+                return OperationResult<ReceiveResult>.Fail(
+                    ConnectorErrorCodes.ReceiveTimeout,
+                    MessagingErrorCodes.ErrorDomain,
+                    $"The receive operation timed out after {receiveTimeout}");
             }
             catch (MessagingException ex)
             {

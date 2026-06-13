@@ -241,6 +241,34 @@ namespace Ratatosk
         }
 
         /// <summary>
+        /// Configures the timeout options for the connector, controlling how long
+        /// operations can run before being cancelled.
+        /// </summary>
+        /// <param name="configure">
+        /// A delegate that configures the <see cref="TimeoutOptions"/> instance.
+        /// </param>
+        /// <returns>
+        /// Returns the current builder instance to allow chaining.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="configure"/> is <c>null</c>.
+        /// </exception>
+        public ChannelConnectorBuilder<TConnector> WithTimeout(Action<TimeoutOptions> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure, nameof(configure));
+
+            var options = new TimeoutOptions();
+            configure(options);
+
+            _fluentSettings[TimeoutSettingsKeys.SendTimeout] = options.SendTimeout.ToString();
+            _fluentSettings[TimeoutSettingsKeys.ReceiveTimeout] = options.ReceiveTimeout.ToString();
+            _fluentSettings[TimeoutSettingsKeys.StatusQueryTimeout] = options.StatusQueryTimeout.ToString();
+            _fluentSettings[TimeoutSettingsKeys.RetryOnTimeout] = options.RetryOnTimeout;
+
+            return this;
+        }
+
+        /// <summary>
         /// Overrides the default factory used to create the connector
         /// with a custom factory type.
         /// </summary>
