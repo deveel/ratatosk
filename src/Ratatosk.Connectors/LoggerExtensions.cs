@@ -519,5 +519,27 @@ namespace Ratatosk
         internal static partial void LogCircuitBreakerReset(this ILogger logger, string operationType);
 
         #endregion
+
+        #region Timeout Logging
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.SendTimeout,
+            Level = LogLevel.Error,
+            Message = "Send operation for message {MessageId} timed out after {Timeout}")]
+        internal static partial void LogSendTimeout(this ILogger logger, string messageId, TimeSpan timeout);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.ReceiveTimeout,
+            Level = LogLevel.Error,
+            Message = "Receive operation timed out after {Timeout}")]
+        internal static partial void LogReceiveTimeout(this ILogger logger, TimeSpan timeout);
+
+        [LoggerMessage(
+            EventId = ConnectorLoggerEventId.StatusQueryTimeout,
+            Level = LogLevel.Error,
+            Message = "Status query for message {MessageId} timed out after {Timeout}")]
+        internal static partial void LogStatusQueryTimeout(this ILogger logger, string messageId, TimeSpan timeout);
+
+        #endregion
     }
 }
